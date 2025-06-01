@@ -129,11 +129,12 @@ class _ProfileScreenState extends State<ProfileScreen>
         slivers: [
           // 현대적인 앱바
           SliverAppBar(
-            expandedHeight: 80.0,
+            expandedHeight: 60.0,
             floating: false,
             pinned: true,
             elevation: 0,
             backgroundColor: Colors.transparent,
+            centerTitle: true,
             flexibleSpace: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -162,7 +163,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ],
                   ),
                 ),
-                titlePadding: const EdgeInsets.only(left: 16, bottom: 12),
+                centerTitle: true,
+                titlePadding: const EdgeInsets.only(left: 16, bottom: 8),
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

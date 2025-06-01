@@ -169,11 +169,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         slivers: [
           // 현대적인 앱바
           SliverAppBar(
-            expandedHeight: 80.0,
+            expandedHeight: 60.0,
             floating: false,
             pinned: true,
             elevation: 0,
             backgroundColor: Colors.transparent,
+            centerTitle: true,
             flexibleSpace: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -202,7 +203,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     ],
                   ),
                 ),
-                titlePadding: const EdgeInsets.only(left: 16, bottom: 12),
+                centerTitle: true,
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -220,7 +221,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             ),
             actions: [
               Container(
-                margin: const EdgeInsets.only(right: 8),
+                margin: const EdgeInsets.only(right: 16),
                 child: IconButton(
                   icon: Container(
                     padding: const EdgeInsets.all(8),

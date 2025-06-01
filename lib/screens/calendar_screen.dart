@@ -88,11 +88,12 @@ class _CalendarScreenState extends State<CalendarScreen>
         slivers: [
           // 현대적인 앱바 - 다른 화면들과 통일된 스타일
           SliverAppBar(
-            expandedHeight: 80.0,
+            expandedHeight: 60.0,
             floating: false,
             pinned: true,
             elevation: 0,
             backgroundColor: Colors.transparent,
+            centerTitle: true,
             flexibleSpace: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -121,7 +122,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                     ],
                   ),
                 ),
-                titlePadding: const EdgeInsets.only(left: 16, bottom: 12),
+                centerTitle: true,
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -139,7 +140,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             ),
             actions: [
               Container(
-                margin: const EdgeInsets.only(right: 16, bottom: 8),
+                margin: const EdgeInsets.only(right: 16),
                 child: PopupMenuButton<String>(
                   icon: Container(
                     padding: const EdgeInsets.all(8),
@@ -560,11 +561,24 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
             ],
           ),
-          child: FloatingActionButton(
+          child: FloatingActionButton.extended(
             onPressed: _showVacationRequestDialog,
             backgroundColor: Colors.transparent,
             elevation: 0,
-            child: const Icon(Icons.add, color: Colors.white, size: 28),
+            icon: const Icon(
+              Icons.add_circle_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+            label: const Text(
+              '휴무 추가',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
+              ),
+            ),
           ),
         ),
       ),
