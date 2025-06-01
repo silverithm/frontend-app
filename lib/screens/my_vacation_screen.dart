@@ -65,6 +65,227 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     }
   }
 
+  void _showNotifications() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          children: [
+            // 핸들 바
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // 헤더
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.notifications,
+                          color: Colors.blue.shade600,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        '알림',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      '닫기',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 알림 목록
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildNotificationItem(
+                    '휴무 신청 승인',
+                    '2024년 1월 15일 휴무 신청이 승인되었습니다.',
+                    Icons.check_circle,
+                    Colors.green,
+                    '방금 전',
+                    true,
+                  ),
+                  _buildNotificationItem(
+                    '휴무 신청 거절',
+                    '2024년 1월 20일 휴무 신청이 거절되었습니다.\n사유: 해당 날짜에 이미 다른 직원이 휴무 예정',
+                    Icons.cancel,
+                    Colors.red,
+                    '1시간 전',
+                    true,
+                  ),
+                  _buildNotificationItem(
+                    '휴무 신청 승인',
+                    '2024년 1월 25일 휴무 신청이 승인되었습니다.',
+                    Icons.check_circle,
+                    Colors.green,
+                    '2시간 전',
+                    false,
+                  ),
+                  _buildNotificationItem(
+                    '시스템 공지',
+                    '휴무 신청 시스템이 업데이트되었습니다. 새로운 기능을 확인해보세요.',
+                    Icons.info,
+                    Colors.blue,
+                    '1일 전',
+                    false,
+                  ),
+                  _buildNotificationItem(
+                    '휴무 신청 승인',
+                    '2024년 1월 10일 휴무 신청이 승인되었습니다.',
+                    Icons.check_circle,
+                    Colors.green,
+                    '3일 전',
+                    false,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationItem(
+    String title,
+    String message,
+    IconData icon,
+    Color color,
+    String time,
+    bool isUnread,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isUnread ? color.withOpacity(0.05) : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isUnread ? color.withOpacity(0.2) : Colors.grey.shade200,
+          width: 1,
+        ),
+        boxShadow: isUnread
+            ? [
+                BoxShadow(
+                  color: color.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                    if (isUnread)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showCancelDialog(VacationRequest request) {
     showDialog(
       context: context,
@@ -222,24 +443,52 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             actions: [
               Container(
                 margin: const EdgeInsets.only(right: 16),
-                child: IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
+                child: Stack(
+                  children: [
+                    IconButton(
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      onPressed: _showNotifications,
+                    ),
+                    // 알림 뱃지
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade500,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '3',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    child: const Icon(
-                      Icons.refresh,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  onPressed: _refreshData,
+                  ],
                 ),
               ),
             ],
