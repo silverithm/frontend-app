@@ -17,6 +17,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _notificationsEnabled = true;
 
   @override
   void initState() {
@@ -475,30 +476,75 @@ class _ProfileScreenState extends State<ProfileScreen>
                           _buildSettingTile(
                             icon: Icons.notifications,
                             title: '알림 설정',
-                            subtitle: '푸시 알림 관리',
+                            subtitle: _notificationsEnabled
+                                ? '푸시 알림이 활성화되어 있습니다'
+                                : '푸시 알림이 비활성화되어 있습니다',
                             trailing: Container(
-                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.orange.shade100,
-                                borderRadius: BorderRadius.circular(10),
+                                gradient: LinearGradient(
+                                  colors: _notificationsEnabled
+                                      ? [
+                                          Colors.blue.shade400,
+                                          Colors.blue.shade600,
+                                        ]
+                                      : [
+                                          Colors.grey.shade300,
+                                          Colors.grey.shade400,
+                                        ],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: _notificationsEnabled
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.blue.shade300
+                                              .withOpacity(0.4),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
                               ),
-                              child: Icon(
-                                Icons.chevron_right,
-                                color: Colors.orange.shade600,
-                                size: 20,
+                              child: Switch(
+                                value: _notificationsEnabled,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _notificationsEnabled = value;
+                                  });
+
+                                  // 알림 상태에 따른 스낵바 표시
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        _notificationsEnabled
+                                            ? '알림이 활성화되었습니다'
+                                            : '알림이 비활성화되었습니다',
+                                      ),
+                                      backgroundColor: _notificationsEnabled
+                                          ? Colors.blue.shade600
+                                          : Colors.grey.shade600,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      action: SnackBarAction(
+                                        label: '확인',
+                                        textColor: Colors.white,
+                                        onPressed: () {},
+                                      ),
+                                    ),
+                                  );
+                                },
+                                activeColor: Colors.white,
+                                inactiveThumbColor: Colors.white,
+                                trackColor: MaterialStateProperty.all(
+                                  Colors.transparent,
+                                ),
                               ),
                             ),
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('알림 설정 기능은 준비 중입니다'),
-                                  backgroundColor: Colors.orange.shade600,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              );
+                              setState(() {
+                                _notificationsEnabled = !_notificationsEnabled;
+                              });
                             },
                           ),
 

@@ -469,20 +469,28 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       right: 6,
                       top: 6,
                       child: Container(
-                        width: 12,
-                        height: 12,
+                        width: 16,
+                        height: 16,
                         decoration: BoxDecoration(
                           color: Colors.red.shade500,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.shade300.withOpacity(0.5),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                         child: Center(
                           child: Text(
                             '3',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 8,
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
+                              height: 1.0,
                             ),
                           ),
                         ),
