@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/vacation_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
 import '../widgets/vacation_calendar_widget.dart';
 import '../widgets/vacation_request_dialog.dart';
+import 'dart:math' as math;
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -469,15 +471,24 @@ class _CalendarScreenState extends State<CalendarScreen>
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
-                                          child: Text(
-                                            vacation.userName,
-                                            style: TextStyle(
-                                              color: _getStatusTextColor(
-                                                vacation.status,
+                                          child: Row(
+                                            children: [
+                                              // 휴무 유형 도형
+                                              _buildVacationTypeShape(vacation),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  vacation.displayName,
+                                                  style: TextStyle(
+                                                    color: _getStatusTextColor(
+                                                      vacation.status,
+                                                    ),
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
                                               ),
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 16,
-                                            ),
+                                            ],
                                           ),
                                         ),
                                         Container(
@@ -502,24 +513,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                                             ),
                                           ),
                                         ),
-                                        if (vacation.type ==
-                                            VacationType.mandatory)
-                                          Container(
-                                            margin: const EdgeInsets.only(
-                                              left: 8,
-                                            ),
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.amber.shade100,
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Icon(
-                                              Icons.star,
-                                              size: 16,
-                                              color: Colors.amber.shade700,
-                                            ),
-                                          ),
                                       ],
                                     ),
                                   ),
@@ -617,4 +610,100 @@ class _CalendarScreenState extends State<CalendarScreen>
         return Icons.schedule;
     }
   }
+
+  Widget _buildVacationTypeShape(VacationRequest vacation) {
+    if (vacation.type == VacationType.mandatory) {
+      // 필수 휴무 - 별표
+      return Container(
+        width: 16,
+        height: 16,
+        child: CustomPaint(
+          painter: StarPainter(color: Colors.red.shade600),
+          size: const Size(16, 16),
+        ),
+      );
+    }
+
+    switch (vacation.duration) {
+      case VacationDuration.fullDay:
+        // 연차 - 전체 원
+        return Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: Colors.blue.shade600,
+            shape: BoxShape.circle,
+          ),
+        );
+      case VacationDuration.halfDay:
+        // 반차 - 반 잘린 원
+        return Container(
+          width: 16,
+          height: 16,
+          child: CustomPaint(
+            painter: HalfCirclePainter(color: Colors.orange.shade600),
+            size: const Size(16, 16),
+          ),
+        );
+    }
+  }
+}
+
+// 별표 그리기를 위한 CustomPainter
+class StarPainter extends CustomPainter {
+  final Color color;
+
+  StarPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final outerRadius = size.width / 2;
+    final innerRadius = outerRadius * 0.4;
+
+    for (int i = 0; i < 10; i++) {
+      final angle = (i * 36) * (3.14159 / 180);
+      final radius = i % 2 == 0 ? outerRadius : innerRadius;
+      final x = centerX + radius * math.cos(angle);
+      final y = centerY + radius * math.sin(angle);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// 반원 그리기를 위한 CustomPainter
+class HalfCirclePainter extends CustomPainter {
+  final Color color;
+
+  HalfCirclePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.drawArc(rect, 0, 3.14159, true, paint); // 반원 (180도)
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
