@@ -579,14 +579,8 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Color _getStatusColor(VacationStatus status) {
-    switch (status) {
-      case VacationStatus.approved:
-        return Colors.green.shade50;
-      case VacationStatus.rejected:
-        return Colors.red.shade50;
-      case VacationStatus.pending:
-        return Colors.orange.shade50;
-    }
+    // 모든 상태에 대해 흰색 배경으로 통일
+    return Colors.white;
   }
 
   Color _getStatusTextColor(VacationStatus status) {

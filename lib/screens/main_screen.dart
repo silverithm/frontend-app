@@ -113,7 +113,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                     _currentIndex == 0
                         ? Icons.list_alt
                         : Icons.list_alt_outlined,
-                    size: _currentIndex == 0 ? 28 : 24,
+                    size: _currentIndex == 0 ? 24 : 22,
                   ),
                 ),
                 label: '내 휴무',
@@ -121,38 +121,21 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               BottomNavigationBarItem(
                 icon: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.all(_currentIndex == 1 ? 12 : 8),
+                  padding: EdgeInsets.all(_currentIndex == 1 ? 10 : 6),
                   decoration: BoxDecoration(
-                    gradient: _currentIndex == 1
-                        ? LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.blue.shade600,
-                              Colors.blue.shade400,
-                            ],
-                          )
-                        : null,
-                    color: _currentIndex == 1 ? null : Colors.transparent,
+                    color: _currentIndex == 1
+                        ? Colors.blue.shade600.withOpacity(0.1)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: _currentIndex == 1
-                        ? [
-                            BoxShadow(
-                              color: Colors.blue.shade300.withOpacity(0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : null,
                   ),
                   child: Icon(
                     _currentIndex == 1
                         ? Icons.calendar_month
                         : Icons.calendar_month_outlined,
                     color: _currentIndex == 1
-                        ? Colors.white
+                        ? Colors.blue.shade600
                         : Colors.grey.shade400,
-                    size: _currentIndex == 1 ? 32 : 24,
+                    size: _currentIndex == 1 ? 26 : 22,
                   ),
                 ),
                 label: '달력',
@@ -169,7 +152,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   ),
                   child: Icon(
                     _currentIndex == 2 ? Icons.person : Icons.person_outline,
-                    size: _currentIndex == 2 ? 28 : 24,
+                    size: _currentIndex == 2 ? 24 : 22,
                   ),
                 ),
                 label: '프로필',
