@@ -23,6 +23,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
   VacationType _selectedType = VacationType.personal;
+  VacationDuration _selectedDuration = VacationDuration.fullDay;
   bool _isSubmitting = false;
 
   late AnimationController _animationController;
@@ -107,6 +108,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         userRole: authProvider.currentUser!.role,
         date: widget.selectedDate,
         type: _selectedType,
+        duration: _selectedDuration,
         reason: _reasonController.text.trim().isNotEmpty
             ? _reasonController.text.trim()
             : null,
@@ -116,7 +118,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('휴무 신청이 완료되었습니다'),
+            content: Text(
+              '${_selectedDuration == VacationDuration.fullDay ? '연차' : '반차'} 신청이 완료되었습니다',
+            ),
             backgroundColor: Colors.green.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -325,9 +329,228 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // 휴무 유형 선택
+                            // 휴무 기간 선택 (연차/반차)
                             Container(
-                              padding: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.shade100.withOpacity(
+                                      0.5,
+                                    ),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '휴무 기간',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey.shade800,
+                                          fontSize: 14,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 12),
+
+                                  Row(
+                                    children: [
+                                      // 연차
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            gradient:
+                                                _selectedDuration ==
+                                                    VacationDuration.fullDay
+                                                ? LinearGradient(
+                                                    colors: [
+                                                      Colors.purple.shade50,
+                                                      Colors.purple.shade100,
+                                                    ],
+                                                  )
+                                                : null,
+                                            color:
+                                                _selectedDuration !=
+                                                    VacationDuration.fullDay
+                                                ? Colors.grey.shade50
+                                                : null,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color:
+                                                  _selectedDuration ==
+                                                      VacationDuration.fullDay
+                                                  ? Colors.purple.shade300
+                                                  : Colors.grey.shade300,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            onTap: () {
+                                              setState(() {
+                                                _selectedDuration =
+                                                    VacationDuration.fullDay;
+                                              });
+                                            },
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                    horizontal: 12,
+                                                  ),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.calendar_view_day,
+                                                    size: 24,
+                                                    color:
+                                                        _selectedDuration ==
+                                                            VacationDuration
+                                                                .fullDay
+                                                        ? Colors.purple.shade600
+                                                        : Colors.grey.shade600,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    '연차',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 12,
+                                                      color:
+                                                          _selectedDuration ==
+                                                              VacationDuration
+                                                                  .fullDay
+                                                          ? Colors
+                                                                .purple
+                                                                .shade800
+                                                          : Colors
+                                                                .grey
+                                                                .shade700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      const SizedBox(width: 12),
+
+                                      // 반차
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            gradient:
+                                                _selectedDuration ==
+                                                    VacationDuration.halfDay
+                                                ? LinearGradient(
+                                                    colors: [
+                                                      Colors.orange.shade50,
+                                                      Colors.orange.shade100,
+                                                    ],
+                                                  )
+                                                : null,
+                                            color:
+                                                _selectedDuration !=
+                                                    VacationDuration.halfDay
+                                                ? Colors.grey.shade50
+                                                : null,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color:
+                                                  _selectedDuration ==
+                                                      VacationDuration.halfDay
+                                                  ? Colors.orange.shade300
+                                                  : Colors.grey.shade300,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            onTap: () {
+                                              setState(() {
+                                                _selectedDuration =
+                                                    VacationDuration.halfDay;
+                                              });
+                                            },
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                    horizontal: 12,
+                                                  ),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.schedule,
+                                                    size: 24,
+                                                    color:
+                                                        _selectedDuration ==
+                                                            VacationDuration
+                                                                .halfDay
+                                                        ? Colors.orange.shade600
+                                                        : Colors.grey.shade600,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    '반차',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 12,
+                                                      color:
+                                                          _selectedDuration ==
+                                                              VacationDuration
+                                                                  .halfDay
+                                                          ? Colors
+                                                                .orange
+                                                                .shade800
+                                                          : Colors
+                                                                .grey
+                                                                .shade700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // 휴무 유형 선택 (한 줄로 변경)
+                            Container(
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(16),
@@ -356,154 +579,148 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                         ?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.grey.shade800,
+                                          fontSize: 14,
                                         ),
                                   ),
-                                  const SizedBox(height: 16),
-
-                                  // 개인 휴무
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      gradient:
-                                          _selectedType == VacationType.personal
-                                          ? LinearGradient(
-                                              colors: [
-                                                Colors.blue.shade50,
-                                                Colors.blue.shade100,
-                                              ],
-                                            )
-                                          : null,
-                                      color:
-                                          _selectedType != VacationType.personal
-                                          ? Colors.grey.shade50
-                                          : null,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color:
-                                            _selectedType ==
-                                                VacationType.personal
-                                            ? Colors.blue.shade300
-                                            : Colors.grey.shade300,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: RadioListTile<VacationType>(
-                                      title: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.person,
-                                            color:
-                                                _selectedType ==
-                                                    VacationType.personal
-                                                ? Colors.blue.shade600
-                                                : Colors.grey.shade600,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Text(
-                                            '개인 휴무',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      subtitle: const Text('일반적인 개인 휴무'),
-                                      value: VacationType.personal,
-                                      groupValue: _selectedType,
-                                      onChanged: _isSubmitting
-                                          ? null
-                                          : (value) {
-                                              setState(() {
-                                                _selectedType = value!;
-                                              });
-                                            },
-                                      dense: true,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 8,
-                                          ),
-                                      activeColor: Colors.blue.shade600,
-                                    ),
-                                  ),
-
                                   const SizedBox(height: 12),
 
-                                  // 필수 휴무
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      gradient:
-                                          _selectedType ==
-                                              VacationType.mandatory
-                                          ? LinearGradient(
-                                              colors: [
-                                                Colors.amber.shade50,
-                                                Colors.amber.shade100,
-                                              ],
-                                            )
-                                          : null,
-                                      color:
-                                          _selectedType !=
-                                              VacationType.mandatory
-                                          ? Colors.grey.shade50
-                                          : null,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color:
-                                            _selectedType ==
-                                                VacationType.mandatory
-                                            ? Colors.amber.shade300
-                                            : Colors.grey.shade300,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: RadioListTile<VacationType>(
-                                      title: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.star,
-                                            color:
+                                  // 한 줄로 배치
+                                  Row(
+                                    children: [
+                                      // 개인 휴무
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            gradient:
                                                 _selectedType ==
-                                                    VacationType.mandatory
-                                                ? Colors.amber.shade600
-                                                : Colors.grey.shade600,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Text(
-                                            '필수 휴무',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
+                                                    VacationType.personal
+                                                ? LinearGradient(
+                                                    colors: [
+                                                      Colors.blue.shade50,
+                                                      Colors.blue.shade100,
+                                                    ],
+                                                  )
+                                                : null,
+                                            color:
+                                                _selectedType !=
+                                                    VacationType.personal
+                                                ? Colors.grey.shade50
+                                                : null,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color:
+                                                  _selectedType ==
+                                                      VacationType.personal
+                                                  ? Colors.blue.shade300
+                                                  : Colors.grey.shade300,
+                                              width: 2,
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      subtitle: const Text('회사 지정 또는 법정 휴무'),
-                                      value: VacationType.mandatory,
-                                      groupValue: _selectedType,
-                                      onChanged: _isSubmitting
-                                          ? null
-                                          : (value) {
+                                          child: RadioListTile<VacationType>(
+                                            title: Text(
+                                              '개인',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                                color:
+                                                    _selectedType ==
+                                                        VacationType.personal
+                                                    ? Colors.blue.shade800
+                                                    : Colors.grey.shade700,
+                                              ),
+                                            ),
+                                            value: VacationType.personal,
+                                            groupValue: _selectedType,
+                                            onChanged: (value) {
                                               setState(() {
                                                 _selectedType = value!;
                                               });
                                             },
-                                      dense: true,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 8,
+                                            activeColor: Colors.blue.shade600,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 0,
+                                                ),
+                                            dense: true,
                                           ),
-                                      activeColor: Colors.amber.shade600,
-                                    ),
+                                        ),
+                                      ),
+
+                                      const SizedBox(width: 12),
+
+                                      // 필수 휴무
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            gradient:
+                                                _selectedType ==
+                                                    VacationType.mandatory
+                                                ? LinearGradient(
+                                                    colors: [
+                                                      Colors.amber.shade50,
+                                                      Colors.amber.shade100,
+                                                    ],
+                                                  )
+                                                : null,
+                                            color:
+                                                _selectedType !=
+                                                    VacationType.mandatory
+                                                ? Colors.grey.shade50
+                                                : null,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color:
+                                                  _selectedType ==
+                                                      VacationType.mandatory
+                                                  ? Colors.amber.shade300
+                                                  : Colors.grey.shade300,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: RadioListTile<VacationType>(
+                                            title: Text(
+                                              '필수',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                                color:
+                                                    _selectedType ==
+                                                        VacationType.mandatory
+                                                    ? Colors.amber.shade800
+                                                    : Colors.grey.shade700,
+                                              ),
+                                            ),
+                                            value: VacationType.mandatory,
+                                            groupValue: _selectedType,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _selectedType = value!;
+                                              });
+                                            },
+                                            activeColor: Colors.amber.shade600,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 0,
+                                                ),
+                                            dense: true,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 12),
 
-                            // 사유 입력
+                            // 사유 입력 (더 크게)
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
@@ -529,266 +746,170 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   Row(
                                     children: [
                                       Icon(
-                                        Icons.note_outlined,
+                                        Icons.edit_note,
                                         color: Colors.grey.shade600,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        '사유 (선택사항)',
+                                        '휴무 사유',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
                                             ?.copyWith(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.grey.shade800,
+                                              fontSize: 16,
                                             ),
+                                      ),
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '선택사항',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.grey.shade600,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 16),
-
                                   TextFormField(
                                     controller: _reasonController,
-                                    enabled: !_isSubmitting,
-                                    maxLines: 3,
+                                    maxLines: 6,
                                     maxLength: 200,
                                     decoration: InputDecoration(
-                                      hintText: '휴무 사유를 입력해주세요 (선택사항)',
+                                      hintText:
+                                          '휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 개인 사정\n• 병원 진료\n• 가족 행사 등',
                                       hintStyle: TextStyle(
                                         color: Colors.grey.shade400,
+                                        fontSize: 14,
+                                        height: 1.4,
                                       ),
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide(
                                           color: Colors.grey.shade300,
-                                          width: 1,
                                         ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide(
-                                          color: Colors.blue.shade500,
+                                          color: Colors.blue.shade400,
                                           width: 2,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey.shade300,
                                         ),
                                       ),
                                       filled: true,
                                       fillColor: Colors.grey.shade50,
+                                      contentPadding: const EdgeInsets.all(20),
                                       counterStyle: TextStyle(
                                         color: Colors.grey.shade500,
                                         fontSize: 12,
                                       ),
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      height: 1.4,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
 
-                            const SizedBox(height: 20),
-
-                            // 현재 신청 현황
-                            Consumer<VacationProvider>(
-                              builder: (context, vacationProvider, child) {
-                                final vacations = vacationProvider
-                                    .getVacationsForDate(widget.selectedDate);
-
-                                if (vacations.isNotEmpty) {
-                                  return Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.orange.shade50,
-                                          Colors.orange.shade100,
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: Colors.orange.shade300,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(8),
-                                              decoration: BoxDecoration(
-                                                color: Colors.orange.shade600,
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              child: const Icon(
-                                                Icons.info_outline,
-                                                color: Colors.white,
-                                                size: 16,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              '이 날짜의 현재 신청 현황',
-                                              style: TextStyle(
-                                                color: Colors.orange.shade800,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(
-                                              0.7,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '${vacations.length}명이 이미 신청했습니다',
-                                            style: TextStyle(
-                                              color: Colors.orange.shade700,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-                                return const SizedBox.shrink();
-                              },
-                            ),
-
                             const SizedBox(height: 24),
 
-                            // 버튼들
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: Colors.grey.shade300,
-                                        width: 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: TextButton(
-                                      onPressed: _isSubmitting
-                                          ? null
-                                          : () => Navigator.pop(context),
-                                      style: TextButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        '취소',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                            // 제출 버튼
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.blue.shade400,
+                                    Colors.blue.shade600,
+                                    Colors.blue.shade800,
+                                  ],
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  flex: 2,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Colors.blue.shade400,
-                                          Colors.blue.shade600,
-                                          Colors.blue.shade800,
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.blue.shade400
-                                              .withOpacity(0.4),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 6),
-                                        ),
-                                      ],
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.shade300.withOpacity(
+                                      0.4,
                                     ),
-                                    child: ElevatedButton(
-                                      onPressed: _isSubmitting
-                                          ? null
-                                          : _submitRequest,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.transparent,
-                                        shadowColor: Colors.transparent,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        elevation: 0,
-                                      ),
-                                      child: _isSubmitting
-                                          ? Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                SizedBox(
-                                                  height: 20,
-                                                  width: 20,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation<
-                                                          Color
-                                                        >(Colors.white),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: _isSubmitting
+                                    ? null
+                                    : _submitRequest,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 18,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: _isSubmitting
+                                    ? Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Colors.white,
                                                   ),
-                                                ),
-                                                const SizedBox(width: 12),
-                                                const Text(
-                                                  '신청 중...',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          : const Text(
-                                              '신청하기',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
+                                              strokeWidth: 2,
                                             ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            '신청 중...',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Text(
+                                        '${_selectedDuration == VacationDuration.fullDay ? '연차' : '반차'} 신청하기',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                              ),
                             ),
                           ],
                         ),

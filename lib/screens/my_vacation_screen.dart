@@ -1084,13 +1084,49 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              _formatDate(request.date),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _formatDate(request.date),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors:
+                                          request.duration ==
+                                              VacationDuration.fullDay
+                                          ? [
+                                              Colors.purple.shade400,
+                                              Colors.purple.shade600,
+                                            ]
+                                          : [
+                                              Colors.orange.shade400,
+                                              Colors.orange.shade600,
+                                            ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    request.durationText,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],

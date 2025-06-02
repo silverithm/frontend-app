@@ -2,6 +2,8 @@ enum VacationStatus { pending, approved, rejected }
 
 enum VacationType { mandatory, personal }
 
+enum VacationDuration { fullDay, halfDay }
+
 class VacationRequest {
   final String id;
   final String userId;
@@ -10,6 +12,7 @@ class VacationRequest {
   final DateTime date;
   final VacationStatus status;
   final VacationType type;
+  final VacationDuration duration;
   final String? reason;
   final DateTime createdAt;
   final DateTime? approvedAt;
@@ -24,6 +27,7 @@ class VacationRequest {
     required this.date,
     this.status = VacationStatus.pending,
     this.type = VacationType.personal,
+    this.duration = VacationDuration.fullDay,
     this.reason,
     required this.createdAt,
     this.approvedAt,
@@ -40,6 +44,7 @@ class VacationRequest {
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
       status: _parseStatus(json['status']),
       type: _parseType(json['type']),
+      duration: _parseDuration(json['duration']),
       reason: json['reason'],
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       approvedAt: json['approvedAt'] != null
@@ -59,6 +64,7 @@ class VacationRequest {
       'date': date.toIso8601String(),
       'status': status.toString().split('.').last,
       'type': type.toString().split('.').last,
+      'duration': duration.toString().split('.').last,
       'reason': reason,
       'createdAt': createdAt.toIso8601String(),
       'approvedAt': approvedAt?.toIso8601String(),
@@ -87,6 +93,15 @@ class VacationRequest {
     }
   }
 
+  static VacationDuration _parseDuration(String? duration) {
+    switch (duration) {
+      case 'halfDay':
+        return VacationDuration.halfDay;
+      default:
+        return VacationDuration.fullDay;
+    }
+  }
+
   String get statusText {
     switch (status) {
       case VacationStatus.pending:
@@ -107,6 +122,19 @@ class VacationRequest {
     }
   }
 
+  String get durationText {
+    switch (duration) {
+      case VacationDuration.fullDay:
+        return '연차';
+      case VacationDuration.halfDay:
+        return '반차';
+    }
+  }
+
+  String get displayName {
+    return '$userName ($durationText)';
+  }
+
   VacationRequest copyWith({
     String? id,
     String? userId,
@@ -115,6 +143,7 @@ class VacationRequest {
     DateTime? date,
     VacationStatus? status,
     VacationType? type,
+    VacationDuration? duration,
     String? reason,
     DateTime? createdAt,
     DateTime? approvedAt,
@@ -129,6 +158,7 @@ class VacationRequest {
       date: date ?? this.date,
       status: status ?? this.status,
       type: type ?? this.type,
+      duration: duration ?? this.duration,
       reason: reason ?? this.reason,
       createdAt: createdAt ?? this.createdAt,
       approvedAt: approvedAt ?? this.approvedAt,

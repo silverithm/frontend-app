@@ -439,7 +439,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       // 정확한 행 수 계산
                       final rows = (days.length / 7).ceil();
 
-                      // 기본 모드: 화면에 꽉 차게, 확장 모드: 제한된 높이 + 스크롤
+                      // 기본 모드일 때 화면에 꽉 차게, 확장 모드일 때 제한된 높이 + 스크롤
                       final dateTextHeight = _isExpanded
                           ? 22.0
                           : 28.0; // 기본 모드에서 더 크게
@@ -447,7 +447,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           ? MediaQuery.of(context).size.height *
                                 0.6 // 확장 모드: 60%
                           : MediaQuery.of(context).size.height *
-                                0.45; // 기본 모드: 45%로 축소
+                                0.35; // 기본 모드: 35%로 더 축소
 
                       if (_isExpanded) {
                         // 확장 모드: 스크롤 가능한 고정 높이
@@ -485,35 +485,28 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       } else {
                         // 기본 모드: 적당한 크기로 가운데 배치
                         final actualGridHeight =
-                            maxGridHeight * 0.8; // 전체 높이의 80%만 사용
+                            maxGridHeight * 0.9; // 전체 높이의 90%만 사용
                         final cellHeight =
                             (actualGridHeight - spacing * (rows - 1)) / rows;
 
                         return Container(
-                          height: maxGridHeight, // 전체 높이는 유지
-                          child: Center(
-                            // 가운데 정렬
-                            child: Container(
-                              height: actualGridHeight,
-                              child: GridView.builder(
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: EdgeInsets.zero,
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 7,
-                                      childAspectRatio: cellWidth / cellHeight,
-                                      crossAxisSpacing: spacing,
-                                      mainAxisSpacing: spacing,
-                                    ),
-                                itemCount: days.length,
-                                itemBuilder: (context, index) =>
-                                    _buildCalendarCell(
-                                      days[index],
-                                      vacationProvider,
-                                      dateTextHeight,
-                                      cellHeight,
-                                    ),
-                              ),
+                          height: actualGridHeight, // 실제 그리드 높이만 사용
+                          child: GridView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.zero,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 7,
+                                  childAspectRatio: cellWidth / cellHeight,
+                                  crossAxisSpacing: spacing,
+                                  mainAxisSpacing: spacing,
+                                ),
+                            itemCount: days.length,
+                            itemBuilder: (context, index) => _buildCalendarCell(
+                              days[index],
+                              vacationProvider,
+                              dateTextHeight,
+                              cellHeight,
                             ),
                           ),
                         );
@@ -522,8 +515,68 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                   ),
                 ),
 
-                // 하단 여백
-                const SizedBox(height: 8),
+                // 색상별 범례 추가
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade200, width: 1),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // 신청 상태
+                      _buildCompactLegendItem(
+                        '승인',
+                        Colors.green.shade500,
+                        Icons.check_circle,
+                      ),
+                      _buildCompactLegendItem(
+                        '대기',
+                        Colors.orange.shade500,
+                        Icons.schedule,
+                      ),
+                      _buildCompactLegendItem(
+                        '거절',
+                        Colors.red.shade500,
+                        Icons.cancel,
+                      ),
+
+                      // 구분선
+                      Container(
+                        width: 1,
+                        height: 12,
+                        color: Colors.grey.shade300,
+                      ),
+
+                      // 휴무 유형
+                      _buildTypeLegendItem(
+                        '연차',
+                        Colors.blue.shade600,
+                        Icons.calendar_view_day,
+                      ),
+                      _buildTypeLegendItem(
+                        '반차',
+                        Colors.orange.shade600,
+                        Icons.schedule,
+                      ),
+                      _buildTypeLegendItem(
+                        '필수',
+                        Colors.red.shade600,
+                        Icons.star,
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -651,21 +704,26 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    vacation.userName.length > 4
-                        ? '${vacation.userName.substring(0, 3)}..'
-                        : vacation.userName,
-                    style: const TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: -0.2,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        vacation.displayName.length > 6
+                            ? '${vacation.displayName.substring(0, 5)}..'
+                            : vacation.displayName,
+                        style: const TextStyle(
+                          fontSize: 7.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: -0.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
-                  ),
+                    _buildVacationTypeShape(vacation),
+                  ],
                 ),
               );
             }).toList(),
@@ -766,4 +824,181 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         return Colors.orange.shade500;
     }
   }
+
+  Widget _buildCompactLegendItem(String label, Color color, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTypeLegendItem(String label, Color color, IconData icon) {
+    Widget shape;
+
+    switch (label) {
+      case '연차':
+        // 전체 원
+        shape = Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        );
+        break;
+      case '반차':
+        // 반원
+        shape = Container(
+          width: 8,
+          height: 8,
+          child: CustomPaint(
+            painter: HalfCirclePainter(color: color),
+            size: const Size(8, 8),
+          ),
+        );
+        break;
+      case '필수':
+        // 별표
+        shape = Container(
+          width: 8,
+          height: 8,
+          child: CustomPaint(
+            painter: StarPainter(color: color),
+            size: const Size(8, 8),
+          ),
+        );
+        break;
+      default:
+        shape = Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        shape,
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVacationTypeShape(VacationRequest vacation) {
+    if (vacation.type == VacationType.mandatory) {
+      // 필수 휴무 - 별표
+      return Container(
+        width: 10,
+        height: 10,
+        child: CustomPaint(
+          painter: StarPainter(color: Colors.white.withOpacity(0.9)),
+          size: const Size(10, 10),
+        ),
+      );
+    }
+
+    switch (vacation.duration) {
+      case VacationDuration.fullDay:
+        // 연차 - 전체 원
+        return Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            shape: BoxShape.circle,
+          ),
+        );
+      case VacationDuration.halfDay:
+        // 반차 - 반 잘린 원
+        return Container(
+          width: 8,
+          height: 8,
+          child: CustomPaint(
+            painter: HalfCirclePainter(color: Colors.white.withOpacity(0.9)),
+            size: const Size(8, 8),
+          ),
+        );
+    }
+  }
+}
+
+// 별표 그리기를 위한 CustomPainter
+class StarPainter extends CustomPainter {
+  final Color color;
+
+  StarPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final outerRadius = size.width / 2;
+    final innerRadius = outerRadius * 0.4;
+
+    for (int i = 0; i < 10; i++) {
+      final angle = (i * 36) * (3.14159 / 180);
+      final radius = i % 2 == 0 ? outerRadius : innerRadius;
+      final x = centerX + radius * math.cos(angle);
+      final y = centerY + radius * math.sin(angle);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// 반원 그리기를 위한 CustomPainter
+class HalfCirclePainter extends CustomPainter {
+  final Color color;
+
+  HalfCirclePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.drawArc(rect, 0, 3.14159, true, paint); // 반원 (180도)
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

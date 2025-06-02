@@ -85,6 +85,7 @@ class VacationProvider with ChangeNotifier {
     required String userRole,
     required DateTime date,
     required VacationType type,
+    required VacationDuration duration,
     String? reason,
   }) async {
     try {
@@ -101,6 +102,7 @@ class VacationProvider with ChangeNotifier {
         userRole: userRole,
         date: date,
         type: type,
+        duration: duration,
         reason: reason,
         createdAt: DateTime.now(),
       );
@@ -196,6 +198,9 @@ class VacationProvider with ChangeNotifier {
                 date: date,
                 status: VacationStatus.values[(random + i + j) % 3],
                 type: j == 0 ? VacationType.mandatory : VacationType.personal,
+                duration: j % 2 == 0
+                    ? VacationDuration.fullDay
+                    : VacationDuration.halfDay,
                 createdAt: DateTime.now().subtract(Duration(days: j)),
               ),
             );
@@ -227,6 +232,9 @@ class VacationProvider with ChangeNotifier {
           date: date,
           status: VacationStatus.values[i % 3],
           type: i % 3 == 0 ? VacationType.mandatory : VacationType.personal,
+          duration: i % 2 == 0
+              ? VacationDuration.fullDay
+              : VacationDuration.halfDay,
           reason: i % 2 == 0 ? '개인 사정' : null,
           createdAt: now.subtract(Duration(days: i)),
           approvedAt: i % 3 == 1 ? now.subtract(Duration(days: i - 1)) : null,
