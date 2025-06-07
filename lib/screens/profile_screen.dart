@@ -330,18 +330,42 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      _getRoleIcon(user.role),
-                                      color: _getRoleColor(user.role),
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _getRoleText(user.role),
-                                      style: TextStyle(
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
                                         color: _getRoleColor(user.role),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        _getRoleIcon(user.role),
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '직원 유형',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _getRoleDisplayName(user.role),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -783,22 +807,22 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Color _getRoleColor(String role) {
     switch (role) {
-      case 'caregiver':
-        return Colors.pink;
-      case 'office':
-        return Colors.blue;
+      case 'CAREGIVER':
+        return Colors.pink.shade400;
+      case 'OFFICE':
+        return Colors.blue.shade500;
       case 'admin':
-        return Colors.purple;
+        return Colors.purple.shade500;
       default:
-        return Colors.grey;
+        return Colors.grey.shade500;
     }
   }
 
   IconData _getRoleIcon(String role) {
     switch (role) {
-      case 'caregiver':
+      case 'CAREGIVER':
         return Icons.favorite;
-      case 'office':
+      case 'OFFICE':
         return Icons.business;
       case 'admin':
         return Icons.admin_panel_settings;
@@ -807,12 +831,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  String _getRoleText(String role) {
+  String _getRoleDisplayName(String role) {
     switch (role) {
-      case 'caregiver':
-        return '돌봄 직원';
-      case 'office':
-        return '사무 직원';
+      case 'CAREGIVER':
+        return '요양보호사';
+      case 'OFFICE':
+        return '사무직';
       case 'admin':
         return '관리자';
       default:

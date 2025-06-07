@@ -183,22 +183,22 @@ class _CalendarScreenState extends State<CalendarScreen>
                       ),
                     ),
                     const PopupMenuItem(
-                      value: 'caregiver',
+                      value: 'CAREGIVER',
                       child: Row(
                         children: [
                           Icon(Icons.favorite, size: 20, color: Colors.pink),
                           SizedBox(width: 8),
-                          Text('돌봄 직원'),
+                          Text('요양보호사'),
                         ],
                       ),
                     ),
                     const PopupMenuItem(
-                      value: 'office',
+                      value: 'OFFICE',
                       child: Row(
                         children: [
                           Icon(Icons.business, size: 20, color: Colors.blue),
                           SizedBox(width: 8),
-                          Text('사무 직원'),
+                          Text('사무직'),
                         ],
                       ),
                     ),
@@ -234,17 +234,17 @@ class _CalendarScreenState extends State<CalendarScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _roleFilter == 'caregiver'
+                            _roleFilter == 'CAREGIVER'
                                 ? Icons.favorite
                                 : Icons.business,
-                            color: _roleFilter == 'caregiver'
+                            color: _roleFilter == 'CAREGIVER'
                                 ? Colors.pink.shade400
                                 : Colors.blue.shade600,
                             size: 18,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '필터: ${_roleFilter == 'caregiver' ? '돌봄 직원' : '사무 직원'}',
+                            '필터: ${_roleFilter == 'CAREGIVER' ? '요양보호사' : '사무직'}',
                             style: TextStyle(
                               color: Colors.blue.shade700,
                               fontWeight: FontWeight.w600,
@@ -606,8 +606,8 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildVacationTypeShape(VacationRequest vacation) {
+    // 필수 휴무일 때만 별표 표시
     if (vacation.type == VacationType.mandatory) {
-      // 필수 휴무 - 별표
       return Container(
         width: 16,
         height: 16,
@@ -618,28 +618,8 @@ class _CalendarScreenState extends State<CalendarScreen>
       );
     }
 
-    switch (vacation.duration) {
-      case VacationDuration.fullDay:
-        // 연차 - 전체 원
-        return Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: Colors.blue.shade600,
-            shape: BoxShape.circle,
-          ),
-        );
-      case VacationDuration.halfDay:
-        // 반차 - 반 잘린 원
-        return Container(
-          width: 16,
-          height: 16,
-          child: CustomPaint(
-            painter: HalfCirclePainter(color: Colors.orange.shade600),
-            size: const Size(16, 16),
-          ),
-        );
-    }
+    // 개인 휴무(연차/반차)는 도형 없이 빈 공간
+    return const SizedBox.shrink();
   }
 }
 
@@ -676,26 +656,6 @@ class StarPainter extends CustomPainter {
     path.close();
 
     canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// 반원 그리기를 위한 CustomPainter
-class HalfCirclePainter extends CustomPainter {
-  final Color color;
-
-  HalfCirclePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    canvas.drawArc(rect, 0, 3.14159, true, paint); // 반원 (180도)
   }
 
   @override

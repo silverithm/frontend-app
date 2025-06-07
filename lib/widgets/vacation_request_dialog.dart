@@ -22,9 +22,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
+  final _passwordController = TextEditingController();
   VacationType _selectedType = VacationType.personal;
   VacationDuration _selectedDuration = VacationDuration.fullDay;
   bool _isSubmitting = false;
+  bool _obscurePassword = true;
 
   late AnimationController _animationController;
   late AnimationController _submitAnimationController;
@@ -70,6 +72,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   @override
   void dispose() {
     _reasonController.dispose();
+    _passwordController.dispose();
     _animationController.dispose();
     _submitAnimationController.dispose();
     super.dispose();
@@ -112,6 +115,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         reason: _reasonController.text.trim().isNotEmpty
             ? _reasonController.text.trim()
             : null,
+        password: _passwordController.text.trim(),
       );
 
       if (success && mounted) {
@@ -801,6 +805,132 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       fontSize: 15,
                                       height: 1.4,
                                     ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // 비밀번호 입력
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.shade100.withOpacity(
+                                      0.5,
+                                    ),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.lock_outline,
+                                        color: Colors.grey.shade600,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '비밀번호',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey.shade800,
+                                              fontSize: 16,
+                                            ),
+                                      ),
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '필수',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.red.shade600,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    obscureText: _obscurePassword,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return '비밀번호를 입력해주세요';
+                                      }
+                                      return null;
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText: '계정 비밀번호를 입력하세요',
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                        fontSize: 14,
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscurePassword
+                                              ? Icons.visibility_off
+                                              : Icons.visibility,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscurePassword =
+                                                !_obscurePassword;
+                                          });
+                                        },
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide(
+                                          color: Colors.blue.shade400,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.grey.shade50,
+                                      contentPadding: const EdgeInsets.all(20),
+                                    ),
+                                    style: const TextStyle(fontSize: 15),
                                   ),
                                 ],
                               ),

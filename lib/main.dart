@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/vacation_provider.dart';
+import 'providers/company_provider.dart';
 import 'services/storage_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => VacationProvider()),
+        ChangeNotifierProvider(create: (_) => CompanyProvider()),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/vacation_request.dart';
+import '../services/api_service.dart';
 
 class VacationProvider with ChangeNotifier {
   List<VacationRequest> _vacationRequests = [];
@@ -41,20 +42,52 @@ class VacationProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
   Future<void> loadCalendarData(DateTime month) async {
     try {
       setLoading(true);
       clearError();
 
-      // TODO: 실제 API 호출로 교체
-      await Future.delayed(const Duration(seconds: 1));
+      // 월의 시작일과 마지막일 계산
+      final startDate = DateTime(month.year, month.month, 1);
+      final endDate = DateTime(month.year, month.month + 1, 0);
 
-      // 임시 달력 데이터 생성
-      _generateMockCalendarData(month);
+      // Spring Boot API 호출
+      final response = await ApiService().getVacationCalendar(
+        startDate: _formatDate(startDate),
+        endDate: _formatDate(endDate),
+        roleFilter: _roleFilter,
+      );
+
+      // API 응답을 캘린더 데이터로 변환
+      _calendarData.clear();
+
+      if (response['dates'] != null) {
+        final datesMap = response['dates'] as Map<String, dynamic>;
+
+        for (final entry in datesMap.entries) {
+          final dateStr = entry.key;
+          final dateInfo = entry.value as Map<String, dynamic>;
+          final vacations = dateInfo['vacations'] as List? ?? [];
+
+          final date = DateTime.parse(dateStr);
+          final dateKey = DateTime(date.year, date.month, date.day);
+
+          _calendarData[dateKey] = vacations
+              .map((v) => VacationRequest.fromJson(v))
+              .toList();
+        }
+      }
 
       notifyListeners();
     } catch (e) {
       setError('캘린더 데이터 로딩에 실패했습니다: ${e.toString()}');
+      // 에러 시 임시 데이터 생성 (개발 중)
+      _generateMockCalendarData(month);
+      notifyListeners();
     } finally {
       setLoading(false);
     }
@@ -65,10 +98,8 @@ class VacationProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      // TODO: 실제 API 호출로 교체
-      await Future.delayed(const Duration(seconds: 1));
-
-      // 임시 휴가 신청 데이터 생성
+      // TODO: 사용자별 휴가 신청 목록 API 추가 필요
+      // 현재는 임시 데이터 사용
       _generateMockVacationRequests(userId);
 
       notifyListeners();
@@ -87,40 +118,49 @@ class VacationProvider with ChangeNotifier {
     required VacationType type,
     required VacationDuration duration,
     String? reason,
+    String? password,
   }) async {
     try {
       setLoading(true);
       clearError();
 
-      // TODO: 실제 API 호출로 교체
-      await Future.delayed(const Duration(seconds: 2));
-
-      final newRequest = VacationRequest(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: userId,
+      // Spring Boot API 호출
+      final response = await ApiService().createVacationRequest(
         userName: userName,
-        userRole: userRole,
-        date: date,
-        type: type,
-        duration: duration,
-        reason: reason,
-        createdAt: DateTime.now(),
+        date: _formatDate(date),
+        type: type.toString().split('.').last, // 'personal' 또는 'mandatory'
+        reason: reason ?? '',
+        role: userRole,
+        password: password ?? '',
+        userId: userId,
       );
 
-      _vacationRequests.add(newRequest);
+      if (response['success'] == true && response['data'] != null) {
+        // 성공 시 로컬 데이터 업데이트
+        final newRequest = VacationRequest.fromJson(response['data']);
+        _vacationRequests.add(newRequest);
 
-      // 캘린더 데이터에도 추가
-      final dateKey = DateTime(date.year, date.month, date.day);
-      if (_calendarData.containsKey(dateKey)) {
-        _calendarData[dateKey]!.add(newRequest);
+        // 캘린더 데이터에도 추가
+        final dateKey = DateTime(date.year, date.month, date.day);
+        if (_calendarData.containsKey(dateKey)) {
+          _calendarData[dateKey]!.add(newRequest);
+        } else {
+          _calendarData[dateKey] = [newRequest];
+        }
+
+        notifyListeners();
+        return true;
       } else {
-        _calendarData[dateKey] = [newRequest];
+        setError(response['error'] ?? '휴가 신청에 실패했습니다.');
+        return false;
       }
-
-      notifyListeners();
-      return true;
     } catch (e) {
-      setError('휴가 신청에 실패했습니다: ${e.toString()}');
+      if (e.toString().contains('ApiException')) {
+        final errorMsg = e.toString().replaceAll('ApiException: ', '');
+        setError(errorMsg.split(' (Status:')[0]);
+      } else {
+        setError('휴가 신청에 실패했습니다: ${e.toString()}');
+      }
       return false;
     } finally {
       setLoading(false);
@@ -132,9 +172,8 @@ class VacationProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      // TODO: 실제 API 호출로 교체
-      await Future.delayed(const Duration(seconds: 1));
-
+      // TODO: 휴가 신청 취소 API 호출 구현 필요
+      // 현재는 로컬에서만 제거
       _vacationRequests.removeWhere((request) => request.id == requestId);
 
       // 캘린더 데이터에서도 제거
@@ -152,6 +191,28 @@ class VacationProvider with ChangeNotifier {
     }
   }
 
+  Future<void> loadVacationForDate(DateTime date) async {
+    try {
+      final response = await ApiService().getVacationForDate(
+        date: _formatDate(date),
+        role: _roleFilter == 'all' ? 'CAREGIVER' : _roleFilter,
+      );
+
+      if (response['vacations'] != null) {
+        final vacations = (response['vacations'] as List)
+            .map((v) => VacationRequest.fromJson(v))
+            .toList();
+
+        final dateKey = DateTime(date.year, date.month, date.day);
+        _calendarData[dateKey] = vacations;
+        notifyListeners();
+      }
+    } catch (e) {
+      // 에러 시 기존 데이터 유지
+      print('날짜별 휴가 데이터 로딩 실패: $e');
+    }
+  }
+
   List<VacationRequest> getVacationsForDate(DateTime date) {
     final dateKey = DateTime(date.year, date.month, date.day);
     final vacations = _calendarData[dateKey] ?? [];
@@ -160,9 +221,7 @@ class VacationProvider with ChangeNotifier {
       return vacations;
     }
 
-    return vacations
-        .where((vacation) => vacation.userRole == _roleFilter)
-        .toList();
+    return vacations.where((vacation) => vacation.role == _roleFilter).toList();
   }
 
   int getVacationCountForDate(DateTime date) {
@@ -173,6 +232,7 @@ class VacationProvider with ChangeNotifier {
     return getVacationCountForDate(date) >= maxPeople;
   }
 
+  // 개발 중 임시 데이터 생성 (API 연결 후 제거 예정)
   void _generateMockCalendarData(DateTime month) {
     _calendarData.clear();
 
@@ -194,7 +254,7 @@ class VacationProvider with ChangeNotifier {
                 id: '${date.millisecondsSinceEpoch}_$j',
                 userId: 'user_$j',
                 userName: '직원${j + 1}',
-                userRole: j % 2 == 0 ? 'caregiver' : 'office',
+                role: j % 2 == 0 ? 'CAREGIVER' : 'OFFICE',
                 date: date,
                 status: VacationStatus.values[(random + i + j) % 3],
                 type: j == 0 ? VacationType.mandatory : VacationType.personal,
@@ -228,7 +288,7 @@ class VacationProvider with ChangeNotifier {
           id: 'request_$i',
           userId: userId,
           userName: '김직원',
-          userRole: 'caregiver',
+          role: 'CAREGIVER',
           date: date,
           status: VacationStatus.values[i % 3],
           type: i % 3 == 0 ? VacationType.mandatory : VacationType.personal,

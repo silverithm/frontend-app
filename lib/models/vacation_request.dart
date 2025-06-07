@@ -8,13 +8,14 @@ class VacationRequest {
   final String id;
   final String userId;
   final String userName;
-  final String userRole;
+  final String role;
   final DateTime date;
   final VacationStatus status;
   final VacationType type;
   final VacationDuration duration;
   final String? reason;
   final DateTime createdAt;
+  final DateTime? updatedAt;
   final DateTime? approvedAt;
   final String? approvedBy;
   final String? rejectionReason;
@@ -23,30 +24,36 @@ class VacationRequest {
     required this.id,
     required this.userId,
     required this.userName,
-    required this.userRole,
+    required this.role,
     required this.date,
     this.status = VacationStatus.pending,
     this.type = VacationType.personal,
     this.duration = VacationDuration.fullDay,
     this.reason,
     required this.createdAt,
+    this.updatedAt,
     this.approvedAt,
     this.approvedBy,
     this.rejectionReason,
   });
 
+  String get userRole => role;
+
   factory VacationRequest.fromJson(Map<String, dynamic> json) {
     return VacationRequest(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       userId: json['userId'] ?? '',
       userName: json['userName'] ?? '',
-      userRole: json['userRole'] ?? 'caregiver',
+      role: json['role'] ?? 'CAREGIVER',
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
       status: _parseStatus(json['status']),
       type: _parseType(json['type']),
       duration: _parseDuration(json['duration']),
       reason: json['reason'],
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'])
+          : null,
       approvedAt: json['approvedAt'] != null
           ? DateTime.tryParse(json['approvedAt'])
           : null,
@@ -60,13 +67,14 @@ class VacationRequest {
       'id': id,
       'userId': userId,
       'userName': userName,
-      'userRole': userRole,
+      'role': role,
       'date': date.toIso8601String(),
       'status': status.toString().split('.').last,
       'type': type.toString().split('.').last,
       'duration': duration.toString().split('.').last,
       'reason': reason,
       'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
       'approvedAt': approvedAt?.toIso8601String(),
       'approvedBy': approvedBy,
       'rejectionReason': rejectionReason,
@@ -139,13 +147,14 @@ class VacationRequest {
     String? id,
     String? userId,
     String? userName,
-    String? userRole,
+    String? role,
     DateTime? date,
     VacationStatus? status,
     VacationType? type,
     VacationDuration? duration,
     String? reason,
     DateTime? createdAt,
+    DateTime? updatedAt,
     DateTime? approvedAt,
     String? approvedBy,
     String? rejectionReason,
@@ -154,13 +163,14 @@ class VacationRequest {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
-      userRole: userRole ?? this.userRole,
+      role: role ?? this.role,
       date: date ?? this.date,
       status: status ?? this.status,
       type: type ?? this.type,
       duration: duration ?? this.duration,
       reason: reason ?? this.reason,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       approvedAt: approvedAt ?? this.approvedAt,
       approvedBy: approvedBy ?? this.approvedBy,
       rejectionReason: rejectionReason ?? this.rejectionReason,

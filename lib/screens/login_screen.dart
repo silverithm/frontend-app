@@ -98,14 +98,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: Constants.largePadding),
 
-                        // 이메일 입력
+                        // 사용자명/이메일 입력
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            labelText: '이메일',
-                            hintText: 'example@company.com',
-                            prefixIcon: const Icon(Icons.email_outlined),
+                            labelText: '사용자명 또는 이메일',
+                            hintText: 'username 또는 example@company.com',
+                            prefixIcon: const Icon(Icons.person_outline),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -124,12 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return '이메일을 입력해주세요';
-                            }
-                            if (!RegExp(
-                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            ).hasMatch(value)) {
-                              return '올바른 이메일 형식을 입력해주세요';
+                              return '사용자명 또는 이메일을 입력해주세요';
                             }
                             return null;
                           },
