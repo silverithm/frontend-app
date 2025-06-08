@@ -250,6 +250,7 @@ class ApiService {
     required String password,
     required String companyId,
     String? userId,
+    String? duration,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final queryParams = {'companyId': companyId};
@@ -258,18 +259,24 @@ class ApiService {
         '$_baseUrl${Constants.vacationSubmitEndpoint}',
       ).replace(queryParameters: queryParams);
 
+      final requestBody = {
+        'userName': userName,
+        'date': date,
+        'type': type,
+        'reason': reason,
+        'role': role,
+        'password': password,
+        'userId': userId,
+      };
+
+      if (duration != null) {
+        requestBody['duration'] = duration;
+      }
+
       return await http.post(
         uri,
         headers: await _getHeaders(),
-        body: json.encode({
-          'userName': userName,
-          'date': date,
-          'type': type,
-          'reason': reason,
-          'role': role,
-          'password': password,
-          'userId': userId,
-        }),
+        body: json.encode(requestBody),
       );
     });
   }

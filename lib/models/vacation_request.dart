@@ -2,7 +2,11 @@ enum VacationStatus { pending, approved, rejected }
 
 enum VacationType { mandatory, personal }
 
-enum VacationDuration { fullDay, halfDay }
+enum VacationDuration {
+  fullDay, // 연차 (1.0일)
+  halfDayAm, // 오전 반차 (0.5일)
+  halfDayPm, // 오후 반차 (0.5일)
+}
 
 class VacationRequest {
   final String id;
@@ -103,8 +107,11 @@ class VacationRequest {
 
   static VacationDuration _parseDuration(String? duration) {
     switch (duration) {
-      case 'halfDay':
-        return VacationDuration.halfDay;
+      case 'HALF_DAY_AM':
+        return VacationDuration.halfDayAm;
+      case 'HALF_DAY_PM':
+        return VacationDuration.halfDayPm;
+      case 'FULL_DAY':
       default:
         return VacationDuration.fullDay;
     }
@@ -134,8 +141,10 @@ class VacationRequest {
     switch (duration) {
       case VacationDuration.fullDay:
         return '연차';
-      case VacationDuration.halfDay:
-        return '반차';
+      case VacationDuration.halfDayAm:
+        return '오전 반차';
+      case VacationDuration.halfDayPm:
+        return '오후 반차';
     }
   }
 

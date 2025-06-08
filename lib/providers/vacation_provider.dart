@@ -220,6 +220,20 @@ class VacationProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
+      // VacationDuration을 API 형식으로 변환
+      String durationString;
+      switch (duration) {
+        case VacationDuration.fullDay:
+          durationString = 'FULL_DAY';
+          break;
+        case VacationDuration.halfDayAm:
+          durationString = 'HALF_DAY_AM';
+          break;
+        case VacationDuration.halfDayPm:
+          durationString = 'HALF_DAY_PM';
+          break;
+      }
+
       // Spring Boot API 호출 - companyId 필요
       final response = await ApiService().createVacationRequest(
         userName: userName,
@@ -230,6 +244,7 @@ class VacationProvider with ChangeNotifier {
         password: password ?? '',
         companyId: companyId ?? '1', // 기본값 1 사용
         userId: userId,
+        duration: durationString, // 변환된 duration 전송
       );
 
       if (response['success'] == true && response['data'] != null) {

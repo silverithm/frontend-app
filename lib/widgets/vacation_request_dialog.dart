@@ -121,7 +121,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${_selectedDuration == VacationDuration.fullDay ? '연차' : '반차'} 신청이 완료되었습니다',
+              '${_getDurationDisplayText(_selectedDuration)} 신청이 완료되었습니다',
             ),
             backgroundColor: Colors.green.shade600,
             behavior: SnackBarBehavior.floating,
@@ -159,6 +159,17 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     final weekdays = ['일', '월', '화', '수', '목', '금', '토'];
     final weekday = weekdays[date.weekday % 7];
     return '${date.year}년 ${date.month}월 ${date.day}일 ($weekday)';
+  }
+
+  String _getDurationDisplayText(VacationDuration duration) {
+    switch (duration) {
+      case VacationDuration.fullDay:
+        return '연차';
+      case VacationDuration.halfDayAm:
+        return '오전 반차';
+      case VacationDuration.halfDayPm:
+        return '오후 반차';
+    }
   }
 
   @override
@@ -367,6 +378,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   ),
                                   const SizedBox(height: 12),
 
+                                  // 한 줄로 3개 버튼 배치
                                   Row(
                                     children: [
                                       // 연차
@@ -414,14 +426,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     vertical: 8,
-                                                    horizontal: 8,
+                                                    horizontal: 4,
                                                   ),
                                               child: Center(
                                                 child: Text(
                                                   '연차',
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.w600,
-                                                    fontSize: 12,
+                                                    fontSize: 11,
                                                     color:
                                                         _selectedDuration ==
                                                             VacationDuration
@@ -436,15 +448,15 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                         ),
                                       ),
 
-                                      const SizedBox(width: 12),
+                                      const SizedBox(width: 8),
 
-                                      // 반차
+                                      // 오전 반차
                                       Expanded(
                                         child: Container(
                                           decoration: BoxDecoration(
                                             gradient:
                                                 _selectedDuration ==
-                                                    VacationDuration.halfDay
+                                                    VacationDuration.halfDayAm
                                                 ? LinearGradient(
                                                     colors: [
                                                       Colors.orange.shade50,
@@ -454,7 +466,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                                 : null,
                                             color:
                                                 _selectedDuration !=
-                                                    VacationDuration.halfDay
+                                                    VacationDuration.halfDayAm
                                                 ? Colors.grey.shade50
                                                 : null,
                                             borderRadius: BorderRadius.circular(
@@ -463,7 +475,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             border: Border.all(
                                               color:
                                                   _selectedDuration ==
-                                                      VacationDuration.halfDay
+                                                      VacationDuration.halfDayAm
                                                   ? Colors.orange.shade300
                                                   : Colors.grey.shade300,
                                               width: 2,
@@ -476,26 +488,99 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             onTap: () {
                                               setState(() {
                                                 _selectedDuration =
-                                                    VacationDuration.halfDay;
+                                                    VacationDuration.halfDayAm;
                                               });
                                             },
                                             child: Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                     vertical: 8,
-                                                    horizontal: 8,
+                                                    horizontal: 4,
                                                   ),
                                               child: Center(
                                                 child: Text(
-                                                  '반차',
+                                                  '오전\n반차',
+                                                  textAlign: TextAlign.center,
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.w600,
-                                                    fontSize: 12,
+                                                    fontSize: 10,
+                                                    height: 1.2,
                                                     color:
                                                         _selectedDuration ==
                                                             VacationDuration
-                                                                .halfDay
+                                                                .halfDayAm
                                                         ? Colors.orange.shade800
+                                                        : Colors.grey.shade700,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      const SizedBox(width: 8),
+
+                                      // 오후 반차
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            gradient:
+                                                _selectedDuration ==
+                                                    VacationDuration.halfDayPm
+                                                ? LinearGradient(
+                                                    colors: [
+                                                      Colors.purple.shade50,
+                                                      Colors.purple.shade100,
+                                                    ],
+                                                  )
+                                                : null,
+                                            color:
+                                                _selectedDuration !=
+                                                    VacationDuration.halfDayPm
+                                                ? Colors.grey.shade50
+                                                : null,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: Border.all(
+                                              color:
+                                                  _selectedDuration ==
+                                                      VacationDuration.halfDayPm
+                                                  ? Colors.purple.shade300
+                                                  : Colors.grey.shade300,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            onTap: () {
+                                              setState(() {
+                                                _selectedDuration =
+                                                    VacationDuration.halfDayPm;
+                                              });
+                                            },
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 8,
+                                                    horizontal: 4,
+                                                  ),
+                                              child: Center(
+                                                child: Text(
+                                                  '오후\n반차',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 10,
+                                                    height: 1.2,
+                                                    color:
+                                                        _selectedDuration ==
+                                                            VacationDuration
+                                                                .halfDayPm
+                                                        ? Colors.purple.shade800
                                                         : Colors.grey.shade700,
                                                   ),
                                                 ),

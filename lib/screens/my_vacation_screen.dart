@@ -13,14 +13,17 @@ class MyVacationScreen extends StatefulWidget {
 }
 
 class _MyVacationScreenState extends State<MyVacationScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _hasLoadedInitialData = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -39,22 +42,48 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = context.read<AuthProvider>();
-      final vacationProvider = context.read<VacationProvider>();
-
-      if (authProvider.currentUser != null) {
-        vacationProvider.loadMyVacationRequests(
-          authProvider.currentUser!.id,
-          companyId: authProvider.currentUser!.company?.id ?? '1',
-          userName: authProvider.currentUser!.name,
-        );
-      }
+      _loadInitialData();
       _animationController.forward();
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 화면이 다시 포커스를 받을 때마다 데이터 새로고침
+    if (_hasLoadedInitialData) {
+      _refreshData();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // 앱이 포그라운드로 돌아올 때 데이터 새로고침
+    if (state == AppLifecycleState.resumed) {
+      _refreshData();
+    }
+  }
+
+  void _loadInitialData() {
+    final authProvider = context.read<AuthProvider>();
+    final vacationProvider = context.read<VacationProvider>();
+
+    if (authProvider.currentUser != null) {
+      vacationProvider.loadMyVacationRequests(
+        authProvider.currentUser!.id,
+        companyId: authProvider.currentUser!.company?.id ?? '1',
+        userName: authProvider.currentUser!.name,
+      );
+      _hasLoadedInitialData = true;
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     super.dispose();
   }
@@ -449,6 +478,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
                       if (success && mounted) {
                         Navigator.pop(context);
+                        // 삭제 성공 후 데이터 새로고침
+                        await _refreshData();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text('휴무 신청이 삭제되었습니다'),
@@ -507,250 +538,182 @@ class _MyVacationScreenState extends State<MyVacationScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: CustomScrollView(
-        slivers: [
-          // 현대적인 앱바
-          SliverAppBar(
-            expandedHeight: 60.0,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            centerTitle: true,
-            title: const Text(
-              '내 휴무 신청',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 18,
-                shadows: [
-                  Shadow(
-                    color: Colors.black26,
-                    offset: Offset(1, 1),
-                    blurRadius: 3,
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // 현대적인 앱바
+            SliverAppBar(
+              expandedHeight: 60.0,
+              floating: false,
+              pinned: true,
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              centerTitle: true,
+              title: const Text(
+                '내 휴무 신청',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 18,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+              ),
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.blue.shade600,
+                      Colors.blue.shade400,
+                      Colors.cyan.shade300,
+                    ],
                   ),
-                ],
-              ),
-            ),
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue.shade600,
-                    Colors.blue.shade400,
-                    Colors.cyan.shade300,
-                  ],
                 ),
               ),
-            ),
-            actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 16),
-                child: Stack(
-                  children: [
-                    IconButton(
-                      icon: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.notifications_outlined,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      onPressed: _showNotifications,
-                    ),
-                    // 알림 뱃지
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Consumer<NotificationProvider>(
-                        builder: (context, notificationProvider, child) {
-                          final unreadCount = notificationProvider.unreadCount;
-                          if (unreadCount == 0) return const SizedBox.shrink();
-
-                          return Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade600,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.shade300.withOpacity(0.5),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 20,
-                              minHeight: 20,
-                            ),
-                            child: Text(
-                              unreadCount > 99 ? '99+' : unreadCount.toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          Consumer<VacationProvider>(
-            builder: (context, vacationProvider, child) {
-              if (vacationProvider.isLoading) {
-                return SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
+              actions: [
+                Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  child: Stack(
+                    children: [
+                      IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.grey.shade100,
-                                Colors.grey.shade50,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.grey.shade600,
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '데이터를 불러오는 중...',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                            size: 20,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              }
+                        onPressed: _showNotifications,
+                      ),
+                      // 알림 뱃지
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Consumer<NotificationProvider>(
+                          builder: (context, notificationProvider, child) {
+                            final unreadCount =
+                                notificationProvider.unreadCount;
+                            if (unreadCount == 0)
+                              return const SizedBox.shrink();
 
-              if (vacationProvider.errorMessage.isNotEmpty) {
-                return SliverFillRemaining(
-                  child: Center(
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Container(
-                        margin: const EdgeInsets.all(32),
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.red.shade50, Colors.white],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.shade100.withOpacity(0.5),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
+                            return Container(
+                              padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Colors.red.shade100,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Icon(
-                                Icons.error_outline,
-                                size: 48,
                                 color: Colors.red.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              vacationProvider.errorMessage,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.red.shade700,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton.icon(
-                              onPressed: _refreshData,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('다시 시도'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red.shade600,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 12,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 0,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.red.shade300.withOpacity(0.5),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                              constraints: const BoxConstraints(
+                                minWidth: 20,
+                                minHeight: 20,
+                              ),
+                              child: Text(
+                                unreadCount > 99
+                                    ? '99+'
+                                    : unreadCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                );
-              }
+                ),
+              ],
+            ),
 
-              final requests = vacationProvider.vacationRequests;
+            Consumer<VacationProvider>(
+              builder: (context, vacationProvider, child) {
+                if (vacationProvider.isLoading) {
+                  return SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.grey.shade100,
+                                  Colors.grey.shade50,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '데이터를 불러오는 중...',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
 
-              if (requests.isEmpty) {
-                return SliverFillRemaining(
-                  child: Center(
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
+                if (vacationProvider.errorMessage.isNotEmpty) {
+                  return SliverFillRemaining(
+                    child: Center(
+                      child: FadeTransition(
+                        opacity: _fadeAnimation,
                         child: Container(
                           margin: const EdgeInsets.all(32),
-                          padding: const EdgeInsets.all(32),
+                          padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Colors.white, Colors.grey.shade50],
+                              colors: [Colors.red.shade50, Colors.white],
                             ),
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
+                                color: Colors.red.shade100.withOpacity(0.5),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
                               ),
                             ],
                           ),
@@ -758,38 +721,43 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.grey.shade100,
-                                      Colors.grey.shade50,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: Colors.red.shade100,
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Icon(
-                                  Icons.event_available,
-                                  size: 64,
-                                  color: Colors.grey.shade600,
+                                  Icons.error_outline,
+                                  size: 48,
+                                  color: Colors.red.shade600,
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16),
                               Text(
-                                '휴무 신청 내역이 없습니다',
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '달력에서 날짜를 선택하여\n휴무를 신청해보세요',
+                                vacationProvider.errorMessage,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 14,
+                                  color: Colors.red.shade700,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton.icon(
+                                onPressed: _refreshData,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('다시 시도'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red.shade600,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
                                 ),
                               ),
                             ],
@@ -797,257 +765,333 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         ),
                       ),
                     ),
-                  ),
-                );
-              }
+                  );
+                }
 
-              // 상태별로 그룹화
-              final pendingRequests = requests
-                  .where((r) => r.status == VacationStatus.pending)
-                  .toList();
-              final approvedRequests = requests
-                  .where((r) => r.status == VacationStatus.approved)
-                  .toList();
-              final rejectedRequests = requests
-                  .where((r) => r.status == VacationStatus.rejected)
-                  .toList();
+                final requests = vacationProvider.vacationRequests;
 
-              return SliverList(
-                delegate: SliverChildListDelegate([
-                  // 통계 카드
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Container(
-                      margin: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Colors.white, Colors.grey.shade50],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                if (requests.isEmpty) {
+                  return SliverFillRemaining(
+                    child: Center(
+                      child: FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: SlideTransition(
+                          position: _slideAnimation,
+                          child: Container(
+                            margin: const EdgeInsets.all(32),
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Colors.white, Colors.grey.shade50],
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Colors.indigo.shade400,
-                                        Colors.indigo.shade600,
+                                        Colors.grey.shade100,
+                                        Colors.grey.shade50,
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                  child: const Icon(
-                                    Icons.analytics,
-                                    color: Colors.white,
-                                    size: 24,
+                                  child: Icon(
+                                    Icons.event_available,
+                                    size: 64,
+                                    color: Colors.grey.shade600,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(height: 24),
                                 Text(
-                                  '신청 현황',
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade800,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildStatusCard(
-                                    '대기',
-                                    pendingRequests.length,
-                                    Colors.orange.shade600,
-                                    Icons.schedule,
+                                  '휴무 신청 내역이 없습니다',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildStatusCard(
-                                    '승인',
-                                    approvedRequests.length,
-                                    Colors.green.shade600,
-                                    Icons.check_circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildStatusCard(
-                                    '거절',
-                                    rejectedRequests.length,
-                                    Colors.red.shade600,
-                                    Icons.cancel,
+                                const SizedBox(height: 8),
+                                Text(
+                                  '달력에서 날짜를 선택하여\n휴무를 신청해보세요',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  );
+                }
 
-                  const SizedBox(height: 8),
+                // 상태별로 그룹화
+                final pendingRequests = requests
+                    .where((r) => r.status == VacationStatus.pending)
+                    .toList();
+                final approvedRequests = requests
+                    .where((r) => r.status == VacationStatus.approved)
+                    .toList();
+                final rejectedRequests = requests
+                    .where((r) => r.status == VacationStatus.rejected)
+                    .toList();
 
-                  // 신청 목록
-                  if (pendingRequests.isNotEmpty) ...[
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildSectionHeader(
-                        '대기 중',
-                        pendingRequests.length,
-                        Colors.orange.shade600,
-                        Icons.schedule,
-                      ),
-                    ),
-                    ...pendingRequests.asMap().entries.map(
-                      (entry) => AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) {
-                          final delay = entry.key * 0.1;
-                          final animation = Tween<double>(begin: 0.0, end: 1.0)
-                              .animate(
-                                CurvedAnimation(
-                                  parent: _animationController,
-                                  curve: Interval(
-                                    delay,
-                                    delay + 0.3,
-                                    curve: Curves.easeOutBack,
-                                  ),
-                                ),
-                              );
-
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0.3, 0),
-                                end: Offset.zero,
-                              ).animate(animation),
-                              child: _buildRequestCard(entry.value),
+                return SliverList(
+                  delegate: SliverChildListDelegate([
+                    // 통계 카드
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Colors.white, Colors.grey.shade50],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (approvedRequests.isNotEmpty) ...[
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildSectionHeader(
-                        '승인됨',
-                        approvedRequests.length,
-                        Colors.green.shade600,
-                        Icons.check_circle,
-                      ),
-                    ),
-                    ...approvedRequests.asMap().entries.map(
-                      (entry) => AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) {
-                          final delay =
-                              (pendingRequests.length + entry.key) * 0.1;
-                          final animation = Tween<double>(begin: 0.0, end: 1.0)
-                              .animate(
-                                CurvedAnimation(
-                                  parent: _animationController,
-                                  curve: Interval(
-                                    delay,
-                                    delay + 0.3,
-                                    curve: Curves.easeOutBack,
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.indigo.shade400,
+                                          Colors.indigo.shade600,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Icon(
+                                      Icons.analytics,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
                                   ),
-                                ),
-                              );
-
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0.3, 0),
-                                end: Offset.zero,
-                              ).animate(animation),
-                              child: _buildRequestCard(entry.value),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  if (rejectedRequests.isNotEmpty) ...[
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildSectionHeader(
-                        '거절됨',
-                        rejectedRequests.length,
-                        Colors.red.shade600,
-                        Icons.cancel,
-                      ),
-                    ),
-                    ...rejectedRequests.asMap().entries.map(
-                      (entry) => AnimatedBuilder(
-                        animation: _animationController,
-                        builder: (context, child) {
-                          final delay =
-                              (pendingRequests.length +
-                                  approvedRequests.length +
-                                  entry.key) *
-                              0.1;
-                          final animation = Tween<double>(begin: 0.0, end: 1.0)
-                              .animate(
-                                CurvedAnimation(
-                                  parent: _animationController,
-                                  curve: Interval(
-                                    delay,
-                                    delay + 0.3,
-                                    curve: Curves.easeOutBack,
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    '신청 현황',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey.shade800,
+                                        ),
                                   ),
-                                ),
-                              );
-
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0.3, 0),
-                                end: Offset.zero,
-                              ).animate(animation),
-                              child: _buildRequestCard(entry.value),
-                            ),
-                          );
-                        },
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildStatusCard(
+                                      '대기',
+                                      pendingRequests.length,
+                                      Colors.orange.shade600,
+                                      Icons.schedule,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildStatusCard(
+                                      '승인',
+                                      approvedRequests.length,
+                                      Colors.green.shade600,
+                                      Icons.check_circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildStatusCard(
+                                      '거절',
+                                      rejectedRequests.length,
+                                      Colors.red.shade600,
+                                      Icons.cancel,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ],
 
-                  const SizedBox(height: 100), // 바텀 패딩
-                ]),
-              );
-            },
-          ),
-        ],
+                    const SizedBox(height: 8),
+
+                    // 신청 목록
+                    if (pendingRequests.isNotEmpty) ...[
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildSectionHeader(
+                          '대기 중',
+                          pendingRequests.length,
+                          Colors.orange.shade600,
+                          Icons.schedule,
+                        ),
+                      ),
+                      ...pendingRequests.asMap().entries.map(
+                        (entry) => AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            final delay = entry.key * 0.1;
+                            final animation =
+                                Tween<double>(begin: 0.0, end: 1.0).animate(
+                                  CurvedAnimation(
+                                    parent: _animationController,
+                                    curve: Interval(
+                                      delay,
+                                      delay + 0.3,
+                                      curve: Curves.easeOutBack,
+                                    ),
+                                  ),
+                                );
+
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.3, 0),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: _buildRequestCard(entry.value),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    if (approvedRequests.isNotEmpty) ...[
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildSectionHeader(
+                          '승인됨',
+                          approvedRequests.length,
+                          Colors.green.shade600,
+                          Icons.check_circle,
+                        ),
+                      ),
+                      ...approvedRequests.asMap().entries.map(
+                        (entry) => AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            final delay =
+                                (pendingRequests.length + entry.key) * 0.1;
+                            final animation =
+                                Tween<double>(begin: 0.0, end: 1.0).animate(
+                                  CurvedAnimation(
+                                    parent: _animationController,
+                                    curve: Interval(
+                                      delay,
+                                      delay + 0.3,
+                                      curve: Curves.easeOutBack,
+                                    ),
+                                  ),
+                                );
+
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.3, 0),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: _buildRequestCard(entry.value),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    if (rejectedRequests.isNotEmpty) ...[
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildSectionHeader(
+                          '거절됨',
+                          rejectedRequests.length,
+                          Colors.red.shade600,
+                          Icons.cancel,
+                        ),
+                      ),
+                      ...rejectedRequests.asMap().entries.map(
+                        (entry) => AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            final delay =
+                                (pendingRequests.length +
+                                    approvedRequests.length +
+                                    entry.key) *
+                                0.1;
+                            final animation =
+                                Tween<double>(begin: 0.0, end: 1.0).animate(
+                                  CurvedAnimation(
+                                    parent: _animationController,
+                                    curve: Interval(
+                                      delay,
+                                      delay + 0.3,
+                                      curve: Curves.easeOutBack,
+                                    ),
+                                  ),
+                                );
+
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.3, 0),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: _buildRequestCard(entry.value),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 100), // 바텀 패딩
+                  ]),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
