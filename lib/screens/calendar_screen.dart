@@ -36,7 +36,9 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final vacationProvider = context.read<VacationProvider>();
-      vacationProvider.loadCalendarData(_currentDate);
+      final authProvider = context.read<AuthProvider>();
+      final companyId = authProvider.currentUser?.company?.id ?? '1';
+      vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
       _fabAnimationController.forward();
     });
   }
@@ -70,7 +72,9 @@ class _CalendarScreenState extends State<CalendarScreen>
         selectedDate: _selectedDate!,
         onRequestSubmitted: () {
           final vacationProvider = context.read<VacationProvider>();
-          vacationProvider.loadCalendarData(_currentDate);
+          final authProvider = context.read<AuthProvider>();
+          final companyId = authProvider.currentUser?.company?.id ?? '1';
+          vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
         },
       ),
     );
@@ -140,124 +144,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
               ),
             ),
-            actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 16),
-                child: PopupMenuButton<String>(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.filter_list,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  onSelected: (value) {
-                    setState(() {
-                      _roleFilter = value;
-                    });
-                    final vacationProvider = context.read<VacationProvider>();
-                    vacationProvider.setRoleFilter(value);
-                    _filterAnimationController.forward(from: 0);
-                  },
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'all',
-                      child: Row(
-                        children: [
-                          Icon(Icons.people, size: 20),
-                          SizedBox(width: 8),
-                          Text('전체'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'CAREGIVER',
-                      child: Row(
-                        children: [
-                          Icon(Icons.favorite, size: 20, color: Colors.pink),
-                          SizedBox(width: 8),
-                          Text('요양보호사'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'OFFICE',
-                      child: Row(
-                        children: [
-                          Icon(Icons.business, size: 20, color: Colors.blue),
-                          SizedBox(width: 8),
-                          Text('사무직'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
-
-          // 필터 표시
-          if (_roleFilter != 'all')
-            SliverToBoxAdapter(
-              child: AnimatedBuilder(
-                animation: _filterAnimationController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: 0.8 + 0.2 * _filterAnimationController.value,
-                    child: Container(
-                      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.blue.shade200,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _roleFilter == 'CAREGIVER'
-                                ? Icons.favorite
-                                : Icons.business,
-                            color: _roleFilter == 'CAREGIVER'
-                                ? Colors.pink.shade400
-                                : Colors.blue.shade600,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '필터: ${_roleFilter == 'CAREGIVER' ? '요양보호사' : '사무직'}',
-                            style: TextStyle(
-                              color: Colors.blue.shade700,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
 
           // 달력 위젯
           SliverToBoxAdapter(
@@ -270,7 +157,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                     _currentDate = date;
                   });
                   final vacationProvider = context.read<VacationProvider>();
-                  vacationProvider.loadCalendarData(date);
+                  final authProvider = context.read<AuthProvider>();
+                  final companyId =
+                      authProvider.currentUser?.company?.id ?? '1';
+                  vacationProvider.loadCalendarData(date, companyId: companyId);
                 },
                 onDateSelected: (date) {
                   setState(() {
@@ -278,6 +168,20 @@ class _CalendarScreenState extends State<CalendarScreen>
                   });
                 },
                 roleFilter: _roleFilter,
+                onRoleFilterChanged: (newRole) {
+                  setState(() {
+                    _roleFilter = newRole;
+                  });
+                  final vacationProvider = context.read<VacationProvider>();
+                  vacationProvider.setRoleFilter(newRole);
+                  final authProvider = context.read<AuthProvider>();
+                  final companyId =
+                      authProvider.currentUser?.company?.id ?? '1';
+                  vacationProvider.loadCalendarData(
+                    _currentDate,
+                    companyId: companyId,
+                  );
+                },
               ),
             ),
           ),
@@ -479,10 +383,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                               Expanded(
                                                 child: Text(
                                                   vacation.displayName,
-                                                  style: TextStyle(
-                                                    color: _getStatusTextColor(
-                                                      vacation.status,
-                                                    ),
+                                                  style: const TextStyle(
+                                                    color: Colors.black,
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 16,
                                                   ),

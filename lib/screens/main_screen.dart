@@ -40,7 +40,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       final vacationProvider = context.read<VacationProvider>();
 
       if (authProvider.currentUser != null) {
-        vacationProvider.loadCalendarData(DateTime.now());
+        final companyId = authProvider.currentUser!.company?.id ?? '1';
+        vacationProvider.loadCalendarData(DateTime.now(), companyId: companyId);
         vacationProvider.loadMyVacationRequests(authProvider.currentUser!.id);
       }
     });

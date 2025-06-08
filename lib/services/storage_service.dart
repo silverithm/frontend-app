@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../utils/constants.dart';
 
 class StorageService {
@@ -55,5 +56,51 @@ class StorageService {
 
   Future<void> removeToken() async {
     await remove(Constants.tokenKey);
+  }
+
+  // refresh token 관련 메서드
+  Future<void> saveRefreshToken(String refreshToken) async {
+    await saveString('refresh_token', refreshToken);
+  }
+
+  String? getRefreshToken() {
+    return getString('refresh_token');
+  }
+
+  Future<void> removeRefreshToken() async {
+    await remove('refresh_token');
+  }
+
+  Future<void> removeAllTokens() async {
+    await removeToken();
+    await removeRefreshToken();
+  }
+
+  // 사용자 정보 저장/복원 메서드
+  Future<void> saveUserData(Map<String, dynamic> userData) async {
+    final userDataJson = jsonEncode(userData);
+    await saveString('user_data', userDataJson);
+  }
+
+  Map<String, dynamic>? getSavedUserData() {
+    final userDataJson = getString('user_data');
+    if (userDataJson != null) {
+      try {
+        return jsonDecode(userDataJson) as Map<String, dynamic>;
+      } catch (e) {
+        print('[StorageService] 사용자 정보 파싱 오류: $e');
+        return null;
+      }
+    }
+    return null;
+  }
+
+  Future<void> removeUserData() async {
+    await remove('user_data');
+  }
+
+  Future<void> removeAll() async {
+    await removeAllTokens();
+    await removeUserData();
   }
 }

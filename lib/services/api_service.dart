@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
 import '../utils/constants.dart';
-import '../models/user.dart';
-import '../models/vacation_request.dart';
 import '../services/storage_service.dart';
+import '../screens/login_screen.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -11,6 +11,12 @@ class ApiService {
   ApiService._internal();
 
   final String _baseUrl = Constants.baseUrl;
+  BuildContext? _globalContext; // 글로벌 context 저장
+
+  // 글로벌 context 설정 (main.dart에서 호출)
+  void setGlobalContext(BuildContext context) {
+    _globalContext = context;
+  }
 
   // 공통 헤더 생성
   Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
@@ -20,13 +26,100 @@ class ApiService {
     };
 
     if (includeAuth) {
-      final token = await StorageService().getToken();
+      final token = StorageService().getToken();
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
       }
     }
 
     return headers;
+  }
+
+  // 토큰 refresh 요청
+  Future<bool> _refreshToken() async {
+    try {
+      final refreshToken = StorageService().getRefreshToken();
+      if (refreshToken == null) {
+        print('[API] Refresh token이 없음');
+        return false;
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl${Constants.refreshTokenEndpoint}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({'refreshToken': refreshToken}),
+      );
+
+      print('[API] Refresh token 응답 상태: ${response.statusCode}');
+      print('[API] Refresh token 응답: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body) as Map<String, dynamic>;
+
+        // 새로운 access token 저장
+        if (responseData['accessToken'] != null) {
+          await StorageService().saveToken(responseData['accessToken']);
+          print('[API] 새로운 access token 저장 완료');
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      print('[API] Refresh token 에러: $e');
+      return false;
+    }
+  }
+
+  // 로그인 화면으로 이동
+  void _navigateToLogin() {
+    if (_globalContext != null) {
+      Navigator.of(_globalContext!).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
+  // 토큰 만료 처리를 포함한 공통 요청 처리
+  Future<Map<String, dynamic>> _makeAuthenticatedRequest(
+    Future<http.Response> Function() requestFunction,
+  ) async {
+    try {
+      // 첫 번째 요청 시도
+      final response = await requestFunction();
+
+      // 401 Unauthorized 확인
+      if (response.statusCode == 401) {
+        print('[API] 토큰 만료 감지 - refresh 시도');
+
+        // refresh token으로 새 토큰 획득 시도
+        final refreshSuccess = await _refreshToken();
+
+        if (refreshSuccess) {
+          print('[API] 토큰 refresh 성공 - 요청 재시도');
+          // 새 토큰으로 재요청
+          final retryResponse = await requestFunction();
+          return _handleResponse(retryResponse);
+        } else {
+          print('[API] 토큰 refresh 실패 - 로그인 화면으로 이동');
+          // refresh도 실패하면 모든 토큰 제거하고 로그인 화면으로
+          await StorageService().removeAllTokens();
+          _navigateToLogin();
+          throw ApiException('로그인이 필요합니다', 401);
+        }
+      }
+
+      return _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw Exception('API 요청 실패: $e');
+    }
   }
 
   // 회원가입 요청
@@ -36,7 +129,7 @@ class ApiService {
     required String name,
     required String role,
     required String password,
-    String? companyId,
+    required String companyId,
   }) async {
     try {
       final requestBody = {
@@ -45,13 +138,11 @@ class ApiService {
         'name': name,
         'role': role,
         'password': password,
+        'companyId': int.parse(companyId),
       };
 
-      if (companyId != null && companyId.isNotEmpty) {
-        requestBody['companyId'] = companyId;
-      }
-
       print('회원가입 요청 URL: $_baseUrl${Constants.joinRequestEndpoint}');
+      print('회원가입 요청 데이터: $requestBody');
 
       final response = await http.post(
         Uri.parse('$_baseUrl${Constants.joinRequestEndpoint}'),
@@ -91,14 +182,16 @@ class ApiService {
   Future<Map<String, dynamic>> getVacationCalendar({
     required String startDate,
     required String endDate,
+    required String companyId,
     String roleFilter = 'all',
     String? nameFilter,
   }) async {
-    try {
+    return await _makeAuthenticatedRequest(() async {
       final queryParams = {
         'startDate': startDate,
         'endDate': endDate,
         'roleFilter': roleFilter,
+        'companyId': companyId,
       };
 
       if (nameFilter != null && nameFilter.isNotEmpty) {
@@ -109,22 +202,27 @@ class ApiService {
         '$_baseUrl${Constants.vacationCalendarEndpoint}',
       ).replace(queryParameters: queryParams);
 
+      print('[API] 휴가 캘린더 조회 요청: $uri');
+      print('[API] 요청 파라미터: $queryParams');
+
       final response = await http.get(uri, headers: await _getHeaders());
 
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('휴가 캘린더 조회 실패: $e');
-    }
+      print('[API] 휴가 캘린더 응답 상태: ${response.statusCode}');
+      print('[API] 휴가 캘린더 응답 본문: ${response.body}');
+
+      return response;
+    });
   }
 
   // 특정 날짜 휴가 조회
   Future<Map<String, dynamic>> getVacationForDate({
     required String date,
+    required String companyId,
     String role = 'CAREGIVER',
     String? nameFilter,
   }) async {
     try {
-      final queryParams = {'role': role};
+      final queryParams = {'role': role, 'companyId': companyId};
 
       if (nameFilter != null && nameFilter.isNotEmpty) {
         queryParams['nameFilter'] = nameFilter;
@@ -150,11 +248,18 @@ class ApiService {
     required String reason,
     required String role,
     required String password,
+    required String companyId,
     String? userId,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl${Constants.vacationSubmitEndpoint}'),
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {'companyId': companyId};
+
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.vacationSubmitEndpoint}',
+      ).replace(queryParameters: queryParams);
+
+      return await http.post(
+        uri,
         headers: await _getHeaders(),
         body: json.encode({
           'userName': userName,
@@ -166,11 +271,7 @@ class ApiService {
           'userId': userId,
         }),
       );
-
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('휴가 신청 실패: $e');
-    }
+    });
   }
 
   // 기존 일반적인 메서드들
@@ -208,20 +309,30 @@ class ApiService {
   Future<Map<String, dynamic>> getVacationLimits({
     required String start,
     required String end,
+    required String companyId,
+    String? role,
   }) async {
-    try {
-      final queryParams = {'start': start, 'end': end};
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {'start': start, 'end': end, 'companyId': companyId};
+
+      if (role != null && role != 'all') {
+        queryParams['role'] = role;
+      }
 
       final uri = Uri.parse(
         '$_baseUrl${Constants.vacationLimitsEndpoint}',
       ).replace(queryParameters: queryParams);
 
+      print('[API] 휴가 제한 조회 요청: $uri');
+      print('[API] 요청 파라미터: $queryParams');
+
       final response = await http.get(uri, headers: await _getHeaders());
 
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('휴가 제한 조회 실패: $e');
-    }
+      print('[API] 휴가 제한 응답 상태: ${response.statusCode}');
+      print('[API] 휴가 제한 응답 본문: ${response.body}');
+
+      return response;
+    });
   }
 
   // 회사 목록 조회
@@ -257,6 +368,68 @@ class ApiService {
     } catch (e) {
       throw Exception('FCM 토큰 업데이트 실패: $e');
     }
+  }
+
+  // 내 휴무 신청 전체 조회
+  Future<Map<String, dynamic>> getMyVacationRequests({
+    required String companyId,
+    required String userName,
+    required String userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'companyId': companyId,
+        'userName': userName,
+        'userId': userId,
+      };
+
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.myVacationRequestsEndpoint}',
+      ).replace(queryParameters: queryParams);
+
+      print('내 휴무 신청 조회 URL: $uri');
+
+      return await http.get(uri, headers: await _getHeaders());
+    });
+  }
+
+  // 내 휴무 신청 삭제
+  Future<Map<String, dynamic>> deleteMyVacationRequest({
+    required String vacationId,
+    required String userName,
+    required String userId,
+    required String password,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'userName': userName,
+        'userId': userId,
+        'password': password,
+      };
+
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.myVacationRequestsEndpoint}/$vacationId',
+      ).replace(queryParameters: queryParams);
+
+      print('내 휴무 신청 삭제 URL: $uri');
+
+      return await http.delete(uri, headers: await _getHeaders());
+    });
+  }
+
+  // 사용자 알림 조회
+  Future<Map<String, dynamic>> getNotifications({
+    required String userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.notificationsEndpoint}/$userId',
+      );
+
+      print('[API] 알림 조회 요청: $uri');
+
+      return await http.get(uri, headers: await _getHeaders());
+    });
   }
 
   Map<String, dynamic> _handleResponse(http.Response response) {

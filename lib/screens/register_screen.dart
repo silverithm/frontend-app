@@ -4,7 +4,6 @@ import '../providers/auth_provider.dart';
 import '../providers/company_provider.dart';
 import '../models/company.dart';
 import '../utils/constants.dart';
-import 'main_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,6 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   String _selectedRole = 'CAREGIVER';
   Company? _selectedCompany; // 선택된 회사
+  String? _companyErrorMessage;
 
   @override
   void initState() {
@@ -46,13 +46,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // 회사 선택 필수 검사
+    if (_selectedCompany == null) {
+      setState(() {
+        _companyErrorMessage = '회사를 선택해주세요.';
+      });
+      return;
+    }
+
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.register(
       _emailController.text.trim(),
       _passwordController.text,
       _nameController.text.trim(),
       _selectedRole,
-      companyId: _selectedCompany?.id,
+      companyId: _selectedCompany!.id, // 필수로 전달
     );
 
     if (success && mounted) {
@@ -540,7 +548,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             DropdownMenuItem(
                               value: 'OFFICE',
-                              child: Text('사무직'),
+                              child: Text('사무실'),
                             ),
                           ],
                           onChanged: (value) {
@@ -552,42 +560,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: Constants.defaultPadding),
 
                         // 회사 선택
-                        DropdownButtonFormField<Company?>(
-                          value: _selectedCompany,
-                          decoration: InputDecoration(
-                            labelText: '회사',
-                            prefixIcon: const Icon(Icons.business_outlined),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.blue.shade500,
-                              ),
-                            ),
-                          ),
-                          items: context
-                              .watch<CompanyProvider>()
-                              .companies
-                              .map(
-                                (company) => DropdownMenuItem<Company?>(
-                                  value: company,
-                                  child: Text(company.name),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            DropdownButtonFormField<Company?>(
+                              value: _selectedCompany,
+                              decoration: InputDecoration(
+                                labelText: '회사 *', // 필수 표시
+                                prefixIcon: const Icon(Icons.business_outlined),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCompany = value;
-                            });
-                          },
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: _companyErrorMessage != null
+                                        ? Colors.red.shade300
+                                        : Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: _companyErrorMessage != null
+                                        ? Colors.red.shade500
+                                        : Colors.blue.shade500,
+                                  ),
+                                ),
+                              ),
+                              hint: const Text('회사를 선택해주세요'),
+                              items: context
+                                  .watch<CompanyProvider>()
+                                  .companies
+                                  .map(
+                                    (company) => DropdownMenuItem<Company?>(
+                                      value: company,
+                                      child: Text(company.name),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCompany = value;
+                                  _companyErrorMessage = null; // 에러 메시지 초기화
+                                });
+                              },
+                            ),
+                            // 에러 메시지 표시
+                            if (_companyErrorMessage != null)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  left: 12,
+                                ),
+                                child: Text(
+                                  _companyErrorMessage!,
+                                  style: TextStyle(
+                                    color: Colors.red.shade600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: Constants.defaultPadding),
 

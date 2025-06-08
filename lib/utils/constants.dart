@@ -1,17 +1,23 @@
 class Constants {
   // API 관련 상수 - TODO: 실제 Spring Boot 서버 URL로 변경 필요
-  static const String baseUrl = 'https://69af-211-177-230-196.ngrok-free.app/api/v1';
+  static const String baseUrl =
+      'https://69af-211-177-230-196.ngrok-free.app/api';
 
   // API 엔드포인트
   static const String loginEndpoint = '/auth/login';
-  static const String signinEndpoint = '/members/signin';
-  static const String joinRequestEndpoint = '/members/join-request';
-  static const String companiesEndpoint = '/members/companies';
-  static const String fcmTokenEndpoint = '/members';
-  static const String vacationCalendarEndpoint = '/vacations/calendar';
-  static const String vacationDateEndpoint = '/vacations/date';
-  static const String vacationSubmitEndpoint = '/vacations/submit';
-  static const String vacationLimitsEndpoint = '/vacations/limits';
+  static const String signinEndpoint = '/v1/members/signin';
+  static const String refreshTokenEndpoint = '/v1/refresh-token';
+  static const String joinRequestEndpoint = '/v1/members/join-request';
+  static const String companiesEndpoint = '/v1/members/companies';
+  static const String fcmTokenEndpoint = '/v1/members';
+  static const String vacationCalendarEndpoint = '/vacation/calendar';
+  static const String vacationDateEndpoint = '/vacation/date';
+  static const String vacationSubmitEndpoint = '/vacation/submit';
+  static const String vacationLimitsEndpoint = '/vacation/limits';
+  // 개인 휴무 관련 엔드포인트
+  static const String myVacationRequestsEndpoint = '/vacation/my/requests';
+  // 알림 관련 엔드포인트
+  static const String notificationsEndpoint = '/notifications/user';
 
   // 저장소 키
   static const String tokenKey = 'auth_token';

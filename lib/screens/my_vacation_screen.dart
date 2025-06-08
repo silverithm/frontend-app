@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
+import '../providers/notification_provider.dart';
 
 class MyVacationScreen extends StatefulWidget {
   const MyVacationScreen({super.key});
@@ -42,7 +43,11 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       final vacationProvider = context.read<VacationProvider>();
 
       if (authProvider.currentUser != null) {
-        vacationProvider.loadMyVacationRequests(authProvider.currentUser!.id);
+        vacationProvider.loadMyVacationRequests(
+          authProvider.currentUser!.id,
+          companyId: authProvider.currentUser!.company?.id ?? '1',
+          userName: authProvider.currentUser!.name,
+        );
       }
       _animationController.forward();
     });
@@ -61,11 +66,21 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     if (authProvider.currentUser != null) {
       await vacationProvider.loadMyVacationRequests(
         authProvider.currentUser!.id,
+        companyId: authProvider.currentUser!.company?.id ?? '1',
+        userName: authProvider.currentUser!.name,
       );
     }
   }
 
   void _showNotifications() {
+    // 알림 데이터 로드
+    final authProvider = context.read<AuthProvider>();
+    final notificationProvider = context.read<NotificationProvider>();
+
+    if (authProvider.currentUser != null) {
+      notificationProvider.loadNotifications(authProvider.currentUser!.id);
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -142,50 +157,81 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             ),
             // 알림 목록
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildNotificationItem(
-                    '휴무 신청 승인',
-                    '2024년 1월 15일 휴무 신청이 승인되었습니다.',
-                    Icons.check_circle,
-                    Colors.green,
-                    '방금 전',
-                    true,
-                  ),
-                  _buildNotificationItem(
-                    '휴무 신청 거절',
-                    '2024년 1월 20일 휴무 신청이 거절되었습니다.\n사유: 해당 날짜에 이미 다른 직원이 휴무 예정',
-                    Icons.cancel,
-                    Colors.red,
-                    '1시간 전',
-                    true,
-                  ),
-                  _buildNotificationItem(
-                    '휴무 신청 승인',
-                    '2024년 1월 25일 휴무 신청이 승인되었습니다.',
-                    Icons.check_circle,
-                    Colors.green,
-                    '2시간 전',
-                    false,
-                  ),
-                  _buildNotificationItem(
-                    '시스템 공지',
-                    '휴무 신청 시스템이 업데이트되었습니다. 새로운 기능을 확인해보세요.',
-                    Icons.info,
-                    Colors.blue,
-                    '1일 전',
-                    false,
-                  ),
-                  _buildNotificationItem(
-                    '휴무 신청 승인',
-                    '2024년 1월 10일 휴무 신청이 승인되었습니다.',
-                    Icons.check_circle,
-                    Colors.green,
-                    '3일 전',
-                    false,
-                  ),
-                ],
+              child: Consumer<NotificationProvider>(
+                builder: (context, notificationProvider, child) {
+                  if (notificationProvider.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (notificationProvider.errorMessage.isNotEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red.shade300,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            notificationProvider.errorMessage,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (notificationProvider.notifications.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.notifications_off_outlined,
+                            size: 48,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '알림이 없습니다',
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: notificationProvider.notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification =
+                          notificationProvider.notifications[index];
+                      return _buildNotificationItem(
+                        notification.title,
+                        notification.message,
+                        notification.icon,
+                        notification.color,
+                        notification.timeAgo,
+                        notification.isUnread,
+                        onTap: () {
+                          if (notification.isUnread) {
+                            notificationProvider.markAsRead(notification.id);
+                          }
+                        },
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -200,174 +246,249 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     IconData icon,
     Color color,
     String time,
-    bool isUnread,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isUnread ? color.withOpacity(0.05) : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isUnread ? color.withOpacity(0.2) : Colors.grey.shade200,
-          width: 1,
+    bool isUnread, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isUnread ? color.withOpacity(0.05) : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isUnread ? color.withOpacity(0.2) : Colors.grey.shade200,
+            width: 1,
+          ),
+          boxShadow: isUnread
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
-        boxShadow: isUnread
-            ? [
-                BoxShadow(
-                  color: color.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
-                      ),
-                    ),
-                    if (isUnread)
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCancelDialog(VacationRequest request) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.red.shade100,
-                borderRadius: BorderRadius.circular(12),
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                Icons.warning_rounded,
-                color: Colors.red.shade600,
-                size: 24,
-              ),
+              child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 12),
-            const Text(
-              '휴무 신청 취소',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      if (isUnread)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    time,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        content: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  void _showDeleteDialog(VacationRequest request) {
+    bool isDeleting = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            '${request.date.month}월 ${request.date.day}일 휴무 신청을 취소하시겠습니까?',
-            style: const TextStyle(fontSize: 16),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.delete_outline,
+                  color: Colors.red.shade600,
+                  size: 24,
+                ),
               ),
-            ),
-            child: const Text('아니오'),
+              const SizedBox(width: 12),
+              const Text(
+                '휴무 신청 삭제',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              final vacationProvider = context.read<VacationProvider>();
-              final success = await vacationProvider.cancelVacationRequest(
-                request.id,
-              );
-
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('휴무 신청이 취소되었습니다'),
-                    backgroundColor: Colors.green.shade600,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${request.date.month}월 ${request.date.day}일 휴무 신청을 삭제하시겠습니까?',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+              if (request.status == VacationStatus.approved) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
                   ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              elevation: 0,
-            ),
-            child: const Text('취소'),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber, color: Colors.orange.shade600),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '승인된 휴무는 삭제 시 관리자에게 문의가 필요할 수 있습니다.',
+                          style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: isDeleting ? null : () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: isDeleting
+                  ? null
+                  : () async {
+                      setState(() {
+                        isDeleting = true;
+                      });
+
+                      final authProvider = context.read<AuthProvider>();
+                      final vacationProvider = context.read<VacationProvider>();
+
+                      final success = await vacationProvider
+                          .deleteMyVacationRequest(
+                            vacationId: request.id,
+                            userName: authProvider.currentUser?.name ?? '',
+                            userId: authProvider.currentUser?.id ?? '',
+                            password: '', // 빈 비밀번호로 전송
+                          );
+
+                      setState(() {
+                        isDeleting = false;
+                      });
+
+                      if (success && mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('휴무 신청이 삭제되었습니다'),
+                            backgroundColor: Colors.green.shade600,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
+                      } else if (mounted) {
+                        Navigator.pop(context);
+                        // 에러 메시지는 VacationProvider에서 처리됨
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              child: isDeleting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('삭제'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -396,6 +517,21 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             elevation: 0,
             backgroundColor: Colors.transparent,
             centerTitle: true,
+            title: const Text(
+              '내 휴무 신청',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontSize: 18,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+            ),
             flexibleSpace: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -406,37 +542,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     Colors.blue.shade400,
                     Colors.cyan.shade300,
                   ],
-                ),
-              ),
-              child: FlexibleSpaceBar(
-                title: const Text(
-                  '내 휴무 신청',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 16,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black26,
-                        offset: Offset(1, 1),
-                        blurRadius: 3,
-                      ),
-                    ],
-                  ),
-                ),
-                centerTitle: true,
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.blue.shade600,
-                        Colors.blue.shade400,
-                        Colors.cyan.shade300,
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -466,34 +571,42 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     ),
                     // 알림 뱃지
                     Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade500,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.shade300.withOpacity(0.5),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
+                      top: 4,
+                      right: 4,
+                      child: Consumer<NotificationProvider>(
+                        builder: (context, notificationProvider, child) {
+                          final unreadCount = notificationProvider.unreadCount;
+                          if (unreadCount == 0) return const SizedBox.shrink();
+
+                          return Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade600,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.shade300.withOpacity(0.5),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            '3',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              height: 1.0,
+                            constraints: const BoxConstraints(
+                              minWidth: 20,
+                              minHeight: 20,
                             ),
-                          ),
-                        ),
+                            child: Text(
+                              unreadCount > 99 ? '99+' : unreadCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -515,15 +628,15 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                Colors.purple.shade100,
-                                Colors.pink.shade100,
+                                Colors.grey.shade100,
+                                Colors.grey.shade50,
                               ],
                             ),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.purple.shade600,
+                              Colors.grey.shade600,
                             ),
                           ),
                         ),
@@ -531,7 +644,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         Text(
                           '데이터를 불러오는 중...',
                           style: TextStyle(
-                            color: Colors.purple.shade600,
+                            color: Colors.grey.shade600,
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -649,8 +762,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      Colors.blue.shade100,
-                                      Colors.purple.shade100,
+                                      Colors.grey.shade100,
+                                      Colors.grey.shade50,
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(20),
@@ -658,7 +771,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                 child: Icon(
                                   Icons.event_available,
                                   size: 64,
-                                  color: Colors.purple.shade600,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
                               const SizedBox(height: 24),
@@ -710,7 +823,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Colors.white, Colors.blue.shade50],
+                          colors: [Colors.white, Colors.grey.shade50],
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
@@ -733,8 +846,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Colors.purple.shade400,
-                                        Colors.purple.shade600,
+                                        Colors.indigo.shade400,
+                                        Colors.indigo.shade600,
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(16),
@@ -763,7 +876,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   child: _buildStatusCard(
                                     '대기',
                                     pendingRequests.length,
-                                    Colors.orange,
+                                    Colors.orange.shade600,
                                     Icons.schedule,
                                   ),
                                 ),
@@ -772,7 +885,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   child: _buildStatusCard(
                                     '승인',
                                     approvedRequests.length,
-                                    Colors.green,
+                                    Colors.green.shade600,
                                     Icons.check_circle,
                                   ),
                                 ),
@@ -781,7 +894,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   child: _buildStatusCard(
                                     '거절',
                                     rejectedRequests.length,
-                                    Colors.red,
+                                    Colors.red.shade600,
                                     Icons.cancel,
                                   ),
                                 ),
@@ -802,7 +915,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       child: _buildSectionHeader(
                         '대기 중',
                         pendingRequests.length,
-                        Colors.orange,
+                        Colors.orange.shade600,
                         Icons.schedule,
                       ),
                     ),
@@ -845,7 +958,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       child: _buildSectionHeader(
                         '승인됨',
                         approvedRequests.length,
-                        Colors.green,
+                        Colors.green.shade600,
                         Icons.check_circle,
                       ),
                     ),
@@ -889,7 +1002,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       child: _buildSectionHeader(
                         '거절됨',
                         rejectedRequests.length,
-                        Colors.red,
+                        Colors.red.shade600,
                         Icons.cancel,
                       ),
                     ),
@@ -1095,125 +1208,127 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                     color: Colors.black87,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors:
-                                          request.duration ==
-                                              VacationDuration.fullDay
-                                          ? [
-                                              Colors.purple.shade400,
-                                              Colors.purple.shade600,
-                                            ]
-                                          : [
-                                              Colors.orange.shade400,
-                                              Colors.orange.shade600,
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            _getStatusTextColor(request.status),
+                                            _getStatusTextColor(
+                                              request.status,
+                                            ).withOpacity(0.8),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: _getStatusTextColor(
+                                              request.status,
+                                            ).withOpacity(0.3),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        request.statusText,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors:
+                                              request.duration ==
+                                                  VacationDuration.fullDay
+                                              ? [
+                                                  Colors.purple.shade400,
+                                                  Colors.purple.shade600,
+                                                ]
+                                              : [
+                                                  Colors.purple.shade300,
+                                                  Colors.purple.shade500,
+                                                ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        request.durationText,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    if (request.type ==
+                                        VacationType.mandatory) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.red.shade200,
+                                              Colors.red.shade400,
                                             ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    request.durationText,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  _getStatusTextColor(request.status),
-                                  _getStatusTextColor(
-                                    request.status,
-                                  ).withOpacity(0.8),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _getStatusTextColor(
-                                    request.status,
-                                  ).withOpacity(0.3),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              request.statusText,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          if (request.type == VacationType.mandatory) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.amber.shade400,
-                                    Colors.amber.shade600,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.red.shade200
+                                                  .withOpacity(0.4),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 3),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.star,
+                                              size: 14,
+                                              color: Colors.white,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Text(
+                                              '필수',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.amber.shade300.withOpacity(
-                                      0.4,
-                                    ),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.star,
-                                    size: 14,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text(
-                                    '필수',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ],
@@ -1226,12 +1341,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
-                      onPressed: () => _showCancelDialog(request),
+                      onPressed: () => _showDeleteDialog(request),
                       icon: Icon(
-                        Icons.cancel_outlined,
+                        Icons.delete_outlined,
                         color: Colors.red.shade600,
                       ),
-                      tooltip: '신청 취소',
+                      tooltip: '신청 삭제',
                     ),
                   ),
               ],
@@ -1276,7 +1391,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.red.shade50, Colors.red.shade100],
+                    colors: [Colors.red.shade100, Colors.red.shade50],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.red.shade200, width: 1),

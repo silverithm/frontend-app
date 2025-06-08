@@ -126,7 +126,7 @@ class VacationRequest {
       case VacationType.mandatory:
         return '필수';
       case VacationType.personal:
-        return '개인';
+        return '일반';
     }
   }
 

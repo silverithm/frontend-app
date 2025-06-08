@@ -4,7 +4,9 @@ import 'providers/app_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/vacation_provider.dart';
 import 'providers/company_provider.dart';
+import 'providers/notification_provider.dart';
 import 'services/storage_service.dart';
+import 'services/api_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 
@@ -28,6 +30,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => VacationProvider()),
         ChangeNotifierProvider(create: (_) => CompanyProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
@@ -64,6 +67,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
     super.initState();
     // 앱 시작 시 로그인 상태 확인
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // ApiService에 글로벌 context 설정
+      ApiService().setGlobalContext(context);
       context.read<AuthProvider>().checkAuthStatus();
     });
   }

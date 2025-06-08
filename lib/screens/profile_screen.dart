@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/app_provider.dart';
 import '../models/user.dart';
 import 'login_screen.dart';
 
@@ -122,6 +121,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     return '${date.year}년 ${date.month}월 ${date.day}일';
   }
 
+  String _formatDateTime(DateTime date) {
+    return '${date.year}년 ${date.month}월 ${date.day}일 ${date.hour}:${date.minute}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,6 +139,21 @@ class _ProfileScreenState extends State<ProfileScreen>
             elevation: 0,
             backgroundColor: Colors.transparent,
             centerTitle: true,
+            title: const Text(
+              '프로필',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontSize: 18,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+            ),
             flexibleSpace: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -146,38 +164,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                     Colors.blue.shade400,
                     Colors.cyan.shade300,
                   ],
-                ),
-              ),
-              child: FlexibleSpaceBar(
-                title: const Text(
-                  '프로필',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 16,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black26,
-                        offset: Offset(1, 1),
-                        blurRadius: 3,
-                      ),
-                    ],
-                  ),
-                ),
-                centerTitle: true,
-                titlePadding: const EdgeInsets.only(left: 16, bottom: 8),
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.blue.shade600,
-                        Colors.blue.shade400,
-                        Colors.cyan.shade300,
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -284,145 +270,117 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                               const SizedBox(height: 24),
 
-                              // 사용자 정보
-                              Text(
-                                user.name,
-                                style: Theme.of(context).textTheme.headlineSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey.shade800,
-                                    ),
-                              ),
-
-                              const SizedBox(height: 12),
-
+                              // 사용자 정보 섹션
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
+                                padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      _getRoleColor(user.role).withOpacity(0.1),
-                                      _getRoleColor(
-                                        user.role,
-                                      ).withOpacity(0.05),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(
-                                    color: _getRoleColor(
-                                      user.role,
-                                    ).withOpacity(0.3),
-                                    width: 1,
-                                  ),
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: _getRoleColor(
-                                        user.role,
-                                      ).withOpacity(0.2),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 5),
                                     ),
                                   ],
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: _getRoleColor(user.role),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        _getRoleIcon(user.role),
-                                        color: Colors.white,
-                                        size: 16,
+                                    Text(
+                                      '기본 정보',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey.shade800,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                    const SizedBox(height: 20),
+
+                                    // 이름
+                                    _buildInfoRow(
+                                      icon: Icons.person,
+                                      iconColor: Colors.blue.shade600,
+                                      title: '이름',
+                                      value: user.name,
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // 이메일
+                                    _buildInfoRow(
+                                      icon: Icons.email,
+                                      iconColor: Colors.green.shade600,
+                                      title: '이메일',
+                                      value: user.email,
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // 직원 유형
+                                    _buildInfoRow(
+                                      icon: user.role == 'CAREGIVER'
+                                          ? Icons.favorite
+                                          : Icons.business,
+                                      iconColor: user.role == 'CAREGIVER'
+                                          ? Colors.pink.shade600
+                                          : Colors.indigo.shade600,
+                                      title: '직원 유형',
+                                      value: _getRoleDisplayName(user.role),
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // 부서 (있는 경우)
+                                    if (user.department != null &&
+                                        user.department!.isNotEmpty)
+                                      Column(
                                         children: [
-                                          Text(
-                                            '직원 유형',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade600,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                          _buildInfoRow(
+                                            icon: Icons.business_center,
+                                            iconColor: Colors.orange.shade600,
+                                            title: '부서',
+                                            value: user.department!,
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            _getRoleDisplayName(user.role),
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.black87,
+                                          const SizedBox(height: 16),
+                                        ],
+                                      ),
+
+                                    // 직책 (있는 경우)
+                                    if (user.position != null &&
+                                        user.position!.isNotEmpty)
+                                      Column(
+                                        children: [
+                                          _buildInfoRow(
+                                            icon: Icons.work,
+                                            iconColor: Colors.purple.shade600,
+                                            title: '직책',
+                                            value: user.position!,
+                                          ),
+                                          const SizedBox(height: 16),
+                                        ],
+                                      ),
+
+                                    // 가입일
+                                    _buildInfoRow(
+                                      icon: Icons.calendar_today,
+                                      iconColor: Colors.teal.shade600,
+                                      title: '가입일',
+                                      value: _formatDate(user.createdAt),
+                                    ),
+
+                                    // 마지막 로그인 (있는 경우)
+                                    if (user.lastLoginAt != null)
+                                      Column(
+                                        children: [
+                                          const SizedBox(height: 16),
+                                          _buildInfoRow(
+                                            icon: Icons.login,
+                                            iconColor: Colors.grey.shade600,
+                                            title: '마지막 로그인',
+                                            value: _formatDateTime(
+                                              user.lastLoginAt!,
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.grey.shade200,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.email,
-                                          color: Colors.grey.shade600,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            user.email,
-                                            style: TextStyle(
-                                              color: Colors.grey.shade700,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_today,
-                                          color: Colors.grey.shade600,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          '가입일: ${_formatDate(user.createdAt)}',
-                                          style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                                   ],
                                 ),
                               ),
@@ -453,50 +411,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       child: Column(
                         children: [
-                          _buildSettingTile(
-                            icon: Icons.dark_mode,
-                            title: '다크 모드',
-                            subtitle: '어두운 테마로 변경',
-                            trailing: Consumer<AppProvider>(
-                              builder: (context, appProvider, child) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: appProvider.isDarkMode
-                                          ? [
-                                              Colors.indigo.shade400,
-                                              Colors.indigo.shade600,
-                                            ]
-                                          : [
-                                              Colors.grey.shade300,
-                                              Colors.grey.shade400,
-                                            ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Switch(
-                                    value: appProvider.isDarkMode,
-                                    onChanged: (value) {
-                                      appProvider.toggleTheme();
-                                    },
-                                    activeColor: Colors.white,
-                                    inactiveThumbColor: Colors.white,
-                                    trackColor: MaterialStateProperty.all(
-                                      Colors.transparent,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            onTap: () {
-                              final appProvider = context.read<AppProvider>();
-                              appProvider.toggleTheme();
-                            },
-                            isFirst: true,
-                          ),
-
-                          const Divider(height: 1, color: Colors.transparent),
-
                           _buildSettingTile(
                             icon: Icons.notifications,
                             title: '알림 설정',
@@ -805,6 +719,44 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  Widget _buildInfoRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: iconColor, size: 20),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 60, // 라벨 너비를 더 줄임
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade800,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+            // overflow와 maxLines 제거하여 2줄로 표시 가능
+          ),
+        ),
+      ],
+    );
+  }
+
   Color _getRoleColor(String role) {
     switch (role) {
       case 'CAREGIVER':
@@ -832,14 +784,17 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   String _getRoleDisplayName(String role) {
-    switch (role) {
+    print('User role: "$role"'); // 디버그 출력
+    switch (role.toUpperCase()) {
+      // 대소문자 구분 없이 처리
       case 'CAREGIVER':
         return '요양보호사';
       case 'OFFICE':
-        return '사무직';
-      case 'admin':
+        return '사무실';
+      case 'ADMIN':
         return '관리자';
       default:
+        print('Unknown role: "$role", using default'); // 디버그 출력
         return '직원';
     }
   }

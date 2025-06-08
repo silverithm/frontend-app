@@ -33,27 +33,45 @@ class AuthProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      // Spring Boot signin API 호출
+      // Spring Boot API 호출
       final response = await ApiService().signin(
         username: username,
         password: password,
       );
 
-      // MemberSigninResponseDTO 응답 처리
+      print('[AuthProvider] 로그인 응답: $response');
+
       if (response['memberId'] != null) {
+        // 실제 응답 데이터로 User 객체 생성
         _currentUser = User.fromJson(response);
 
         // 토큰 저장
-        if (_currentUser!.tokenInfo?.accessToken != null) {
+        if (response['tokenInfo'] != null &&
+            response['tokenInfo']['accessToken'] != null) {
           await StorageService().saveToken(
-            _currentUser!.tokenInfo!.accessToken,
+            response['tokenInfo']['accessToken'],
           );
+
+          // refresh token도 저장
+          if (response['tokenInfo']['refreshToken'] != null) {
+            await StorageService().saveRefreshToken(
+              response['tokenInfo']['refreshToken'],
+            );
+          }
+
+          print('[AuthProvider] 토큰 저장 완료');
         }
 
+        // 사용자 정보도 저장
+        await StorageService().saveUserData(response);
+        print('[AuthProvider] 사용자 정보 저장 완료');
+
+        print('[AuthProvider] 로그인 성공 - 사용자: ${_currentUser!.name}');
         notifyListeners();
         return true;
       } else {
-        setError('로그인에 실패했습니다.');
+        final errorMsg = response['error'] ?? '로그인에 실패했습니다.';
+        setError(errorMsg);
         return false;
       }
     } catch (e) {
@@ -61,7 +79,7 @@ class AuthProvider with ChangeNotifier {
         final errorMsg = e.toString().replaceAll('ApiException: ', '');
         setError(errorMsg.split(' (Status:')[0]);
       } else {
-        setError('로그인에 실패했습니다: ${e.toString()}');
+        setError('로그인 중 오류가 발생했습니다: ${e.toString()}');
       }
       return false;
     } finally {
@@ -74,7 +92,7 @@ class AuthProvider with ChangeNotifier {
     String password,
     String name,
     String role, {
-    String? companyId, // 회사 ID 추가
+    required String companyId, // 필수로 변경
   }) async {
     try {
       setLoading(true);
@@ -82,6 +100,12 @@ class AuthProvider with ChangeNotifier {
 
       print("회원가입 요청을 처리 중...");
       print("이메일: $email, 이름: $name, 역할: $role, 회사 ID: $companyId");
+
+      // companyId 유효성 검사
+      if (companyId.isEmpty) {
+        setError('회사를 선택해주세요.');
+        return false;
+      }
 
       // 회원가입 요청 API 호출 (관리자 승인 대기)
       final response = await ApiService().submitJoinRequest(
@@ -122,7 +146,7 @@ class AuthProvider with ChangeNotifier {
       setLoading(true);
 
       // TODO: 로그아웃 API 호출 (필요시)
-      await StorageService().removeToken();
+      await StorageService().removeAll(); // 모든 토큰과 사용자 정보 제거
 
       _currentUser = null;
       notifyListeners();
@@ -137,25 +161,28 @@ class AuthProvider with ChangeNotifier {
     try {
       setLoading(true);
 
-      final token = await StorageService().getToken();
+      final token = StorageService().getToken();
       if (token != null) {
-        // TODO: 토큰 검증 API 호출 (현재는 임시로 토큰이 있으면 로그인 상태로 처리)
+        // 토큰이 있으면 저장된 사용자 정보 복원 시도
+        print('[AuthProvider] 토큰 발견 - 저장된 사용자 정보 복원 시도');
 
-        // 임시 사용자 데이터 - 실제로는 토큰으로 사용자 정보를 가져와야 함
-        _currentUser = User(
-          id: '1',
-          username: 'user@example.com',
-          email: 'user@example.com',
-          name: '김직원',
-          role: 'CAREGIVER',
-          createdAt: DateTime.now(),
-        );
+        // 저장된 사용자 정보 복원 (StorageService에서 사용자 정보를 저장/복원하는 메서드 필요)
+        final savedUserData = StorageService().getSavedUserData();
+        if (savedUserData != null) {
+          _currentUser = User.fromJson(savedUserData);
+          print('[AuthProvider] 저장된 사용자 정보 복원 성공: ${_currentUser!.name}');
+        } else {
+          print('[AuthProvider] 저장된 사용자 정보 없음 - 로그인 필요');
+          _currentUser = null;
+        }
+      } else {
+        print('[AuthProvider] 토큰 없음 - 로그인 필요');
+        _currentUser = null;
       }
 
       notifyListeners();
     } catch (e) {
-      // 토큰이 유효하지 않으면 제거
-      await StorageService().removeToken();
+      print('[AuthProvider] 인증 상태 확인 중 오류: $e');
       _currentUser = null;
       notifyListeners();
     } finally {

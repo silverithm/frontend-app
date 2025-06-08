@@ -9,6 +9,7 @@ class VacationCalendarWidget extends StatefulWidget {
   final Function(DateTime) onDateChanged;
   final Function(DateTime?) onDateSelected;
   final String roleFilter;
+  final Function(String)? onRoleFilterChanged;
 
   const VacationCalendarWidget({
     super.key,
@@ -16,6 +17,7 @@ class VacationCalendarWidget extends StatefulWidget {
     required this.onDateChanged,
     required this.onDateSelected,
     this.roleFilter = 'all',
+    this.onRoleFilterChanged,
   });
 
   @override
@@ -264,6 +266,38 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                   ),
                 ),
 
+                // role 필터 버튼들
+                if (widget.onRoleFilterChanged != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey.shade200,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildRoleFilterButton('all', '전체', Icons.people),
+                        const SizedBox(width: 8),
+                        _buildRoleFilterButton(
+                          'CAREGIVER',
+                          '요양보호사',
+                          Icons.favorite,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildRoleFilterButton('OFFICE', '사무실', Icons.business),
+                      ],
+                    ),
+                  ),
+
                 // 요일 헤더
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -410,18 +444,20 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                   ),
                 ),
 
-                // 달력 그리드 - 고정 높이로 계산
+                // 달력 그리드 - 세로만 확장, 가로는 화면에 맞춤
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Builder(
                     builder: (context) {
                       final screenWidth = MediaQuery.of(context).size.width;
                       final horizontalPadding = 32.0; // 좌우 패딩 (16*2)
-                      final spacing = 6.0; // 그리드 간격 증가 (4 -> 6)
+                      final spacing = 6.0; // 그리드 간격
+
+                      // 가로 너비는 항상 화면에 맞춤 (7등분)
                       final cellWidth =
                           (screenWidth - horizontalPadding - (spacing * 6)) / 7;
 
-                      // 확장 모드일 때 최대 휴가자 수 계산
+                      // 확장 모드일 때 최대 휴가자 수 계산 (세로 확장용)
                       int maxVacationsInDay = 0;
                       if (_isExpanded) {
                         for (final day in days) {
@@ -439,58 +475,92 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       // 정확한 행 수 계산
                       final rows = (days.length / 7).ceil();
 
-                      // 기본 모드일 때 화면에 꽉 차게, 확장 모드일 때 제한된 높이 + 스크롤
-                      final dateTextHeight = _isExpanded
-                          ? 22.0
-                          : 28.0; // 기본 모드에서 더 크게
+                      // 높이 계산
+                      final dateTextHeight = _isExpanded ? 22.0 : 28.0;
                       final maxGridHeight = _isExpanded
                           ? MediaQuery.of(context).size.height *
-                                0.6 // 확장 모드: 60%
-                          : MediaQuery.of(context).size.height *
-                                0.35; // 기본 모드: 35%로 더 축소
+                                0.7 // 확장 모드 시 더 큰 영역 사용
+                          : MediaQuery.of(context).size.height * 0.35;
 
                       if (_isExpanded) {
-                        // 확장 모드: 스크롤 가능한 고정 높이
-                        final maxCellHeight = 80.0; // 확장 모드 최대 셀 높이
-                        final gridHeight = math.min(
-                          maxCellHeight * rows + spacing * (rows - 1),
+                        // 확장 모드: 세로만 확장, 스크롤 개선
+                        final baseCellHeight = 50.0; // 기본 높이
+                        final additionalHeight =
+                            maxVacationsInDay * 18.0; // 휴가자당 18px
+                        final dynamicCellHeight =
+                            baseCellHeight + additionalHeight;
+                        final maxCellHeight = 150.0; // 최대 높이 제한 증가
+                        final cellHeight = math.min(
+                          dynamicCellHeight,
+                          maxCellHeight,
+                        );
+
+                        final totalGridHeight =
+                            cellHeight * rows + spacing * (rows - 1);
+                        final containerHeight = math.min(
+                          totalGridHeight,
                           maxGridHeight,
                         );
 
                         return Container(
-                          height: gridHeight,
-                          child: SingleChildScrollView(
-                            child: GridView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              padding: EdgeInsets.zero,
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 7,
-                                    childAspectRatio: cellWidth / maxCellHeight,
-                                    crossAxisSpacing: spacing,
-                                    mainAxisSpacing: spacing,
+                          height: containerHeight,
+                          child: totalGridHeight > maxGridHeight
+                              ? SingleChildScrollView(
+                                  physics:
+                                      const ClampingScrollPhysics(), // 스크롤 물리 개선
+                                  child: GridView.builder(
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    shrinkWrap: true,
+                                    padding: EdgeInsets.zero,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 7,
+                                          childAspectRatio:
+                                              cellWidth / cellHeight,
+                                          crossAxisSpacing: spacing,
+                                          mainAxisSpacing: spacing,
+                                        ),
+                                    itemCount: days.length,
+                                    itemBuilder: (context, index) =>
+                                        _buildCalendarCell(
+                                          days[index],
+                                          vacationProvider,
+                                          dateTextHeight,
+                                          cellHeight,
+                                        ),
                                   ),
-                              itemCount: days.length,
-                              itemBuilder: (context, index) =>
-                                  _buildCalendarCell(
-                                    days[index],
-                                    vacationProvider,
-                                    dateTextHeight,
-                                    maxCellHeight,
-                                  ),
-                            ),
-                          ),
+                                )
+                              : GridView.builder(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 7,
+                                        childAspectRatio:
+                                            cellWidth / cellHeight,
+                                        crossAxisSpacing: spacing,
+                                        mainAxisSpacing: spacing,
+                                      ),
+                                  itemCount: days.length,
+                                  itemBuilder: (context, index) =>
+                                      _buildCalendarCell(
+                                        days[index],
+                                        vacationProvider,
+                                        dateTextHeight,
+                                        cellHeight,
+                                      ),
+                                ),
                         );
                       } else {
-                        // 기본 모드: 적당한 크기로 가운데 배치
-                        final actualGridHeight =
-                            maxGridHeight * 0.9; // 전체 높이의 90%만 사용
+                        // 기본 모드: 개선된 점 표시
+                        final actualGridHeight = maxGridHeight * 0.9;
                         final cellHeight =
                             (actualGridHeight - spacing * (rows - 1)) / rows;
 
                         return Container(
-                          height: actualGridHeight, // 실제 그리드 높이만 사용
+                          height: actualGridHeight,
                           child: GridView.builder(
                             physics: const NeverScrollableScrollPhysics(),
                             padding: EdgeInsets.zero,
@@ -558,17 +628,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         color: Colors.grey.shade300,
                       ),
 
-                      // 휴무 유형
-                      _buildTypeLegendItem(
-                        '연차',
-                        Colors.blue.shade600,
-                        Icons.calendar_view_day,
-                      ),
-                      _buildTypeLegendItem(
-                        '반차',
-                        Colors.orange.shade600,
-                        Icons.schedule,
-                      ),
+                      // 필수 휴무만 표시
                       _buildTypeLegendItem(
                         '필수',
                         Colors.red.shade600,
@@ -596,16 +656,45 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         _selectedDate != null && _isSameDay(date, _selectedDate!);
     final isToday = _isToday(date);
 
+    // 날짜별 여유 인원 확인
+    final isAvailable = vacationProvider.isDateAvailable(date);
+    final currentCount = vacationProvider.getVacationCountForDate(date);
+    final limit = vacationProvider.getVacationLimitForDate(date);
+
+    // 색상 결정 (같은 달의 날짜만, 전체 모드가 아닐 때만)
+    Color? availabilityColor;
+    if (_isSameMonth(date) && widget.roleFilter != 'all') {
+      if (isAvailable) {
+        availabilityColor = Colors.green.shade50; // 여유 있음 - 연한 초록
+      } else {
+        availabilityColor = Colors.red.shade50; // 인원 초과 - 연한 빨강
+      }
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: isSelected
             ? Colors.blue.shade600
             : isToday
             ? Colors.blue.shade50
-            : Colors.transparent,
+            : availabilityColor ?? Colors.transparent, // 여유 인원에 따른 색상
         borderRadius: BorderRadius.circular(8),
         border: isToday && !isSelected
             ? Border.all(color: Colors.blue.shade300, width: 1.5)
+            : _isSameMonth(date) &&
+                  widget.roleFilter != 'all' &&
+                  !isAvailable &&
+                  !isSelected
+            ? Border.all(color: Colors.red.shade300, width: 1) // 인원 초과 시 빨간 테두리
+            : _isSameMonth(date) &&
+                  widget.roleFilter != 'all' &&
+                  isAvailable &&
+                  !isSelected &&
+                  !isToday
+            ? Border.all(
+                color: Colors.green.shade300,
+                width: 1,
+              ) // 여유 있을 시 초록 테두리
             : null,
         boxShadow: isSelected
             ? [
@@ -627,46 +716,187 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             width: double.infinity,
             height: cellHeight,
             padding: const EdgeInsets.all(3),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // 날짜 숫자 - 고정 높이
-                SizedBox(
-                  height: dateTextHeight,
-                  child: Center(
-                    child: Text(
-                      date.day.toString(),
-                      style: TextStyle(
-                        fontSize: _isExpanded ? 13 : 16,
-                        fontWeight: FontWeight.w600,
-                        color: !_isSameMonth(date)
-                            ? Colors.grey.shade300
-                            : isSelected
-                            ? Colors.white
-                            : isToday
-                            ? Colors.blue.shade700
-                            : date.weekday == DateTime.sunday
-                            ? Colors.red.shade600
-                            : date.weekday == DateTime.saturday
-                            ? Colors.blue.shade600
-                            : Colors.grey.shade800,
+            child: _isExpanded
+                ? Stack(
+                    children: [
+                      // 날짜 숫자 (좌측 상단)
+                      Positioned(
+                        top: 2,
+                        left: 2,
+                        child: Text(
+                          date.day.toString(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: !_isSameMonth(date)
+                                ? Colors.grey.shade300
+                                : isSelected
+                                ? Colors.white
+                                : isToday
+                                ? Colors.blue.shade700
+                                : date.weekday == DateTime.sunday
+                                ? Colors.red.shade600
+                                : date.weekday == DateTime.saturday
+                                ? Colors.blue.shade600
+                                : Colors.grey.shade800,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
 
-                // 휴가자 표시 영역 - 남은 공간 사용
-                if (_isSameMonth(date) && vacations.isNotEmpty)
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(top: 2),
-                      child: _buildVacationIndicator(date, vacations),
-                    ),
+                      // 휴가자 이름들 (가운데부터 위쪽으로)
+                      if (_isSameMonth(date) && vacations.isNotEmpty)
+                        Positioned(
+                          top: 18, // 20 -> 18로 날짜와 간격 줄임
+                          left: 0,
+                          right: 0,
+                          bottom: widget.roleFilter != 'all'
+                              ? 15
+                              : 0, // 20 -> 15로 인원 수 표시 공간 줄임
+                          child: _buildVacationIndicator(date, vacations),
+                        ),
+
+                      // 인원 수 표시 (하단, 전체 모드가 아닐 때만)
+                      if (_isSameMonth(date) && widget.roleFilter != 'all')
+                        Positioned(
+                          bottom: 2,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.white.withOpacity(0.2)
+                                    : isAvailable
+                                    ? Colors.green.shade100
+                                    : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(3),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.4)
+                                      : isAvailable
+                                      ? Colors.green.shade300
+                                      : Colors.red.shade300,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '$currentCount/$limit',
+                                  style: TextStyle(
+                                    fontSize: 5,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : isAvailable
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 기본 모드: 개선된 점 표시
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // 날짜 숫자
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  date.day.toString(),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: !_isSameMonth(date)
+                                        ? Colors.grey.shade300
+                                        : isSelected
+                                        ? Colors.white
+                                        : isToday
+                                        ? Colors.blue.shade700
+                                        : date.weekday == DateTime.sunday
+                                        ? Colors.red.shade600
+                                        : date.weekday == DateTime.saturday
+                                        ? Colors.blue.shade600
+                                        : Colors.grey.shade800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // 인원 수 표시 (전체 모드가 아닐 때만)
+                            if (_isSameMonth(date) &&
+                                widget.roleFilter != 'all')
+                              Flexible(
+                                child: Container(
+                                  margin: const EdgeInsets.only(top: 0.5),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 1.5,
+                                    vertical: 0.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.white.withOpacity(0.2)
+                                        : isAvailable
+                                        ? Colors.green.shade100
+                                        : Colors.red.shade100,
+                                    borderRadius: BorderRadius.circular(3),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? Colors.white.withOpacity(0.4)
+                                          : isAvailable
+                                          ? Colors.green.shade300
+                                          : Colors.red.shade300,
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      '$currentCount/$limit',
+                                      style: TextStyle(
+                                        fontSize: 5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : isAvailable
+                                            ? Colors.green.shade700
+                                            : Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      // 휴가자 표시 영역
+                      if (_isSameMonth(date) && vacations.isNotEmpty)
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(top: 1),
+                            child: _buildVacationIndicator(date, vacations),
+                          ),
+                        ),
+                    ],
                   ),
-              ],
-            ),
           ),
         ),
       ),
@@ -690,9 +920,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             children: vacations.map((vacation) {
               return Container(
                 width: double.infinity,
-                height: 13.0,
+                height: 16.0,
                 margin: const EdgeInsets.only(bottom: 1.5),
-                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 1.5,
+                  vertical: 1,
+                ),
                 decoration: BoxDecoration(
                   color: _getStatusColor(vacation.status),
                   borderRadius: BorderRadius.circular(4),
@@ -705,24 +938,34 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                   ],
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // 이름 표시 (가능한 많은 공간 사용)
                     Expanded(
                       child: Text(
-                        vacation.displayName.length > 6
-                            ? '${vacation.displayName.substring(0, 5)}..'
-                            : vacation.displayName,
+                        vacation.userName,
                         style: const TextStyle(
-                          fontSize: 7.5,
+                          fontSize: 9.0,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          letterSpacing: -0.2,
+                          letterSpacing: -0.3,
                         ),
                         maxLines: 1,
-                        overflow: TextOverflow.clip,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    _buildVacationTypeShape(vacation),
+                    // 필수휴무인 경우에만 매우 작은 아이콘 표시
+                    if (vacation.type == VacationType.mandatory)
+                      Container(
+                        width: 4,
+                        height: 4,
+                        margin: const EdgeInsets.only(left: 1),
+                        child: CustomPaint(
+                          painter: StarPainter(
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                          size: const Size(4, 4),
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -758,6 +1001,19 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         ),
                       ],
                     ),
+                    // 필수휴무인 경우 작은 별표 표시
+                    child: vacation.type == VacationType.mandatory
+                        ? Center(
+                            child: Container(
+                              width: 4,
+                              height: 4,
+                              child: CustomPaint(
+                                painter: StarPainter(color: Colors.white),
+                                size: const Size(4, 4),
+                              ),
+                            ),
+                          )
+                        : null,
                   );
                 })
               else ...[
@@ -778,6 +1034,18 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         ),
                       ],
                     ),
+                    child: vacation.type == VacationType.mandatory
+                        ? Center(
+                            child: Container(
+                              width: 4,
+                              height: 4,
+                              child: CustomPaint(
+                                painter: StarPainter(color: Colors.white),
+                                size: const Size(4, 4),
+                              ),
+                            ),
+                          )
+                        : null,
                   );
                 }),
                 Container(
@@ -850,43 +1118,23 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
   Widget _buildTypeLegendItem(String label, Color color, IconData icon) {
     Widget shape;
 
-    switch (label) {
-      case '연차':
-        // 전체 원
-        shape = Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        );
-        break;
-      case '반차':
-        // 반원
-        shape = Container(
-          width: 8,
-          height: 8,
-          child: CustomPaint(
-            painter: HalfCirclePainter(color: color),
-            size: const Size(8, 8),
-          ),
-        );
-        break;
-      case '필수':
-        // 별표
-        shape = Container(
-          width: 8,
-          height: 8,
-          child: CustomPaint(
-            painter: StarPainter(color: color),
-            size: const Size(8, 8),
-          ),
-        );
-        break;
-      default:
-        shape = Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-        );
+    if (label == '필수') {
+      // 별표
+      shape = Container(
+        width: 8,
+        height: 8,
+        child: CustomPaint(
+          painter: StarPainter(color: color),
+          size: const Size(8, 8),
+        ),
+      );
+    } else {
+      // 기본 원형
+      shape = Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+      );
     }
 
     return Row(
@@ -906,41 +1154,63 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     );
   }
 
-  Widget _buildVacationTypeShape(VacationRequest vacation) {
-    if (vacation.type == VacationType.mandatory) {
-      // 필수 휴무 - 별표
-      return Container(
-        width: 10,
-        height: 10,
-        child: CustomPaint(
-          painter: StarPainter(color: Colors.white.withOpacity(0.9)),
-          size: const Size(10, 10),
-        ),
-      );
-    }
+  Widget _buildRoleFilterButton(String role, String label, IconData icon) {
+    final isSelected = widget.roleFilter == role;
 
-    switch (vacation.duration) {
-      case VacationDuration.fullDay:
-        // 연차 - 전체 원
-        return Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: () => widget.onRoleFilterChanged?.call(role),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [Colors.blue.shade500, Colors.blue.shade600],
+                )
+              : null,
+          color: isSelected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.blue.shade600 : Colors.grey.shade300,
+            width: 1.5,
           ),
-        );
-      case VacationDuration.halfDay:
-        // 반차 - 반 잘린 원
-        return Container(
-          width: 8,
-          height: 8,
-          child: CustomPaint(
-            painter: HalfCirclePainter(color: Colors.white.withOpacity(0.9)),
-            size: const Size(8, 8),
-          ),
-        );
-    }
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.blue.shade300.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.grey.shade200.withOpacity(0.5),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.white : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -977,26 +1247,6 @@ class StarPainter extends CustomPainter {
     path.close();
 
     canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// 반원 그리기를 위한 CustomPainter
-class HalfCirclePainter extends CustomPainter {
-  final Color color;
-
-  HalfCirclePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    canvas.drawArc(rect, 0, 3.14159, true, paint); // 반원 (180도)
   }
 
   @override
