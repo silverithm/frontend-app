@@ -49,6 +49,9 @@ dependencies:
   
   # JSON 직렬화를 위한 패키지
   json_annotation: ^4.8.1
+  
+  # URL 실행을 위한 패키지
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

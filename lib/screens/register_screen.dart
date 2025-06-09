@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/company_provider.dart';
 import '../models/company.dart';
@@ -24,6 +25,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Company? _selectedCompany; // 선택된 회사
   String? _companyErrorMessage;
 
+  // 약관 동의 관련 변수
+  bool _agreeToPrivacyPolicy = false;
+  bool _agreeToTermsOfService = false;
+  String? _agreementErrorMessage;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +49,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  // URL 열기 메서드
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('링크를 열 수 없습니다: $url'),
+              backgroundColor: Colors.red.shade600,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('링크 열기 중 오류가 발생했습니다'),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -53,6 +87,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
       return;
     }
+
+    // 약관 동의 필수 검사
+    if (!_agreeToPrivacyPolicy || !_agreeToTermsOfService) {
+      setState(() {
+        _agreementErrorMessage = '개인정보 처리방침과 서비스 이용약관에 모두 동의해주세요.';
+      });
+      return;
+    }
+
+    setState(() {
+      _agreementErrorMessage = null;
+    });
 
     final authProvider = context.read<AuthProvider>();
     final success = await authProvider.register(
@@ -720,15 +766,361 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: Constants.largePadding),
 
+                        // 약관 동의 섹션
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _agreementErrorMessage != null
+                                  ? Colors.red.shade300
+                                  : Colors.grey.shade200,
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.gavel,
+                                    color: Colors.blue.shade600,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '약관 동의',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey.shade800,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '(필수)',
+                                    style: TextStyle(
+                                      color: Colors.red.shade600,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              // 개인정보 처리방침 동의
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _agreeToPrivacyPolicy =
+                                        !_agreeToPrivacyPolicy;
+                                    if (_agreeToPrivacyPolicy &&
+                                        _agreeToTermsOfService) {
+                                      _agreementErrorMessage = null;
+                                    }
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: _agreeToPrivacyPolicy
+                                                ? Colors.blue.shade600
+                                                : Colors.grey.shade400,
+                                            width: 2,
+                                          ),
+                                          color: _agreeToPrivacyPolicy
+                                              ? Colors.blue.shade600
+                                              : Colors.transparent,
+                                        ),
+                                        child: _agreeToPrivacyPolicy
+                                            ? const Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 14,
+                                              )
+                                            : null,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                '개인정보 처리방침',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade700,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                            const Text(
+                                              '에 동의합니다',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () => _launchURL(
+                                          'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.blue.shade200,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '보기',
+                                            style: TextStyle(
+                                              color: Colors.blue.shade700,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // 서비스 이용약관 동의
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _agreeToTermsOfService =
+                                        !_agreeToTermsOfService;
+                                    if (_agreeToPrivacyPolicy &&
+                                        _agreeToTermsOfService) {
+                                      _agreementErrorMessage = null;
+                                    }
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: _agreeToTermsOfService
+                                                ? Colors.blue.shade600
+                                                : Colors.grey.shade400,
+                                            width: 2,
+                                          ),
+                                          color: _agreeToTermsOfService
+                                              ? Colors.blue.shade600
+                                              : Colors.transparent,
+                                        ),
+                                        child: _agreeToTermsOfService
+                                            ? const Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 14,
+                                              )
+                                            : null,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                '서비스 이용약관',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade700,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                            const Text(
+                                              '에 동의합니다',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () => _launchURL(
+                                          'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.shade50,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.blue.shade200,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '보기',
+                                            style: TextStyle(
+                                              color: Colors.blue.shade700,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // 전체 동의 체크박스
+                              const SizedBox(height: 12),
+                              Container(height: 1, color: Colors.grey.shade300),
+                              const SizedBox(height: 12),
+                              InkWell(
+                                onTap: () {
+                                  final newValue =
+                                      !(_agreeToPrivacyPolicy &&
+                                          _agreeToTermsOfService);
+                                  setState(() {
+                                    _agreeToPrivacyPolicy = newValue;
+                                    _agreeToTermsOfService = newValue;
+                                    if (newValue) {
+                                      _agreementErrorMessage = null;
+                                    }
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color:
+                                                (_agreeToPrivacyPolicy &&
+                                                    _agreeToTermsOfService)
+                                                ? Colors.green.shade600
+                                                : Colors.grey.shade400,
+                                            width: 2,
+                                          ),
+                                          color:
+                                              (_agreeToPrivacyPolicy &&
+                                                  _agreeToTermsOfService)
+                                              ? Colors.green.shade600
+                                              : Colors.transparent,
+                                        ),
+                                        child:
+                                            (_agreeToPrivacyPolicy &&
+                                                _agreeToTermsOfService)
+                                            ? const Icon(
+                                                Icons.check,
+                                                color: Colors.white,
+                                                size: 14,
+                                              )
+                                            : null,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        '위 약관에 모두 동의합니다',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade800,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // 에러 메시지
+                              if (_agreementErrorMessage != null) ...[
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      color: Colors.red.shade600,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        _agreementErrorMessage!,
+                                        style: TextStyle(
+                                          color: Colors.red.shade600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: Constants.largePadding),
+
                         // 회원가입 버튼
                         Consumer<AuthProvider>(
                           builder: (context, authProvider, child) {
+                            final isFormValid =
+                                _agreeToPrivacyPolicy && _agreeToTermsOfService;
+
                             return ElevatedButton(
-                              onPressed: authProvider.isLoading
+                              onPressed:
+                                  (authProvider.isLoading || !isFormValid)
                                   ? null
                                   : _handleRegister,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue.shade600,
+                                backgroundColor: isFormValid
+                                    ? Colors.blue.shade600
+                                    : Colors.grey.shade400,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
@@ -736,7 +1128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                elevation: 2,
+                                elevation: isFormValid ? 2 : 0,
                               ),
                               child: authProvider.isLoading
                                   ? const SizedBox(
@@ -750,9 +1142,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             ),
                                       ),
                                     )
-                                  : const Text(
-                                      '회원가입',
-                                      style: TextStyle(
+                                  : Text(
+                                      isFormValid ? '회원가입' : '약관 동의 후 회원가입 가능',
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
