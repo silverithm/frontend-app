@@ -178,6 +178,18 @@ class ApiService {
     }
   }
 
+  // 회원탈퇴
+  Future<Map<String, dynamic>> withdrawMember() async {
+    return await _makeAuthenticatedRequest(() async {
+      final response = await http.post(
+        Uri.parse('$_baseUrl${Constants.withdrawalEndpoint}'),
+        headers: await _getHeaders(includeAuth: true),
+      );
+
+      return response;
+    });
+  }
+
   // 휴가 캘린더 조회
   Future<Map<String, dynamic>> getVacationCalendar({
     required String startDate,

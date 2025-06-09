@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
 import 'login_screen.dart';
@@ -47,6 +48,34 @@ class _ProfileScreenState extends State<ProfileScreen>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  // URL 열기 메서드
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('링크를 열 수 없습니다: $url'),
+              backgroundColor: Colors.red.shade600,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('링크 열기 중 오류가 발생했습니다'),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    }
   }
 
   void _showLogoutDialog(BuildContext context) {
@@ -113,6 +142,248 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: const Text('로그아웃'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showWithdrawalDialog(BuildContext context) {
+    bool isWithdrawing = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.person_remove,
+                  color: Colors.red.shade600,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('회원탈퇴', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⚠️ 주의사항',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• 계정이 영구적으로 삭제됩니다\n• 모든 휴무 신청 내역이 삭제됩니다\n• 삭제된 데이터는 복구할 수 없습니다\n• 재가입을 원하시면 새로 신청해야 합니다',
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '정말로 회원탈퇴를 진행하시겠습니까?',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isWithdrawing ? null : () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: isWithdrawing
+                  ? null
+                  : () async {
+                      setState(() {
+                        isWithdrawing = true;
+                      });
+
+                      final authProvider = context.read<AuthProvider>();
+                      final success = await authProvider.withdrawMember();
+
+                      if (success && context.mounted) {
+                        Navigator.pop(context);
+
+                        // 성공 메시지 표시
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            content: Container(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 80,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.green.shade400,
+                                          Colors.green.shade600,
+                                        ],
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 40,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    '회원탈퇴 완료',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green.shade800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    '그동안 이용해주셔서 감사했습니다.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(
+                                          context,
+                                        ).pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                            builder: (_) => const LoginScreen(),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green.shade600,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        '확인',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      } else if (context.mounted) {
+                        setState(() {
+                          isWithdrawing = false;
+                        });
+
+                        // 에러 메시지 표시
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              authProvider.errorMessage.isNotEmpty
+                                  ? authProvider.errorMessage
+                                  : '회원탈퇴에 실패했습니다',
+                            ),
+                            backgroundColor: Colors.red.shade600,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              child: isWithdrawing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('탈퇴하기'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -445,29 +716,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                               child: Switch(
                                 value: _notificationsEnabled,
                                 onChanged: (value) {
-                                  setState(() {
-                                    _notificationsEnabled = value;
-                                  });
-
-                                  // 알림 상태에 따른 스낵바 표시
+                                  // 기존 상태로 되돌리기
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(
-                                        _notificationsEnabled
-                                            ? '알림이 활성화되었습니다'
-                                            : '알림이 비활성화되었습니다',
-                                      ),
-                                      backgroundColor: _notificationsEnabled
-                                          ? Colors.blue.shade600
-                                          : Colors.grey.shade600,
+                                      content: const Text('알림 설정 기능은 준비 중입니다'),
+                                      backgroundColor: Colors.orange.shade600,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      action: SnackBarAction(
-                                        label: '확인',
-                                        textColor: Colors.white,
-                                        onPressed: () {},
                                       ),
                                     ),
                                   );
@@ -480,9 +736,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                             ),
                             onTap: () {
-                              setState(() {
-                                _notificationsEnabled = !_notificationsEnabled;
-                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('알림 설정 기능은 준비 중입니다'),
+                                  backgroundColor: Colors.orange.shade600,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
                             },
                           ),
 
@@ -507,8 +770,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: const Text('도움말 페이지는 준비 중입니다'),
-                                  backgroundColor: Colors.blue.shade600,
+                                  content: const Text('도움말 기능은 준비 중입니다'),
+                                  backgroundColor: Colors.orange.shade600,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -537,35 +800,138 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                             ),
                             onTap: () {
-                              showAboutDialog(
-                                context: context,
-                                applicationName: '휴무 관리 시스템',
-                                applicationVersion: '1.0.0',
-                                applicationIcon: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.indigo.shade400,
-                                        Colors.blue.shade600,
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: const Icon(
-                                    Icons.calendar_month,
-                                    size: 32,
-                                    color: Colors.white,
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('앱 정보 기능은 준비 중입니다'),
+                                  backgroundColor: Colors.orange.shade600,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                children: [
-                                  const Text('간편하게 휴무를 신청하고 관리할 수 있는 앱입니다.'),
-                                ],
                               );
                             },
+                          ),
+
+                          const Divider(height: 1, color: Colors.transparent),
+
+                          _buildSettingTile(
+                            icon: Icons.person_remove,
+                            title: '회원탈퇴',
+                            subtitle: '계정을 영구적으로 삭제합니다',
+                            trailing: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.chevron_right,
+                                color: Colors.red.shade600,
+                                size: 20,
+                              ),
+                            ),
+                            onTap: () => _showWithdrawalDialog(context),
                             isLast: true,
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 약관 및 정책 섹션
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Colors.white, Colors.grey.shade50],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            // 섹션 헤더
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.grey.shade100,
+                                          Colors.grey.shade200,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Icon(
+                                      Icons.gavel,
+                                      color: Colors.grey.shade700,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    '약관 및 정책',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // 약관 링크들
+                            _buildPolicyTile(
+                              icon: Icons.privacy_tip,
+                              title: '개인정보 처리방침',
+                              subtitle: '개인정보 수집 및 이용에 대한 정책',
+                              iconColor: Colors.blue.shade600,
+                              onTap: () => _launchURL(
+                                'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
+                              ),
+                              isFirst: true,
+                            ),
+
+                            Container(
+                              height: 1,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              color: Colors.grey.shade200,
+                            ),
+
+                            _buildPolicyTile(
+                              icon: Icons.description,
+                              title: '서비스 이용약관',
+                              subtitle: '서비스 이용에 대한 약관 및 조건',
+                              iconColor: Colors.green.shade600,
+                              onTap: () => _launchURL(
+                                'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
+                              ),
+                              isLast: true,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -797,5 +1163,38 @@ class _ProfileScreenState extends State<ProfileScreen>
         print('Unknown role: "$role", using default'); // 디버그 출력
         return '직원';
     }
+  }
+
+  Widget _buildPolicyTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color iconColor,
+    required VoidCallback onTap,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.indigo.shade100, Colors.blue.shade100],
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: iconColor, size: 24),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+      ),
+      onTap: onTap,
+    );
   }
 }

@@ -157,6 +157,44 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // 회원탈퇴
+  Future<bool> withdrawMember() async {
+    try {
+      setLoading(true);
+      clearError();
+
+      print('[AuthProvider] 회원탈퇴 요청 시작');
+
+      // 회원탈퇴 API 호출
+      final response = await ApiService().withdrawMember();
+
+      if (response['message'] != null) {
+        print('[AuthProvider] 회원탈퇴 성공: ${response['message']}');
+
+        // 모든 로컬 데이터 삭제
+        await StorageService().removeAll();
+        _currentUser = null;
+
+        notifyListeners();
+        return true;
+      } else {
+        final errorMsg = response['error'] ?? '회원탈퇴에 실패했습니다.';
+        setError(errorMsg);
+        return false;
+      }
+    } catch (e) {
+      if (e.toString().contains('ApiException')) {
+        final errorMsg = e.toString().replaceAll('ApiException: ', '');
+        setError(errorMsg.split(' (Status:')[0]);
+      } else {
+        setError('회원탈퇴 중 오류가 발생했습니다: ${e.toString()}');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   Future<void> checkAuthStatus() async {
     try {
       setLoading(true);
