@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue.shade50,
+      backgroundColor: Colors.blue,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(Constants.defaultPadding),
@@ -54,25 +54,21 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 60),
 
               // 로고 및 제목
-              Icon(Icons.calendar_month, size: 80, color: Colors.blue.shade600),
-              const SizedBox(height: Constants.defaultPadding),
-
-              Text(
-                '휴무 관리 시스템',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade800,
+              Padding(
+                padding: const EdgeInsets.only(right:8.0),
+                child: Image.asset(
+                  'assets/images/app_icon_with_text.png',
+                  width: 80,
+                  height: 80,
                 ),
               ),
-              const SizedBox(height: Constants.smallPadding),
 
               Text(
                 '간편하게 휴무를 신청하고 관리하세요',
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+                ).textTheme.bodyMedium?.copyWith(color: Colors.white),
               ),
 
               const SizedBox(height: 60),
@@ -275,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     '계정이 없으신가요? ',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(color: Colors.white),
                   ),
                   TextButton(
                     onPressed: () {
@@ -287,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: const Text(
                       '회원가입',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
                 ],
