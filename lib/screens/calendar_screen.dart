@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
 import '../widgets/vacation_calendar_widget.dart';
 import '../widgets/vacation_request_dialog.dart';
+import '../services/analytics_service.dart';
 import 'dart:math' as math;
 
 class CalendarScreen extends StatefulWidget {
@@ -40,6 +41,13 @@ class _CalendarScreenState extends State<CalendarScreen>
       final companyId = authProvider.currentUser?.company?.id ?? '1';
       vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
       _fabAnimationController.forward();
+
+      // Analytics 화면 조회 이벤트
+      AnalyticsService().logScreenView(screenName: 'calendar_screen');
+      AnalyticsService().logCalendarView(
+        viewType: 'month',
+        date: _currentDate.toIso8601String().split('T')[0],
+      );
     });
   }
 
@@ -161,6 +169,12 @@ class _CalendarScreenState extends State<CalendarScreen>
                   final companyId =
                       authProvider.currentUser?.company?.id ?? '1';
                   vacationProvider.loadCalendarData(date, companyId: companyId);
+
+                  // Analytics 캘린더 조회 이벤트
+                  AnalyticsService().logCalendarView(
+                    viewType: 'month',
+                    date: date.toIso8601String().split('T')[0],
+                  );
                 },
                 onDateSelected: (date) {
                   setState(() {

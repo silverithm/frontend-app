@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/analytics_service.dart';
 import '../utils/constants.dart';
 import 'register_screen.dart';
 import 'main_screen.dart';
@@ -35,6 +36,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (success && mounted) {
+      // Analytics 로그인 이벤트 기록
+      await AnalyticsService().logLogin(method: 'email');
+
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
@@ -55,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // 로고 및 제목
               Padding(
-                padding: const EdgeInsets.only(right:8.0),
+                padding: const EdgeInsets.only(right: 8.0),
                 child: Image.asset(
                   'assets/images/app_icon_with_text.png',
                   width: 80,
@@ -268,10 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    '계정이 없으신가요? ',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  Text('계정이 없으신가요? ', style: TextStyle(color: Colors.white)),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).push(
@@ -282,7 +283,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: const Text(
                       '회원가입',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.6+7
 
 environment:
   sdk: ^3.9.0-128.0.dev
@@ -52,6 +52,8 @@ dependencies:
   
   # URL 실행을 위한 패키지
   url_launcher: ^6.3.0
+  firebase_core: ^3.14.0
+  firebase_analytics: ^11.5.0
 
 dev_dependencies:
   flutter_test:
@@ -113,27 +115,26 @@ flutter:
   # see https://flutter.dev/to/font-from-package
 
 # flutter_launcher_icons 설정
-flutter_icons:
-  android: "launcher_icon"
+flutter_launcher_icons:
+  android: "carev_icon"
   ios: true
-  # 1024x1024 크기의 PNG 파일을 사용하는 것을 권장합니다
   image_path: "assets/images/app_icon.png"
-  # 적응형 아이콘 설정 (Android)
-  adaptive_icon_background: "assets/images/icon_background.png"
-  adaptive_icon_foreground: "assets/images/icon_foreground.png"
+  # Android 적응형 아이콘 설정 (Android 8.0+ 지원)
+  adaptive_icon_background: "#2196F3"
+  adaptive_icon_foreground: "assets/images/app_icon.png"
   # iOS 전용 설정
   remove_alpha_ios: true
   # 웹 아이콘 설정
   web:
     generate: true
     image_path: "assets/images/app_icon.png"
-    background_color: "#hexcode"
-    theme_color: "#hexcode"
+    background_color: "#2196F3"
+    theme_color: "#2196F3"
   # Windows 아이콘 설정
   windows:
     generate: true
     image_path: "assets/images/app_icon.png"
-    icon_size: 48 # 48, 64, 128, 256 중 선택
+    icon_size: 48
   # macOS 아이콘 설정
   macos:
     generate: true

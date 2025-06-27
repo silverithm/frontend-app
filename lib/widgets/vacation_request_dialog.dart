@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/vacation_request.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/analytics_service.dart';
 
 class VacationRequestDialog extends StatefulWidget {
   final DateTime selectedDate;
@@ -117,6 +118,13 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       );
 
       if (success && mounted) {
+        // Analytics 휴무 신청 이벤트 기록
+        await AnalyticsService().logVacationRequest(
+          vacationType: _selectedType.toString().split('.').last,
+          startDate: widget.selectedDate.toIso8601String().split('T')[0],
+          endDate: widget.selectedDate.toIso8601String().split('T')[0],
+        );
+
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

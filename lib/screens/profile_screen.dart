@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
+import '../services/analytics_service.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -41,6 +42,10 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _animationController.forward();
+
+      // Analytics 프로필 화면 조회 이벤트
+      AnalyticsService().logScreenView(screenName: 'profile_screen');
+      AnalyticsService().logProfileView();
     });
   }
 

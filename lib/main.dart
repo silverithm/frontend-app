@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'providers/app_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/vacation_provider.dart';
@@ -7,11 +9,18 @@ import 'providers/company_provider.dart';
 import 'providers/notification_provider.dart';
 import 'services/storage_service.dart';
 import 'services/api_service.dart';
+import 'services/analytics_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase 초기화
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Analytics 서비스 초기화
+  AnalyticsService().initialize();
 
   // 저장소 서비스 초기화
   await StorageService().init();
@@ -47,6 +56,7 @@ class MyApp extends StatelessWidget {
             ),
             home: const AuthWrapper(),
             debugShowCheckedModeBanner: false,
+            navigatorObservers: [AnalyticsService().observer],
           );
         },
       ),

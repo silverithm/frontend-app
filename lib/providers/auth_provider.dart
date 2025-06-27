@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/storage_service.dart';
 import '../services/api_service.dart';
+import '../services/analytics_service.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _currentUser;
@@ -65,6 +66,13 @@ class AuthProvider with ChangeNotifier {
         // 사용자 정보도 저장
         await StorageService().saveUserData(response);
         print('[AuthProvider] 사용자 정보 저장 완료');
+
+        // Analytics 사용자 속성 설정
+        await AnalyticsService().setUserProperties(
+          userId: _currentUser!.id.toString(),
+          userRole: _currentUser!.role,
+          companyId: _currentUser!.company?.id,
+        );
 
         print('[AuthProvider] 로그인 성공 - 사용자: ${_currentUser!.name}');
         notifyListeners();
@@ -144,6 +152,9 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     try {
       setLoading(true);
+
+      // Analytics 로그아웃 이벤트 기록
+      await AnalyticsService().logLogout();
 
       // TODO: 로그아웃 API 호출 (필요시)
       await StorageService().removeAll(); // 모든 토큰과 사용자 정보 제거
