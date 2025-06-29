@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+carev-key.keystore
+
+# Firebase 설정 파일들 (민감정보 포함)
+google-services.json
+**/GoogleService-Info.plist
