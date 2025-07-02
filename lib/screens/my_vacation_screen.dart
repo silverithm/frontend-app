@@ -1279,36 +1279,40 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors:
-                                              request.duration ==
-                                                  VacationDuration.fullDay
-                                              ? [
-                                                  Colors.purple.shade400,
-                                                  Colors.purple.shade600,
-                                                ]
-                                              : [
-                                                  Colors.purple.shade300,
-                                                  Colors.purple.shade500,
-                                                ],
+                                    if (request.duration !=
+                                        VacationDuration.unused)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
                                         ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        request.durationText,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors:
+                                                request.duration ==
+                                                    VacationDuration.fullDay
+                                                ? [
+                                                    Colors.purple.shade400,
+                                                    Colors.purple.shade600,
+                                                  ]
+                                                : [
+                                                    Colors.purple.shade300,
+                                                    Colors.purple.shade500,
+                                                  ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          request.durationText,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
-                                    ),
                                     if (request.type ==
                                         VacationType.mandatory) ...[
                                       const SizedBox(width: 8),
