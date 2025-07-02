@@ -930,24 +930,30 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
               children: [
                 // 이름 표시 (우선순위)
                 Expanded(
-                  child: Text(
-                    vacation.userName,
-                    style: const TextStyle(
-                      fontSize: 9.0,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: -0.3,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        vacation.userName,
+                        style: const TextStyle(
+                          fontSize: 7.0,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(width: 3),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        child: _buildVacationTypeIcon(vacation),
+                      ),
+                    ],
                   ),
                 ),
+
                 // 휴무 유형 아이콘 (오른쪽)
-                Container(
-                  width: 8,
-                  height: 8,
-                  child: _buildVacationTypeIcon(vacation),
-                ),
               ],
             ),
           );
