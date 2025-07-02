@@ -599,6 +599,29 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         color: Colors.grey.shade300,
                       ),
 
+                      // 연차/반차 구분
+                      _buildDurationLegendItem(
+                        '연차',
+                        Colors.blue.shade100,
+                        Colors.blue.shade300,
+                        Colors.blue.shade800,
+                        '연',
+                      ),
+                      _buildDurationLegendItem(
+                        '반차',
+                        Colors.orange.shade100,
+                        Colors.orange.shade300,
+                        Colors.orange.shade800,
+                        '반',
+                      ),
+
+                      // 구분선
+                      Container(
+                        width: 1,
+                        height: 12,
+                        color: Colors.grey.shade300,
+                      ),
+
                       // 필수 휴무만 표시
                       _buildTypeLegendItem(
                         '필수',
@@ -891,7 +914,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             width: double.infinity,
             height: 16.0,
             margin: const EdgeInsets.only(bottom: 1.5),
-            padding: const EdgeInsets.symmetric(horizontal: 1.5, vertical: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 0.5, vertical: 0.5),
             decoration: BoxDecoration(
               color: _getStatusColor(vacation.status),
               borderRadius: BorderRadius.circular(4),
@@ -905,7 +928,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             ),
             child: Row(
               children: [
-                // 이름 표시 (가능한 많은 공간 사용)
+                // 이름 표시 (우선순위)
                 Expanded(
                   child: Text(
                     vacation.userName,
@@ -919,19 +942,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                // 필수휴무인 경우에만 매우 작은 아이콘 표시
-                if (vacation.type == VacationType.mandatory)
-                  Container(
-                    width: 4,
-                    height: 4,
-                    margin: const EdgeInsets.only(left: 1),
-                    child: CustomPaint(
-                      painter: StarPainter(
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                      size: const Size(4, 4),
-                    ),
-                  ),
+                // 휴무 유형 아이콘 (오른쪽)
+                Container(
+                  width: 8,
+                  height: 8,
+                  child: _buildVacationTypeIcon(vacation),
+                ),
               ],
             ),
           );
@@ -1046,6 +1062,67 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     }
   }
 
+  Widget _buildVacationTypeIcon(VacationRequest vacation) {
+    if (vacation.type == VacationType.mandatory) {
+      // 필수 휴무는 별표 표시 (우선순위)
+      return CustomPaint(
+        painter: StarPainter(color: Colors.white.withOpacity(0.9)),
+        size: const Size(8, 8),
+      );
+    } else {
+      // 연차/반차는 동그라미에 텍스트 표시
+      String text;
+      if (vacation.duration == VacationDuration.unused) {
+        text = '';
+      } else if (vacation.duration == VacationDuration.fullDay) {
+        text = '연';
+      } else {
+        text = '반'; // 오전반차, 오후반차 모두 "반"으로 표시
+      }
+
+      if (text.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      // 연차와 반차 구분을 위한 색상 설정
+      Color backgroundColor;
+      Color borderColor;
+      Color textColor;
+
+      if (vacation.duration == VacationDuration.fullDay) {
+        // 연차 - 파란색 계열
+        backgroundColor = Colors.blue.shade100.withOpacity(0.8);
+        borderColor = Colors.blue.shade300;
+        textColor = Colors.blue.shade800;
+      } else {
+        // 반차 - 오렌지색 계열
+        backgroundColor = Colors.orange.shade100.withOpacity(0.8);
+        borderColor = Colors.orange.shade300;
+        textColor = Colors.orange.shade800;
+      }
+
+      return Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: backgroundColor,
+          border: Border.all(color: borderColor, width: 0.5),
+        ),
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 5,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   Color _getStatusColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
@@ -1105,6 +1182,48 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
       mainAxisSize: MainAxisSize.min,
       children: [
         shape,
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDurationLegendItem(
+    String label,
+    Color backgroundColor,
+    Color borderColor,
+    Color textColor,
+    String durationText,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: backgroundColor,
+            border: Border.all(color: borderColor, width: 0.5),
+          ),
+          child: Center(
+            child: Text(
+              durationText,
+              style: TextStyle(
+                fontSize: 5,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ),
+        ),
         const SizedBox(width: 4),
         Text(
           label,
@@ -1197,7 +1316,8 @@ class StarPainter extends CustomPainter {
     final innerRadius = outerRadius * 0.4;
 
     for (int i = 0; i < 10; i++) {
-      final angle = (i * 36) * (3.14159 / 180);
+      // -90도부터 시작하여 별표가 위를 향하도록 수정
+      final angle = ((i * 36) - 90) * (3.14159 / 180);
       final radius = i % 2 == 0 ? outerRadius : innerRadius;
       final x = centerX + radius * math.cos(angle);
       final y = centerY + radius * math.sin(angle);
