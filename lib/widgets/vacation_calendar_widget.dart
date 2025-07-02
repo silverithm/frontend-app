@@ -503,55 +503,26 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         );
 
                         return Container(
-                          height: containerHeight,
-                          child: totalGridHeight > maxGridHeight
-                              ? SingleChildScrollView(
-                                  physics:
-                                      const ClampingScrollPhysics(), // 스크롤 물리 개선
-                                  child: GridView.builder(
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    shrinkWrap: true,
-                                    padding: EdgeInsets.zero,
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 7,
-                                          childAspectRatio:
-                                              cellWidth / cellHeight,
-                                          crossAxisSpacing: spacing,
-                                          mainAxisSpacing: spacing,
-                                        ),
-                                    itemCount: days.length,
-                                    itemBuilder: (context, index) =>
-                                        _buildCalendarCell(
-                                          days[index],
-                                          vacationProvider,
-                                          dateTextHeight,
-                                          cellHeight,
-                                        ),
-                                  ),
-                                )
-                              : GridView.builder(
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  shrinkWrap: true,
-                                  padding: EdgeInsets.zero,
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 7,
-                                        childAspectRatio:
-                                            cellWidth / cellHeight,
-                                        crossAxisSpacing: spacing,
-                                        mainAxisSpacing: spacing,
-                                      ),
-                                  itemCount: days.length,
-                                  itemBuilder: (context, index) =>
-                                      _buildCalendarCell(
-                                        days[index],
-                                        vacationProvider,
-                                        dateTextHeight,
-                                        cellHeight,
-                                      ),
+                          height: totalGridHeight, // 전체 높이를 사용하여 스크롤 없이 표시
+                          child: GridView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 7,
+                                  childAspectRatio: cellWidth / cellHeight,
+                                  crossAxisSpacing: spacing,
+                                  mainAxisSpacing: spacing,
                                 ),
+                            itemCount: days.length,
+                            itemBuilder: (context, index) => _buildCalendarCell(
+                              days[index],
+                              vacationProvider,
+                              dateTextHeight,
+                              cellHeight,
+                            ),
+                          ),
                         );
                       } else {
                         // 기본 모드: 개선된 점 표시
@@ -912,66 +883,59 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     }
 
     if (_isExpanded) {
-      // 확장 모드: 휴가자 이름들을 안전하게 표시
-      return ClipRect(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: vacations.map((vacation) {
-              return Container(
-                width: double.infinity,
-                height: 16.0,
-                margin: const EdgeInsets.only(bottom: 1.5),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 1.5,
-                  vertical: 1,
+      // 확장 모드: 휴가자 이름들을 표시
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: vacations.map((vacation) {
+          return Container(
+            width: double.infinity,
+            height: 16.0,
+            margin: const EdgeInsets.only(bottom: 1.5),
+            padding: const EdgeInsets.symmetric(horizontal: 1.5, vertical: 1),
+            decoration: BoxDecoration(
+              color: _getStatusColor(vacation.status),
+              borderRadius: BorderRadius.circular(4),
+              boxShadow: [
+                BoxShadow(
+                  color: _getStatusColor(vacation.status).withOpacity(0.3),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
                 ),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(vacation.status),
-                  borderRadius: BorderRadius.circular(4),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _getStatusColor(vacation.status).withOpacity(0.3),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
+              ],
+            ),
+            child: Row(
+              children: [
+                // 이름 표시 (가능한 많은 공간 사용)
+                Expanded(
+                  child: Text(
+                    vacation.userName,
+                    style: const TextStyle(
+                      fontSize: 9.0,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: -0.3,
                     ),
-                  ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    // 이름 표시 (가능한 많은 공간 사용)
-                    Expanded(
-                      child: Text(
-                        vacation.userName,
-                        style: const TextStyle(
-                          fontSize: 9.0,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          letterSpacing: -0.3,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                // 필수휴무인 경우에만 매우 작은 아이콘 표시
+                if (vacation.type == VacationType.mandatory)
+                  Container(
+                    width: 4,
+                    height: 4,
+                    margin: const EdgeInsets.only(left: 1),
+                    child: CustomPaint(
+                      painter: StarPainter(
+                        color: Colors.white.withOpacity(0.9),
                       ),
+                      size: const Size(4, 4),
                     ),
-                    // 필수휴무인 경우에만 매우 작은 아이콘 표시
-                    if (vacation.type == VacationType.mandatory)
-                      Container(
-                        width: 4,
-                        height: 4,
-                        margin: const EdgeInsets.only(left: 1),
-                        child: CustomPaint(
-                          painter: StarPainter(
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                          size: const Size(4, 4),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
+                  ),
+              ],
+            ),
+          );
+        }).toList(),
       );
     } else {
       // 기본 모드: 개선된 점 표시
