@@ -625,7 +625,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       // 필수 휴무만 표시
                       _buildTypeLegendItem(
                         '필수',
-                        Colors.red.shade600,
+                        Colors.yellow.shade600,
                         Icons.star,
                       ),
                     ],
@@ -994,7 +994,9 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               width: 4,
                               height: 4,
                               child: CustomPaint(
-                                painter: StarPainter(color: Colors.white),
+                                painter: StarPainter(
+                                  color: Colors.yellow.shade600,
+                                ),
                                 size: const Size(4, 4),
                               ),
                             ),
@@ -1026,7 +1028,9 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               width: 4,
                               height: 4,
                               child: CustomPaint(
-                                painter: StarPainter(color: Colors.white),
+                                painter: StarPainter(
+                                  color: Colors.yellow.shade600,
+                                ),
                                 size: const Size(4, 4),
                               ),
                             ),
@@ -1072,7 +1076,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     if (vacation.type == VacationType.mandatory) {
       // 필수 휴무는 별표 표시 (우선순위)
       return CustomPaint(
-        painter: StarPainter(color: Colors.white.withOpacity(0.9)),
+        painter: StarPainter(color: Colors.yellow.shade600),
         size: const Size(8, 8),
       );
     } else {
