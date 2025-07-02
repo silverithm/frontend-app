@@ -528,7 +528,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         width: 16,
         height: 16,
         child: CustomPaint(
-          painter: StarPainter(color: Colors.red.shade600),
+          painter: StarPainter(color: Colors.yellow.shade600),
           size: const Size(16, 16),
         ),
       );
@@ -558,7 +558,8 @@ class StarPainter extends CustomPainter {
     final innerRadius = outerRadius * 0.4;
 
     for (int i = 0; i < 10; i++) {
-      final angle = (i * 36) * (3.14159 / 180);
+      // -90도부터 시작하여 별표가 위를 향하도록 수정
+      final angle = ((i * 36) - 90) * (3.14159 / 180);
       final radius = i % 2 == 0 ? outerRadius : innerRadius;
       final x = centerX + radius * math.cos(angle);
       final y = centerY + radius * math.sin(angle);

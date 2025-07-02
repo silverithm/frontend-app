@@ -4,6 +4,7 @@ import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
 import '../providers/notification_provider.dart';
+import 'dart:math' as math;
 
 class MyVacationScreen extends StatefulWidget {
   const MyVacationScreen({super.key});
@@ -1319,8 +1320,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
-                                              Colors.red.shade200,
-                                              Colors.red.shade400,
+                                              Colors.orange.shade200,
+                                              Colors.orange.shade400,
                                             ],
                                           ),
                                           borderRadius: BorderRadius.circular(
@@ -1328,7 +1329,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.red.shade200
+                                              color: Colors.orange.shade200
                                                   .withOpacity(0.4),
                                               blurRadius: 6,
                                               offset: const Offset(0, 3),
@@ -1338,10 +1339,15 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            const Icon(
-                                              Icons.star,
-                                              size: 14,
-                                              color: Colors.white,
+                                            Container(
+                                              width: 14,
+                                              height: 14,
+                                              child: CustomPaint(
+                                                painter: StarPainter(
+                                                  color: Colors.white,
+                                                ),
+                                                size: const Size(14, 14),
+                                              ),
                                             ),
                                             const SizedBox(width: 4),
                                             const Text(
@@ -1501,4 +1507,44 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         return Colors.orange.shade700;
     }
   }
+}
+
+// 별표 그리기를 위한 CustomPainter
+class StarPainter extends CustomPainter {
+  final Color color;
+
+  StarPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final outerRadius = size.width / 2;
+    final innerRadius = outerRadius * 0.4;
+
+    for (int i = 0; i < 10; i++) {
+      // -90도부터 시작하여 별표가 위를 향하도록 수정
+      final angle = ((i * 36) - 90) * (3.14159 / 180);
+      final radius = i % 2 == 0 ? outerRadius : innerRadius;
+      final x = centerX + radius * math.cos(angle);
+      final y = centerY + radius * math.sin(angle);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
