@@ -3,6 +3,7 @@ enum VacationStatus { pending, approved, rejected }
 enum VacationType { mandatory, personal }
 
 enum VacationDuration {
+  unused, // 미사용 (0.0일)
   fullDay, // 연차 (1.0일)
   halfDayAm, // 오전 반차 (0.5일)
   halfDayPm, // 오후 반차 (0.5일)
@@ -107,6 +108,8 @@ class VacationRequest {
 
   static VacationDuration _parseDuration(String? duration) {
     switch (duration) {
+      case 'UNUSED':
+        return VacationDuration.unused;
       case 'HALF_DAY_AM':
         return VacationDuration.halfDayAm;
       case 'HALF_DAY_PM':
@@ -139,6 +142,8 @@ class VacationRequest {
 
   String get durationText {
     switch (duration) {
+      case VacationDuration.unused:
+        return ''; // 미사용일 때는 아무것도 표시하지 않음
       case VacationDuration.fullDay:
         return '연차';
       case VacationDuration.halfDayAm:
@@ -149,7 +154,8 @@ class VacationRequest {
   }
 
   String get displayName {
-    return '$userName ($durationText)';
+    final duration = durationText;
+    return duration.isEmpty ? userName : '$userName ($duration)';
   }
 
   VacationRequest copyWith({

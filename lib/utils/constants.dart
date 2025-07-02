@@ -1,12 +1,12 @@
 class Constants {
   // API 관련 상수 - TODO: 실제 Spring Boot 서버 URL로 변경 필요
-  static const String baseUrl =
-      'https://silverithm.site/api';
+  static const String baseUrl = 'https://silverithm.site/api';
 
   // API 엔드포인트
   static const String loginEndpoint = '/auth/login';
   static const String signinEndpoint = '/v1/members/signin';
   static const String refreshTokenEndpoint = '/v1/refresh-token';
+  static const String validateTokenEndpoint = '/v1/validate-token';
   static const String joinRequestEndpoint = '/v1/members/join-request';
   static const String withdrawalEndpoint = '/v1/members/withdrawal';
   static const String companiesEndpoint = '/v1/members/companies';

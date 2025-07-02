@@ -36,12 +36,12 @@ class ApiService {
   }
 
   // 토큰 refresh 요청
-  Future<bool> _refreshToken() async {
+  Future<RefreshTokenResult> _refreshToken() async {
     try {
       final refreshToken = StorageService().getRefreshToken();
       if (refreshToken == null) {
         print('[API] Refresh token이 없음');
-        return false;
+        return RefreshTokenResult.noRefreshToken();
       }
 
       final response = await http.post(
@@ -62,25 +62,66 @@ class ApiService {
         // 새로운 access token 저장
         if (responseData['accessToken'] != null) {
           await StorageService().saveToken(responseData['accessToken']);
-          print('[API] 새로운 access token 저장 완료');
-          return true;
+
+          // refresh token도 새로 받았다면 업데이트
+          if (responseData['refreshToken'] != null) {
+            await StorageService().saveRefreshToken(
+              responseData['refreshToken'],
+            );
+          }
+
+          print('[API] 새로운 토큰 저장 완료');
+          return RefreshTokenResult.success();
         }
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        // Refresh token 만료됨
+        print('[API] Refresh token 만료됨 - 모든 토큰 제거');
+        await StorageService().removeAllTokens();
+        return RefreshTokenResult.expired();
+      } else {
+        // 기타 에러 (네트워크 오류 등)
+        print('[API] Refresh token 요청 실패: ${response.statusCode}');
+        return RefreshTokenResult.failed();
       }
 
-      return false;
+      return RefreshTokenResult.failed();
     } catch (e) {
       print('[API] Refresh token 에러: $e');
-      return false;
+      return RefreshTokenResult.failed();
     }
   }
 
   // 로그인 화면으로 이동
   void _navigateToLogin() {
-    if (_globalContext != null) {
-      Navigator.of(_globalContext!).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+    try {
+      final context = _globalContext;
+      if (context != null && context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+        print('[API] 로그인 화면으로 이동 완료');
+      } else {
+        print('[API] Context가 없거나 유효하지 않아 화면 이동 불가');
+      }
+    } catch (e) {
+      print('[API] 로그인 화면 이동 중 오류: $e');
+    }
+  }
+
+  // 글로벌 로그아웃 처리 (토큰 제거 + 화면 이동)
+  Future<void> _performGlobalLogout() async {
+    try {
+      // 모든 토큰 제거
+      await StorageService().removeAll();
+      print('[API] 글로벌 로그아웃 - 모든 데이터 제거 완료');
+
+      // 로그인 화면으로 이동
+      _navigateToLogin();
+    } catch (e) {
+      print('[API] 글로벌 로그아웃 처리 중 오류: $e');
+      // 에러가 발생해도 화면은 이동
+      _navigateToLogin();
     }
   }
 
@@ -93,22 +134,25 @@ class ApiService {
       final response = await requestFunction();
 
       // 401 Unauthorized 확인
-      if (response.statusCode == 401) {
+      if (response.statusCode == 401 || response.statusCode == 403) {
         print('[API] 토큰 만료 감지 - refresh 시도');
 
         // refresh token으로 새 토큰 획득 시도
-        final refreshSuccess = await _refreshToken();
+        final refreshResult = await _refreshToken();
 
-        if (refreshSuccess) {
+        if (refreshResult.isSuccess) {
           print('[API] 토큰 refresh 성공 - 요청 재시도');
           // 새 토큰으로 재요청
           final retryResponse = await requestFunction();
           return _handleResponse(retryResponse);
         } else {
-          print('[API] 토큰 refresh 실패 - 로그인 화면으로 이동');
-          // refresh도 실패하면 모든 토큰 제거하고 로그인 화면으로
-          await StorageService().removeAllTokens();
-          _navigateToLogin();
+          print('[API] 토큰 refresh 실패 - 로그아웃 처리');
+
+          // refresh token이 만료되었거나 없는 경우 강제 로그아웃
+          print('[API] Refresh token 만료 또는 없음 - 강제 로그아웃');
+          // AuthProvider를 통한 일관된 로그아웃 처리를 위해 콜백 호출
+          await _performGlobalLogout();
+
           throw ApiException('로그인이 필요합니다', 401);
         }
       }
@@ -176,6 +220,55 @@ class ApiService {
     } catch (e) {
       throw Exception('로그인 실패: $e');
     }
+  }
+
+  // 토큰 검증 (서버에 토큰 유효성 확인)
+  Future<Map<String, dynamic>?> validateToken() async {
+    try {
+      final token = StorageService().getToken();
+      if (token == null) {
+        print('[API] 토큰이 없어서 검증 불가');
+        return null;
+      }
+
+      print('[API] 토큰 검증 시작');
+
+      // POST 방식으로 Request Body에 토큰 포함해서 전송
+      final response = await http.post(
+        Uri.parse('$_baseUrl${Constants.validateTokenEndpoint}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({'token': token}),
+      );
+
+      print('[API] 토큰 검증 응답 상태: ${response.statusCode}');
+      print('[API] 토큰 검증 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        // 성공 응답 파싱
+        final responseData = json.decode(response.body) as Map<String, dynamic>;
+        print('[API] 토큰 검증 성공 - 사용자: ${responseData['username']}');
+        return responseData;
+      } else if (response.statusCode == 400) {
+        // 토큰 무효 (서버에서 400 Bad Request 반환)
+        final responseData = json.decode(response.body) as Map<String, dynamic>;
+        print('[API] 토큰 무효: ${responseData['message']}');
+        return null;
+      } else {
+        print('[API] 토큰 검증 실패: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('[API] 토큰 검증 중 오류: $e');
+      return null;
+    }
+  }
+
+  // 토큰 갱신 시도 (public으로 변경)
+  Future<RefreshTokenResult> refreshToken() async {
+    return await _refreshToken();
   }
 
   // 회원탈퇴
@@ -526,4 +619,56 @@ class ApiException implements Exception {
 
   @override
   String toString() => 'ApiException: $message (Status: $statusCode)';
+}
+
+// Refresh Token 결과 클래스
+class RefreshTokenResult {
+  final bool isSuccess;
+  final bool isExpired;
+  final bool hasRefreshToken;
+
+  RefreshTokenResult._({
+    required this.isSuccess,
+    required this.isExpired,
+    required this.hasRefreshToken,
+  });
+
+  // 성공
+  factory RefreshTokenResult.success() {
+    return RefreshTokenResult._(
+      isSuccess: true,
+      isExpired: false,
+      hasRefreshToken: true,
+    );
+  }
+
+  // Refresh token 만료
+  factory RefreshTokenResult.expired() {
+    return RefreshTokenResult._(
+      isSuccess: false,
+      isExpired: true,
+      hasRefreshToken: true,
+    );
+  }
+
+  // Refresh token 없음
+  factory RefreshTokenResult.noRefreshToken() {
+    return RefreshTokenResult._(
+      isSuccess: false,
+      isExpired: false,
+      hasRefreshToken: false,
+    );
+  }
+
+  // 기타 실패 (네트워크 오류 등)
+  factory RefreshTokenResult.failed() {
+    return RefreshTokenResult._(
+      isSuccess: false,
+      isExpired: false,
+      hasRefreshToken: true,
+    );
+  }
+
+  // 로그아웃이 필요한 경우 (토큰이 없거나 만료됨)
+  bool get shouldLogout => !hasRefreshToken || isExpired;
 }

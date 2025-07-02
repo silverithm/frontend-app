@@ -211,31 +211,114 @@ class AuthProvider with ChangeNotifier {
       setLoading(true);
 
       final token = StorageService().getToken();
-      if (token != null) {
-        // 토큰이 있으면 저장된 사용자 정보 복원 시도
-        print('[AuthProvider] 토큰 발견 - 저장된 사용자 정보 복원 시도');
-
-        // 저장된 사용자 정보 복원 (StorageService에서 사용자 정보를 저장/복원하는 메서드 필요)
-        final savedUserData = StorageService().getSavedUserData();
-        if (savedUserData != null) {
-          _currentUser = User.fromJson(savedUserData);
-          print('[AuthProvider] 저장된 사용자 정보 복원 성공: ${_currentUser!.name}');
-        } else {
-          print('[AuthProvider] 저장된 사용자 정보 없음 - 로그인 필요');
-          _currentUser = null;
-        }
-      } else {
+      if (token == null) {
         print('[AuthProvider] 토큰 없음 - 로그인 필요');
         _currentUser = null;
+        notifyListeners();
+        return;
       }
 
-      notifyListeners();
+      print('[AuthProvider] 토큰 발견 - 유효성 검증 시작');
+
+      // 1단계: 저장된 사용자 정보 확인
+      final savedUserData = StorageService().getSavedUserData();
+      if (savedUserData == null) {
+        print('[AuthProvider] 저장된 사용자 정보 없음 - 로그아웃');
+        await _performLogout();
+        return;
+      }
+
+      // 2단계: 서버에 토큰 유효성 검증
+      print('[AuthProvider] 서버 토큰 검증 시작');
+      var tokenValidationResult = await ApiService().validateToken();
+
+      if (tokenValidationResult == null) {
+        print('[AuthProvider] 서버 토큰 검증 실패 - refresh 시도');
+        final refreshResult = await ApiService().refreshToken();
+
+        if (refreshResult.isSuccess) {
+          print('[AuthProvider] 토큰 갱신 성공 - 재검증');
+          tokenValidationResult = await ApiService().validateToken();
+          if (tokenValidationResult == null) {
+            print('[AuthProvider] 재검증 실패 - 로그아웃');
+            await _performLogout();
+            return;
+          }
+        } else if (refreshResult.shouldLogout) {
+          print('[AuthProvider] Refresh token 만료 또는 없음 - 로그아웃');
+          await _performLogout();
+          return;
+        } else {
+          print('[AuthProvider] 토큰 갱신 일시적 실패 - 로그아웃');
+          await _performLogout();
+          return;
+        }
+      }
+
+      // 3단계: 서버에서 받은 토큰 정보로 로컬 정보 업데이트
+      if (tokenValidationResult != null) {
+        print('[AuthProvider] 토큰 검증 성공 - 토큰 정보 업데이트');
+
+        // 서버에서 받은 최신 토큰 만료 시간 저장
+        if (tokenValidationResult['expiresAt'] != null) {
+          final expiresAt = tokenValidationResult['expiresAt'] as int;
+          final expiresDateTime = DateTime.fromMillisecondsSinceEpoch(
+            expiresAt,
+          );
+
+          // TokenInfo 업데이트
+          final currentToken = StorageService().getToken();
+          final updatedTokenInfo = {
+            'accessToken': currentToken,
+            'refreshToken': StorageService().getRefreshToken(),
+            'expiresAt': expiresDateTime.toIso8601String(),
+          };
+
+          // 사용자 데이터에 업데이트된 토큰 정보 반영
+          savedUserData['tokenInfo'] = updatedTokenInfo;
+          await StorageService().saveUserData(savedUserData);
+
+          print('[AuthProvider] 토큰 만료 시간 업데이트: $expiresDateTime');
+        }
+      }
+
+      // 4단계: 모든 검증 통과 - 사용자 정보 복원
+      try {
+        _currentUser = User.fromJson(savedUserData);
+        print('[AuthProvider] 사용자 정보 복원 성공: ${_currentUser!.name}');
+
+        // Analytics 사용자 속성 설정
+        await AnalyticsService().setUserProperties(
+          userId: _currentUser!.id.toString(),
+          userRole: _currentUser!.role,
+          companyId: _currentUser!.company?.id,
+        );
+
+        notifyListeners();
+      } catch (e) {
+        print('[AuthProvider] 사용자 정보 복원 실패: $e');
+        await _performLogout();
+      }
     } catch (e) {
       print('[AuthProvider] 인증 상태 확인 중 오류: $e');
-      _currentUser = null;
-      notifyListeners();
+      await _performLogout();
     } finally {
       setLoading(false);
+    }
+  }
+
+  // 로그아웃 처리 (내부 메서드)
+  Future<void> _performLogout() async {
+    try {
+      await StorageService().removeAll();
+      _currentUser = null;
+      clearError();
+      notifyListeners();
+      print('[AuthProvider] 로그아웃 처리 완료');
+    } catch (e) {
+      print('[AuthProvider] 로그아웃 처리 중 오류: $e');
+      _currentUser = null;
+      notifyListeners();
     }
   }
 

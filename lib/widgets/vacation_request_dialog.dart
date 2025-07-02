@@ -25,6 +25,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   final _reasonController = TextEditingController();
   VacationType _selectedType = VacationType.personal;
   VacationDuration _selectedDuration = VacationDuration.fullDay;
+  bool _isVacationUsed = false; // 연차 사용 여부
   bool _isSubmitting = false;
 
   late AnimationController _animationController;
@@ -110,6 +111,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         date: widget.selectedDate,
         type: _selectedType,
         duration: _selectedDuration,
+        isVacationUsed: _isVacationUsed,
         reason: _reasonController.text.trim().isNotEmpty
             ? _reasonController.text.trim()
             : null,
@@ -129,7 +131,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${_getDurationDisplayText(_selectedDuration)} 신청이 완료되었습니다',
+              _isVacationUsed
+                  ? '${_getDurationDisplayText(_selectedDuration)} 신청이 완료되었습니다'
+                  : '미사용 휴무 신청이 완료되었습니다',
             ),
             backgroundColor: Colors.green.shade600,
             behavior: SnackBarBehavior.floating,
@@ -171,6 +175,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
 
   String _getDurationDisplayText(VacationDuration duration) {
     switch (duration) {
+      case VacationDuration.unused:
+        return '미사용';
       case VacationDuration.fullDay:
         return '연차';
       case VacationDuration.halfDayAm:
@@ -350,7 +356,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // 휴무 기간 선택 (연차/반차)
+                            // 연차 사용 여부 선택 (미사용/사용)
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -374,7 +380,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '휴무 기간',
+                                    '연차 사용 여부',
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
@@ -386,85 +392,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   ),
                                   const SizedBox(height: 12),
 
-                                  // 한 줄로 3개 버튼 배치
+                                  // 연차 사용 여부 선택
                                   Row(
                                     children: [
-                                      // 연차
+                                      // 미사용
                                       Expanded(
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            gradient:
-                                                _selectedDuration ==
-                                                    VacationDuration.fullDay
-                                                ? LinearGradient(
-                                                    colors: [
-                                                      Colors.blue.shade50,
-                                                      Colors.blue.shade100,
-                                                    ],
-                                                  )
-                                                : null,
-                                            color:
-                                                _selectedDuration !=
-                                                    VacationDuration.fullDay
-                                                ? Colors.grey.shade50
-                                                : null,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color:
-                                                  _selectedDuration ==
-                                                      VacationDuration.fullDay
-                                                  ? Colors.blue.shade300
-                                                  : Colors.grey.shade300,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          child: InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                _selectedDuration =
-                                                    VacationDuration.fullDay;
-                                              });
-                                            },
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 8,
-                                                    horizontal: 4,
-                                                  ),
-                                              child: Center(
-                                                child: Text(
-                                                  '연차',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 11,
-                                                    color:
-                                                        _selectedDuration ==
-                                                            VacationDuration
-                                                                .fullDay
-                                                        ? Colors.blue.shade800
-                                                        : Colors.grey.shade700,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(width: 8),
-
-                                      // 오전 반차
-                                      Expanded(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            gradient:
-                                                _selectedDuration ==
-                                                    VacationDuration.halfDayAm
+                                            gradient: !_isVacationUsed
                                                 ? LinearGradient(
                                                     colors: [
                                                       Colors.orange.shade50,
@@ -472,19 +407,15 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                                     ],
                                                   )
                                                 : null,
-                                            color:
-                                                _selectedDuration !=
-                                                    VacationDuration.halfDayAm
+                                            color: _isVacationUsed
                                                 ? Colors.grey.shade50
                                                 : null,
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
                                             border: Border.all(
-                                              color:
-                                                  _selectedDuration ==
-                                                      VacationDuration.halfDayAm
-                                                  ? Colors.orange.shade300
+                                              color: !_isVacationUsed
+                                                  ? Colors.orange.shade400
                                                   : Colors.grey.shade300,
                                               width: 2,
                                             ),
@@ -495,28 +426,22 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             ),
                                             onTap: () {
                                               setState(() {
-                                                _selectedDuration =
-                                                    VacationDuration.halfDayAm;
+                                                _isVacationUsed = false;
                                               });
                                             },
                                             child: Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
-                                                    vertical: 8,
+                                                    vertical: 12,
                                                     horizontal: 4,
                                                   ),
                                               child: Center(
                                                 child: Text(
-                                                  '오전\n반차',
-                                                  textAlign: TextAlign.center,
+                                                  '미사용',
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.w600,
-                                                    fontSize: 10,
-                                                    height: 1.2,
-                                                    color:
-                                                        _selectedDuration ==
-                                                            VacationDuration
-                                                                .halfDayAm
+                                                    fontSize: 12,
+                                                    color: !_isVacationUsed
                                                         ? Colors.orange.shade800
                                                         : Colors.grey.shade700,
                                                   ),
@@ -529,33 +454,27 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
 
                                       const SizedBox(width: 8),
 
-                                      // 오후 반차
+                                      // 사용
                                       Expanded(
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            gradient:
-                                                _selectedDuration ==
-                                                    VacationDuration.halfDayPm
+                                            gradient: _isVacationUsed
                                                 ? LinearGradient(
                                                     colors: [
-                                                      Colors.purple.shade50,
-                                                      Colors.purple.shade100,
+                                                      Colors.blue.shade50,
+                                                      Colors.blue.shade100,
                                                     ],
                                                   )
                                                 : null,
-                                            color:
-                                                _selectedDuration !=
-                                                    VacationDuration.halfDayPm
+                                            color: !_isVacationUsed
                                                 ? Colors.grey.shade50
                                                 : null,
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
                                             border: Border.all(
-                                              color:
-                                                  _selectedDuration ==
-                                                      VacationDuration.halfDayPm
-                                                  ? Colors.purple.shade300
+                                              color: _isVacationUsed
+                                                  ? Colors.blue.shade300
                                                   : Colors.grey.shade300,
                                               width: 2,
                                             ),
@@ -566,29 +485,23 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             ),
                                             onTap: () {
                                               setState(() {
-                                                _selectedDuration =
-                                                    VacationDuration.halfDayPm;
+                                                _isVacationUsed = true;
                                               });
                                             },
                                             child: Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
-                                                    vertical: 8,
+                                                    vertical: 12,
                                                     horizontal: 4,
                                                   ),
                                               child: Center(
                                                 child: Text(
-                                                  '오후\n반차',
-                                                  textAlign: TextAlign.center,
+                                                  '사용',
                                                   style: TextStyle(
                                                     fontWeight: FontWeight.w600,
-                                                    fontSize: 10,
-                                                    height: 1.2,
-                                                    color:
-                                                        _selectedDuration ==
-                                                            VacationDuration
-                                                                .halfDayPm
-                                                        ? Colors.purple.shade800
+                                                    fontSize: 12,
+                                                    color: _isVacationUsed
+                                                        ? Colors.blue.shade800
                                                         : Colors.grey.shade700,
                                                   ),
                                                 ),
@@ -603,7 +516,272 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               ),
                             ),
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
+
+                            // 연차 유형 선택 (사용 선택시에만 표시)
+                            if (_isVacationUsed)
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.shade100.withOpacity(
+                                        0.5,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '연차 유형',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.grey.shade800,
+                                            fontSize: 14,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 12),
+
+                                    // 연차 유형 선택 버튼들
+                                    Row(
+                                      children: [
+                                        // 연차
+                                        Expanded(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              gradient:
+                                                  _selectedDuration ==
+                                                      VacationDuration.fullDay
+                                                  ? LinearGradient(
+                                                      colors: [
+                                                        Colors.green.shade50,
+                                                        Colors.green.shade100,
+                                                      ],
+                                                    )
+                                                  : null,
+                                              color:
+                                                  _selectedDuration !=
+                                                      VacationDuration.fullDay
+                                                  ? Colors.grey.shade50
+                                                  : null,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color:
+                                                    _selectedDuration ==
+                                                        VacationDuration.fullDay
+                                                    ? Colors.green.shade300
+                                                    : Colors.grey.shade300,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedDuration =
+                                                      VacationDuration.fullDay;
+                                                });
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                      horizontal: 4,
+                                                    ),
+                                                child: Center(
+                                                  child: Text(
+                                                    '연차',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 12,
+                                                      color:
+                                                          _selectedDuration ==
+                                                              VacationDuration
+                                                                  .fullDay
+                                                          ? Colors
+                                                                .green
+                                                                .shade800
+                                                          : Colors
+                                                                .grey
+                                                                .shade700,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 8),
+
+                                        // 오전 반차
+                                        Expanded(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              gradient:
+                                                  _selectedDuration ==
+                                                      VacationDuration.halfDayAm
+                                                  ? LinearGradient(
+                                                      colors: [
+                                                        Colors.orange.shade50,
+                                                        Colors.orange.shade100,
+                                                      ],
+                                                    )
+                                                  : null,
+                                              color:
+                                                  _selectedDuration !=
+                                                      VacationDuration.halfDayAm
+                                                  ? Colors.grey.shade50
+                                                  : null,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color:
+                                                    _selectedDuration ==
+                                                        VacationDuration
+                                                            .halfDayAm
+                                                    ? Colors.orange.shade300
+                                                    : Colors.grey.shade300,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedDuration =
+                                                      VacationDuration
+                                                          .halfDayAm;
+                                                });
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                      horizontal: 4,
+                                                    ),
+                                                child: Center(
+                                                  child: Text(
+                                                    '오전 반차',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 10,
+                                                      color:
+                                                          _selectedDuration ==
+                                                              VacationDuration
+                                                                  .halfDayAm
+                                                          ? Colors
+                                                                .orange
+                                                                .shade800
+                                                          : Colors
+                                                                .grey
+                                                                .shade700,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        const SizedBox(width: 8),
+
+                                        // 오후 반차
+                                        Expanded(
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              gradient:
+                                                  _selectedDuration ==
+                                                      VacationDuration.halfDayPm
+                                                  ? LinearGradient(
+                                                      colors: [
+                                                        Colors.purple.shade50,
+                                                        Colors.purple.shade100,
+                                                      ],
+                                                    )
+                                                  : null,
+                                              color:
+                                                  _selectedDuration !=
+                                                      VacationDuration.halfDayPm
+                                                  ? Colors.grey.shade50
+                                                  : null,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color:
+                                                    _selectedDuration ==
+                                                        VacationDuration
+                                                            .halfDayPm
+                                                    ? Colors.purple.shade300
+                                                    : Colors.grey.shade300,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedDuration =
+                                                      VacationDuration
+                                                          .halfDayPm;
+                                                });
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                      horizontal: 4,
+                                                    ),
+                                                child: Center(
+                                                  child: Text(
+                                                    '오후 반차',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 10,
+                                                      color:
+                                                          _selectedDuration ==
+                                                              VacationDuration
+                                                                  .halfDayPm
+                                                          ? Colors
+                                                                .purple
+                                                                .shade800
+                                                          : Colors
+                                                                .grey
+                                                                .shade700,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                            if (_isVacationUsed) const SizedBox(height: 16),
 
                             // 휴무 유형 선택 (한 줄로 변경)
                             Container(
@@ -897,22 +1075,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide(
-                                          color:
-                                              _selectedType ==
-                                                  VacationType.mandatory
-                                              ? Colors.red.shade400
-                                              : Colors.blue.shade400,
+                                          color: Colors.blue.shade400,
                                           width: 2,
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide(
-                                          color:
-                                              _selectedType ==
-                                                  VacationType.mandatory
-                                              ? Colors.red.shade200
-                                              : Colors.grey.shade300,
+                                          color: Colors.grey.shade300,
                                         ),
                                       ),
                                       errorBorder: OutlineInputBorder(
@@ -930,11 +1100,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                         ),
                                       ),
                                       filled: true,
-                                      fillColor:
-                                          _selectedType ==
-                                              VacationType.mandatory
-                                          ? Colors.red.shade50
-                                          : Colors.grey.shade50,
+                                      fillColor: Colors.grey.shade50,
                                       contentPadding: const EdgeInsets.all(20),
                                       counterStyle: TextStyle(
                                         color: Colors.grey.shade500,

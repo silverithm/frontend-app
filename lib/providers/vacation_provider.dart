@@ -212,6 +212,7 @@ class VacationProvider with ChangeNotifier {
     required DateTime date,
     required VacationType type,
     required VacationDuration duration,
+    required bool isVacationUsed, // 연차 사용 여부 추가
     String? reason,
     String? password,
     String? companyId,
@@ -220,18 +221,27 @@ class VacationProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      // VacationDuration을 API 형식으로 변환
+      // 연차 사용 여부에 따라 API 형식 결정
       String durationString;
-      switch (duration) {
-        case VacationDuration.fullDay:
-          durationString = 'FULL_DAY';
-          break;
-        case VacationDuration.halfDayAm:
-          durationString = 'HALF_DAY_AM';
-          break;
-        case VacationDuration.halfDayPm:
-          durationString = 'HALF_DAY_PM';
-          break;
+      if (!isVacationUsed) {
+        // 미사용인 경우
+        durationString = 'UNUSED';
+      } else {
+        // 사용인 경우 선택된 duration에 따라 변환
+        switch (duration) {
+          case VacationDuration.unused:
+            durationString = 'UNUSED'; // 이 경우는 발생하지 않아야 함
+            break;
+          case VacationDuration.fullDay:
+            durationString = 'FULL_DAY';
+            break;
+          case VacationDuration.halfDayAm:
+            durationString = 'HALF_DAY_AM';
+            break;
+          case VacationDuration.halfDayPm:
+            durationString = 'HALF_DAY_PM';
+            break;
+        }
       }
 
       // Spring Boot API 호출 - companyId 필요
