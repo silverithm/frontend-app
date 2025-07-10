@@ -61,7 +61,7 @@ class AppVersionProvider with ChangeNotifier {
 
       if (_forceUpdate && minimumVersion.isNotEmpty) {
         _forceUpdate =
-            _isVersionLower(currentVersionParts, minimumVersionParts) &&
+            _isVersionLower(currentVersionParts, latestVersionParts) &&
             !_isVersionEqual(currentVersionParts, latestVersionParts);
         ;
       }
