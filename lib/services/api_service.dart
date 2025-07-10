@@ -387,11 +387,11 @@ class ApiService {
   }
 
   // 기존 일반적인 메서드들
-  Future<Map<String, dynamic>> get(String endpoint) async {
+  Future<Map<String, dynamic>> get(String endpoint, {bool includeAuth = true}) async {
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl$endpoint'),
-        headers: await _getHeaders(),
+        headers: await _getHeaders(includeAuth: includeAuth),
       );
 
       return _handleResponse(response);

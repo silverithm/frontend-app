@@ -7,11 +7,13 @@ import 'providers/auth_provider.dart';
 import 'providers/vacation_provider.dart';
 import 'providers/company_provider.dart';
 import 'providers/notification_provider.dart';
+import 'providers/app_version_provider.dart';
 import 'services/storage_service.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
+import 'widgets/update_dialog.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +42,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => VacationProvider()),
         ChangeNotifierProvider(create: (_) => CompanyProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => AppVersionProvider()),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
@@ -72,23 +75,33 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
+  bool _dialogShown = false;
+
   @override
   void initState() {
     super.initState();
-    // 앱 시작 시 로그인 상태 확인
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 앱 시작 시 버전 체크 및 로그인 상태 확인
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       // ApiService에 글로벌 context 설정
       ApiService().setGlobalContext(context);
-      context.read<AuthProvider>().checkAuthStatus();
+      
+      // 앱 버전 체크
+      final appVersionProvider = context.read<AppVersionProvider>();
+      await appVersionProvider.checkAppVersion();
+      
+      // 버전 체크 후 로그인 상태 확인
+      if (!appVersionProvider.forceUpdate) {
+        context.read<AuthProvider>().checkAuthStatus();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        // 로딩 중일 때 스플래시 화면 표시
-        if (authProvider.isLoading) {
+    return Consumer2<AuthProvider, AppVersionProvider>(
+      builder: (context, authProvider, appVersionProvider, child) {
+        // 버전 체크 중이거나 로딩 중일 때 스플래시 화면 표시
+        if (!appVersionProvider.isVersionChecked || authProvider.isLoading) {
           return Scaffold(
             backgroundColor: Colors.blue.shade50,
             body: Center(
@@ -126,12 +139,55 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // 로그인 상태에 따라 화면 분기
-        if (authProvider.isLoggedIn) {
-          return const MainScreen();
-        } else {
-          return const LoginScreen();
+        // 업데이트가 필요한 경우 업데이트 다이얼로그 표시
+        if (appVersionProvider.needsUpdate && !appVersionProvider.forceUpdate && !_dialogShown) {
+          // 선택적 업데이트 - 다이얼로그를 한 번만 표시
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted && !_dialogShown) {
+              _dialogShown = true;
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                barrierColor: Colors.black.withOpacity(0.5),
+                builder: (context) => UpdateDialog(
+                  currentVersion: appVersionProvider.currentVersion,
+                  latestVersion: appVersionProvider.latestVersion,
+                  updateMessage: appVersionProvider.updateMessage,
+                  forceUpdate: appVersionProvider.forceUpdate,
+                ),
+              ).then((_) {
+                _dialogShown = false;
+              });
+            }
+          });
         }
+
+        // 강제 업데이트가 필요한 경우 업데이트 화면만 표시
+        if (appVersionProvider.forceUpdate) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: UpdateDialog(
+                  currentVersion: appVersionProvider.currentVersion,
+                  latestVersion: appVersionProvider.latestVersion,
+                  updateMessage: appVersionProvider.updateMessage,
+                  forceUpdate: true,
+                ),
+              ),
+            ),
+          );
+        }
+
+        // 로그인 상태에 따라 화면 분기 (항상 백그라운드 화면 렌더링)
+        Widget backgroundScreen;
+        if (authProvider.isLoggedIn) {
+          backgroundScreen = const MainScreen();
+        } else {
+          backgroundScreen = const LoginScreen();
+        }
+
+        return backgroundScreen;
       },
     );
   }

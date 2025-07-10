@@ -157,11 +157,17 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
 
         return FadeTransition(
           opacity: _fadeAnimation,
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-            ),
+          child: InteractiveViewer(
+            boundaryMargin: const EdgeInsets.all(20),
+            minScale: 1.0,
+            maxScale: 2.5,
+            panEnabled: true,
+            scaleEnabled: true,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+              ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -634,6 +640,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
               ],
             ),
           ),
+          ),
         );
       },
     );
@@ -932,18 +939,21 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        vacation.userName,
-                        style: const TextStyle(
-                          fontSize: 7.0,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                      Flexible(
+                        child: Text(
+                          vacation.userName,
+                          style: const TextStyle(
+                            fontSize: 7.0,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: 1),
                       Container(
                         width: 8,
                         height: 8,
