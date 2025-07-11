@@ -641,7 +641,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   .map(
                                     (company) => DropdownMenuItem<Company?>(
                                       value: company,
-                                      child: Text(company.name),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            company.name,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          if (company.userEmails.isNotEmpty)
+                                            Text(
+                                              company.userEmails.first,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
                                     ),
                                   )
                                   .toList(),
@@ -855,27 +875,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                '개인정보 처리방침',
+                                        child: RichText(
+                                          text: TextSpan(
+                                            children: [
+                                              TextSpan(
+                                                text: '개인정보 처리방침',
                                                 style: TextStyle(
                                                   color: Colors.grey.shade700,
                                                   fontSize: 14,
                                                 ),
                                               ),
-                                            ),
-                                            const Text(
-                                              '에 동의합니다',
-                                              style: TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 14,
+                                              TextSpan(
+                                                text: '에 동의합니다',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade600,
+                                                  fontSize: 14,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
+                                      const SizedBox(width: 8),
                                       InkWell(
                                         onTap: () => _launchURL(
                                           'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
@@ -955,27 +976,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                '서비스 이용약관',
+                                        child: RichText(
+                                          text: TextSpan(
+                                            children: [
+                                              TextSpan(
+                                                text: '서비스 이용약관',
                                                 style: TextStyle(
                                                   color: Colors.grey.shade700,
                                                   fontSize: 14,
                                                 ),
                                               ),
-                                            ),
-                                            const Text(
-                                              '에 동의합니다',
-                                              style: TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 14,
+                                              TextSpan(
+                                                text: '에 동의합니다',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade600,
+                                                  fontSize: 14,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
+                                      const SizedBox(width: 8),
                                       InkWell(
                                         onTap: () => _launchURL(
                                           'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',

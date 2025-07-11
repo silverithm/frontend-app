@@ -3,12 +3,14 @@ class Company {
   final String name;
   final String addressName;
   final Location? companyAddress;
+  final List<String> userEmails;
 
   Company({
     required this.id,
     required this.name,
     required this.addressName,
     this.companyAddress,
+    this.userEmails = const [],
   });
 
   factory Company.fromJson(Map<String, dynamic> json) {
@@ -19,6 +21,9 @@ class Company {
       companyAddress: json['companyAddress'] != null
           ? Location.fromJson(json['companyAddress'])
           : null,
+      userEmails: json['userEmails'] != null
+          ? List<String>.from(json['userEmails'])
+          : [],
     );
   }
 
@@ -28,6 +33,7 @@ class Company {
       'name': name,
       'addressName': addressName,
       'companyAddress': companyAddress?.toJson(),
+      'userEmails': userEmails,
     };
   }
 
