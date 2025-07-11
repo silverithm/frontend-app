@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/vacation_provider.dart';
+import '../services/fcm_service.dart';
 import 'calendar_screen.dart';
 import 'my_vacation_screen.dart';
 import 'profile_screen.dart';
@@ -34,15 +35,29 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       const ProfileScreen(),
     ];
 
-    // 사용자 정보가 있으면 휴가 데이터 로드
+    // 사용자 정보가 있으면 휴가 데이터 로드 및 FCM 토큰 전송
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = context.read<AuthProvider>();
       final vacationProvider = context.read<VacationProvider>();
 
+      print('[MainScreen] 메인 화면 초기화 - 사용자 정보 확인');
+      print('[MainScreen] currentUser: ${authProvider.currentUser}');
+
       if (authProvider.currentUser != null) {
+        final userId = authProvider.currentUser!.id;
         final companyId = authProvider.currentUser!.company?.id ?? '1';
+        
+        print('[MainScreen] 로그인된 사용자 ID: $userId');
+        print('[MainScreen] 회사 ID: $companyId');
+        
         vacationProvider.loadCalendarData(DateTime.now(), companyId: companyId);
-        vacationProvider.loadMyVacationRequests(authProvider.currentUser!.id);
+        vacationProvider.loadMyVacationRequests(userId);
+        
+        // FCM 토큰 서버 전송
+        print('[MainScreen] FCM 토큰 서버 전송 시작');
+        FCMService().sendTokenToServer(userId);
+      } else {
+        print('[MainScreen] 사용자 정보 없음 - FCM 토큰 전송 건너뜀');
       }
     });
   }

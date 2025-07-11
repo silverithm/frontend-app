@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'providers/app_provider.dart';
 import 'providers/auth_provider.dart';
@@ -11,6 +13,7 @@ import 'providers/app_version_provider.dart';
 import 'services/storage_service.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
+import 'services/fcm_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'widgets/update_dialog.dart';
@@ -21,11 +24,22 @@ void main() async {
   // Firebase 초기화
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // FCM 백그라운드 메시지 핸들러 설정
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  // iOS에서 APNS 토큰 초기화 대기
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    await Future.delayed(Duration(milliseconds: 2000)); // 2초 대기
+  }
+
   // Analytics 서비스 초기화
   AnalyticsService().initialize();
 
   // 저장소 서비스 초기화
   await StorageService().init();
+
+  // FCM 서비스 초기화
+  await FCMService().initialize();
 
   runApp(const MyApp());
 }
