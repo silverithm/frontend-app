@@ -914,9 +914,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
 
     if (_isExpanded) {
       // 확장 모드: 휴가자 이름들을 표시
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: vacations.map((vacation) {
+      return SizedBox(
+        height: 111.2,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: vacations.map((vacation) {
           return Container(
             width: double.infinity,
             height: 16.0,
@@ -968,6 +971,8 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             ),
           );
         }).toList(),
+          ),
+        ),
       );
     } else {
       // 기본 모드: 개선된 점 표시
