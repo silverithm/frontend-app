@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import '../services/analytics_service.dart';
 import '../utils/constants.dart';
@@ -18,12 +19,43 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _rememberEmail = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedEmail();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSavedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('saved_email');
+    final rememberEmail = prefs.getBool('remember_email') ?? false;
+    
+    if (savedEmail != null && rememberEmail) {
+      setState(() {
+        _emailController.text = savedEmail;
+        _rememberEmail = rememberEmail;
+      });
+    }
+  }
+
+  Future<void> _saveEmailPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberEmail) {
+      await prefs.setString('saved_email', _emailController.text.trim());
+      await prefs.setBool('remember_email', true);
+    } else {
+      await prefs.remove('saved_email');
+      await prefs.setBool('remember_email', false);
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -36,6 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (success && mounted) {
+      // 이메일 기억하기 설정 저장
+      await _saveEmailPreference();
+      
       // Analytics 로그인 이벤트 기록
       await AnalyticsService().logLogin(method: 'email');
 
@@ -128,7 +163,36 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: Constants.defaultPadding),
+
+                        // 이메일 기억하기 체크박스
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberEmail,
+                              onChanged: (value) {
+                                setState(() {
+                                  _rememberEmail = value ?? false;
+                                });
+                              },
+                              activeColor: Colors.blue.shade600,
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _rememberEmail = !_rememberEmail;
+                                });
+                              },
+                              child: const Text(
+                                '이메일 기억하기',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Constants.smallPadding),
 
                         // 비밀번호 입력
                         TextFormField(
