@@ -114,43 +114,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     return Consumer2<AuthProvider, AppVersionProvider>(
       builder: (context, authProvider, appVersionProvider, child) {
-        // 버전 체크 중이거나 로딩 중일 때 스플래시 화면 표시
+        // 버전 체크 중이거나 로딩 중일 때도 로그인 화면으로 바로 이동
         if (!appVersionProvider.isVersionChecked || authProvider.isLoading) {
-          return Scaffold(
-            backgroundColor: Colors.blue.shade50,
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.calendar_month,
-                    size: 80,
-                    color: Colors.blue.shade600,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    '휴무 관리 시스템',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '앱을 초기화하고 있습니다...',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 32),
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.blue.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
+          return const LoginScreen();
         }
 
         // 업데이트가 필요한 경우 업데이트 다이얼로그 표시
