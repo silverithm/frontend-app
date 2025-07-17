@@ -532,9 +532,20 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         );
                       } else {
                         // 기본 모드: 개선된 점 표시
-                        final actualGridHeight = maxGridHeight * 0.9;
-                        final cellHeight =
-                            (actualGridHeight - spacing * (rows - 1)) / rows;
+                        // 각 날짜의 최대 휴가 수 계산
+                        int maxVacationsInWeek = 0;
+                        for (int i = 0; i < days.length; i++) {
+                          final vacations = vacationProvider.getVacationsForDate(days[i]);
+                          if (vacations.length > maxVacationsInWeek) {
+                            maxVacationsInWeek = vacations.length;
+                          }
+                        }
+                        
+                        // 동적 셀 높이 계산
+                        final baseCellHeight = 40.0;
+                        final additionalHeight = maxVacationsInWeek > 3 ? 12.0 : 0.0;
+                        final cellHeight = baseCellHeight + additionalHeight;
+                        final actualGridHeight = (cellHeight * rows) + (spacing * (rows - 1));
 
                         return Container(
                           height: actualGridHeight,
@@ -976,12 +987,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
       );
     } else {
       // 기본 모드: 개선된 점 표시
-      return Center(
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 20),
+      return Container(
+        padding: const EdgeInsets.all(2),
+        child: Center(
           child: Wrap(
             alignment: WrapAlignment.center,
-            spacing: 3,
+            spacing: 2,
             runSpacing: 2,
             children: [
               if (vacations.length <= 3)
