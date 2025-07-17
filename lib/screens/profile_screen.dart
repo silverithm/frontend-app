@@ -151,6 +151,403 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  void _showPasswordChangeDialog(BuildContext dialogContext) {
+    showDialog(
+      context: dialogContext,
+      builder: (BuildContext context) {
+        final currentPasswordController = TextEditingController();
+        final newPasswordController = TextEditingController();
+        final confirmPasswordController = TextEditingController();
+        bool isChanging = false;
+        bool showCurrentPassword = false;
+        bool showNewPassword = false;
+        bool showConfirmPassword = false;
+
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.lock, color: Colors.green.shade600, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Text('비밀번호 변경', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 현재 비밀번호
+                TextFormField(
+                  controller: currentPasswordController,
+                  obscureText: !showCurrentPassword,
+                  decoration: InputDecoration(
+                    labelText: '현재 비밀번호',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        showCurrentPassword ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          showCurrentPassword = !showCurrentPassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // 새 비밀번호
+                TextFormField(
+                  controller: newPasswordController,
+                  obscureText: !showNewPassword,
+                  decoration: InputDecoration(
+                    labelText: '새 비밀번호',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        showNewPassword ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          showNewPassword = !showNewPassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    helperText: '6자 이상 입력하세요',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // 새 비밀번호 확인
+                TextFormField(
+                  controller: confirmPasswordController,
+                  obscureText: !showConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: '새 비밀번호 확인',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        showConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          showConfirmPassword = !showConfirmPassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '비밀번호는 영문, 숫자, 특수문자를 포함하여 6자 이상으로 설정하는 것을 권장합니다.',
+                          style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isChanging ? null : () {
+                Navigator.pop(context);
+              },
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: isChanging ? null : () async {
+                // 유효성 검사
+                if (currentPasswordController.text.isEmpty) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('현재 비밀번호를 입력해주세요'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                if (newPasswordController.text.isEmpty) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('새 비밀번호를 입력해주세요'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                if (newPasswordController.text.length < 6) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('비밀번호는 6자 이상이어야 합니다'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                if (newPasswordController.text != confirmPasswordController.text) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('새 비밀번호가 일치하지 않습니다'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                setState(() {
+                  isChanging = true;
+                });
+                
+                final authProvider = context.read<AuthProvider>();
+                final success = await authProvider.changePassword(
+                  currentPassword: currentPasswordController.text,
+                  newPassword: newPasswordController.text,
+                  context: context,
+                );
+                
+                if (context.mounted) {
+                  if (success) {
+                    Navigator.pop(context);
+                  } else {
+                    setState(() {
+                      isChanging = false;
+                    });
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                foregroundColor: Colors.white,
+              ),
+              child: isChanging
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('변경'),
+            ),
+          ],
+        ),
+      );
+      },
+    ).then((_) {
+      // Dialog가 닫힌 후 자동으로 controller들이 dispose됩니다
+    });
+  }
+
+  void _showRoleChangeDialog(BuildContext context, User user) {
+    String selectedRole = user.role;
+    bool isChanging = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.swap_horiz, color: Colors.blue.shade600, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Text('역할 변경', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    RadioListTile<String>(
+                      title: Row(
+                        children: [
+                          Icon(Icons.favorite, color: Colors.pink.shade600, size: 20),
+                          const SizedBox(width: 8),
+                          const Text('요양보호사'),
+                        ],
+                      ),
+                      subtitle: const Text('요양 서비스 제공 직원'),
+                      value: 'CAREGIVER',
+                      groupValue: selectedRole,
+                      onChanged: isChanging ? null : (value) {
+                        setState(() {
+                          selectedRole = value!;
+                        });
+                      },
+                    ),
+                    const Divider(),
+                    RadioListTile<String>(
+                      title: Row(
+                        children: [
+                          Icon(Icons.business, color: Colors.indigo.shade600, size: 20),
+                          const SizedBox(width: 8),
+                          const Text('사무직'),
+                        ],
+                      ),
+                      subtitle: const Text('사무실 근무 직원'),
+                      value: 'OFFICE',
+                      groupValue: selectedRole,
+                      onChanged: isChanging ? null : (value) {
+                        setState(() {
+                          selectedRole = value!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (selectedRole != user.role)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '역할 변경 시 권한이 변경됩니다.',
+                          style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isChanging ? null : () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: (isChanging || selectedRole == user.role) ? null : () async {
+                setState(() {
+                  isChanging = true;
+                });
+
+                final authProvider = context.read<AuthProvider>();
+                final success = await authProvider.updateMemberRole(selectedRole);
+
+                if (success && context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('역할이 성공적으로 변경되었습니다.'),
+                      backgroundColor: Colors.green.shade600,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                } else if (context.mounted) {
+                  setState(() {
+                    isChanging = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        authProvider.errorMessage.isNotEmpty
+                            ? authProvider.errorMessage
+                            : '역할 변경에 실패했습니다',
+                      ),
+                      backgroundColor: Colors.red.shade600,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
+              ),
+              child: isChanging
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('변경'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showWithdrawalDialog(BuildContext context) {
     bool isWithdrawing = false;
 
@@ -591,16 +988,42 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     ),
                                     const SizedBox(height: 16),
 
-                                    // 직원 유형
-                                    _buildInfoRow(
-                                      icon: user.role == 'CAREGIVER'
-                                          ? Icons.favorite
-                                          : Icons.business,
-                                      iconColor: user.role == 'CAREGIVER'
-                                          ? Colors.pink.shade600
-                                          : Colors.indigo.shade600,
-                                      title: '직원 유형',
-                                      value: _getRoleDisplayName(user.role),
+                                    // 직원 유형 (클릭 가능)
+                                    InkWell(
+                                      onTap: () => _showRoleChangeDialog(context, user),
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: _buildInfoRow(
+                                                icon: user.role == 'CAREGIVER'
+                                                    ? Icons.favorite
+                                                    : Icons.business,
+                                                iconColor: user.role == 'CAREGIVER'
+                                                    ? Colors.pink.shade600
+                                                    : Colors.indigo.shade600,
+                                                title: '직원 유형',
+                                                value: _getRoleDisplayName(user.role),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue.shade100,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                Icons.edit,
+                                                size: 16,
+                                                color: Colors.blue.shade600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                     const SizedBox(height: 16),
 
@@ -687,6 +1110,27 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       child: Column(
                         children: [
+                          _buildSettingTile(
+                            icon: Icons.lock,
+                            title: '비밀번호 변경',
+                            subtitle: '계정 보안을 위해 주기적으로 변경하세요',
+                            trailing: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.chevron_right,
+                                color: Colors.green.shade600,
+                                size: 20,
+                              ),
+                            ),
+                            onTap: () => _showPasswordChangeDialog(context),
+                          ),
+
+                          const Divider(height: 1, color: Colors.transparent),
+
                           _buildSettingTile(
                             icon: Icons.notifications,
                             title: '알림 설정',

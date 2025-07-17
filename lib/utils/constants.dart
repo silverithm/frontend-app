@@ -19,6 +19,10 @@ class Constants {
   static const String myVacationRequestsEndpoint = '/vacation/my/requests';
   // 알림 관련 엔드포인트
   static const String notificationsEndpoint = '/notifications/user';
+  // 비밀번호 찾기 및 역할 변경 엔드포인트
+  static const String findPasswordEndpoint = '/v1/members/find/password';
+  static const String changePasswordEndpoint = '/v1/members/change/password';
+  static const String updateRoleEndpoint = '/v1/members/role';
 
   // 저장소 키
   static const String tokenKey = 'auth_token';

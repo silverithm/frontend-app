@@ -80,6 +80,72 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('비밀번호 찾기'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '가입하신 이메일을 입력하시면 임시 비밀번호를 전송해드립니다.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: '이메일',
+                  hintText: 'example@email.com',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  prefixIcon: const Icon(Icons.email_outlined),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = emailController.text.trim();
+                if (email.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('이메일을 입력해주세요'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                
+                // 먼저 context를 저장
+                final buildContext = context;
+                Navigator.of(context).pop();
+                
+                // AuthProvider에서 비밀번호 찾기 처리
+                if (buildContext.mounted) {
+                  final authProvider = buildContext.read<AuthProvider>();
+                  await authProvider.findPassword(email, buildContext);
+                }
+              },
+              child: const Text('전송'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,7 +305,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: Constants.largePadding),
+                        const SizedBox(height: Constants.smallPadding),
+
+                        // 비밀번호 찾기 링크
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              _showForgotPasswordDialog();
+                            },
+                            child: Text(
+                              '비밀번호를 잊으셨나요?',
+                              style: TextStyle(
+                                color: Colors.blue.shade600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: Constants.defaultPadding),
 
                         // 로그인 버튼
                         Consumer<AuthProvider>(

@@ -8,11 +8,17 @@ class AuthProvider with ChangeNotifier {
   User? _currentUser;
   bool _isLoading = false;
   String _errorMessage = '';
+  bool _isInitialized = false;
 
   User? get currentUser => _currentUser;
+
   bool get isLoading => _isLoading;
+
   String get errorMessage => _errorMessage;
+
   bool get isLoggedIn => _currentUser != null;
+  
+  bool get isInitialized => _isInitialized;
 
   void setLoading(bool loading) {
     _isLoading = loading;
@@ -84,10 +90,15 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       if (e.toString().contains('ApiException')) {
-        final errorMsg = e.toString().replaceAll('ApiException: ', '');
-        setError(errorMsg.split(' (Status:')[0]);
+        final errorMsg = e
+            .toString()
+            .replaceAll('ApiException: ', '')
+            .replaceAll('Exception: 로그인 실패:', '')
+            .replaceAll('(Status: 400)', '');
+
+        setError(errorMsg);
       } else {
-        setError('로그인 중 오류가 발생했습니다: ${e.toString()}');
+        setError('로그인 중 오류가 발생했습니다');
       }
       return false;
     } finally {
@@ -117,7 +128,8 @@ class AuthProvider with ChangeNotifier {
 
       // 회원가입 요청 API 호출 (관리자 승인 대기)
       final response = await ApiService().submitJoinRequest(
-        username: email, // username으로 email 사용
+        username: email,
+        // username으로 email 사용
         email: email,
         name: name,
         role: role,
@@ -214,6 +226,7 @@ class AuthProvider with ChangeNotifier {
       if (token == null) {
         print('[AuthProvider] 토큰 없음 - 로그인 필요');
         _currentUser = null;
+        _isInitialized = true;
         notifyListeners();
         return;
       }
@@ -294,6 +307,7 @@ class AuthProvider with ChangeNotifier {
           companyId: _currentUser!.company?.id,
         );
 
+        _isInitialized = true;
         notifyListeners();
       } catch (e) {
         print('[AuthProvider] 사용자 정보 복원 실패: $e');
@@ -303,6 +317,7 @@ class AuthProvider with ChangeNotifier {
       print('[AuthProvider] 인증 상태 확인 중 오류: $e');
       await _performLogout();
     } finally {
+      _isInitialized = true;
       setLoading(false);
     }
   }
@@ -312,12 +327,14 @@ class AuthProvider with ChangeNotifier {
     try {
       await StorageService().removeAll();
       _currentUser = null;
+      _isInitialized = true;
       clearError();
       notifyListeners();
       print('[AuthProvider] 로그아웃 처리 완료');
     } catch (e) {
       print('[AuthProvider] 로그아웃 처리 중 오류: $e');
       _currentUser = null;
+      _isInitialized = true;
       notifyListeners();
     }
   }
@@ -325,5 +342,188 @@ class AuthProvider with ChangeNotifier {
   void updateUser(User user) {
     _currentUser = user;
     notifyListeners();
+  }
+
+  // 비밀번호 찾기
+  Future<void> findPassword(String email, BuildContext context) async {
+    try {
+      setLoading(true);
+      clearError();
+
+      final response = await ApiService().findPassword(email: email);
+      
+      if (!context.mounted) return;
+
+      if (response['message'] != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message']),
+            backgroundColor: Colors.green.shade600,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['error'] ?? '비밀번호 찾기에 실패했습니다.'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      String errorMessage = '비밀번호 찾기 중 오류가 발생했습니다';
+      
+      if (e.toString().contains('403')) {
+        errorMessage = '임시로 비밀번호 찾기 기능이 제한되었습니다. 잠시 후 다시 시도해주세요.';
+      } else if (e.toString().contains('ApiException')) {
+        final msg = e.toString().replaceAll('ApiException: ', '').split(' (Status:')[0];
+        errorMessage = msg;
+      }
+      
+      setError(errorMessage);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 비밀번호 변경
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required BuildContext context,
+  }) async {
+    try {
+      setLoading(true);
+      clearError();
+
+      final response = await ApiService().changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+
+      if (response['message'] != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message']),
+              backgroundColor: Colors.green.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return true;
+      } else {
+        final errorMsg = response['error'] ?? '비밀번호 변경에 실패했습니다.';
+        setError(errorMsg);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return false;
+      }
+    } catch (e) {
+      if (e.toString().contains('ApiException')) {
+        final errorMsg = e.toString().replaceAll('ApiException: ', '');
+        setError(errorMsg.split(' (Status:')[0]);
+      } else {
+        setError('비밀번호 변경 중 오류가 발생했습니다: ${e.toString()}');
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 회원 역할 변경
+  Future<bool> updateMemberRole(String role) async {
+    try {
+      setLoading(true);
+      clearError();
+
+      print('[AuthProvider] 역할 변경 요청: $role');
+
+      final response = await ApiService().updateMemberRole(role: role);
+      print('[AuthProvider] 역할 변경 API 응답: $response');
+
+      if (response['message'] != null) {
+        print('[AuthProvider] 역할 변경 성공: ${response['message']}');
+
+        // 현재 사용자 정보 업데이트
+        if (_currentUser != null) {
+          final updatedUser = User(
+            id: _currentUser!.id,
+            username: _currentUser!.username,
+            email: _currentUser!.email,
+            name: _currentUser!.name,
+            role: role,
+            company: _currentUser!.company,
+            tokenInfo: _currentUser!.tokenInfo,
+            createdAt: _currentUser!.createdAt,
+            department: _currentUser!.department,
+            position: _currentUser!.position,
+          );
+
+          _currentUser = updatedUser;
+
+          // 저장된 사용자 데이터도 업데이트
+          final userData = StorageService().getSavedUserData();
+          if (userData != null) {
+            userData['role'] = role;
+            await StorageService().saveUserData(userData);
+          }
+
+          notifyListeners();
+        }
+
+        return true;
+      } else {
+        final errorMsg = response['error'] ?? '역할 변경에 실패했습니다.';
+        setError(errorMsg);
+        return false;
+      }
+    } catch (e) {
+      if (e.toString().contains('ApiException')) {
+        final errorMsg = e.toString().replaceAll('ApiException: ', '');
+        setError(errorMsg.split(' (Status:')[0]);
+      } else {
+        setError('역할 변경 중 오류가 발생했습니다: ${e.toString()}');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }
 }

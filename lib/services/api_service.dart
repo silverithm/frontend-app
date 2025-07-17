@@ -112,6 +112,9 @@ class ApiService {
   // 글로벌 로그아웃 처리 (토큰 제거 + 화면 이동)
   Future<void> _performGlobalLogout() async {
     try {
+      print('[API] === 글로벌 로그아웃 시작 ===');
+      print('[API] 호출 스택: ${StackTrace.current}');
+      
       // 모든 토큰 제거
       await StorageService().removeAll();
       print('[API] 글로벌 로그아웃 - 모든 데이터 제거 완료');
@@ -544,6 +547,62 @@ class ApiService {
     });
   }
 
+  // 비밀번호 찾기 (임시 비밀번호 발송) - 인증 불필요
+  Future<Map<String, dynamic>> findPassword({required String email}) async {
+    try {
+      final uri = Uri.parse('$_baseUrl${Constants.findPasswordEndpoint}').replace(
+        queryParameters: {'email': email},
+      );
+
+      final response = await http.post(
+        uri,
+        headers: await _getHeaders(includeAuth: false),
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('비밀번호 찾기 실패: $e');
+    }
+  }
+
+  // 비밀번호 변경
+  Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final response = await http.post(
+        Uri.parse('$_baseUrl${Constants.changePasswordEndpoint}'),
+        headers: await _getHeaders(),
+        body: json.encode({
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      );
+
+      return response;
+    });
+  }
+
+  // 회원 역할 변경
+  Future<Map<String, dynamic>> updateMemberRole({required String role}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl${Constants.updateRoleEndpoint}').replace(
+        queryParameters: {'role': role},
+      );
+
+      print('[API] 역할 변경 요청 URI: $uri');
+      final response = await http.put(
+        uri,
+        headers: await _getHeaders(),
+      );
+      print('[API] 역할 변경 응답 상태: ${response.statusCode}');
+      print('[API] 역할 변경 응답 본문: ${response.body}');
+
+      return response;
+    });
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
     print('API 응답 상태 코드: ${response.statusCode}');
     print('API 응답 본문 길이: ${response.body.length}');
@@ -561,7 +620,7 @@ class ApiService {
         String errorMessage;
         switch (response.statusCode) {
           case 400:
-            errorMessage = '이미 가입 요청된 사용자이거나 잘못된 요청입니다.';
+            errorMessage = '아이디 또는 비밀번호를 다시 확인해 주세요';
             break;
           case 401:
             errorMessage = '인증이 필요합니다.';

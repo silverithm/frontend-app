@@ -98,11 +98,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // ApiService에 글로벌 context 설정
       ApiService().setGlobalContext(context);
-      
+
       // 앱 버전 체크
       final appVersionProvider = context.read<AppVersionProvider>();
       await appVersionProvider.checkAppVersion();
-      
+
       // 버전 체크 후 로그인 상태 확인
       if (!appVersionProvider.forceUpdate) {
         context.read<AuthProvider>().checkAuthStatus();
@@ -114,8 +114,32 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     return Consumer2<AuthProvider, AppVersionProvider>(
       builder: (context, authProvider, appVersionProvider, child) {
-        // 버전 체크 중이거나 로딩 중일 때도 로그인 화면으로 바로 이동
-        if (!appVersionProvider.isVersionChecked || authProvider.isLoading) {
+        // 버전 체크 또는 인증 체크가 완료되지 않았을 때
+        if (!appVersionProvider.isVersionChecked || !authProvider.isInitialized) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/app_icon_with_text_3.png',
+                    width: 200,
+                    height:200,
+                  ),
+                  const SizedBox(height: 10),
+                  const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // 로그인되지 않은 경우에만 로그인 화면으로 이동
+        if (!authProvider.isLoggedIn) {
           return const LoginScreen();
         }
 
