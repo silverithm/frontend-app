@@ -4,6 +4,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
 import '../services/analytics_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import '../theme/app_theme.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -1049,7 +1053,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         children: [
                                           _buildInfoRow(
                                             icon: Icons.work,
-                                            iconColor: Colors.purple.shade600,
+                                            iconColor: AppSemanticColors.interactiveSecondaryDefault,
                                             title: '직책',
                                             value: user.position!,
                                           ),
@@ -1239,12 +1243,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.purple.shade100,
+                                color: AppSemanticColors.backgroundSecondary,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
-                                color: Colors.purple.shade600,
+                                color: AppSemanticColors.interactiveSecondaryDefault,
                                 size: 20,
                               ),
                             ),
@@ -1579,7 +1583,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       case 'OFFICE':
         return Colors.blue.shade500;
       case 'admin':
-        return Colors.purple.shade500;
+        return AppSemanticColors.interactiveSecondaryDefault;
       default:
         return Colors.grey.shade500;
     }

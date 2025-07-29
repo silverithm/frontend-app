@@ -10,13 +10,16 @@ import 'providers/vacation_provider.dart';
 import 'providers/company_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/app_version_provider.dart';
+import 'providers/admin_provider.dart';
 import 'services/storage_service.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
 import 'services/fcm_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
+import 'utils/admin_utils.dart';
 import 'widgets/update_dialog.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,20 +60,13 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CompanyProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => AppVersionProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
           return MaterialApp(
             title: 'Frontend App',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: appProvider.isDarkMode
-                    ? Brightness.dark
-                    : Brightness.light,
-              ),
-              useMaterial3: true,
-            ),
+            theme: appProvider.isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme,
             home: const AuthWrapper(),
             debugShowCheckedModeBanner: false,
             navigatorObservers: [AnalyticsService().observer],
@@ -186,6 +182,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // 로그인 상태에 따라 화면 분기 (항상 백그라운드 화면 렌더링)
         Widget backgroundScreen;
         if (authProvider.isLoggedIn) {
+          print('[AuthWrapper] 로그인된 사용자 정보:');
+          print('[AuthWrapper] - 이름: ${authProvider.currentUser?.name}');
+          print('[AuthWrapper] - 역할: ${authProvider.currentUser?.role}');
+          print('[AuthWrapper] - 회사: ${authProvider.currentUser?.company?.name}');
+          print('[AuthWrapper] - canAccessAdminPages: ${AdminUtils.canAccessAdminPages(authProvider.currentUser)}');
+          
+          // 모든 사용자는 동일한 MainScreen을 사용 (역할에 따른 네비게이션은 MainScreen 내부에서 처리)
+          print('[AuthWrapper] 메인 화면 표시 (역할: ${authProvider.currentUser?.role})');
           backgroundScreen = const MainScreen();
         } else {
           backgroundScreen = const LoginScreen();

@@ -4,6 +4,10 @@ import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
 import '../providers/notification_provider.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import '../theme/app_theme.dart';
 import 'dart:math' as math;
 
 class MyVacationScreen extends StatefulWidget {
@@ -844,7 +848,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
                 return SliverList(
                   delegate: SliverChildListDelegate([
-                    // 통계 카드
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: Container(
@@ -1292,12 +1295,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                                 request.duration ==
                                                     VacationDuration.fullDay
                                                 ? [
-                                                    Colors.purple.shade400,
-                                                    Colors.purple.shade600,
+                                                    AppSemanticColors.interactiveSecondaryDefault,
+                                                    AppSemanticColors.interactiveSecondaryDefault,
                                                   ]
                                                 : [
-                                                    Colors.purple.shade300,
-                                                    Colors.purple.shade500,
+                                                    AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.7),
+                                                    AppSemanticColors.interactiveSecondaryDefault,
                                                   ],
                                           ),
                                           borderRadius: BorderRadius.circular(

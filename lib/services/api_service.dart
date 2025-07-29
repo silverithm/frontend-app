@@ -225,6 +225,24 @@ class ApiService {
     }
   }
 
+  // 관리자 로그인
+  Future<Map<String, dynamic>> adminSignin({
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl${Constants.adminSigninEndpoint}'),
+        headers: await _getHeaders(includeAuth: false),
+        body: json.encode({'email': username, 'password': password}),
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('관리자 로그인 실패: $e');
+    }
+  }
+
   // 토큰 검증 (서버에 토큰 유효성 확인)
   Future<Map<String, dynamic>?> validateToken() async {
     try {
@@ -603,6 +621,243 @@ class ApiService {
     });
   }
 
+  // ===================== 관리자 기능 API =====================
+
+  // 승인 대기 중인 가입 요청 조회
+  Future<Map<String, dynamic>> getPendingJoinRequests({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/members/join-requests/pending',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 승인 대기 요청 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 회사 전체 회원 조회
+  Future<Map<String, dynamic>> getCompanyMembers({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/members',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 회사 회원 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 가입 요청 승인
+  Future<Map<String, dynamic>> approveJoinRequest({
+    required String userId,
+    required String adminId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/members/join-requests/$userId/approve',
+      ).replace(queryParameters: {'adminId': adminId});
+
+      print('[API] 가입 요청 승인: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers);
+    });
+  }
+
+  // 가입 요청 거부
+  Future<Map<String, dynamic>> rejectJoinRequest({
+    required String userId,
+    required String adminId,
+    required String rejectReason,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/members/join-requests/$userId/reject',
+      ).replace(queryParameters: {'adminId': adminId});
+
+      print('[API] 가입 요청 거부: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'rejectReason': rejectReason}),
+      );
+    });
+  }
+
+  // 회원 상태 변경 (활성/비활성)
+  Future<Map<String, dynamic>> updateMemberStatus({
+    required String userId,
+    required String status, // 'active' or 'inactive'
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/members/$userId');
+
+      print('[API] 회원 상태 변경: $uri, status: $status');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'status': status}),
+      );
+    });
+  }
+
+  // 회원 삭제
+  Future<Map<String, dynamic>> deleteMember({
+    required String userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/members/$userId');
+
+      print('[API] 회원 삭제: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 휴가 요청 목록 조회 (관리자용)
+  Future<Map<String, dynamic>> getVacationRequests({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/vacation/requests',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 휴가 요청 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 휴가 요청 승인
+  Future<Map<String, dynamic>> approveVacationRequest({
+    required String vacationId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/api/vacation/approve/$vacationId');
+
+      print('[API] 휴가 요청 승인: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers);
+    });
+  }
+
+  // 휴가 요청 거부
+  Future<Map<String, dynamic>> rejectVacationRequest({
+    required String vacationId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/api/vacation/reject/$vacationId');
+
+      print('[API] 휴가 요청 거부: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers);
+    });
+  }
+
+
+  // 휴가 한도 저장
+  Future<Map<String, dynamic>> saveVacationLimits({
+    required String companyId,
+    required List<Map<String, dynamic>> limits,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/vacation/limits',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 휴가 한도 저장: $uri');
+      print('[API] 한도 데이터: $limits');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({'limits': limits}),
+      );
+    });
+  }
+
+  // 회사 프로필 조회
+  Future<Map<String, dynamic>> getCompanyProfile() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/api/v1/company/profile');
+
+      print('[API] 회사 프로필 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 회사 프로필 업데이트
+  Future<Map<String, dynamic>> updateCompanyProfile({
+    String? name,
+    String? address,
+    String? contactEmail,
+    String? contactPhone,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/api/v1/company/profile');
+
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (address != null) body['address'] = address;
+      if (contactEmail != null) body['contactEmail'] = contactEmail;
+      if (contactPhone != null) body['contactPhone'] = contactPhone;
+
+      print('[API] 회사 프로필 업데이트: $uri');
+      print('[API] 업데이트 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
     print('API 응답 상태 코드: ${response.statusCode}');
     print('API 응답 본문 길이: ${response.body.length}');
@@ -615,30 +870,7 @@ class ApiService {
         return {};
       } else {
         print('빈 응답이고 에러 상태 코드');
-
-        // 특정 에러 상태에 대한 의미있는 메시지 제공
-        String errorMessage;
-        switch (response.statusCode) {
-          case 400:
-            errorMessage = '아이디 또는 비밀번호를 다시 확인해 주세요';
-            break;
-          case 401:
-            errorMessage = '인증이 필요합니다.';
-            break;
-          case 403:
-            errorMessage = '접근 권한이 없습니다.';
-            break;
-          case 404:
-            errorMessage = '요청한 리소스를 찾을 수 없습니다.';
-            break;
-          case 500:
-            errorMessage = '서버 내부 오류가 발생했습니다.';
-            break;
-          default:
-            errorMessage = '서버에서 빈 응답을 반환했습니다';
-        }
-
-        throw ApiException(errorMessage, response.statusCode);
+        _throwMeaningfulError(response.statusCode, '서버에서 빈 응답을 반환했습니다');
       }
     }
 
@@ -650,21 +882,64 @@ class ApiService {
         return responseData;
       } else {
         print('API 요청 실패 - 에러 처리');
-        // Spring Boot API 에러 형식에 맞춰 에러 처리
-        final errorMessage =
-            responseData['error'] ?? responseData['message'] ?? 'API 요청 실패';
+        // frontend-admin과 동일한 에러 처리 방식
+        final errorMessage = responseData['error'] ?? 
+                           responseData['message'] ?? 
+                           _getDefaultErrorMessage(response.statusCode);
         throw ApiException(errorMessage, response.statusCode);
       }
     } catch (e) {
       print('JSON 파싱 에러: $e');
-      if (e is FormatException) {
-        throw ApiException(
-          '서버 응답을 파싱할 수 없습니다: ${response.body}',
-          response.statusCode,
-        );
-      } else {
+      if (e is ApiException) {
         rethrow;
       }
+      if (e is FormatException) {
+        // JSON 파싱 실패 시 응답 내용에 따라 적절한 에러 메시지 생성
+        if (response.body.contains('error')) {
+          try {
+            // 단순한 에러 텍스트인 경우
+            final simpleError = response.body.replaceAll('"', '').replaceAll('{', '').replaceAll('}', '');
+            if (simpleError.contains('error:')) {
+              final errorMsg = simpleError.split('error:')[1].trim();
+              throw ApiException(errorMsg, response.statusCode);
+            }
+          } catch (_) {
+            // 파싱 실패 시 기본 에러
+          }
+        }
+        _throwMeaningfulError(response.statusCode, '서버 응답을 파싱할 수 없습니다');
+      } else {
+        _throwMeaningfulError(response.statusCode, 'API 요청 처리 중 오류가 발생했습니다');
+      }
+    }
+    
+    // 도달하지 않아야 하는 코드, 안전을 위해 예외 throw
+    throw ApiException('예상치 못한 오류가 발생했습니다', 500);
+  }
+  
+  void _throwMeaningfulError(int statusCode, String fallbackMessage) {
+    final errorMessage = _getDefaultErrorMessage(statusCode, fallbackMessage);
+    throw ApiException(errorMessage, statusCode);
+  }
+  
+  String _getDefaultErrorMessage(int statusCode, [String? fallbackMessage]) {
+    switch (statusCode) {
+      case 400:
+        return '잘못된 요청입니다. 입력 정보를 다시 확인해 주세요';
+      case 401:
+        return '인증이 필요합니다. 다시 로그인해 주세요';
+      case 403:
+        return '접근 권한이 없습니다';
+      case 404:
+        return '요청한 리소스를 찾을 수 없습니다';
+      case 500:
+        return '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해 주세요';
+      case 502:
+        return '서버가 일시적으로 사용할 수 없습니다';
+      case 503:
+        return '서비스를 일시적으로 사용할 수 없습니다';
+      default:
+        return fallbackMessage ?? 'API 요청 실패 (${statusCode})';
     }
   }
 }

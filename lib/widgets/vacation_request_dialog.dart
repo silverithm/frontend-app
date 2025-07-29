@@ -4,6 +4,10 @@ import '../models/vacation_request.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/analytics_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import '../theme/app_theme.dart';
 
 class VacationRequestDialog extends StatefulWidget {
   final DateTime selectedDate;
@@ -713,8 +717,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                                       VacationDuration.halfDayPm
                                                   ? LinearGradient(
                                                       colors: [
-                                                        Colors.purple.shade50,
-                                                        Colors.purple.shade100,
+                                                        AppSemanticColors.backgroundSecondary,
+                                                        AppSemanticColors.surfaceDefault,
                                                       ],
                                                     )
                                                   : null,
@@ -730,7 +734,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                                     _selectedDuration ==
                                                         VacationDuration
                                                             .halfDayPm
-                                                    ? Colors.purple.shade300
+                                                    ? AppSemanticColors.interactiveSecondaryDefault
                                                     : Colors.grey.shade300,
                                                 width: 2,
                                               ),

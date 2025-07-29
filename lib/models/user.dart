@@ -37,7 +37,7 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['memberId']?.toString() ?? json['id']?.toString() ?? '',
+      id: json['id']?.toString() ?? '',
       username: json['username'] ?? '',
       email: json['email'] ?? '',
       name: json['name'] ?? '',
@@ -55,7 +55,7 @@ class User {
       lastLoginAt: json['lastLoginAt'] != null
           ? DateTime.tryParse(json['lastLoginAt'])
           : null,
-      isActive: json['isActive'] ?? json['status'] == 'active',
+      isActive: json['isActive'] ?? (json['status'] == 'active'),
       tokenInfo: json['tokenInfo'] != null
           ? TokenInfo.fromJson(json['tokenInfo'])
           : null,

@@ -6,6 +6,10 @@ import '../models/vacation_request.dart';
 import '../widgets/vacation_calendar_widget.dart';
 import '../widgets/vacation_request_dialog.dart';
 import '../services/analytics_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import '../theme/app_theme.dart';
 import 'dart:math' as math;
 
 class CalendarScreen extends StatefulWidget {
@@ -114,9 +118,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.blue.shade600,
-                    Colors.blue.shade400,
-                    Colors.cyan.shade300,
+                    AppSemanticColors.interactivePrimaryDefault,
+                    AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
+                    AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.6),
                   ],
                 ),
               ),
@@ -143,9 +147,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.blue.shade600,
-                        Colors.blue.shade400,
-                        Colors.cyan.shade300,
+                        AppSemanticColors.interactivePrimaryDefault,
+                        AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
+                        AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.6),
                       ],
                     ),
                   ),
@@ -211,7 +215,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Colors.white, Colors.blue.shade50],
+                      colors: [Colors.white, AppSemanticColors.backgroundSecondary],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
@@ -238,15 +242,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          Colors.blue.shade400,
-                                          Colors.blue.shade600,
+                                          AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
+                                          AppSemanticColors.interactivePrimaryDefault,
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.blue.shade300
-                                              .withOpacity(0.4),
+                                          color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.4),
                                           blurRadius: 8,
                                           offset: const Offset(0, 4),
                                         ),
@@ -340,14 +343,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.shade100,
+                                    color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
                                     '휴무자 ${vacations.length}명',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.blue.shade700,
+                                      color: AppSemanticColors.interactivePrimaryDefault,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -444,8 +447,8 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
             ),
 
-          // 하단 여백
-          const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+          // 하단 여백 - 플로팅 액션 버튼이 잘리지 않도록 충분한 여백 확보
+          const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
         ],
       ),
       floatingActionButton: ScaleTransition(
@@ -456,15 +459,15 @@ class _CalendarScreenState extends State<CalendarScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.blue.shade400,
-                Colors.blue.shade600,
-                Colors.blue.shade800,
+                AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
+                AppSemanticColors.interactivePrimaryDefault,
+                AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 1.2, red: 0.8),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.blue.shade400.withOpacity(0.4),
+                color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.4),
                 blurRadius: 15,
                 offset: const Offset(0, 6),
               ),

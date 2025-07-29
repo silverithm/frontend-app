@@ -5,6 +5,10 @@ import '../providers/auth_provider.dart';
 import '../providers/company_provider.dart';
 import '../models/company.dart';
 import '../utils/constants.dart';
+import '../widgets/common/index.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -355,53 +359,121 @@ class _RegisterScreenState extends State<RegisterScreen> {
               // 승인 프로세스 안내
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.blue.shade50, Colors.indigo.shade50],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.blue.shade200, width: 1),
-                ),
-                child: Row(
+                child: Column(
                   children: [
+                    // 가입 프로세스 카드
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.admin_panel_settings,
-                        color: Colors.blue.shade600,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '관리자 승인 필요',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '회원가입 요청 후 관리자 승인을 받아야\n로그인이 가능합니다.',
-                            style: TextStyle(
-                              color: Colors.blue.shade700,
-                              fontSize: 12,
-                              height: 1.3,
-                            ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.white, Colors.blue.shade50],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.shade100.withOpacity(0.5),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
                         ],
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            '회원가입 절차 안내',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade900,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          // 프로세스 그리드
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.65,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            children: [
+                              _buildProcessCard(
+                                '1',
+                                '[관리자]',
+                                '웹사이트 가입',
+                                '근무표 관리자가 먼저 carev.kr에서 회사 정보를 등록하며 가입을 완료합니다.',
+                                Icons.computer,
+                                'from-blue-400 to-indigo-500',
+                              ),
+                              _buildProcessCard(
+                                '2',
+                                '[직원]',
+                                '앱 가입 요청',
+                                '직원은 앱에서 가입 시, 등록된 소속 회사를 선택하고 가입을 요청합니다.',
+                                Icons.phone_android,
+                                'from-indigo-400 to-purple-500',
+                              ),
+                              _buildProcessCard(
+                                '3',
+                                '[관리자]',
+                                '가입 승인',
+                                '관리자는 carev.kr에서(회원 관리) 직원의 가입 요청을 확인하고 승인합니다.',
+                                Icons.check_circle,
+                                'from-green-400 to-teal-500',
+                              ),
+                              _buildProcessCard(
+                                '4',
+                                '[직원]',
+                                '앱 로그인',
+                                '관리자의 승인이 완료되면, 직원은 앱에 정상적으로 로그인할 수 있습니다.',
+                                Icons.login,
+                                'from-purple-400 to-pink-500',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // 사용방법 버튼
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.orange.shade400, Colors.orange.shade600],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.orange.shade300.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextButton.icon(
+                        onPressed: () => _launchURL('https://youtu.be/x2cJedS6vaU'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.play_circle_filled,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        label: const Text(
+                          '사용방법 보러가기',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -423,74 +495,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // 회원가입 프로세스 안내
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey.shade50,
-                                Colors.blue.shade50,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.grey.shade200,
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                '회원가입 절차',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade800,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  _buildProcessStep(
-                                    '1',
-                                    '정보 입력',
-                                    Colors.blue.shade600,
-                                    true,
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      height: 2,
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  _buildProcessStep(
-                                    '2',
-                                    '관리자 승인',
-                                    Colors.orange.shade600,
-                                    false,
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      height: 2,
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  _buildProcessStep(
-                                    '3',
-                                    '로그인 가능',
-                                    Colors.green.shade600,
-                                    false,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
 
                         // 이름 입력
                         TextFormField(
@@ -1282,5 +1286,120 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildProcessCard(
+    String step,
+    String role,
+    String title,
+    String description,
+    IconData icon,
+    String gradientColors,
+  ) {
+    final colors = _getGradientColors(gradientColors);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: colors,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    step,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colors[0].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  role,
+                  style: TextStyle(
+                    color: colors[1],
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Icon(
+            icon,
+            size: 32,
+            color: colors[0],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Text(
+                description,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 11,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Color> _getGradientColors(String gradientString) {
+    switch (gradientString) {
+      case 'from-blue-400 to-indigo-500':
+        return [Colors.blue.shade400, Colors.indigo.shade500];
+      case 'from-indigo-400 to-purple-500':
+        return [AppSemanticColors.interactivePrimaryDefault, AppSemanticColors.interactiveSecondaryDefault];
+      case 'from-green-400 to-teal-500':
+        return [Colors.green.shade400, Colors.teal.shade500];
+      case 'from-purple-400 to-pink-500':
+        return [AppSemanticColors.interactiveSecondaryDefault, AppSemanticColors.statusErrorBackground];
+      default:
+        return [Colors.blue.shade400, Colors.blue.shade600];
+    }
   }
 }

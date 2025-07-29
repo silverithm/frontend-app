@@ -157,23 +157,17 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
 
         return FadeTransition(
           opacity: _fadeAnimation,
-          child: InteractiveViewer(
-            boundaryMargin: const EdgeInsets.all(20),
-            minScale: 1.0,
-            maxScale: 2.5,
-            panEnabled: true,
-            scaleEnabled: true,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-              ),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 헤더
                 Container(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -216,7 +210,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           icon: Icon(
                             Icons.chevron_left,
                             color: Colors.grey.shade700,
-                            size: 24,
+                            size: 20,
                           ),
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.transparent,
@@ -230,7 +224,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       Text(
                         _formatYearMonth(widget.currentDate),
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: Colors.grey.shade800,
                           letterSpacing: -0.5,
@@ -258,7 +252,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           icon: Icon(
                             Icons.chevron_right,
                             color: Colors.grey.shade700,
-                            size: 24,
+                            size: 20,
                           ),
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.transparent,
@@ -300,6 +294,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         ),
                         const SizedBox(width: 8),
                         _buildRoleFilterButton('OFFICE', '사무실', Icons.business),
+
                       ],
                     ),
                   ),
@@ -489,46 +484,62 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           : MediaQuery.of(context).size.height * 0.35;
 
                       if (_isExpanded) {
-                        // 확장 모드: 세로만 확장, 스크롤 개선
-                        final baseCellHeight = 50.0; // 기본 높이
-                        final additionalHeight =
-                            maxVacationsInDay * 18.0; // 휴가자당 18px
-                        final dynamicCellHeight =
-                            baseCellHeight + additionalHeight;
-                        final maxCellHeight = 150.0; // 최대 높이 제한 증가
-                        final cellHeight = math.min(
-                          dynamicCellHeight,
-                          maxCellHeight,
-                        );
+                        // 확장 모드: 주별로 동적 높이 조정
+                        // 주별로 그룹화
+                        List<List<DateTime>> weeks = [];
+                        for (int i = 0; i < days.length; i += 7) {
+                          weeks.add(days.sublist(i, math.min(i + 7, days.length)));
+                        }
 
-                        final totalGridHeight =
-                            cellHeight * rows + spacing * (rows - 1);
-                        final containerHeight = math.min(
-                          totalGridHeight,
-                          maxGridHeight,
-                        );
-
-                        return Container(
-                          height: totalGridHeight, // 전체 높이를 사용하여 스크롤 없이 표시
-                          child: GridView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            padding: EdgeInsets.zero,
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 7,
-                                  childAspectRatio: cellWidth / cellHeight,
-                                  crossAxisSpacing: spacing,
-                                  mainAxisSpacing: spacing,
-                                ),
-                            itemCount: days.length,
-                            itemBuilder: (context, index) => _buildCalendarCell(
-                              days[index],
-                              vacationProvider,
-                              dateTextHeight,
-                              cellHeight,
-                            ),
-                          ),
+                        return Column(
+                          children: weeks.map((weekDays) {
+                            // 이번 주에서 가장 많은 휴가자 수 계산 (필터링 적용)
+                            int maxVacationsInWeek = 0;
+                            for (final day in weekDays) {
+                              if (_isSameMonth(day)) {
+                                // getVacationsForDate는 이미 roleFilter가 적용된 결과를 반환함
+                                final vacations = vacationProvider.getVacationsForDate(day);
+                                print('[Calendar] 날짜: ${day.day}, 필터링된 휴가자: ${vacations.length}, 필터: ${widget.roleFilter}');
+                                
+                                if (vacations.length > maxVacationsInWeek) {
+                                  maxVacationsInWeek = vacations.length;
+                                }
+                              }
+                            }
+                            
+                            print('[Calendar] 주별 최대 휴가자 수: $maxVacationsInWeek (필터: ${widget.roleFilter})');
+                            
+                            // 주별 동적 높이 계산
+                            // 기본 높이: 30 (날짜 + 패딩)
+                            // 휴가자당: 18 (이름 표시 공간)
+                            // 휴무 제한 표시 공간: 20 (전체 모드가 아닐 때만)
+                            double baseHeight = 30.0;
+                            double vacationHeight = maxVacationsInWeek * 18.0;
+                            double limitHeight = widget.roleFilter != 'all' ? 20.0 : 0.0;
+                            double weekHeight = math.max(50.0, baseHeight + vacationHeight + limitHeight);
+                            
+                            print('[Calendar] 높이 계산 - 기본: $baseHeight, 휴가자: $vacationHeight, 제한: $limitHeight, 총: $weekHeight');
+                            
+                            return Container(
+                              margin: EdgeInsets.only(bottom: spacing),
+                              child: Row(
+                                children: weekDays.map((day) {
+                                  return Expanded(
+                                    child: Container(
+                                      height: weekHeight,
+                                      margin: EdgeInsets.only(right: spacing),
+                                      child: _buildCalendarCell(
+                                        day,
+                                        vacationProvider,
+                                        dateTextHeight,
+                                        weekHeight,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            );
+                          }).toList(),
                         );
                       } else {
                         // 기본 모드: 개선된 점 표시
@@ -595,17 +606,17 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       // 신청 상태
                       _buildCompactLegendItem(
                         '승인',
-                        Colors.green.shade500,
+                        Colors.green.shade400.withOpacity(0.8),
                         Icons.check_circle,
                       ),
                       _buildCompactLegendItem(
                         '대기',
-                        Colors.orange.shade500,
+                        Colors.amber.shade400.withOpacity(0.8),
                         Icons.schedule,
                       ),
                       _buildCompactLegendItem(
                         '거절',
-                        Colors.red.shade500,
+                        Colors.red.shade400.withOpacity(0.75),
                         Icons.cancel,
                       ),
 
@@ -642,7 +653,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       // 필수 휴무만 표시
                       _buildTypeLegendItem(
                         '필수',
-                        Colors.yellow.shade600,
+                        Colors.amber.shade500.withOpacity(0.9),
                         Icons.star,
                       ),
                     ],
@@ -650,7 +661,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                 ),
               ],
             ),
-          ),
           ),
         );
       },
@@ -758,12 +768,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       // 휴가자 이름들 (가운데부터 위쪽으로)
                       if (_isSameMonth(date) && vacations.isNotEmpty)
                         Positioned(
-                          top: 18, // 20 -> 18로 날짜와 간격 줄임
+                          top: 18, // 날짜와 간격
                           left: 0,
                           right: 0,
                           bottom: widget.roleFilter != 'all'
-                              ? 15
-                              : 0, // 20 -> 15로 인원 수 표시 공간 줄임
+                              ? 18 // 휴무 제한 표시 공간 확보
+                              : 2, // 전체 모드일 때는 최소 간격만
                           child: _buildVacationIndicator(date, vacations),
                         ),
 
@@ -777,6 +787,92 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 4,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.white.withOpacity(0.2)
+                                    : isAvailable
+                                    ? Colors.green.shade100
+                                    : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(3),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.4)
+                                      : isAvailable
+                                      ? Colors.green.shade300
+                                      : Colors.red.shade300,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '$currentCount/$limit',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : isAvailable
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
+                : Stack(
+                    children: [
+
+                      // 날짜 숫자 (좌측 상단)
+                      Positioned(
+                        top: 2,
+                        left: 2,
+                        child: Text(
+                          date.day.toString(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: !_isSameMonth(date)
+                                ? Colors.grey.shade300
+                                : isSelected
+                                ? Colors.white
+                                : isToday
+                                ? Colors.blue.shade700
+                                : date.weekday == DateTime.sunday
+                                ? Colors.red.shade600
+                                : date.weekday == DateTime.saturday
+                                ? Colors.blue.shade600
+                                : Colors.grey.shade800,
+                          ),
+                        ),
+                      ),
+
+
+                      // 휴가자 표시 영역 (중앙)
+                      if (_isSameMonth(date) && vacations.isNotEmpty)
+                        Positioned(
+                          top: 16,
+                          left: 2,
+                          right: 2,
+                          bottom: widget.roleFilter != 'all' ? 12 : 2,
+                          child: _buildVacationIndicator(date, vacations),
+                        ),
+
+                      // 인원 수 표시 (하단, 전체 모드가 아닐 때만)
+                      if (_isSameMonth(date) && widget.roleFilter != 'all')
+                        Positioned(
+                          bottom: 2,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3,
                                 vertical: 1,
                               ),
                               decoration: BoxDecoration(
@@ -814,100 +910,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           ),
                         ),
                     ],
-                  )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // 기본 모드: 개선된 점 표시
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // 날짜 숫자
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  date.day.toString(),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: !_isSameMonth(date)
-                                        ? Colors.grey.shade300
-                                        : isSelected
-                                        ? Colors.white
-                                        : isToday
-                                        ? Colors.blue.shade700
-                                        : date.weekday == DateTime.sunday
-                                        ? Colors.red.shade600
-                                        : date.weekday == DateTime.saturday
-                                        ? Colors.blue.shade600
-                                        : Colors.grey.shade800,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // 인원 수 표시 (전체 모드가 아닐 때만)
-                            if (_isSameMonth(date) &&
-                                widget.roleFilter != 'all')
-                              Flexible(
-                                child: Container(
-                                  margin: const EdgeInsets.only(top: 0.5),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 1.5,
-                                    vertical: 0.5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? Colors.white.withOpacity(0.2)
-                                        : isAvailable
-                                        ? Colors.green.shade100
-                                        : Colors.red.shade100,
-                                    borderRadius: BorderRadius.circular(3),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? Colors.white.withOpacity(0.4)
-                                          : isAvailable
-                                          ? Colors.green.shade300
-                                          : Colors.red.shade300,
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      '$currentCount/$limit',
-                                      style: TextStyle(
-                                        fontSize: 5,
-                                        fontWeight: FontWeight.w600,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : isAvailable
-                                            ? Colors.green.shade700
-                                            : Colors.red.shade700,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-
-                      // 휴가자 표시 영역
-                      if (_isSameMonth(date) && vacations.isNotEmpty)
-                        Expanded(
-                          flex: 2,
-                          child: Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(top: 1),
-                            child: _buildVacationIndicator(date, vacations),
-                          ),
-                        ),
-                    ],
                   ),
           ),
         ),
@@ -924,9 +926,8 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     }
 
     if (_isExpanded) {
-      // 확장 모드: 휴가자 이름들을 표시
-      return SizedBox(
-        height: 111.2,
+      // 확장 모드: 휴가자 이름들을 표시 (동적 높이, overflow 방지)
+      return Expanded(
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -986,92 +987,56 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         ),
       );
     } else {
-      // 기본 모드: 개선된 점 표시
+      // 기본 모드: 최대 2개 동그라미 + +N 표시
       return Container(
         padding: const EdgeInsets.all(2),
         child: Center(
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 2,
-            runSpacing: 2,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (vacations.length <= 3)
-                ...vacations.map((vacation) {
-                  return Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _getStatusColor(vacation.status),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _getStatusColor(
-                            vacation.status,
-                          ).withOpacity(0.4),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    // 필수휴무인 경우 작은 별표 표시
-                    child: vacation.type == VacationType.mandatory
-                        ? Center(
-                            child: Container(
-                              width: 4,
-                              height: 4,
-                              child: CustomPaint(
-                                painter: StarPainter(
-                                  color: Colors.yellow.shade600,
-                                ),
-                                size: const Size(4, 4),
-                              ),
-                            ),
-                          )
-                        : null,
-                  );
-                })
-              else ...[
-                ...vacations.take(2).map((vacation) {
-                  return Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _getStatusColor(vacation.status),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _getStatusColor(
-                            vacation.status,
-                          ).withOpacity(0.4),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: vacation.type == VacationType.mandatory
-                        ? Center(
-                            child: Container(
-                              width: 4,
-                              height: 4,
-                              child: CustomPaint(
-                                painter: StarPainter(
-                                  color: Colors.yellow.shade600,
-                                ),
-                                size: const Size(4, 4),
-                              ),
-                            ),
-                          )
-                        : null,
-                  );
-                }),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1.5,
-                  ),
+              // 동그라미들 (최대 2개)
+              ...vacations.take(2).map((vacation) {
+                return Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 2),
                   decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _getStatusColor(vacation.status),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _getStatusColor(vacation.status).withOpacity(0.4),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  // 필수휴무인 경우 작은 별표 표시
+                  child: vacation.type == VacationType.mandatory
+                      ? Center(
+                          child: Container(
+                            width: 5,
+                            height: 5,
+                            child: CustomPaint(
+                              painter: StarPainter(
+                                color: Colors.amber.shade600.withOpacity(0.9),
+                              ),
+                              size: const Size(5, 5),
+                            ),
+                          ),
+                        )
+                      : null,
+                );
+              }).toList(),
+              
+              // +N 표시 (3개 이상일 때)
+              if (vacations.length > 2)
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
                     color: Colors.grey.shade600,
-                    borderRadius: BorderRadius.circular(3),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.shade400.withOpacity(0.4),
@@ -1080,17 +1045,17 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       ),
                     ],
                   ),
-                  child: Text(
-                    '+${vacations.length - 2}',
-                    style: const TextStyle(
-                      fontSize: 8,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.2,
+                  child: Center(
+                    child: Text(
+                      '+${vacations.length - 2}',
+                      style: const TextStyle(
+                        fontSize: 4,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ],
             ],
           ),
         ),
@@ -1102,7 +1067,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     if (vacation.type == VacationType.mandatory) {
       // 필수 휴무는 별표 표시 (우선순위)
       return CustomPaint(
-        painter: StarPainter(color: Colors.yellow.shade600),
+        painter: StarPainter(color: Colors.amber.shade600.withOpacity(0.9)),
         size: const Size(8, 8),
       );
     } else {
@@ -1162,11 +1127,11 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
   Color _getStatusColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
-        return Colors.green.shade500;
+        return Colors.green.shade400.withOpacity(0.8); // 투명도가 있는 연한 초록색
       case VacationStatus.rejected:
-        return Colors.red.shade500;
+        return Colors.red.shade400.withOpacity(0.75); // 투명도가 있는 연한 빨간색
       case VacationStatus.pending:
-        return Colors.orange.shade500;
+        return Colors.amber.shade400.withOpacity(0.8); // 투명도가 있는 앰버색 (더 세련된 노란색)
     }
   }
 

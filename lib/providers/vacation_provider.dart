@@ -426,24 +426,10 @@ class VacationProvider with ChangeNotifier {
     String? companyId,
   }) async {
     try {
-      // 전체 모드일 때는 vacation limits를 요청하지 않음
-      if (_roleFilter == 'all') {
-        print('[VacationProvider] 전체 모드 - vacation limits 요청 생략');
-        // 기본값으로 설정
-        _vacationLimits.clear();
-        for (
-          var date = start;
-          date.isBefore(end.add(const Duration(days: 1)));
-          date = date.add(const Duration(days: 1))
-        ) {
-          _vacationLimits[DateTime(date.year, date.month, date.day)] =
-              3; // 전체 모드일 때도 기본값 3으로 설정
-        }
-        return;
-      }
-
       // Spring Boot API 호출 - role 필터 포함
-      final apiRole = _roleFilter == 'OFFICE' ? 'OFFICE' : 'CAREGIVER';
+      // 전체 모드일 때는 CAREGIVER 기준으로 휴무 제한을 가져옴
+      final apiRole = _roleFilter == 'all' ? 'CAREGIVER' : 
+                      _roleFilter == 'OFFICE' ? 'OFFICE' : 'CAREGIVER';
       print(
         '[VacationProvider] API 호출 - 현재 필터: $_roleFilter, API 역할: $apiRole',
       );

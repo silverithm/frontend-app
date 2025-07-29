@@ -5,6 +5,7 @@ class Constants {
   // API 엔드포인트
   static const String loginEndpoint = '/auth/login';
   static const String signinEndpoint = '/v1/members/signin';
+  static const String adminSigninEndpoint = '/v1/signin';
   static const String refreshTokenEndpoint = '/v1/refresh-token';
   static const String validateTokenEndpoint = '/v1/validate-token';
   static const String joinRequestEndpoint = '/v1/members/join-request';

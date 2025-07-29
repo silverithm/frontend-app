@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
+import '../models/admin_signin_response.dart';
+import '../models/member_signin_response.dart';
 import '../services/storage_service.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart';
+import '../utils/jwt_utils.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _currentUser;
@@ -46,11 +49,12 @@ class AuthProvider with ChangeNotifier {
         password: password,
       );
 
-      print('[AuthProvider] 로그인 응답: $response');
+      print('[AuthProvider] 일반 로그인 응답: $response');
 
       if (response['memberId'] != null) {
-        // 실제 응답 데이터로 User 객체 생성
-        _currentUser = User.fromJson(response);
+        // MemberSigninResponse로 파싱 후 User 객체로 변환
+        final memberResponse = MemberSigninResponse.fromJson(response);
+        _currentUser = memberResponse.toUser();
 
         // 토큰 저장
         if (response['tokenInfo'] != null &&
@@ -99,6 +103,80 @@ class AuthProvider with ChangeNotifier {
         setError(errorMsg);
       } else {
         setError('로그인 중 오류가 발생했습니다');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 관리자 로그인
+  Future<bool> adminLogin(String username, String password) async {
+    try {
+      setLoading(true);
+      clearError();
+
+      // 관리자 로그인 API 호출
+      final response = await ApiService().adminSignin(
+        username: username,
+        password: password,
+      );
+
+      print('[AuthProvider] 관리자 로그인 응답: $response');
+
+      if (response['userId'] != null) {
+        // AdminSigninResponse로 파싱 후 User 객체로 변환
+        final adminResponse = AdminSigninResponse.fromJson(response);
+        _currentUser = adminResponse.toUser();
+
+        // 토큰 저장
+        if (response['tokenInfo'] != null &&
+            response['tokenInfo']['accessToken'] != null) {
+          await StorageService().saveToken(
+            response['tokenInfo']['accessToken'],
+          );
+
+          // refresh token도 저장
+          if (response['tokenInfo']['refreshToken'] != null) {
+            await StorageService().saveRefreshToken(
+              response['tokenInfo']['refreshToken'],
+            );
+          }
+        }
+
+        // 사용자 정보 저장
+        await StorageService().saveUserData(response);
+
+        // Analytics 사용자 속성 설정
+        await AnalyticsService().setUserProperties(
+          userId: _currentUser!.id.toString(),
+          userRole: _currentUser!.role,
+          companyId: _currentUser!.company?.id,
+        );
+
+        print('[AuthProvider] 관리자 로그인 성공 - 사용자: ${_currentUser!.name}');
+        print('[AuthProvider] 관리자 로그인 성공 - 역할: ${_currentUser!.role}');
+        print('[AuthProvider] 관리자 로그인 성공 - 회사: ${_currentUser!.company?.name}');
+        print('[AuthProvider] 관리자 로그인 성공 - 활성 상태: ${_currentUser!.isActive}');
+        print('[AuthProvider] 관리자 로그인 성공 - 상태: ${_currentUser!.status}');
+        notifyListeners();
+        return true;
+      } else {
+        final errorMsg = response['error'] ?? '관리자 로그인에 실패했습니다.';
+        setError(errorMsg);
+        return false;
+      }
+    } catch (e) {
+      if (e.toString().contains('ApiException')) {
+        final errorMsg = e
+            .toString()
+            .replaceAll('ApiException: ', '')
+            .replaceAll('Exception: 관리자 로그인 실패:', '')
+            .replaceAll('(Status: 400)', '');
+
+        setError(errorMsg);
+      } else {
+        setError('관리자 로그인 중 오류가 발생했습니다');
       }
       return false;
     } finally {
@@ -297,8 +375,30 @@ class AuthProvider with ChangeNotifier {
 
       // 4단계: 모든 검증 통과 - 사용자 정보 복원
       try {
-        _currentUser = User.fromJson(savedUserData);
+        print('[AuthProvider] 저장된 데이터 키들: ${savedUserData.keys.toList()}');
+        
+        // 저장된 데이터의 구조를 판단해서 올바른 방식으로 복원
+        if (savedUserData['userId'] != null) {
+          // 관리자 응답 구조
+          print('[AuthProvider] 관리자 응답 구조 감지');
+          final adminResponse = AdminSigninResponse.fromJson(savedUserData);
+          _currentUser = adminResponse.toUser();
+        } else if (savedUserData['memberId'] != null) {
+          // 일반 직원 응답 구조
+          print('[AuthProvider] 직원 응답 구조 감지');
+          final memberResponse = MemberSigninResponse.fromJson(savedUserData);
+          _currentUser = memberResponse.toUser();
+        } else {
+          // 기존 User 구조 (하위 호환성)
+          print('[AuthProvider] 기존 User 구조 감지');
+          _currentUser = User.fromJson(savedUserData);
+        }
+        
         print('[AuthProvider] 사용자 정보 복원 성공: ${_currentUser!.name}');
+        print('[AuthProvider] 복원된 사용자 역할: ${_currentUser!.role}');
+        print('[AuthProvider] 복원된 사용자 활성 상태: ${_currentUser!.isActive}');
+        print('[AuthProvider] 복원된 사용자 상태: ${_currentUser!.status}');
+        print('[AuthProvider] 복원된 사용자 회사: ${_currentUser!.company?.name}');
 
         // Analytics 사용자 속성 설정
         await AnalyticsService().setUserProperties(

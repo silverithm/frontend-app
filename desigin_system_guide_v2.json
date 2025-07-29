@@ -1,0 +1,788 @@
+{
+  "designSystem": {
+    "name": "Advanced Calendar Design System",
+    "version": "3.0.0",
+    "description": "Comprehensive design guide for modern calendar application with advanced features",
+
+    "tokens": {
+      "colors": {
+        "base": {
+          "white": "#FFFFFF",
+          "black": "#000000",
+          "transparent": "transparent"
+        },
+        "gray": {
+          "50": "#F9FAFB",
+          "100": "#F3F4F6",
+          "200": "#E5E7EB",
+          "300": "#D1D5DB",
+          "400": "#9CA3AF",
+          "500": "#6B7280",
+          "600": "#4B5563",
+          "700": "#374151",
+          "800": "#1F2937",
+          "900": "#111827"
+        },
+        "blue": {
+          "50": "#EFF6FF",
+          "100": "#DBEAFE",
+          "200": "#BFDBFE",
+          "300": "#93C5FD",
+          "400": "#60A5FA",
+          "500": "#3B82F6",
+          "600": "#2563EB",
+          "700": "#1D4ED8",
+          "800": "#1E40AF",
+          "900": "#1E3A8A"
+        },
+        "green": {
+          "50": "#F0FDF4",
+          "100": "#DCFCE7",
+          "200": "#BBF7D0",
+          "300": "#86EFAC",
+          "400": "#4ADE80",
+          "500": "#22C55E",
+          "600": "#16A34A",
+          "700": "#15803D",
+          "800": "#166534",
+          "900": "#14532D"
+        },
+        "yellow": {
+          "50": "#FEFCE8",
+          "100": "#FEF9C3",
+          "200": "#FEF08A",
+          "300": "#FDE047",
+          "400": "#FACC15",
+          "500": "#EAB308",
+          "600": "#CA8A04",
+          "700": "#A16207",
+          "800": "#854D0E",
+          "900": "#713F12"
+        },
+        "red": {
+          "50": "#FEF2F2",
+          "100": "#FEE2E2",
+          "200": "#FECACA",
+          "300": "#FCA5A5",
+          "400": "#F87171",
+          "500": "#EF4444",
+          "600": "#DC2626",
+          "700": "#B91C1C",
+          "800": "#991B1B",
+          "900": "#7F1D1D"
+        },
+        "purple": {
+          "50": "#FAF5FF",
+          "100": "#F3E8FF",
+          "200": "#E9D5FF",
+          "300": "#D8B4FE",
+          "400": "#C084FC",
+          "500": "#A855F7",
+          "600": "#9333EA",
+          "700": "#7C3AED",
+          "800": "#6B21A8",
+          "900": "#581C87"
+        }
+      },
+      "spacing": {
+        "0": "0",
+        "px": "1px",
+        "0.5": "2px",
+        "1": "4px",
+        "1.5": "6px",
+        "2": "8px",
+        "2.5": "10px",
+        "3": "12px",
+        "3.5": "14px",
+        "4": "16px",
+        "5": "20px",
+        "6": "24px",
+        "7": "28px",
+        "8": "32px",
+        "9": "36px",
+        "10": "40px",
+        "12": "48px",
+        "14": "56px",
+        "16": "64px",
+        "20": "80px"
+      },
+      "borderRadius": {
+        "none": "0",
+        "sm": "2px",
+        "default": "4px",
+        "md": "6px",
+        "lg": "8px",
+        "xl": "12px",
+        "2xl": "16px",
+        "3xl": "24px",
+        "full": "9999px"
+      },
+      "shadows": {
+        "xs": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+        "sm": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+        "default": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        "md": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+        "lg": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+        "xl": "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        "inner": "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)"
+      },
+      "transitions": {
+        "fastest": "75ms",
+        "fast": "150ms",
+        "normal": "200ms",
+        "slow": "300ms",
+        "slowest": "500ms"
+      }
+    },
+
+    "semanticColors": {
+      "background": {
+        "primary": "@colors.base.white",
+        "secondary": "@colors.gray.50",
+        "tertiary": "@colors.gray.100",
+        "elevated": "@colors.base.white",
+        "overlay": "rgba(0, 0, 0, 0.5)"
+      },
+      "surface": {
+        "default": "@colors.base.white",
+        "hover": "@colors.gray.50",
+        "active": "@colors.gray.100",
+        "disabled": "@colors.gray.200",
+        "selected": "@colors.blue.50"
+      },
+      "border": {
+        "default": "@colors.gray.200",
+        "hover": "@colors.gray.300",
+        "focus": "@colors.blue.500",
+        "disabled": "@colors.gray.100"
+      },
+      "text": {
+        "primary": "@colors.gray.900",
+        "secondary": "@colors.gray.700",
+        "tertiary": "@colors.gray.500",
+        "disabled": "@colors.gray.400",
+        "inverse": "@colors.base.white",
+        "link": "@colors.blue.600",
+        "error": "@colors.red.600"
+      },
+      "interactive": {
+        "primary": {
+          "default": "@colors.blue.600",
+          "hover": "@colors.blue.700",
+          "active": "@colors.blue.800",
+          "disabled": "@colors.blue.300"
+        },
+        "secondary": {
+          "default": "@colors.gray.600",
+          "hover": "@colors.gray.700",
+          "active": "@colors.gray.800",
+          "disabled": "@colors.gray.300"
+        }
+      },
+      "status": {
+        "success": {
+          "background": "@colors.green.50",
+          "border": "@colors.green.200",
+          "text": "@colors.green.800",
+          "icon": "@colors.green.600"
+        },
+        "warning": {
+          "background": "@colors.yellow.50",
+          "border": "@colors.yellow.200",
+          "text": "@colors.yellow.800",
+          "icon": "@colors.yellow.600"
+        },
+        "error": {
+          "background": "@colors.red.50",
+          "border": "@colors.red.200",
+          "text": "@colors.red.800",
+          "icon": "@colors.red.600"
+        },
+        "info": {
+          "background": "@colors.blue.50",
+          "border": "@colors.blue.200",
+          "text": "@colors.blue.800",
+          "icon": "@colors.blue.600"
+        }
+      }
+    },
+
+    "typography": {
+      "fontFamilies": {
+        "sans": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "mono": "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace"
+      },
+      "fontSizes": {
+        "xs": "11px",
+        "sm": "12px",
+        "base": "14px",
+        "lg": "16px",
+        "xl": "18px",
+        "2xl": "20px",
+        "3xl": "24px",
+        "4xl": "30px",
+        "5xl": "36px"
+      },
+      "lineHeights": {
+        "tight": "1.25",
+        "normal": "1.5",
+        "relaxed": "1.75",
+        "loose": "2"
+      },
+      "fontWeights": {
+        "thin": "100",
+        "light": "300",
+        "normal": "400",
+        "medium": "500",
+        "semibold": "600",
+        "bold": "700",
+        "extrabold": "800"
+      },
+      "letterSpacing": {
+        "tighter": "-0.05em",
+        "tight": "-0.025em",
+        "normal": "0",
+        "wide": "0.025em",
+        "wider": "0.05em"
+      }
+    },
+
+    "components": {
+      "calendar": {
+        "container": {
+          "background": "@semanticColors.background.elevated",
+          "borderRadius": "@tokens.borderRadius.xl",
+          "boxShadow": "@tokens.shadows.sm",
+          "overflow": "hidden",
+          "border": "1px solid @semanticColors.border.default"
+        },
+        "header": {
+          "height": "64px",
+          "padding": "@tokens.spacing.4",
+          "background": "@semanticColors.background.primary",
+          "borderBottom": "1px solid @semanticColors.border.default",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between"
+        },
+        "navigation": {
+          "button": {
+            "size": "36px",
+            "borderRadius": "@tokens.borderRadius.lg",
+            "transition": "@tokens.transitions.fast",
+            "states": {
+              "default": {
+                "background": "transparent",
+                "color": "@semanticColors.text.secondary"
+              },
+              "hover": {
+                "background": "@semanticColors.surface.hover",
+                "color": "@semanticColors.text.primary"
+              },
+              "active": {
+                "background": "@semanticColors.surface.active",
+                "transform": "scale(0.95)"
+              },
+              "focus": {
+                "outline": "2px solid @semanticColors.interactive.primary.default",
+                "outlineOffset": "2px"
+              }
+            }
+          },
+          "monthYear": {
+            "fontSize": "@typography.fontSizes.2xl",
+            "fontWeight": "@typography.fontWeights.semibold",
+            "color": "@semanticColors.text.primary"
+          }
+        },
+        "viewToggle": {
+          "container": {
+            "display": "flex",
+            "gap": "@tokens.spacing.1",
+            "padding": "@tokens.spacing.1",
+            "background": "@semanticColors.background.secondary",
+            "borderRadius": "@tokens.borderRadius.lg"
+          },
+          "option": {
+            "padding": "@tokens.spacing.2 @tokens.spacing.3",
+            "borderRadius": "@tokens.borderRadius.md",
+            "fontSize": "@typography.fontSizes.sm",
+            "fontWeight": "@typography.fontWeights.medium",
+            "transition": "@tokens.transitions.fast",
+            "states": {
+              "default": {
+                "background": "transparent",
+                "color": "@semanticColors.text.secondary"
+              },
+              "hover": {
+                "background": "@semanticColors.surface.hover",
+                "color": "@semanticColors.text.primary"
+              },
+              "active": {
+                "background": "@semanticColors.background.primary",
+                "color": "@semanticColors.interactive.primary.default",
+                "boxShadow": "@tokens.shadows.sm"
+              }
+            }
+          }
+        },
+        "grid": {
+          "borderCollapse": "separate",
+          "borderSpacing": "0",
+          "width": "100%"
+        },
+        "weekHeader": {
+          "height": "40px",
+          "background": "@semanticColors.background.secondary",
+          "borderBottom": "1px solid @semanticColors.border.default",
+          "fontSize": "@typography.fontSizes.xs",
+          "fontWeight": "@typography.fontWeights.medium",
+          "color": "@semanticColors.text.tertiary",
+          "textTransform": "uppercase",
+          "letterSpacing": "@typography.letterSpacing.wide"
+        },
+        "dayCell": {
+          "minHeight": "100px",
+          "padding": "@tokens.spacing.2",
+          "border": "1px solid @semanticColors.border.default",
+          "transition": "@tokens.transitions.fast",
+          "position": "relative",
+          "verticalAlign": "top",
+          "states": {
+            "default": {
+              "background": "@semanticColors.surface.default",
+              "cursor": "pointer"
+            },
+            "hover": {
+              "background": "@semanticColors.surface.hover",
+              "zIndex": "1",
+              "boxShadow": "@tokens.shadows.sm"
+            },
+            "today": {
+              "background": "@semanticColors.surface.selected",
+              "borderColor": "@semanticColors.interactive.primary.default",
+              "borderWidth": "2px"
+            },
+            "otherMonth": {
+              "opacity": "0.3",
+              "background": "@semanticColors.background.secondary"
+            },
+            "selected": {
+              "background": "@colors.blue.100",
+              "borderColor": "@semanticColors.interactive.primary.default"
+            },
+            "weekend": {
+              "background": "@semanticColors.background.secondary"
+            }
+          }
+        },
+        "dayNumber": {
+          "fontSize": "@typography.fontSizes.base",
+          "fontWeight": "@typography.fontWeights.medium",
+          "color": "@semanticColors.text.primary",
+          "marginBottom": "@tokens.spacing.2",
+          "states": {
+            "today": {
+              "color": "@semanticColors.interactive.primary.default",
+              "fontWeight": "@typography.fontWeights.bold"
+            },
+            "otherMonth": {
+              "color": "@semanticColors.text.tertiary"
+            }
+          }
+        }
+      },
+      "event": {
+        "label": {
+          "minHeight": "26px",
+          "borderRadius": "@tokens.borderRadius.full",
+          "padding": "@tokens.spacing.1 @tokens.spacing.3",
+          "margin": "@tokens.spacing.0.5 0",
+          "fontSize": "@typography.fontSizes.sm",
+          "fontWeight": "@typography.fontWeights.medium",
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "@tokens.spacing.2",
+          "transition": "@tokens.transitions.normal",
+          "cursor": "pointer",
+          "position": "relative",
+          "overflow": "hidden",
+          "states": {
+            "hover": {
+              "transform": "translateY(-1px)",
+              "boxShadow": "@tokens.shadows.sm",
+              "zIndex": "10"
+            },
+            "active": {
+              "transform": "scale(0.98)"
+            },
+            "dragging": {
+              "opacity": "0.8",
+              "cursor": "grabbing",
+              "boxShadow": "@tokens.shadows.md"
+            }
+          }
+        },
+        "dot": {
+          "size": "8px",
+          "borderRadius": "@tokens.borderRadius.full",
+          "flexShrink": "0"
+        },
+        "text": {
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "whiteSpace": "nowrap",
+          "flex": "1"
+        },
+        "time": {
+          "fontSize": "@typography.fontSizes.xs",
+          "color": "@semanticColors.text.secondary",
+          "marginLeft": "@tokens.spacing.1"
+        },
+        "variants": {
+          "green": {
+            "background": "@semanticColors.status.success.background",
+            "color": "@semanticColors.status.success.text",
+            "dotColor": "@semanticColors.status.success.icon"
+          },
+          "yellow": {
+            "background": "@semanticColors.status.warning.background",
+            "color": "@semanticColors.status.warning.text",
+            "dotColor": "@semanticColors.status.warning.icon"
+          },
+          "blue": {
+            "background": "@semanticColors.status.info.background",
+            "color": "@semanticColors.status.info.text",
+            "dotColor": "@semanticColors.status.info.icon"
+          },
+          "red": {
+            "background": "@semanticColors.status.error.background",
+            "color": "@semanticColors.status.error.text",
+            "dotColor": "@semanticColors.status.error.icon"
+          },
+          "purple": {
+            "background": "@colors.purple.50",
+            "color": "@colors.purple.800",
+            "dotColor": "@colors.purple.600"
+          },
+          "neutral": {
+            "background": "@colors.gray.100",
+            "color": "@colors.gray.700",
+            "dotColor": "@colors.gray.500"
+          }
+        },
+        "multiDay": {
+          "position": "absolute",
+          "height": "24px",
+          "borderRadius": "@tokens.borderRadius.md",
+          "padding": "@tokens.spacing.1 @tokens.spacing.2",
+          "fontSize": "@typography.fontSizes.xs",
+          "fontWeight": "@typography.fontWeights.semibold",
+          "zIndex": "20",
+          "boxShadow": "@tokens.shadows.sm"
+        }
+      },
+      "controls": {
+        "moreButton": {
+          "fontSize": "@typography.fontSizes.xs",
+          "color": "@semanticColors.interactive.primary.default",
+          "fontWeight": "@typography.fontWeights.medium",
+          "padding": "@tokens.spacing.1 @tokens.spacing.2",
+          "borderRadius": "@tokens.borderRadius.md",
+          "transition": "@tokens.transitions.fast",
+          "states": {
+            "hover": {
+              "background": "@semanticColors.surface.hover",
+              "textDecoration": "underline"
+            }
+          }
+        },
+        "todayButton": {
+          "padding": "@tokens.spacing.2 @tokens.spacing.4",
+          "borderRadius": "@tokens.borderRadius.lg",
+          "border": "1px solid @semanticColors.border.default",
+          "fontSize": "@typography.fontSizes.sm",
+          "fontWeight": "@typography.fontWeights.medium",
+          "background": "@semanticColors.background.primary",
+          "color": "@semanticColors.text.primary",
+          "transition": "@tokens.transitions.fast",
+          "states": {
+            "hover": {
+              "background": "@semanticColors.surface.hover",
+              "borderColor": "@semanticColors.border.hover"
+            },
+            "active": {
+              "background": "@semanticColors.surface.active",
+              "transform": "scale(0.98)"
+            }
+          }
+        }
+      },
+      "popover": {
+        "container": {
+          "background": "@semanticColors.background.elevated",
+          "borderRadius": "@tokens.borderRadius.xl",
+          "boxShadow": "@tokens.shadows.xl",
+          "border": "1px solid @semanticColors.border.default",
+          "padding": "@tokens.spacing.4",
+          "minWidth": "300px",
+          "maxWidth": "400px"
+        },
+        "header": {
+          "fontSize": "@typography.fontSizes.lg",
+          "fontWeight": "@typography.fontWeights.semibold",
+          "color": "@semanticColors.text.primary",
+          "marginBottom": "@tokens.spacing.3"
+        },
+        "content": {
+          "fontSize": "@typography.fontSizes.base",
+          "color": "@semanticColors.text.secondary",
+          "lineHeight": "@typography.lineHeights.relaxed"
+        }
+      }
+    },
+
+    "patterns": {
+      "eventDisplay": {
+        "maxVisible": 3,
+        "overflowBehavior": "collapse",
+        "overflowIndicator": {
+          "format": "+{count} more",
+          "style": {
+            "fontSize": "@typography.fontSizes.xs",
+            "color": "@semanticColors.interactive.primary.default",
+            "fontWeight": "@typography.fontWeights.medium"
+          }
+        },
+        "priorityRules": [
+          "all-day events first",
+          "earlier start time first",
+          "longer duration first"
+        ]
+      },
+      "dragAndDrop": {
+        "enabled": true,
+        "ghostOpacity": 0.5,
+        "dropZoneHighlight": {
+          "background": "@colors.blue.50",
+          "border": "2px dashed @colors.blue.400"
+        },
+        "validDropIndicator": {
+          "background": "@colors.green.50",
+          "border": "2px solid @colors.green.400"
+        },
+        "invalidDropIndicator": {
+          "background": "@colors.red.50",
+          "border": "2px solid @colors.red.400"
+        }
+      },
+      "keyboard": {
+        "shortcuts": {
+          "navigation": {
+            "ArrowLeft": "Previous day",
+            "ArrowRight": "Next day",
+            "ArrowUp": "Previous week",
+            "ArrowDown": "Next week",
+            "PageUp": "Previous month",
+            "PageDown": "Next month",
+            "Home": "Start of week",
+            "End": "End of week"
+          },
+          "actions": {
+            "Enter": "Open day detail",
+            "Space": "Select/deselect date",
+            "n": "Create new event",
+            "t": "Go to today",
+            "d": "Day view",
+            "w": "Week view",
+            "m": "Month view",
+            "l": "List view",
+            "/": "Search"
+          }
+        }
+      },
+      "touch": {
+        "swipeThreshold": 50,
+        "swipeVelocity": 0.3,
+        "longPressDelay": 500,
+        "doubleTapDelay": 300
+      }
+    },
+
+    "animations": {
+      "viewTransition": {
+        "duration": "@tokens.transitions.slow",
+        "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "types": {
+          "fade": {
+            "from": { "opacity": 0 },
+            "to": { "opacity": 1 }
+          },
+          "slide": {
+            "from": { "transform": "translateX(100%)" },
+            "to": { "transform": "translateX(0)" }
+          },
+          "scale": {
+            "from": { "transform": "scale(0.95)", "opacity": 0 },
+            "to": { "transform": "scale(1)", "opacity": 1 }
+          }
+        }
+      },
+      "microInteractions": {
+        "hover": {
+          "duration": "@tokens.transitions.fast",
+          "easing": "ease-out"
+        },
+        "press": {
+          "duration": "@tokens.transitions.fastest",
+          "easing": "ease-in"
+        },
+        "drag": {
+          "duration": "@tokens.transitions.normal",
+          "easing": "ease-in-out"
+        }
+      }
+    },
+
+    "responsive": {
+      "breakpoints": {
+        "xs": "0px",
+        "sm": "640px",
+        "md": "768px",
+        "lg": "1024px",
+        "xl": "1280px",
+        "2xl": "1536px"
+      },
+      "containerMaxWidths": {
+        "sm": "640px",
+        "md": "768px",
+        "lg": "1024px",
+        "xl": "1280px"
+      },
+      "adaptations": {
+        "mobile": {
+          "components": {
+            "calendar": {
+              "dayCell": {
+                "minHeight": "80px",
+                "padding": "@tokens.spacing.1"
+              },
+              "event": {
+                "label": {
+                  "fontSize": "@typography.fontSizes.xs",
+                  "padding": "@tokens.spacing.0.5 @tokens.spacing.2"
+                }
+              }
+            }
+          },
+          "patterns": {
+            "eventDisplay": {
+              "maxVisible": 2
+            }
+          }
+        },
+        "tablet": {
+          "components": {
+            "calendar": {
+              "dayCell": {
+                "minHeight": "90px"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "accessibility": {
+      "wcag": {
+        "level": "AA",
+        "contrastRatios": {
+          "normal": 4.5,
+          "large": 3,
+          "graphics": 3
+        }
+      },
+      "aria": {
+        "landmarks": {
+          "calendar": "main",
+          "navigation": "navigation",
+          "viewToggle": "tablist"
+        },
+        "labels": {
+          "calendar": "Calendar view",
+          "previousMonth": "Go to previous month",
+          "nextMonth": "Go to next month",
+          "today": "Go to today",
+          "dayCell": "Select {date}",
+          "event": "{title} at {time}",
+          "moreEvents": "Show {count} more events"
+        },
+        "liveRegions": {
+          "monthChange": "polite",
+          "eventCreated": "polite",
+          "eventUpdated": "polite",
+          "eventDeleted": "assertive"
+        }
+      },
+      "focus": {
+        "visible": {
+          "outline": "2px solid @semanticColors.interactive.primary.default",
+          "outlineOffset": "2px",
+          "borderRadius": "@tokens.borderRadius.md"
+        },
+        "trapped": ["modal", "popover", "dropdown"]
+      },
+      "reducedMotion": {
+        "transitions": "none",
+        "animations": "none",
+        "transforms": "none"
+      }
+    },
+
+    "darkMode": {
+      "auto": true,
+      "overrides": {
+        "semanticColors": {
+          "background": {
+            "primary": "@colors.gray.900",
+            "secondary": "@colors.gray.800",
+            "tertiary": "@colors.gray.700"
+          },
+          "surface": {
+            "default": "@colors.gray.800",
+            "hover": "@colors.gray.700",
+            "active": "@colors.gray.600"
+          },
+          "border": {
+            "default": "@colors.gray.700",
+            "hover": "@colors.gray.600"
+          },
+          "text": {
+            "primary": "@colors.gray.50",
+            "secondary": "@colors.gray.200",
+            "tertiary": "@colors.gray.400"
+          }
+        }
+      }
+    },
+
+    "plugins": {
+      "theme": {
+        "customizable": true,
+        "presets": ["default", "compact", "comfortable"],
+        "userPreferences": {
+          "primaryColor": true,
+          "fontSize": true,
+          "density": true,
+          "animations": true
+        }
+      },
+      "extensions": {
+        "weatherWidget": true,
+        "taskIntegration": true,
+        "videoConferencing": true,
+        "aiAssistant": true
+      }
+    }
+  }
+}
