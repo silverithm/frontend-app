@@ -28,7 +28,25 @@ class _AdminVacationLimitsSettingScreenState
   @override
   void initState() {
     super.initState();
+    _initializeControllersForCurrentMonth();
     _loadVacationLimits();
+  }
+
+  void _initializeControllersForCurrentMonth() {
+    final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
+    final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
+    
+    for (var date = firstDay; !date.isAfter(lastDay); date = date.add(const Duration(days: 1))) {
+      final dateKey = _formatDate(date);
+      
+      // CAREGIVER 컨트롤러 - 기본값 3으로 설정 (API에서 로드될 때까지)
+      final caregiverKey = '${dateKey}_CAREGIVER';
+      _controllers[caregiverKey] = TextEditingController(text: '3');
+      
+      // OFFICE 컨트롤러 - 기본값 3으로 설정 (API에서 로드될 때까지)
+      final officeKey = '${dateKey}_OFFICE';
+      _controllers[officeKey] = TextEditingController(text: '3');
+    }
   }
 
   @override
@@ -59,26 +77,26 @@ class _AdminVacationLimitsSettingScreenState
       
       print('[VacationLimits] API 응답: $result');
       
-      if (result['success'] == true && result['data'] != null) {
+      if (result['limits'] != null) {
         final limitsData = <String, Map<String, VacationLimit>>{};
-        final limitsJson = result['data'] as Map<String, dynamic>;
+        final limitsList = result['limits'] as List<dynamic>;
         
-        // 응답 데이터 파싱
-        for (final entry in limitsJson.entries) {
-          final date = entry.key;
-          final roles = entry.value as Map<String, dynamic>;
+        // 응답 데이터 파싱 - 배열 형태의 데이터를 날짜별로 그룹화
+        for (final limitItem in limitsList) {
+          final limitMap = limitItem as Map<String, dynamic>;
+          final date = limitMap['date'] as String;
+          final role = (limitMap['role'] as String).toUpperCase();
           
-          limitsData[date] = {};
-          for (final roleEntry in roles.entries) {
-            final role = roleEntry.key;
-            final limitData = roleEntry.value as Map<String, dynamic>;
-            
-            limitsData[date]![role] = VacationLimit.fromJson({
-              ...limitData,
-              'date': date,
-              'role': role,
-            });
+          if (limitsData[date] == null) {
+            limitsData[date] = {};
           }
+          
+          limitsData[date]![role] = VacationLimit.fromJson({
+            'id': limitMap['id'],
+            'date': date,
+            'role': role,
+            'maxPeople': limitMap['maxPeople'],
+          });
         }
         
         setState(() {
@@ -119,7 +137,7 @@ class _AdminVacationLimitsSettingScreenState
       
       // OFFICE 컨트롤러
       final officeKey = '${dateKey}_OFFICE';
-      final officeLimit = _limitsData[dateKey]?['OFFICE']?.maxPeople ?? 2;
+      final officeLimit = _limitsData[dateKey]?['OFFICE']?.maxPeople ?? 3;
       _controllers[officeKey] = TextEditingController(text: officeLimit.toString());
     }
   }
@@ -194,16 +212,30 @@ class _AdminVacationLimitsSettingScreenState
   }
 
   void _previousMonth() {
+    // 기존 컨트롤러 정리
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    _controllers.clear();
+    
     setState(() {
       _selectedDate = DateTime(_selectedDate.year, _selectedDate.month - 1);
     });
+    _initializeControllersForCurrentMonth();
     _loadVacationLimits();
   }
 
   void _nextMonth() {
+    // 기존 컨트롤러 정리
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    _controllers.clear();
+    
     setState(() {
       _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + 1);
     });
+    _initializeControllersForCurrentMonth();
     _loadVacationLimits();
   }
 
@@ -314,18 +346,21 @@ class _AdminVacationLimitsSettingScreenState
                   ),
                   child: Row(
                     children: [
-                      _buildRoleTab('전체', 'all'),
+                      Expanded(child: _buildRoleTab('요양보호사', 'CAREGIVER')),
                       const SizedBox(width: 8),
-                      _buildRoleTab('요양보호사', 'CAREGIVER'),
-                      const SizedBox(width: 8),
-                      _buildRoleTab('사무실', 'OFFICE'),
+                      Expanded(child: _buildRoleTab('사무실', 'OFFICE')),
                     ],
                   ),
                 ),
 
-                // 저장 버튼
+                // 제한 설정 테이블
+                Expanded(
+                  child: _buildLimitsTable(),
+                ),
+
+                // 저장 버튼을 아래로 이동
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: [
@@ -336,44 +371,41 @@ class _AdminVacationLimitsSettingScreenState
                       ),
                     ],
                   ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: _isSaving ? null : _saveVacationLimits,
-                      icon: _isSaving 
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Icon(Icons.save, color: Colors.white),
-                      label: Text(
-                        _isSaving ? '저장 중...' : '휴무 제한 저장하기',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  child: SafeArea(
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSaving ? null : _saveVacationLimits,
+                        icon: _isSaving 
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.save, color: Colors.white),
+                        label: Text(
+                          _isSaving ? '저장 중...' : '휴무 제한 저장하기',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-                        disabledBackgroundColor: Colors.grey.shade400,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+                          disabledBackgroundColor: Colors.grey.shade400,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
                         ),
-                        elevation: 2,
                       ),
                     ),
                   ),
-                ),
-
-                // 제한 설정 테이블
-                Expanded(
-                  child: _buildLimitsTable(),
                 ),
               ],
             ),
@@ -460,6 +492,9 @@ class _AdminVacationLimitsSettingScreenState
     final isWeekend = isSunday || isSaturday;
     final weekdayNames = ['', '월', '화', '수', '목', '금', '토', '일'];
     final weekdayName = weekdayNames[date.weekday];
+    
+    print('[_buildDateCard] dateKey: $dateKey, selectedRole: $_selectedRole');
+    print('[_buildDateCard] controllers: ${_controllers.keys.toList()}');
     
     // 색상 결정
     Color borderColor;
@@ -552,20 +587,7 @@ class _AdminVacationLimitsSettingScreenState
             const SizedBox(height: 16),
             
             // 인원 수 설정
-            if (_selectedRole == 'all') ...[
-              // 전체 모드: 두 역할 모두 표시
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildLimitInputCard('요양보호사', '${dateKey}_CAREGIVER', Icons.favorite),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildLimitInputCard('사무실', '${dateKey}_OFFICE', Icons.business),
-                  ),
-                ],
-              ),
-            ] else if (_selectedRole == 'CAREGIVER') ...[
+            if (_selectedRole == 'CAREGIVER') ...[
               // 요양보호사 모드
               _buildLimitInputCard('요양보호사', '${dateKey}_CAREGIVER', Icons.favorite),
             ] else if (_selectedRole == 'OFFICE') ...[
@@ -590,9 +612,10 @@ class _AdminVacationLimitsSettingScreenState
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 16, color: Colors.grey.shade600),
               const SizedBox(width: 6),
@@ -608,6 +631,8 @@ class _AdminVacationLimitsSettingScreenState
           ),
           const SizedBox(height: 8),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Text(
                 '최대',
@@ -617,13 +642,15 @@ class _AdminVacationLimitsSettingScreenState
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(
+              SizedBox(
+                width: 60,
+                height: 36,
                 child: TextFormField(
                   controller: controller,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                   decoration: InputDecoration(
@@ -635,18 +662,29 @@ class _AdminVacationLimitsSettingScreenState
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: AppSemanticColors.interactiveSecondaryDefault, width: 2),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: const EdgeInsets.all(0),
                     filled: true,
                     fillColor: Colors.white,
                   ),
                   onChanged: (value) {
-                    // 숫자만 허용
+                    // 빈 문자열이면 0으로 설정
+                    if (value.isEmpty) {
+                      return;
+                    }
+                    
+                    // 숫자만 허용하고 음수 방지
                     final number = int.tryParse(value);
                     if (number == null || number < 0) {
-                      controller.text = '0';
-                      controller.selection = TextSelection.fromPosition(
-                        TextPosition(offset: controller.text.length),
-                      );
+                      // 이전 값을 유지하되, 잘못된 입력은 제거
+                      final validText = value.replaceAll(RegExp(r'[^0-9]'), '');
+                      if (validText.isNotEmpty) {
+                        controller.value = TextEditingValue(
+                          text: validText,
+                          selection: TextSelection.fromPosition(
+                            TextPosition(offset: validText.length),
+                          ),
+                        );
+                      }
                     }
                   },
                 ),
