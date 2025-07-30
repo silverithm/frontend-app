@@ -1009,58 +1009,124 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 동그라미들 (계산된 최대 개수만큼)
-                  ...vacations.take(actualMaxDots).toList().asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final vacation = entry.value;
-                    final isLast = index == actualMaxDots - 1;
+                  // 동그라미들 (최대 3개)
+                  ...() {
+                    final List<Widget> dots = [];
+                    final int totalVacations = vacations.length;
+                    final int maxDisplay = actualMaxDots.clamp(1, 3);
                     
-                    return Container(
-                      width: dotSize,
-                      height: dotSize,
-                      margin: EdgeInsets.only(right: isLast ? 0 : dotMargin),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _getStatusColor(vacation.status),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _getStatusColor(vacation.status).withOpacity(0.3),
-                            blurRadius: 1,
-                            offset: const Offset(0, 0.5),
-                          ),
-                        ],
-                      ),
-                      // 필수휴무인 경우 작은 별표 표시
-                      child: vacation.type == VacationType.mandatory
-                          ? Center(
-                              child: Container(
-                                width: 3,
-                                height: 3,
-                                child: CustomPaint(
-                                  painter: StarPainter(
-                                    color: Colors.amber.shade700.withOpacity(0.9),
-                                  ),
-                                  size: const Size(3, 3),
+                    // 3개 초과일 때는 2개 점 + 1개 +N 동그라미
+                    if (totalVacations > 3) {
+                      // 첫 2개 점 표시
+                      for (int i = 0; i < 2; i++) {
+                        final vacation = vacations.elementAt(i);
+                        dots.add(
+                          Container(
+                            width: dotSize,
+                            height: dotSize,
+                            margin: const EdgeInsets.only(right: dotMargin),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _getStatusColor(vacation.status),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _getStatusColor(vacation.status).withOpacity(0.3),
+                                  blurRadius: 1,
+                                  offset: const Offset(0, 0.5),
                                 ),
+                              ],
+                            ),
+                            // 필수휴무인 경우 작은 별표 표시
+                            child: vacation.type == VacationType.mandatory
+                                ? Center(
+                                    child: Container(
+                                      width: 3,
+                                      height: 3,
+                                      child: CustomPaint(
+                                        painter: StarPainter(
+                                          color: Colors.amber.shade700.withOpacity(0.9),
+                                        ),
+                                        size: const Size(3, 3),
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        );
+                      }
+                      
+                      // +N 동그라미 (마지막)
+                      dots.add(
+                        Container(
+                          width: dotSize,
+                          height: dotSize,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey.shade600,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade400.withOpacity(0.3),
+                                blurRadius: 1,
+                                offset: const Offset(0, 0.5),
                               ),
-                            )
-                          : null,
-                    );
-                  }).toList(),
-                  
-                  // +N 표시 (더 많은 휴무가 있을 때, 공간이 충분할 때만)
-                  if (vacations.length > actualMaxDots && actualMaxDots < 3)
-                    Container(
-                      margin: const EdgeInsets.only(left: dotMargin),
-                      child: Text(
-                        '+${vacations.length - actualMaxDots}',
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade600,
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              '+${totalVacations - 2}',
+                              style: const TextStyle(
+                                fontSize: 4,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    } else {
+                      // 3개 이하일 때는 모든 점 표시
+                      for (int i = 0; i < totalVacations && i < maxDisplay; i++) {
+                        final vacation = vacations.elementAt(i);
+                        final isLast = i == totalVacations - 1 || i == maxDisplay - 1;
+                        
+                        dots.add(
+                          Container(
+                            width: dotSize,
+                            height: dotSize,
+                            margin: EdgeInsets.only(right: isLast ? 0 : dotMargin),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _getStatusColor(vacation.status),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _getStatusColor(vacation.status).withOpacity(0.3),
+                                  blurRadius: 1,
+                                  offset: const Offset(0, 0.5),
+                                ),
+                              ],
+                            ),
+                            // 필수휴무인 경우 작은 별표 표시
+                            child: vacation.type == VacationType.mandatory
+                                ? Center(
+                                    child: Container(
+                                      width: 3,
+                                      height: 3,
+                                      child: CustomPaint(
+                                        painter: StarPainter(
+                                          color: Colors.amber.shade700.withOpacity(0.9),
+                                        ),
+                                        size: const Size(3, 3),
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        );
+                      }
+                    }
+                    
+                    return dots;
+                  }(),
                 ],
               ),
             );
