@@ -579,7 +579,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             crossAxisCount: 2,
-                            childAspectRatio: 0.65,
+                            childAspectRatio: 0.8,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                             children: [
@@ -613,7 +613,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 '앱 로그인',
                                 '관리자의 승인이 완료되면, 직원은 앱에 정상적으로 로그인할 수 있습니다.',
                                 Icons.login,
-                                'from-purple-400 to-pink-500',
+                                'from-purple-400 to-pink-100',
                               ),
                             ],
                           ),
@@ -1774,12 +1774,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 12),
-          Icon(
-            icon,
-            size: 32,
-            color: colors[0],
           ),
           const SizedBox(height: 12),
           Text(
