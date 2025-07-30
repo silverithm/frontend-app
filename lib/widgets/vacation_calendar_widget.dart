@@ -985,77 +985,86 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         ),
       );
     } else {
-      // 기본 모드: 최대 2개 동그라미 + +N 표시
+      // 기본 모드: 작은 점들로 표시, overflow 방지
       return Container(
-        padding: const EdgeInsets.all(2),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 동그라미들 (최대 2개)
-              ...vacations.take(2).map((vacation) {
-                return Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(right: 2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _getStatusColor(vacation.status),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _getStatusColor(vacation.status).withOpacity(0.4),
-                        blurRadius: 2,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  // 필수휴무인 경우 작은 별표 표시
-                  child: vacation.type == VacationType.mandatory
-                      ? Center(
-                          child: Container(
-                            width: 5,
-                            height: 5,
-                            child: CustomPaint(
-                              painter: StarPainter(
-                                color: Colors.amber.shade600.withOpacity(0.9),
-                              ),
-                              size: const Size(5, 5),
-                            ),
+        padding: const EdgeInsets.all(1),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // 사용 가능한 너비 계산 (패딩 제외)
+            final availableWidth = constraints.maxWidth - 2; // 좌우 패딩 1씩 제외
+            
+            // 점 하나의 크기 (점 크기 + 마진)
+            const dotSize = 6.0;
+            const dotMargin = 1.0;
+            const dotTotalWidth = dotSize + dotMargin;
+            
+            // 최대 표시 가능한 점의 개수 계산
+            final maxDots = (availableWidth / dotTotalWidth).floor();
+            
+            // overflow 방지를 위해 최소 1개, 최대 3개로 제한
+            final actualMaxDots = maxDots.clamp(1, 3);
+            
+            return Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 동그라미들 (계산된 최대 개수만큼)
+                  ...vacations.take(actualMaxDots).toList().asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final vacation = entry.value;
+                    final isLast = index == actualMaxDots - 1;
+                    
+                    return Container(
+                      width: dotSize,
+                      height: dotSize,
+                      margin: EdgeInsets.only(right: isLast ? 0 : dotMargin),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _getStatusColor(vacation.status),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _getStatusColor(vacation.status).withOpacity(0.3),
+                            blurRadius: 1,
+                            offset: const Offset(0, 0.5),
                           ),
-                        )
-                      : null,
-                );
-              }).toList(),
-              
-              // +N 표시 (3개 이상일 때)
-              if (vacations.length > 2)
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey.shade600,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.shade400.withOpacity(0.4),
-                        blurRadius: 2,
-                        offset: const Offset(0, 1),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      '+${vacations.length - 2}',
-                      style: const TextStyle(
-                        fontSize: 4,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      // 필수휴무인 경우 작은 별표 표시
+                      child: vacation.type == VacationType.mandatory
+                          ? Center(
+                              child: Container(
+                                width: 3,
+                                height: 3,
+                                child: CustomPaint(
+                                  painter: StarPainter(
+                                    color: Colors.amber.shade700.withOpacity(0.9),
+                                  ),
+                                  size: const Size(3, 3),
+                                ),
+                              ),
+                            )
+                          : null,
+                    );
+                  }).toList(),
+                  
+                  // +N 표시 (더 많은 휴무가 있을 때, 공간이 충분할 때만)
+                  if (vacations.length > actualMaxDots && actualMaxDots < 3)
+                    Container(
+                      margin: const EdgeInsets.only(left: dotMargin),
+                      child: Text(
+                        '+${vacations.length - actualMaxDots}',
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                     ),
-                  ),
-                ),
-            ],
-          ),
+                ],
+              ),
+            );
+          },
         ),
       );
     }

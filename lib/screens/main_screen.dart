@@ -60,16 +60,27 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         print('[MainScreen] 회사 ID: $companyId');
         print('[MainScreen] 관리자 여부: $isAdmin');
 
-        // 구독 정보를 실시간 API로 로드 (관리자, 일반 사용자 모두)
-        print('[MainScreen] 구독 정보 실시간 로드 시작');
-        await subscriptionProvider.loadSubscription();
-        print('[MainScreen] 구독 정보 실시간 로드 완료');
+        if (isAdmin) {
+          // 관리자인 경우에만 구독 정보 로드
+          print('[MainScreen] 관리자 - 구독 정보 실시간 로드 시작');
+          await subscriptionProvider.loadSubscription();
+          print('[MainScreen] 관리자 - 구독 정보 실시간 로드 완료');
 
-        // 구독 상태 확인 및 필요시 리다이렉트
-        final canProceed = await SubscriptionGuard.checkSubscriptionAndRedirect(context);
-        
-        if (canProceed) {
-          // 구독 체크를 통과한 경우에만 데이터 로드
+          // 구독 상태 확인 및 필요시 리다이렉트 (관리자만)
+          final canProceed = await SubscriptionGuard.checkSubscriptionAndRedirect(context);
+          
+          if (canProceed) {
+            // 구독 체크를 통과한 경우에만 데이터 로드
+            vacationProvider.loadCalendarData(DateTime.now(), companyId: companyId);
+            vacationProvider.loadMyVacationRequests(userId);
+
+            // FCM 토큰 서버 전송
+            print('[MainScreen] FCM 토큰 서버 전송 시작');
+            FCMService().sendTokenToServer(userId);
+          }
+        } else {
+          // 직원인 경우 구독 체크 없이 바로 데이터 로드
+          print('[MainScreen] 직원 - 구독 체크 건너뛰고 데이터 로드');
           vacationProvider.loadCalendarData(DateTime.now(), companyId: companyId);
           vacationProvider.loadMyVacationRequests(userId);
 

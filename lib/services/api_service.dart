@@ -566,7 +566,7 @@ class ApiService {
     });
   }
 
-  // 비밀번호 찾기 (임시 비밀번호 발송) - 인증 불필요
+  // 비밀번호 찾기 (임시 비밀번호 발송) - 직원용 - 인증 불필요
   Future<Map<String, dynamic>> findPassword({required String email}) async {
     try {
       final uri = Uri.parse('$_baseUrl${Constants.findPasswordEndpoint}').replace(
@@ -581,6 +581,26 @@ class ApiService {
       return _handleResponse(response);
     } catch (e) {
       throw Exception('비밀번호 찾기 실패: $e');
+    }
+  }
+
+  // 관리자 비밀번호 찾기 (임시 비밀번호 발송) - 인증 불필요
+  Future<Map<String, dynamic>> findAdminPassword({required String email}) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/v1/find/password').replace(
+        queryParameters: {'email': email},
+      );
+
+      print('[API] 관리자 비밀번호 찾기: $uri');
+
+      final response = await http.post(
+        uri,
+        headers: await _getHeaders(includeAuth: false),
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('관리자 비밀번호 찾기 실패: $e');
     }
   }
 

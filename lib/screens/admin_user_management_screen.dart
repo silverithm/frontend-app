@@ -335,105 +335,129 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   }
 
   Widget _buildPendingUserCard(User user) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Consumer<AdminProvider>(
+      builder: (context, adminProvider, child) {
+        final isProcessing = adminProvider.isLoading;
+        
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  backgroundColor: Colors.orange.shade100,
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.orange.shade600,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.name,
-                        style: const TextStyle(
-                          fontSize: 16,
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.orange.shade100,
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.orange.shade600,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            user.email,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        AdminUtils.getRoleDisplayName(user.role),
+                        style: TextStyle(
+                          color: Colors.orange.shade800,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        user.email,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: isProcessing ? null : () => _showApprovalDialog(user),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade500,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
+                        icon: isProcessing 
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.check, size: 18),
+                        label: Text(isProcessing ? '처리중...' : '승인'),
                       ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    AdminUtils.getRoleDisplayName(user.role),
-                    style: TextStyle(
-                      color: Colors.orange.shade800,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: isProcessing ? null : () => _showRejectDialog(user),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade400,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        icon: isProcessing 
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.close, size: 18),
+                        label: Text(isProcessing ? '처리중...' : '거부'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showApprovalDialog(user),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade500,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: const Icon(Icons.check, size: 18),
-                    label: const Text('승인'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showRejectDialog(user),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade400,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: const Icon(Icons.close, size: 18),
-                    label: const Text('거부'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -576,7 +600,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   void _showApprovalDialog(User user) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -590,12 +614,15 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         content: Text('${user.name}님의 가입을 승인하시겠습니까?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('취소'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
+              
+              // 별도의 context 보존을 위한 변수
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               final authProvider = context.read<AuthProvider>();
               final adminProvider = context.read<AdminProvider>();
               
@@ -604,8 +631,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 authProvider.currentUser?.id ?? '',
               );
               
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              // 위젯이 마운트된 상태이고 API 호출이 성공했을 때만 스낵바 표시
+              if (mounted && success) {
+                scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text('${user.name}님의 가입을 승인했습니다.'),
                     backgroundColor: Colors.green,
@@ -629,7 +657,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -658,13 +686,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('취소'),
           ),
           ElevatedButton(
             onPressed: () async {
               if (reasonController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
                   const SnackBar(
                     content: Text('거부 사유를 입력해주세요.'),
                     backgroundColor: Colors.red,
@@ -673,7 +701,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 return;
               }
               
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
+              
+              // 별도의 context 보존을 위한 변수
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               final authProvider = context.read<AuthProvider>();
               final adminProvider = context.read<AdminProvider>();
               
@@ -683,8 +714,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 reasonController.text.trim(),
               );
               
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              // 위젯이 마운트된 상태이고 API 호출이 성공했을 때만 스낵바 표시
+              if (mounted && success) {
+                scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text('${user.name}님의 가입을 거부했습니다.'),
                     backgroundColor: Colors.red,

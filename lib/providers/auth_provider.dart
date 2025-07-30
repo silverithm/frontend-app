@@ -548,7 +548,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 비밀번호 찾기
+  // 비밀번호 찾기 (직원용)
   Future<void> findPassword(String email, BuildContext context) async {
     try {
       setLoading(true);
@@ -577,6 +577,58 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       String errorMessage = '비밀번호 찾기 중 오류가 발생했습니다';
+      
+      if (e.toString().contains('403')) {
+        errorMessage = '임시로 비밀번호 찾기 기능이 제한되었습니다. 잠시 후 다시 시도해주세요.';
+      } else if (e.toString().contains('ApiException')) {
+        final msg = e.toString().replaceAll('ApiException: ', '').split(' (Status:')[0];
+        errorMessage = msg;
+      }
+      
+      setError(errorMessage);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 관리자 비밀번호 찾기
+  Future<void> findAdminPassword(String email, BuildContext context) async {
+    try {
+      setLoading(true);
+      clearError();
+
+      final response = await ApiService().findAdminPassword(email: email);
+      
+      if (!context.mounted) return;
+
+      if (response['message'] != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message']),
+            backgroundColor: Colors.green.shade600,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['error'] ?? '관리자 비밀번호 찾기에 실패했습니다.'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      String errorMessage = '관리자 비밀번호 찾기 중 오류가 발생했습니다';
       
       if (e.toString().contains('403')) {
         errorMessage = '임시로 비밀번호 찾기 기능이 제한되었습니다. 잠시 후 다시 시도해주세요.';

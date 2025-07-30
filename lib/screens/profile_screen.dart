@@ -1064,18 +1064,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         ],
                                       ),
 
-                                    // 구독 정보 (관리자가 아닌 경우에만 표시)
-                                    if (!AdminUtils.canAccessAdminPages(user))
-                                      Consumer<SubscriptionProvider>(
-                                        builder: (context, subscriptionProvider, child) {
-                                          return Column(
-                                            children: [
-                                              _buildSubscriptionInfo(subscriptionProvider),
-                                              const SizedBox(height: 16),
-                                            ],
-                                          );
-                                        },
-                                      ),
+                                    // 구독 정보는 관리자에게만 표시 (직원에게는 표시하지 않음)
                                     // 가입일
                                     _buildInfoRow(
                                       icon: Icons.calendar_today,
