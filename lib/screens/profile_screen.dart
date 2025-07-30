@@ -808,12 +808,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFEFF6FF), // blue.50 - 파란계열 배경
       body: CustomScrollView(
         slivers: [
-          // 현대적인 앱바
+          // 파란계열 그라데이션 앱바
           SliverAppBar(
-            expandedHeight: 60.0,
+            expandedHeight: 64.0,
             floating: false,
             pinned: true,
             elevation: 0,
@@ -822,9 +822,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             title: const Text(
               '프로필',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 20,
                 shadows: [
                   Shadow(
                     color: Colors.black26,
@@ -835,14 +835,14 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ),
             flexibleSpace: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.blue.shade600,
-                    Colors.blue.shade400,
-                    Colors.cyan.shade300,
+                    Color(0xFF2563EB), // blue.600
+                    Color(0xFF3B82F6), // blue.500
+                    Color(0xFF60A5FA), // blue.400
                   ],
                 ),
               ),

@@ -542,7 +542,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFEFF6FF), // blue.50 - 파란계열 배경
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -550,9 +550,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         title: const Text(
           '내 휴무 신청',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 20,
             shadows: [
               Shadow(
                 color: Colors.black26,
@@ -563,14 +563,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
           ),
         ),
         flexibleSpace: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.blue.shade600,
-                Colors.blue.shade400,
-                Colors.cyan.shade300,
+                Color(0xFF2563EB), // blue.600
+                Color(0xFF3B82F6), // blue.500
+                Color(0xFF60A5FA), // blue.400
               ],
             ),
           ),
@@ -580,24 +580,22 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             margin: const EdgeInsets.only(right: 16),
             child: Stack(
               children: [
-                IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: const Icon(
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6), // gray.100
+                    borderRadius: BorderRadius.circular(8), // lg
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
                       Icons.notifications_outlined,
-                      color: Colors.white,
+                      color: Color(0xFF6B7280), // gray.500
                       size: 20,
                     ),
+                    onPressed: _showNotifications,
+                    padding: EdgeInsets.zero,
                   ),
-                  onPressed: _showNotifications,
                 ),
                 // 알림 뱃지
                 Positioned(

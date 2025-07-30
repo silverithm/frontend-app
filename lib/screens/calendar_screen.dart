@@ -101,67 +101,71 @@ class _CalendarScreenState extends State<CalendarScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFEFF6FF), // blue.50 - 파란계열 배경
       body: CustomScrollView(
         slivers: [
-          // 현대적인 앱바 - 다른 화면들과 통일된 스타일
+          // 파란계열 그라데이션 앱바
           SliverAppBar(
-            expandedHeight: 60.0,
+            expandedHeight: 64.0,
             floating: false,
             pinned: true,
             elevation: 0,
             backgroundColor: Colors.transparent,
             centerTitle: true,
+            title: const Text(
+              '휴무 캘린더',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                fontSize: 20,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(1, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+            ),
             flexibleSpace: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppSemanticColors.interactivePrimaryDefault,
-                    AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
-                    AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.6),
+                    Color(0xFF2563EB), // blue.600
+                    Color(0xFF3B82F6), // blue.500
+                    Color(0xFF60A5FA), // blue.400
                   ],
-                ),
-              ),
-              child: FlexibleSpaceBar(
-                title: const Text(
-                  '휴무 캘린더',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 16,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black26,
-                        offset: Offset(1, 1),
-                        blurRadius: 3,
-                      ),
-                    ],
-                  ),
-                ),
-                centerTitle: true,
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppSemanticColors.interactivePrimaryDefault,
-                        AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
-                        AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.6),
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ),
           ),
 
-          // 달력 위젯
+          // 달력 위젯 - 디자인 시스템 스타일
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: Container(
+              margin: const EdgeInsets.all(24), // spacing.6
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12), // xl
+                border: Border.all(
+                  color: const Color(0xFFE5E7EB), // gray.200
+                  width: 1,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000), // shadows.sm
+                    blurRadius: 3,
+                    offset: Offset(0, 1),
+                  ),
+                  BoxShadow(
+                    color: Color(0x0F000000),
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
               child: VacationCalendarWidget(
                 currentDate: _currentDate,
                 onDateChanged: (date) {
@@ -361,7 +365,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     margin: const EdgeInsets.only(bottom: 8),
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: _getStatusColor(vacation.status),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                         color: _getStatusTextColor(
@@ -447,6 +451,72 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
             ),
 
+
+          // 하단 통계 섹션
+          SliverToBoxAdapter(
+            child: Consumer<VacationProvider>(
+              builder: (context, vacationProvider, child) {
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFE5E7EB),
+                      width: 1,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 3,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
+                          child: _buildStatItem(
+                            '${_currentDate.month}월 총 휴가',
+                            _getMonthlyTotal(vacationProvider).toString(),
+                            const Color(0xFF3B82F6), // blue.500
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatItem(
+                            '승인 대기',
+                            _getMonthlyPending(vacationProvider).toString(),
+                            const Color(0xFFF59E0B), // amber.500
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatItem(
+                            '승인됨',
+                            _getMonthlyApproved(vacationProvider).toString(),
+                            const Color(0xFF10B981), // emerald.500
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatItem(
+                            '거절됨',
+                            _getMonthlyRejected(vacationProvider).toString(),
+                            const Color(0xFFEF4444), // red.500
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
           // 하단 여백 - 플로팅 액션 버튼이 잘리지 않도록 충분한 여백 확보
           const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
         ],
@@ -497,19 +567,25 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  Color _getStatusColor(VacationStatus status) {
-    // 모든 상태에 대해 흰색 배경으로 통일
-    return Colors.white;
+  Color _getStatusBgColor(VacationStatus status) {
+    switch (status) {
+      case VacationStatus.approved:
+        return const Color(0xFFDCFCE7); // green.100
+      case VacationStatus.rejected:
+        return const Color(0xFFFEE2E2); // red.100
+      case VacationStatus.pending:
+        return const Color(0xFFFEF3C7); // yellow.100
+    }
   }
 
   Color _getStatusTextColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
-        return Colors.green.shade700;
+        return const Color(0xFF15803D); // green.700
       case VacationStatus.rejected:
-        return Colors.red.shade700;
+        return const Color(0xFFB91C1C); // red.700
       case VacationStatus.pending:
-        return Colors.orange.shade700;
+        return const Color(0xFFA16207); // yellow.700
     }
   }
 
@@ -539,6 +615,121 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     // 개인 휴무(연차/반차)는 도형 없이 빈 공간
     return const SizedBox.shrink();
+  }
+
+  Widget _buildFilterChip(String label, String value) {
+    final isSelected = _roleFilter == value;
+    return FilterChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : const Color(0xFF6B7280), // gray.500
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          fontSize: 14,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _roleFilter = value;
+        });
+        final vacationProvider = context.read<VacationProvider>();
+        vacationProvider.setRoleFilter(value);
+        final authProvider = context.read<AuthProvider>();
+        final companyId = authProvider.currentUser?.company?.id ?? '1';
+        vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
+      },
+      backgroundColor: Colors.white,
+      selectedColor: const Color(0xFF3B82F6), // blue.500
+      checkmarkColor: Colors.white,
+      side: BorderSide(
+        color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFFE5E7EB),
+        width: 1,
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF6B7280), // gray.500
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  int _getMonthlyTotal(VacationProvider provider) {
+    final monthStart = DateTime(_currentDate.year, _currentDate.month, 1);
+    final monthEnd = DateTime(_currentDate.year, _currentDate.month + 1, 0);
+
+    int total = 0;
+    for (var date = monthStart; date.isBefore(monthEnd.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
+      final dayVacations = provider.getVacationsForDate(date);
+      total += dayVacations.length;
+    }
+    return total;
+  }
+
+  int _getMonthlyPending(VacationProvider provider) {
+    final monthStart = DateTime(_currentDate.year, _currentDate.month, 1);
+    final monthEnd = DateTime(_currentDate.year, _currentDate.month + 1, 0);
+
+    int pending = 0;
+    for (var date = monthStart; date.isBefore(monthEnd.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
+      final dayVacations = provider.getVacationsForDate(date);
+      pending += dayVacations.where((v) => v.status == VacationStatus.pending).length;
+    }
+    return pending;
+  }
+
+  int _getMonthlyApproved(VacationProvider provider) {
+    final monthStart = DateTime(_currentDate.year, _currentDate.month, 1);
+    final monthEnd = DateTime(_currentDate.year, _currentDate.month + 1, 0);
+
+    int approved = 0;
+    for (var date = monthStart; date.isBefore(monthEnd.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
+      final dayVacations = provider.getVacationsForDate(date);
+      approved += dayVacations.where((v) => v.status == VacationStatus.approved).length;
+    }
+    return approved;
+  }
+
+  int _getMonthlyRejected(VacationProvider provider) {
+    final monthStart = DateTime(_currentDate.year, _currentDate.month, 1);
+    final monthEnd = DateTime(_currentDate.year, _currentDate.month + 1, 0);
+
+    int rejected = 0;
+    for (var date = monthStart; date.isBefore(monthEnd.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
+      final dayVacations = provider.getVacationsForDate(date);
+      rejected += dayVacations.where((v) => v.status == VacationStatus.rejected).length;
+    }
+    return rejected;
   }
 }
 

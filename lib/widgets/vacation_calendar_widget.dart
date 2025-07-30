@@ -1350,12 +1350,11 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.white : Colors.grey.shade600,
-            ),
-            const SizedBox(width: 6),
+            // Icon(
+            //   icon,
+            //   size: 16,
+            //   color: isSelected ? Colors.white : Colors.grey.shade600,
+            // ),
             Text(
               label,
               style: TextStyle(

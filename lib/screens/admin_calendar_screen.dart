@@ -194,7 +194,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildStatItem(
-                        '이번달 총 휴가',
+                        '이번 달 총 휴가',
                         _getMonthlyTotal(vacationProvider).toString(),
                         Colors.blue.shade500,
                       ),
@@ -564,7 +564,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
       }
     }
     
-    print('[AdminCalendar] 이번달 총 휴가: $total (필터: $_roleFilter)');
+    print('[AdminCalendar] 이번 달 총 휴가: $total (필터: $_roleFilter)');
     return total;
   }
 
