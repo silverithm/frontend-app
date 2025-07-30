@@ -31,9 +31,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   int _currentIndex = 1; // 달력을 기본으로 설정
   late AnimationController _animationController;
 
-  late final List<Widget> _screens;
-  late final List<BottomNavigationBarItem> _navItems;
-
   @override
   void initState() {
     super.initState();
@@ -42,38 +39,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       vsync: this,
     );
 
-    // 사용자 역할에 따라 화면 구성
-    final authProvider = context.read<AuthProvider>();
-    final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
-
-    if (isAdmin) {
-      // 관리자는 AdminDashboardScreen을 직접 사용하도록 변경될 예정
-      // 현재는 임시로 기존 구조 유지
-      _screens = [
-        const AdminDashboardScreen(),
-      ];
-      _navItems = [];
-      _currentIndex = 0;
-    } else {
-      // 일반 사용자용: 내 휴무 -> 달력 -> 프로필
-      _screens = [
-        const MyVacationScreen(),
-        const CalendarScreen(),
-        const ProfileScreen(),
-      ];
-      _navItems = [
-        _buildNavItem(0, Icons.list_alt, Icons.list_alt_outlined, '내 휴무'),
-        _buildNavItem(
-          1,
-          Icons.calendar_month,
-          Icons.calendar_month_outlined,
-          '달력',
-        ),
-        _buildNavItem(2, Icons.person, Icons.person_outline, '프로필'),
-      ];
-      // 일반 사용자는 달력을 기본으로 설정
-      _currentIndex = 1;
-    }
+    // 기본 인덱스 설정 (일반 사용자는 달력을 기본으로)
+    _currentIndex = 1;
 
     // 사용자 정보가 있으면 구독 체크, 휴가 데이터 로드 및 FCM 토큰 전송
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -142,9 +109,30 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           return const AdminDashboardScreen();
         }
         
+        // 일반 사용자 화면 및 네비게이션 아이템 정의 (실시간)
+        final userScreens = [
+          const MyVacationScreen(),
+          const CalendarScreen(),
+          const ProfileScreen(),
+        ];
+        
+        final userNavItems = [
+          _buildNavItem(0, Icons.list_alt, Icons.list_alt_outlined, '내 휴무'),
+          _buildNavItem(
+            1,
+            Icons.calendar_month,
+            Icons.calendar_month_outlined,
+            '달력',
+          ),
+          _buildNavItem(2, Icons.person, Icons.person_outline, '프로필'),
+        ];
+        
         // 일반 사용자는 기존 구조 유지
         return Scaffold(
-          body: IndexedStack(index: _currentIndex, children: _screens),
+          body: IndexedStack(
+            index: _currentIndex.clamp(0, userScreens.length - 1), 
+            children: userScreens,
+          ),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -166,7 +154,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 topRight: Radius.circular(25),
               ),
               child: BottomNavigationBar(
-                currentIndex: _currentIndex,
+                currentIndex: _currentIndex.clamp(0, userNavItems.length - 1),
                 onTap: _onItemTapped,
                 type: BottomNavigationBarType.fixed,
                 backgroundColor: Colors.transparent,
@@ -178,7 +166,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   fontSize: 12,
                 ),
                 unselectedLabelStyle: const TextStyle(fontSize: 11),
-                items: _navItems,
+                items: userNavItems,
               ),
             ),
           ),

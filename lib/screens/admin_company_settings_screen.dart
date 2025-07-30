@@ -10,6 +10,7 @@ import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/index.dart';
 import 'admin_payment_screen.dart';
+import 'login_screen.dart';
 
 class AdminCompanySettingsScreen extends StatefulWidget {
   const AdminCompanySettingsScreen({super.key});
@@ -598,9 +599,11 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     try {
       await authProvider.logout();
       if (mounted) {
-        // AuthWrapper가 자동으로 로그인 상태를 감지하고 LoginScreen으로 이동하므로
-        // 현재 화면만 닫으면 됩니다
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // 일반 로그인 화면으로 명시적으로 이동
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {

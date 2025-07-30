@@ -53,6 +53,8 @@ dependencies:
   # URL 실행을 위한 패키지
   url_launcher: ^6.3.0
   
+  # 다음 주소 찾기는 webview_flutter로 직접 구현
+  
   # 앱 버전 정보를 위한 패키지
   package_info_plus: ^8.0.0
   firebase_core: ^3.14.0

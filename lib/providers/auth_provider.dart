@@ -195,7 +195,9 @@ class AuthProvider with ChangeNotifier {
     String password,
     String name,
     String role, {
-    required String companyId, // 필수로 변경
+    String? companyId, // optional로 변경
+    String? companyName, // 관리자용
+    String? companyAddress, // 관리자용
   }) async {
     try {
       setLoading(true);
@@ -204,32 +206,38 @@ class AuthProvider with ChangeNotifier {
       print("회원가입 요청을 처리 중...");
       print("이메일: $email, 이름: $name, 역할: $role, 회사 ID: $companyId");
 
-      // companyId 유효성 검사
-      if (companyId.isEmpty) {
-        setError('회사를 선택해주세요.');
-        return false;
-      }
-
-      // 회원가입 요청 API 호출 (관리자 승인 대기)
-      final response = await ApiService().submitJoinRequest(
-        username: email,
-        // username으로 email 사용
-        email: email,
-        name: name,
-        role: role,
-        password: password,
-        companyId: companyId,
-      );
-
-      // Spring Boot API 응답에서 id 필드가 있으면 성공
-      if (response['id'] != null) {
-        print('회원가입 요청 성공 - ID: ${response['id']}, 상태: ${response['status']}');
-        return true;
+      if (role == 'ADMIN') {
+        // 관리자 회원가입은 별도 처리
+        return await _registerAdmin(email, password, name,
+            companyName: companyName, companyAddress: companyAddress);
       } else {
-        setError(
-          response['error'] ?? response['message'] ?? '회원가입 요청에 실패했습니다.',
+        // 직원 회원가입
+        if (companyId == null || companyId.isEmpty) {
+          setError('회사를 선택해주세요.');
+          return false;
+        }
+
+        // 회원가입 요청 API 호출 (관리자 승인 대기)
+        final response = await ApiService().submitJoinRequest(
+          username: email,
+          // username으로 email 사용
+          email: email,
+          name: name,
+          role: role,
+          password: password,
+          companyId: companyId,
         );
-        return false;
+
+        // Spring Boot API 응답에서 id 필드가 있으면 성공
+        if (response['id'] != null) {
+          print('회원가입 요청 성공 - ID: ${response['id']}, 상태: ${response['status']}');
+          return true;
+        } else {
+          setError(
+            response['error'] ?? response['message'] ?? '회원가입 요청에 실패했습니다.',
+          );
+          return false;
+        }
       }
     } catch (e) {
       if (e.toString().contains('ApiException')) {
@@ -242,6 +250,56 @@ class AuthProvider with ChangeNotifier {
       return false;
     } finally {
       setLoading(false);
+    }
+  }
+
+  // 관리자 회원가입 처리
+  Future<bool> _registerAdmin(String email, String password, String name, 
+      {String? companyName, String? companyAddress}) async {
+    try {
+      print("관리자 회원가입 요청을 처리 중...");
+      print("이메일: $email, 이름: $name, 회사명: $companyName");
+
+      // 필수 정보 확인
+      if (companyName == null || companyName.isEmpty) {
+        setError('회사명을 입력해주세요.');
+        return false;
+      }
+      
+      if (companyAddress == null || companyAddress.isEmpty) {
+        setError('회사 주소를 입력해주세요.');
+        return false;
+      }
+
+      // 관리자 회원가입 API 호출
+      final response = await ApiService().signupAdmin(
+        name: name,
+        email: email,
+        password: password,
+        companyName: companyName,
+        companyAddress: companyAddress,
+      );
+
+      print('[AuthProvider] 관리자 회원가입 응답: $response');
+      
+      // TokenInfo 반환 시 회원가입 성공으로 처리 (자동 로그인 안함)
+      if (response['accessToken'] != null) {
+        print('[AuthProvider] 관리자 회원가입 성공 - 토큰 정보 받음');
+        print('[AuthProvider] 관리자 회원가입 완료 - 로그인 화면으로 이동');
+        return true;
+      }
+      
+      return true;
+      
+    } catch (e) {
+      print('관리자 회원가입 중 오류: $e');
+      if (e.toString().contains('ApiException')) {
+        final errorMsg = e.toString().replaceAll('ApiException: ', '');
+        setError(errorMsg.split(' (Status:')[0]);
+      } else {
+        setError('관리자 회원가입에 실패했습니다: ${e.toString()}');
+      }
+      return false;
     }
   }
 
