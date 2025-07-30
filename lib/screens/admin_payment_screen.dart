@@ -12,6 +12,7 @@ import '../models/subscription.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'main_screen.dart';
 
 class AdminPaymentScreen extends StatefulWidget {
   const AdminPaymentScreen({super.key});
@@ -756,8 +757,10 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                Navigator.of(context).pop(); // 결제 화면 닫기
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const MainScreen()),
+                  (route) => false,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade600,

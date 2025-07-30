@@ -523,8 +523,9 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
       
       if (success) {
         _showSuccessDialog('무료 체험이 시작되었습니다!', () {
-          Navigator.of(context).pushReplacement(
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const MainScreen()),
+            (route) => false,
           );
         });
       } else {
