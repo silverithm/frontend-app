@@ -1052,69 +1052,30 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       final success = await authProvider.deleteAdminAccount();
 
                       if (success && context.mounted) {
+                        // 다이얼로그 닫기
                         Navigator.pop(context);
-
-                        // 성공 메시지 표시 후 로그인 화면으로 이동
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            content: Container(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [Colors.green.shade400, Colors.green.shade600],
-                                      ),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.check, color: Colors.white, size: 40),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    '관리자 회원탈퇴 완료',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green.shade800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    '그동안 이용해주셔서 감사했습니다.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pushAndRemoveUntil(
-                                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                          (route) => false,
-                                        );
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green.shade600,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 16),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      child: const Text('확인', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                        
+                        // 잠시 대기 후 로그인 화면으로 직접 이동
+                        await Future.delayed(const Duration(milliseconds: 100));
+                        
+                        if (context.mounted) {
+                          // 모든 이전 화면을 제거하고 로그인 화면으로 이동
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            (route) => false,
+                          );
+                          
+                          // 성공 메시지 표시
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('관리자 회원탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사했습니다.'),
+                              backgroundColor: Colors.green.shade600,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              duration: const Duration(seconds: 4),
                             ),
-                          ),
-                        );
+                          );
+                        }
                       } else if (context.mounted) {
                         setState(() => isWithdrawing = false);
                         

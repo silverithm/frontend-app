@@ -395,15 +395,27 @@ class AuthProvider with ChangeNotifier {
       // 관리자 회원탈퇴 API 호출
       final response = await ApiService().deleteAdminAccount();
 
-      // DELETE 요청의 경우 성공시 빈 응답이거나 success가 있을 수 있음
-      print('[AuthProvider] 관리자 회원탈퇴 성공');
+      print('[AuthProvider] 관리자 회원탈퇴 API 응답: $response');
 
-      // 모든 로컬 데이터 삭제
-      await StorageService().removeAll();
-      _currentUser = null;
+      // 성공 응답 확인
+      if (response['success'] == true || response.containsKey('message')) {
+        print('[AuthProvider] 관리자 회원탈퇴 성공');
 
-      notifyListeners();
-      return true;
+        // 즉시 사용자 상태를 null로 설정하여 UI 업데이트
+        _currentUser = null;
+        _isInitialized = true;
+        notifyListeners();
+
+        // 모든 로컬 데이터 삭제
+        await StorageService().removeAll();
+
+        print('[AuthProvider] 관리자 회원탈퇴 완료 - 사용자 상태 초기화됨');
+        return true;
+      } else {
+        final errorMsg = response['error'] ?? '관리자 회원탈퇴에 실패했습니다.';
+        setError(errorMsg);
+        return false;
+      }
     } catch (e) {
       if (e.toString().contains('ApiException')) {
         final errorMsg = e.toString().replaceAll('ApiException: ', '');

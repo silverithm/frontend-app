@@ -1320,16 +1320,52 @@ class ApiService {
 
   // 관리자 회원탈퇴
   Future<Map<String, dynamic>> deleteAdminAccount() async {
-    return await _makeAuthenticatedRequest(() async {
+    try {
+      final headers = await _getHeaders(includeAuth: true);
       final response = await http.delete(
         Uri.parse('https://silverithm.site/api/v1/users'),
-        headers: await _getHeaders(includeAuth: true),
+        headers: headers,
       );
       
-      print('[API] 관리자 회원탈퇴 요청 완료');
+      print('[API] 관리자 회원탈퇴 응답 상태: ${response.statusCode}');
+      print('[API] 관리자 회원탈퇴 응답 본문: ${response.body}');
       
-      return response;
-    });
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        // 성공적인 응답 처리
+        if (response.body == 'success' || response.body.trim() == 'success') {
+          // 문자열 "success" 응답 처리
+          return {'success': true, 'message': '회원탈퇴가 완료되었습니다'};
+        } else {
+          // JSON 응답일 경우 파싱 시도
+          try {
+            return json.decode(response.body);
+          } catch (e) {
+            // JSON 파싱 실패시에도 성공으로 처리 (상태코드가 2xx이므로)
+            return {'success': true, 'message': '회원탈퇴가 완료되었습니다'};
+          }
+        }
+      } else {
+        // 실패 응답 처리
+        try {
+          final errorData = json.decode(response.body);
+          throw ApiException(
+            errorData['message'] ?? '회원탈퇴에 실패했습니다', 
+            response.statusCode
+          );
+        } catch (e) {
+          throw ApiException(
+            '회원탈퇴에 실패했습니다', 
+            response.statusCode
+          );
+        }
+      }
+    } catch (e) {
+      if (e is ApiException) {
+        rethrow;
+      }
+      print('[API] 관리자 회원탈퇴 오류: $e');
+      throw ApiException('네트워크 오류가 발생했습니다', 0);
+    }
   }
 }
 

@@ -1189,7 +1189,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
   Widget _buildRequestCard(VacationRequest request) {
     final canCancel = request.status == VacationStatus.pending;
-    final canDelete = true; // 모든 상태의 휴무를 삭제할 수 있도록 변경
+    final canDelete = request.status == VacationStatus.pending; // 대기 중인 상태에서만 삭제 가능
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
