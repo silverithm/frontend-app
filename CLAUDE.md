@@ -56,6 +56,47 @@ class AdminDashboardScreen extends StatefulWidget {
 - 에러 처리를 위한 try-catch 블록 포함
 - 의미 있는 에러 메시지 제공
 
+#### API 응답 처리 가이드라인
+**⚠️ 중요: API 응답 파싱 패턴**
+
+1. **`_makeAuthenticatedRequest` 사용 시**:
+   ```dart
+   // ✅ 정확한 방법: 이미 파싱된 Map이 반환됨
+   final response = await _makeAuthenticatedRequest(() async {
+     return await http.get(uri, headers: headers);
+   });
+   final userEmail = response['userEmail']?.toString() ?? '';
+   
+   // ❌ 잘못된 방법: 중복 파싱 시도
+   final responseData = json.decode(response.body); // 에러 발생!
+   ```
+
+2. **baseUrl과 엔드포인트 조합**:
+   ```dart
+   // baseUrl = 'https://silverithm.site/api'
+   
+   // ✅ 정확한 방법
+   final uri = Uri.parse('$_baseUrl/v1/users/info');
+   // 결과: https://silverithm.site/api/v1/users/info
+   
+   // ❌ 잘못된 방법: api 중복
+   final uri = Uri.parse('$_baseUrl/api/v1/users/info');
+   // 결과: https://silverithm.site/api/api/v1/users/info (404 에러)
+   ```
+
+3. **API 응답 디버깅**:
+   ```dart
+   // getUserInfo API 같은 복잡한 응답의 경우 전체 구조 확인
+   final userInfoResponse = await getUserInfo();
+   print('[API] getUserInfo 전체 응답: $userInfoResponse');
+   final userEmail = userInfoResponse['userEmail']?.toString() ?? '';
+   ```
+
+**공통 실수 방지:**
+- `_makeAuthenticatedRequest`는 이미 `_handleResponse`를 거쳐 파싱된 데이터 반환
+- baseUrl에 이미 '/api'가 포함되어 있으므로 엔드포인트에 추가하지 말 것
+- API 응답 구조를 정확히 파악하기 위해 전체 응답을 먼저 로깅
+
 ### 4. 폴더 구조
 ```
 lib/
@@ -117,3 +158,11 @@ lib/
 - docs: 문서 수정
 - test: 테스트 코드 추가/수정
 - chore: 빌드 스크립트, 패키지 매니저 설정 등
+
+## 개발 워크플로우 규칙
+
+### Flutter 앱 실행
+- **중요**: Flutter 앱 실행(`flutter run`)은 사용자가 직접 수행합니다
+- Claude는 `flutter run` 명령어를 사용하지 않습니다
+- 코드 수정 후 사용자가 직접 앱을 실행하여 테스트합니다
+- Claude는 코드 구현 및 수정에만 집중합니다

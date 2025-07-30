@@ -60,6 +60,12 @@ dependencies:
   firebase_messaging: ^15.1.4
   flutter_local_notifications: ^18.0.1
   
+  # 웹뷰를 위한 패키지
+  webview_flutter: ^4.4.2
+  
+  # 환경 변수를 위한 패키지  
+  flutter_dotenv: ^5.1.0
+  
   # 스플래시 스크린을 위한 패키지
   flutter_native_splash: ^2.4.0
 
@@ -81,6 +87,10 @@ dev_dependencies:
   # 앱 아이콘 생성을 위한 패키지
   flutter_launcher_icons: ^0.13.1
 
+# WebView iOS 크래시 문제 해결을 위한 버전 고정
+dependency_overrides:
+  webview_flutter_wkwebview: 3.17.0
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -95,6 +105,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

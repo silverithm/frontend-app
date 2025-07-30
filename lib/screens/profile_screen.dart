@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
+import '../providers/subscription_provider.dart';
 import '../models/user.dart';
 import '../services/analytics_service.dart';
+import '../utils/admin_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
+import 'subscription_check_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -1061,6 +1064,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         ],
                                       ),
 
+                                    // 구독 정보 (관리자가 아닌 경우에만 표시)
+                                    if (!AdminUtils.canAccessAdminPages(user))
+                                      Consumer<SubscriptionProvider>(
+                                        builder: (context, subscriptionProvider, child) {
+                                          return Column(
+                                            children: [
+                                              _buildSubscriptionInfo(subscriptionProvider),
+                                              const SizedBox(height: 16),
+                                            ],
+                                          );
+                                        },
+                                      ),
                                     // 가입일
                                     _buildInfoRow(
                                       icon: Icons.calendar_today,
@@ -1648,6 +1663,272 @@ class _ProfileScreenState extends State<ProfileScreen>
         style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
       ),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildSubscriptionInfo(SubscriptionProvider subscriptionProvider) {
+    // 구독 정보가 로드되지 않은 경우 로딩 중 표시
+    if (subscriptionProvider.isLoading) {
+      return _buildInfoRow(
+        icon: Icons.workspace_premium,
+        iconColor: Colors.grey.shade400,
+        title: '구독 정보',
+        value: '로딩 중...',
+      );
+    }
+
+    // 구독이 없는 경우
+    if (subscriptionProvider.subscription == null) {
+      return InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const SubscriptionCheckScreen(),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(
+                  Icons.workspace_premium,
+                  color: Colors.orange.shade600,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '구독 정보',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '구독이 필요합니다 (탭하여 구독하기)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.orange.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.orange.shade600,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 구독이 있는 경우
+    final subscription = subscriptionProvider.subscription!;
+    final statusColor = subscription.isActive 
+        ? Colors.green.shade600 
+        : subscription.isExpired 
+            ? Colors.red.shade600 
+            : Colors.orange.shade600;
+    
+    final statusIcon = subscription.isActive 
+        ? Icons.check_circle 
+        : subscription.isExpired 
+            ? Icons.error 
+            : Icons.warning;
+
+    return InkWell(
+      onTap: () {
+        _showSubscriptionDetails(subscription);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                statusIcon,
+                color: statusColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '구독 정보',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        subscription.planDisplayName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          subscription.statusDisplayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey.shade400,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSubscriptionDetails(subscription) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              Icons.workspace_premium,
+              color: subscription.isActive 
+                  ? Colors.green.shade600 
+                  : Colors.orange.shade600,
+            ),
+            const SizedBox(width: 8),
+            const Text('구독 정보'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDetailRow('플랜', subscription.planDisplayName),
+            const SizedBox(height: 12),
+            _buildDetailRow('상태', subscription.statusDisplayName),
+            const SizedBox(height: 12),
+            if (subscription.endDate != null) ...{
+              _buildDetailRow(
+                '만료일', 
+                _formatDate(subscription.endDate!),
+              ),
+              const SizedBox(height: 12),
+              if (subscription.isActive)
+                _buildDetailRow(
+                  '남은 일수', 
+                  '${subscription.daysRemaining}일',
+                ),
+            },
+            if (subscription.startDate != null) ...{
+              const SizedBox(height: 12),
+              _buildDetailRow(
+                '시작일', 
+                _formatDate(subscription.startDate!),
+              ),
+            },
+          ],
+        ),
+        actions: [
+          if (!subscription.isActive)
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const SubscriptionCheckScreen(),
+                  ),
+                );
+              },
+              child: const Text('구독 갱신'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 60,
+          child: Text(
+            '$label:',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

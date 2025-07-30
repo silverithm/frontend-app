@@ -56,5 +56,65 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        
+        <!-- 토스페이먼츠 결제를 위한 패키지 -->
+        <!-- 카드사 -->
+        <package android:name="com.kbcard.kbkookmincard" />
+        <package android:name="com.hyundaicard.appcard" />
+        <package android:name="com.shinhancard.smartshinhan" />
+        <package android:name="com.hanaskcard.paycla" />
+        <package android:name="kr.co.samsungcard.mpocket" />
+        <package android:name="com.bccard.bcsmartapp" />
+        <package android:name="com.lottemembers.android" />
+        <package android:name="com.lotte.lottecard" />
+        <package android:name="nh.smart.card" />
+        <package android:name="kr.co.citibank.citimobile" />
+        <package android:name="com.wooricard.smartapp" />
+        
+        <!-- 은행 -->
+        <package android:name="com.kbstar.kbbank" />
+        <package android:name="com.shinhan.sbanking" />
+        <package android:name="com.hanabank.ebk.channel.android.hananbank" />
+        <package android:name="com.wooribank.smart.npib" />
+        <package android:name="com.kbankwith.smartbank" />
+        <package android:name="com.kakaobank.channel" />
+        <package android:name="viva.republica.toss" />
+        <package android:name="com.knbank.opensmart" />
+        <package android:name="com.ibk.neobanking" />
+        <package android:name="com.sc.danb.scbankapp" />
+        <package android:name="com.kebhana.hanapush" />
+        
+        <!-- 간편결제 -->
+        <package android:name="com.nhn.android.search" />
+        <package android:name="com.kakao.talk" />
+        <package android:name="com.tmoney.tmpay" />
+        <package android:name="com.ssg.serviceapp.android.egiftcertificate" />
+        <package android:name="com.lguplus.paynow" />
+        <package android:name="com.lpoint.wallet" />
+        
+        <!-- 본인인증 -->
+        <package android:name="com.sktelecom.tauth" />
+        <package android:name="com.kt.ktauth" />
+        <package android:name="com.lguplus.mobile.certify" />
+        <package android:name="com.dream.pass" />
+        
+        <!-- 기타 결제 관련 -->
+        <package android:name="kvp.jjy.MispAndroid320" />
+        <package android:name="com.kftc.bankpay.android" />
+        <package android:name="com.TouchEn.mVaccine.webs" />
+        <package android:name="com.ahnlab.v3mobileplus" />
+        <package android:name="com.samsung.android.spay" />
+        <package android:name="com.samsung.android.spaylite" />
+        
+        <!-- Intent scheme을 처리할 수 있는 브라우저 -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="intent" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
     </queries>
 </manifest>

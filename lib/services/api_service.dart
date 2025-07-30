@@ -117,6 +117,7 @@ class ApiService {
       
       // 모든 토큰 제거
       await StorageService().removeAll();
+      await StorageService().clear(); // 추가 보안
       print('[API] 글로벌 로그아웃 - 모든 데이터 제거 완료');
 
       // 로그인 화면으로 이동
@@ -855,6 +856,195 @@ class ApiService {
         headers: headers,
         body: json.encode(body),
       );
+    });
+  }
+
+  // ===================== 사용자 정보 API =====================
+
+  // 사용자 정보 조회 (구독 정보 포함)
+  Future<Map<String, dynamic>> getUserInfo() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/users/info');
+
+      print('[API] 사용자 정보 조회 시작: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+      
+      print('[API] 요청 헤더: $headers');
+
+      final response = await http.get(uri, headers: headers);
+      
+      print('[API] 사용자 정보 조회 응답 상태코드: ${response.statusCode}');
+      print('[API] 사용자 정보 조회 응답 본문: ${response.body}');
+      
+      return response;
+    });
+  }
+
+  // ===================== 구독 관련 API =====================
+
+  // 내 구독 정보 조회
+  Future<Map<String, dynamic>> getMySubscription() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/subscriptions');
+
+      print('[API] 구독 정보 조회 시작: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+      
+      print('[API] 요청 헤더: $headers');
+
+      final response = await http.get(uri, headers: headers);
+      
+      print('[API] 구독 정보 조회 응답 상태코드: ${response.statusCode}');
+      print('[API] 구독 정보 조회 응답 본문: ${response.body}');
+      
+      return response;
+    });
+  }
+
+  // 무료 구독 생성
+  Future<Map<String, dynamic>> createFreeSubscription() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/subscriptions/free');
+
+      // 사용자 이메일 가져오기 (getUserInfo API 사용)
+      final userInfoResponse = await getUserInfo();
+      print('[API] getUserInfo 전체 응답: $userInfoResponse');
+      final userEmail = userInfoResponse['userEmail']?.toString() ?? '';
+      print('[API] getUserInfo API로 이메일 조회 성공: $userEmail');
+      
+      print('[API] 무료 구독 생성: $uri');
+      print('[API] 최종 사용자 이메일: $userEmail');
+
+      final body = {
+        'planName': 'FREE', // SubscriptionType
+        'billingType': 'FREE', // SubscriptionBillingType  
+        'amount': 0, // 무료 구독은 금액 0
+        'customerKey': userInfoResponse['customerKey']?.toString() ?? '', // userInfo에서 받아온 customerKey
+        'authKey': '', // 무료 구독은 authKey 불필요
+        'orderName': '무료 체험 구독', // 주문명
+        'customerEmail': userEmail, // 올바른 필드명
+        'customerName': userInfoResponse['userName']?.toString() ?? '', // 사용자 이름
+        'taxFreeAmount': 0, // 비과세 금액
+      };
+      
+      final jsonBody = json.encode(body);
+      print('[API] JSON 인코딩된 본문: $jsonBody');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+      
+      print('[API] 요청 헤더: $headers');
+
+      return await http.post(
+        uri, 
+        headers: headers,
+        body: jsonBody,
+      );
+    });
+  }
+
+  // 유료 구독 생성
+  Future<Map<String, dynamic>> createSubscription({
+    required String planType,
+    required String paymentType,
+    required String authKey,
+    required int amount,
+    required String planName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/subscriptions');
+
+      // 사용자 이메일 가져오기 (getUserInfo API 사용)
+      final userInfoResponse = await getUserInfo();
+      print('[API] getUserInfo 전체 응답: $userInfoResponse');
+      final userEmail = userInfoResponse['userEmail']?.toString() ?? '';
+      print('[API] getUserInfo API로 이메일 조회 성공: $userEmail');
+      
+      print('[API] 최종 사용자 이메일: $userEmail');
+
+      final body = {
+        'planName': planType, // SubscriptionType
+        'billingType': paymentType, // SubscriptionBillingType  
+        'amount': amount, // 실제 결제 금액
+        'customerKey': userInfoResponse['customerKey']?.toString() ?? '', // userInfo에서 받아온 customerKey
+        'authKey': authKey,
+        'orderName': '$planName 구독', // 주문명
+        'customerEmail': userEmail, // 올바른 필드명
+        'customerName': userInfoResponse['userName']?.toString() ?? '', // 사용자 이름
+        'taxFreeAmount': 0, // 비과세 금액
+      };
+
+      print('[API] 유료 구독 생성: $uri');
+      print('[API] 구독 데이터: $body');
+      
+      final jsonBody = json.encode(body);
+      print('[API] JSON 인코딩된 본문: $jsonBody');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+      
+      print('[API] 요청 헤더: $headers');
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: jsonBody,
+      );
+    });
+  }
+
+  // 구독 취소
+  Future<Map<String, dynamic>> cancelSubscription() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/subscriptions/cancel');
+
+      print('[API] 구독 취소: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers);
+    });
+  }
+
+  // 구독 활성화
+  Future<Map<String, dynamic>> activateSubscription() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/subscriptions/activate');
+
+      print('[API] 구독 활성화: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers);
+    });
+  }
+
+  // 구독 결제 실패 정보 조회
+  Future<Map<String, dynamic>> getPaymentFailures({
+    int page = 0,
+    int size = 10,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+
+      final uri = Uri.parse('$_baseUrl/v1/subscriptions/payment-failures')
+          .replace(queryParameters: queryParams);
+
+      print('[API] 결제 실패 정보 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
     });
   }
 

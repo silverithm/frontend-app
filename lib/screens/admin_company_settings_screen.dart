@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/api_service.dart';
+import '../providers/subscription_provider.dart';
+import '../models/payment_failure.dart';
+import '../models/subscription.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/index.dart';
-import '../utils/admin_utils.dart';
-import 'login_screen.dart';
+import 'admin_payment_screen.dart';
 
 class AdminCompanySettingsScreen extends StatefulWidget {
   const AdminCompanySettingsScreen({super.key});
@@ -18,66 +19,22 @@ class AdminCompanySettingsScreen extends StatefulWidget {
 }
 
 class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  
-  Map<String, dynamic>? _companyProfile;
-  bool _isLoading = false;
-  bool _isSaving = false;
-
+  bool _isPaymentFailuresExpanded = false;
   @override
   void initState() {
     super.initState();
-    _loadCompanyProfile();
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _addressController.dispose();
-    _phoneController.dispose();
-    _emailController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadCompanyProfile() async {
-    setState(() => _isLoading = true);
-    
-    try {
-      final result = await ApiService().getCompanyProfile();
+    // 화면 로드 시 최신 구독 정보 및 결제 실패 정보 가져오기
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final subscriptionProvider = context.read<SubscriptionProvider>();
       
-      if (result['success'] == true) {
-        setState(() {
-          _companyProfile = result['data'];
-          _populateFields();
-        });
-      } else {
-        throw Exception(result['message'] ?? '회사 정보 로드 실패');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('회사 정보 로드 실패: $e')),
-        );
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _populateFields() {
-    if (_companyProfile != null) {
-      _nameController.text = _companyProfile!['name'] ?? '';
-      _addressController.text = _companyProfile!['address'] ?? '';
-      _phoneController.text = _companyProfile!['phone'] ?? '';
-      _emailController.text = _companyProfile!['email'] ?? '';
-      _descriptionController.text = _companyProfile!['description'] ?? '';
-    }
+      print('[AdminCompanySettings] 구독 정보 로드 시작');
+      await subscriptionProvider.loadSubscription();
+      print('[AdminCompanySettings] 구독 정보 로드 완료');
+      
+      print('[AdminCompanySettings] 결제 실패 정보 로드 시작');
+      await subscriptionProvider.loadPaymentFailures();
+      print('[AdminCompanySettings] 결제 실패 정보 로드 완료');
+    });
   }
 
   @override
@@ -85,269 +42,248 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.currentUser;
-        
+        final company = user?.company;
+
+        if (company == null) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('회사 정보'),
+              backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+              foregroundColor: Colors.white,
+            ),
+            body: const Center(
+              child: Text('회사 정보를 불러올 수 없습니다.'),
+            ),
+          );
+        }
+
         return Scaffold(
-          backgroundColor: AppSemanticColors.backgroundPrimary,
+          backgroundColor: Colors.grey.shade50,
           appBar: AppBar(
-            title: const Text('회사정보',style: TextStyle(color:Colors.white),),
+            title: const Text(
+              '회사 정보',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
             foregroundColor: Colors.white,
             elevation: 0,
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(80),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.business_center,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+            centerTitle: true,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 회사 정보 카드
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppSemanticColors.interactiveSecondaryDefault,
+                        AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.8),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.business,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        company.name,
+                        style: AppTypography.heading4.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '관리자 계정으로 로그인됨',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // 상세 정보 섹션
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '회사 상세 정보',
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      // 회사명
+                      _buildInfoRow(
+                        icon: Icons.business,
+                        iconColor: AppSemanticColors.interactiveSecondaryDefault,
+                        title: '회사명',
+                        value: company.name,
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // 회사 주소
+                      _buildInfoRow(
+                        icon: Icons.location_on,
+                        iconColor: Colors.red.shade600,
+                        title: '주소',
+                        value: company.addressName.isNotEmpty 
+                            ? company.addressName 
+                            : '주소 정보 없음',
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // 관리자 정보 섹션
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '관리자 정보',
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      // 관리자명
+                      _buildInfoRow(
+                        icon: Icons.person,
+                        iconColor: Colors.blue.shade600,
+                        title: '이름',
+                        value: user!.name,
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // 역할
+                      _buildInfoRow(
+                        icon: Icons.admin_panel_settings,
+                        iconColor: AppSemanticColors.interactiveSecondaryDefault,
+                        title: '역할',
+                        value: '관리자',
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // 구독 정보 섹션 (관리자도 구독 정보 확인 가능)
+                Consumer<SubscriptionProvider>(
+                  builder: (context, subscriptionProvider, child) {
+                    return Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 20,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '회사 정보 및 관리자 설정',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
+                            '구독 정보',
+                            style: AppTypography.heading6.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
+                          const SizedBox(height: 20),
+                          _buildSubscriptionStatus(subscriptionProvider),
                         ],
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'ADMIN',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              ),
+                
+                const SizedBox(height: 24),
+                
+                // 로그아웃 버튼 (제일 하단)
+                _buildLogoutSection(authProvider),
+
+              ],
             ),
           ),
-          body: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.space6),
-                  child: Column(
-                    children: [
-                      // 개인 정보 섹션
-                      _buildProfileSection(user),
-                      const SizedBox(height: AppSpacing.space6),
-                      
-                      // 회사 정보 섹션
-                      _buildCompanySection(),
-                      const SizedBox(height: AppSpacing.space6),
-                      
-                      // 설정 섹션
-                      _buildSettingsSection(context),
-                      const SizedBox(height: AppSpacing.space8),
-                      
-                      // 로그아웃 버튼
-                      _buildLogoutButton(context),
-                      const SizedBox(height: AppSpacing.space8),
-                    ],
-                  ),
-                ),
         );
       },
     );
   }
 
-  Widget _buildProfileSection(user) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 섹션 헤더
-          Row(
-            children: [
-              Icon(
-                Icons.person,
-                color: AppSemanticColors.interactiveSecondaryDefault,
-                size: 24,
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              Text(
-                '내 정보',
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                  fontWeight: AppTypography.fontWeightSemibold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space4),
-          
-          // 개인 정보 목록
-          if (user != null) ...[
-            _buildInfoRow(
-              icon: Icons.badge,
-              iconColor: AppSemanticColors.interactiveSecondaryDefault,
-              title: '이름',
-              value: user.name ?? '',
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            _buildInfoRow(
-              icon: Icons.email,
-              iconColor: AppSemanticColors.interactiveSecondaryDefault,
-              title: '이메일',
-              value: user.email ?? '',
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            if (user.position != null)
-              _buildInfoRow(
-                icon: Icons.work,
-                iconColor: AppSemanticColors.interactiveSecondaryDefault,
-                title: '직책',
-                value: user.position!,
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildCompanySection() {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 섹션 헤더
-          Row(
-            children: [
-              Icon(
-                Icons.business,
-                color: AppSemanticColors.interactiveSecondaryDefault,
-                size: 24,
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              Text(
-                '회사 정보',
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                  fontWeight: AppTypography.fontWeightSemibold,
-                ),
-              ),
-              const Spacer(),
-              if (!_isLoading)
-                AppButton(
-                  text: _isSaving ? '저장 중...' : '수정',
-                  variant: AppButtonVariant.outline,
-                  size: AppButtonSize.small,
-                  isLoading: _isSaving,
-                  onPressed: _isSaving ? null : () => _showCompanyEditDialog(),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space4),
-          
-          // 회사 정보 목록
-          if (_companyProfile != null) ...[
-            _buildInfoRow(
-              icon: Icons.business,
-              iconColor: AppSemanticColors.interactiveSecondaryDefault,
-              title: '회사명',
-              value: _companyProfile!['name'] ?? '',
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            _buildInfoRow(
-              icon: Icons.location_on,
-              iconColor: AppSemanticColors.interactiveSecondaryDefault,
-              title: '주소',
-              value: _companyProfile!['address'] ?? '',
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            _buildInfoRow(
-              icon: Icons.phone,
-              iconColor: AppSemanticColors.interactiveSecondaryDefault,
-              title: '전화번호',
-              value: _companyProfile!['phone'] ?? '',
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            _buildInfoRow(
-              icon: Icons.email,
-              iconColor: AppSemanticColors.interactiveSecondaryDefault,
-              title: '이메일',
-              value: _companyProfile!['email'] ?? '',
-            ),
-          ] else ...[
-            const Center(
-              child: Text('회사 정보를 불러오는 중...'),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildSettingsSection(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 섹션 헤더
-          Row(
-            children: [
-              Icon(
-                Icons.settings,
-                color: AppSemanticColors.interactiveSecondaryDefault,
-                size: 24,
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              Text(
-                '설정',
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                  fontWeight: AppTypography.fontWeightSemibold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space4),
-          
-          // 설정 항목들
-          _buildSettingItem(
-            icon: Icons.info,
-            iconColor: AppSemanticColors.interactivePrimaryDefault,
-            title: '앱 정보',
-            subtitle: '버전 및 개발자 정보',
-            onTap: () => _showAppInfoDialog(context),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildLogoutButton(BuildContext context) {
-    return AppButton(
-      text: '로그아웃',
-      variant: AppButtonVariant.outline,
-      isFullWidth: true,
-      onPressed: () => _showLogoutDialog(context),
-      icon: const Icon(Icons.logout, size: 20),
-    );
-  }
-  
   Widget _buildInfoRow({
     required IconData icon,
     required Color iconColor,
@@ -356,247 +292,653 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
   }) {
     return Row(
       children: [
-        Icon(icon, color: iconColor, size: 20),
-        const SizedBox(width: AppSpacing.space2),
-        SizedBox(
-          width: 60,
-          child: Text(
-            title,
-            style: AppTypography.labelMedium.copyWith(
-              color: AppSemanticColors.textSecondary,
-            ),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor,
+            size: 20,
           ),
         ),
-        const SizedBox(width: AppSpacing.space2),
+        const SizedBox(width: 16),
         Expanded(
-          child: Text(
-            value.isEmpty ? '-' : value,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubscriptionStatus(SubscriptionProvider subscriptionProvider) {
+    print('[AdminCompanySettings] _buildSubscriptionStatus 호출');
+    print('[AdminCompanySettings] isLoading: ${subscriptionProvider.isLoading}');
+    print('[AdminCompanySettings] subscription: ${subscriptionProvider.subscription}');
+    print('[AdminCompanySettings] errorMessage: ${subscriptionProvider.errorMessage}');
+    
+    // 구독 정보 로딩 중
+    if (subscriptionProvider.isLoading) {
+      return Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppSemanticColors.interactiveSecondaryDefault,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            '구독 정보를 불러오는 중...',
             style: AppTypography.bodyMedium.copyWith(
-              color: AppSemanticColors.textPrimary,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 구독 정보가 없는 경우
+    if (subscriptionProvider.subscription == null) {
+      return Column(
+        children: [
+          _buildInfoRow(
+            icon: Icons.info_outline,
+            iconColor: Colors.orange.shade600,
+            title: '구독 상태',
+            value: '구독 정보 없음',
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber,
+                  color: Colors.orange.shade600,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '관리자는 구독 상태와 관계없이 모든 기능을 사용할 수 있습니다.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 구독 정보가 있는 경우
+    final subscription = subscriptionProvider.subscription!;
+    final statusColor = subscription.isActive 
+        ? Colors.green.shade600 
+        : subscription.isExpired 
+            ? Colors.red.shade600 
+            : Colors.orange.shade600;
+
+    return Column(
+      children: [
+        _buildInfoRow(
+          icon: Icons.workspace_premium,
+          iconColor: statusColor,
+          title: '구독 플랜',
+          value: subscription.planDisplayName,
+        ),
+        const SizedBox(height: 20),
+        _buildInfoRow(
+          icon: Icons.assignment_turned_in,
+          iconColor: statusColor,
+          title: '구독 상태',
+          value: subscription.statusDisplayName,
+        ),
+        if (subscription.endDate != null) ...[
+          const SizedBox(height: 20),
+          _buildInfoRow(
+            icon: Icons.schedule,
+            iconColor: Colors.teal.shade600,
+            title: '만료일',
+            value: _formatDate(subscription.endDate!),
+          ),
+          if (subscription.isActive) ...[
+            const SizedBox(height: 20),
+            _buildInfoRow(
+              icon: Icons.timer,
+              iconColor: Colors.blue.shade600,
+              title: '남은 일수',
+              value: '${subscription.daysRemaining}일',
+            ),
+          ],
+        ],
+        // 유료 플랜에 대한 구독 제어 버튼 (무료 플랜 제외)
+        if (!subscription.isFree) ...[
+          const SizedBox(height: 20),
+          _buildSubscriptionControlButtons(subscription, subscriptionProvider),
+        ],
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.admin_panel_settings,
+                color: Colors.green.shade600,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '관리자 권한으로 구독 상태와 관계없이 모든 기능을 사용할 수 있습니다.',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // 결제 실패 정보 표시
+        _buildPaymentFailuresSection(subscriptionProvider),
+        const SizedBox(height: 16),
+        // 결제 관리 버튼
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _navigateToPayment,
+            icon: const Icon(Icons.payment),
+            label: const Text('결제 및 구독 관리'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
       ],
     );
   }
-  
-  Widget _buildSettingItem({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppBorderRadius.md),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.space3,
-          horizontal: AppSpacing.space2,
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.space2),
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppBorderRadius.md),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: AppSpacing.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                      fontWeight: AppTypography.fontWeightMedium,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: AppSemanticColors.textTertiary,
-              size: 20,
-            ),
-          ],
-        ),
+
+  void _navigateToPayment() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AdminPaymentScreen(),
       ),
     );
   }
-  
-  void _showCompanyEditDialog() {
+
+  Widget _buildLogoutSection(AuthProvider authProvider) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '계정 관리',
+            style: AppTypography.heading6.copyWith(
+              color: AppSemanticColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _showLogoutDialog(authProvider),
+              icon: const Icon(Icons.logout),
+              label: const Text('로그아웃'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.grey.shade700,
+                side: BorderSide(color: Colors.grey.shade300),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(AuthProvider authProvider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          '회사 정보 수정',
-          style: AppTypography.heading5.copyWith(
-            color: AppSemanticColors.textPrimary,
-          ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.logout, color: Colors.orange.shade600),
+            const SizedBox(width: 8),
+            const Text('로그아웃'),
+          ],
         ),
-        content: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppInput(
-                  label: '회사명',
-                  controller: _nameController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '회사명을 입력해주세요';
-                    }
-                    return null;
-                  }
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                AppInput(
-                  label: '주소',
-                  controller: _addressController,
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                AppInput(
-                  label: '전화번호',
-                  controller: _phoneController,
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                AppInput(
-                  label: '이메일',
-                  controller: _emailController,
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                AppInput(
-                  label: '회사 설명',
-                  controller: _descriptionController,
-                  maxLines: 3,
-                ),
-              ],
+        content: const Text('정말 로그아웃하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              '취소',
+              style: TextStyle(color: Colors.grey.shade600),
             ),
           ),
-        ),
-        actions: [
-          AppButton(
-            text: '취소',
-            variant: AppButtonVariant.text,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: AppSpacing.space2),
-          AppButton(
-            text: '저장',
-            isLoading: _isSaving,
-            onPressed: _isSaving ? null : () {
-              if (_formKey.currentState!.validate()) {
-                Navigator.of(context).pop();
-                _saveCompanyProfile();
-              }
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop(); // 다이얼로그 닫기
+              await _performLogout(authProvider);
             },
+            child: Text(
+              '로그아웃',
+              style: TextStyle(color: Colors.orange.shade600),
+            ),
           ),
         ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
       ),
     );
   }
-  
-  void _showLogoutDialog(BuildContext context) {
-    AppDialog.showConfirm(
-      context,
-      title: '로그아웃',
-      message: '정말 로그아웃하시겠습니까?',
-      confirmText: '로그아웃',
-    ).then((confirmed) {
-      if (confirmed == true) {
-        _logout(context);
-      }
-    });
-  }
-  
-  void _logout(BuildContext context) async {
-    final authProvider = context.read<AuthProvider>();
-    await authProvider.logout();
-    
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    }
-  }
-  
-  void _showAppInfoDialog(BuildContext context) {
-    AppDialog.showAlert(
-      context,
-      title: '앱 정보',
-      message: '케어브이 관리자 앱\n버전: 1.0.0\n\n개발: 실버리듬',
-    );
-  }
-  
-  Future<void> _saveCompanyProfile() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
 
-    setState(() => _isSaving = true);
-    
+  Future<void> _performLogout(AuthProvider authProvider) async {
     try {
-      final result = await ApiService().updateCompanyProfile(
-        name: _nameController.text.trim(),
-        address: _addressController.text.trim(),
-        contactPhone: _phoneController.text.trim(),
-        contactEmail: _emailController.text.trim(),
-      );
-      
-      if (result['success'] == true) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('회사 정보가 성공적으로 저장되었습니다'),
-              backgroundColor: AppSemanticColors.statusSuccessBackground,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              ),
-            ),
-          );
-          // 저장 후 데이터 다시 로드
-          await _loadCompanyProfile();
-        }
-      } else {
-        throw Exception(result['message'] ?? '저장 실패');
+      await authProvider.logout();
+      if (mounted) {
+        // AuthWrapper가 자동으로 로그인 상태를 감지하고 LoginScreen으로 이동하므로
+        // 현재 화면만 닫으면 됩니다
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('저장 실패: $e'),
-            backgroundColor: AppSemanticColors.statusErrorBackground,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-            ),
+            content: Text('로그아웃 중 오류가 발생했습니다: ${e.toString()}'),
+            backgroundColor: Colors.orange.shade600,
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
     }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}년 ${date.month}월 ${date.day}일';
+  }
+
+  Widget _buildPaymentFailuresSection(SubscriptionProvider subscriptionProvider) {
+    // 결제 실패 정보 로딩 중
+    if (subscriptionProvider.isLoadingFailures) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.shade200),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '결제 실패 정보를 확인 중...',
+              style: AppTypography.bodyMedium.copyWith(
+                color: Colors.orange.shade700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 결제 실패가 없는 경우 - 표시하지 않음
+    if (!subscriptionProvider.hasPaymentFailures) {
+      return const SizedBox.shrink();
+    }
+
+    // 결제 실패가 있는 경우
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 헤더 (항상 표시되며 탭하면 펼치기/접기)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isPaymentFailuresExpanded = !_isPaymentFailuresExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Colors.red.shade600,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '결제 실패 내역',
+                      style: AppTypography.heading6.copyWith(
+                        color: Colors.red.shade700,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade600,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${subscriptionProvider.paymentFailures.length}건',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    _isPaymentFailuresExpanded 
+                        ? Icons.expand_less 
+                        : Icons.expand_more,
+                    color: Colors.red.shade600,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // 상세 내용 (펼쳐졌을 때만 표시)
+          if (_isPaymentFailuresExpanded) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '결제 정보를 확인하고 다시 시도해 주세요.',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: Colors.red.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // 결제 실패 정보 표시 (최대 5개)
+                  ...subscriptionProvider.paymentFailures
+                      .take(5)
+                      .map((failure) => _buildPaymentFailureItem(failure))
+                      .toList(),
+                  if (subscriptionProvider.paymentFailures.length > 5)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Center(
+                        child: Text(
+                          '외 ${subscriptionProvider.paymentFailures.length - 5}건 더...',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: Colors.red.shade600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentFailureItem(PaymentFailure failure) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade100),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  failure.failureReasonKorean,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red.shade700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${failure.formattedAmount} • ${failure.formattedFailedAt}',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionControlButtons(Subscription subscription, SubscriptionProvider subscriptionProvider) {
+    return Row(
+      children: [
+        // 구독 취소/활성화 버튼
+        Expanded(
+          child: subscription.isActive
+              ? OutlinedButton.icon(
+                  onPressed: subscriptionProvider.isLoading 
+                      ? null 
+                      : () => _showCancelSubscriptionDialog(subscriptionProvider),
+                  icon: subscriptionProvider.isLoading
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                          ),
+                        )
+                      : const Icon(Icons.pause_circle_outline),
+                  label: Text(subscriptionProvider.isLoading ? '처리 중...' : '구독 일시정지'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade600,
+                    side: BorderSide(color: Colors.red.shade300),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                )
+              : ElevatedButton.icon(
+                  onPressed: subscriptionProvider.isLoading 
+                      ? null 
+                      : () => _showActivateSubscriptionDialog(subscriptionProvider),
+                  icon: subscriptionProvider.isLoading
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.play_circle_outline),
+                  label: Text(subscriptionProvider.isLoading ? '처리 중...' : '구독 재개'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  void _showCancelSubscriptionDialog(SubscriptionProvider subscriptionProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.pause_circle_outline, color: Colors.red.shade600),
+            const SizedBox(width: 8),
+            const Text('구독 일시정지'),
+          ],
+        ),
+        content: const Text('구독을 일시정지하시겠습니까?\n다음 결제일에 자동 결제가 중단됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              '취소',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final success = await subscriptionProvider.cancelSubscription();
+              if (success && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('구독이 일시정지되었습니다'),
+                    backgroundColor: Colors.orange.shade600,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              '일시정지',
+              style: TextStyle(color: Colors.red.shade600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActivateSubscriptionDialog(SubscriptionProvider subscriptionProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.play_circle_outline, color: Colors.green.shade600),
+            const SizedBox(width: 8),
+            const Text('구독 재개'),
+          ],
+        ),
+        content: const Text('구독을 재개하시겠습니까?\n다음 결제일부터 자동 결제가 재개됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              '취소',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final success = await subscriptionProvider.activateSubscription();
+              if (success && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('구독이 재개되었습니다'),
+                    backgroundColor: Colors.green.shade600,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              '재개',
+              style: TextStyle(color: Colors.green.shade600),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

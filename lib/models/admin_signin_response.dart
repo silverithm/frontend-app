@@ -1,9 +1,11 @@
 import 'user.dart';
 import 'company.dart';
+import 'subscription.dart';
 
 class AdminSigninResponse {
   final String userId;
   final String userName;
+  final String userEmail;
   final String companyId;
   final String companyName;
   final Location? companyAddress;
@@ -15,6 +17,7 @@ class AdminSigninResponse {
   AdminSigninResponse({
     required this.userId,
     required this.userName,
+    required this.userEmail,
     required this.companyId,
     required this.companyName,
     this.companyAddress,
@@ -28,6 +31,7 @@ class AdminSigninResponse {
     return AdminSigninResponse(
       userId: json['userId']?.toString() ?? '',
       userName: json['userName'] ?? '',
+      userEmail: json['userEmail'] ?? '',
       companyId: json['companyId']?.toString() ?? '',
       companyName: json['companyName'] ?? '',
       companyAddress: json['companyAddress'] != null
@@ -47,7 +51,7 @@ class AdminSigninResponse {
     return User(
       id: userId,
       username: userName, // username을 userName 값으로 설정
-      email: '', // 관리자 응답에는 email이 없으므로 빈 값
+      email: userEmail, // 관리자 이메일 설정
       name: userName,
       role: 'ADMIN', // 관리자로 명시적 설정
       status: 'active',
@@ -62,6 +66,77 @@ class AdminSigninResponse {
       ),
       tokenInfo: tokenInfo,
     );
+  }
+
+  /// 관리자 로그인 응답에서 구독 정보를 Subscription 객체로 변환
+  Subscription? toSubscription() {
+    if (subscription == null) return null;
+
+    try {
+      return Subscription(
+        id: subscription!.id,
+        companyId: companyId,
+        planType: _mapPlanNameToType(subscription!.planName),
+        status: _mapStatusToEnum(subscription!.status),
+        startDate: DateTime.tryParse(subscription!.startDate),
+        endDate: DateTime.tryParse(subscription!.endDate),
+        hasUsedFreeSubscription: subscription!.hasUsedFreeSubscription ?? false,
+        paymentType: _mapBillingTypeToPaymentType(subscription!.billingType),
+        customerKey: customerKey,
+      );
+    } catch (e) {
+      print('[AdminSigninResponse] 구독 정보 변환 실패: $e');
+      return null;
+    }
+  }
+
+  SubscriptionType _mapPlanNameToType(String planName) {
+    switch (planName.toUpperCase()) {
+      case 'FREE':
+      case 'TRIAL':
+      case '무료':
+        return SubscriptionType.FREE;
+      case 'BASIC':
+      case '베이직':
+        return SubscriptionType.BASIC;
+      case 'ENTERPRISE':
+      case '엔터프라이즈':
+        return SubscriptionType.ENTERPRISE;
+      default:
+        return SubscriptionType.FREE;
+    }
+  }
+
+  SubscriptionStatus _mapStatusToEnum(String status) {
+    switch (status.toUpperCase()) {
+      case 'ACTIVE':
+      case '활성':
+        return SubscriptionStatus.ACTIVE;
+      case 'CANCELLED':
+      case '취소됨':
+        return SubscriptionStatus.CANCELLED;
+      case 'EXPIRED':
+      case '만료됨':
+        return SubscriptionStatus.EXPIRED;
+      case 'INACTIVE':
+      case '비활성':
+        return SubscriptionStatus.INACTIVE;
+      default:
+        return SubscriptionStatus.INACTIVE;
+    }
+  }
+
+  PaymentType _mapBillingTypeToPaymentType(String billingType) {
+    switch (billingType.toUpperCase()) {
+      case 'MONTHLY':
+      case '월간':
+        return PaymentType.MONTHLY;
+      case 'YEARLY':
+      case '연간':
+        return PaymentType.YEARLY;
+      default:
+        return PaymentType.MONTHLY;
+    }
   }
 }
 

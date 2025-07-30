@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'providers/app_provider.dart';
 import 'providers/auth_provider.dart';
@@ -11,6 +12,7 @@ import 'providers/company_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/app_version_provider.dart';
 import 'providers/admin_provider.dart';
+import 'providers/subscription_provider.dart';
 import 'services/storage_service.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
@@ -23,6 +25,15 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 환경 변수 로드 (안전하게 처리)
+  try {
+    await dotenv.load(fileName: ".env");
+    print('[ENV] .env 파일 로드 성공');
+  } catch (e) {
+    print('[ENV] .env 파일 로드 실패: $e');
+    print('[ENV] 기본값으로 계속 진행...');
+  }
 
   // Firebase 초기화
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -61,6 +72,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => AppVersionProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
@@ -136,6 +148,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
         // 로그인되지 않은 경우에만 로그인 화면으로 이동
         if (!authProvider.isLoggedIn) {
+          print('[AuthWrapper] 로그인되지 않음 - 로그인 화면 표시');
           return const LoginScreen();
         }
 

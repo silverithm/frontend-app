@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../models/admin_signin_response.dart';
 import '../models/member_signin_response.dart';
+import '../models/subscription.dart';
 import '../services/storage_service.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart';
@@ -144,8 +145,10 @@ class AuthProvider with ChangeNotifier {
           }
         }
 
-        // 사용자 정보 저장
-        await StorageService().saveUserData(response);
+        // 사용자 정보 저장 (로그인 시 입력한 이메일 포함)
+        final modifiedResponse = Map<String, dynamic>.from(response);
+        modifiedResponse['userEmail'] = username; // 로그인 시 입력한 이메일 저장
+        await StorageService().saveUserData(modifiedResponse);
 
         // Analytics 사용자 속성 설정
         await AnalyticsService().setUserProperties(
@@ -159,6 +162,9 @@ class AuthProvider with ChangeNotifier {
         print('[AuthProvider] 관리자 로그인 성공 - 회사: ${_currentUser!.company?.name}');
         print('[AuthProvider] 관리자 로그인 성공 - 활성 상태: ${_currentUser!.isActive}');
         print('[AuthProvider] 관리자 로그인 성공 - 상태: ${_currentUser!.status}');
+        
+        // 구독 정보를 AdminSigninResponse 대신 실시간 API로 로드하도록 비워둠
+        // SubscriptionProvider.loadSubscription()이 호출될 때 실시간으로 가져옴
         notifyListeners();
         return true;
       } else {
@@ -242,16 +248,29 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     try {
       setLoading(true);
+      print('[AuthProvider] === 로그아웃 시작 ===');
 
       // Analytics 로그아웃 이벤트 기록
       await AnalyticsService().logLogout();
+      print('[AuthProvider] Analytics 로그아웃 이벤트 기록 완료');
 
-      // TODO: 로그아웃 API 호출 (필요시)
-      await StorageService().removeAll(); // 모든 토큰과 사용자 정보 제거
+      // 모든 토큰과 사용자 정보 제거
+      await StorageService().removeAll();
+      print('[AuthProvider] StorageService.removeAll() 완료');
 
+      // SharedPreferences 전체 클리어 (추가 보안)
+      await StorageService().clear();
+      print('[AuthProvider] StorageService.clear() 완료');
+
+      // 현재 사용자 상태 완전 초기화
       _currentUser = null;
+      _isInitialized = true; // 로그아웃 후에는 true로 설정하여 로그인 화면으로 이동 가능하게 함
+      clearError();
+      
+      print('[AuthProvider] 로그아웃 완료 - 사용자 상태 초기화됨');
       notifyListeners();
     } catch (e) {
+      print('[AuthProvider] 로그아웃 중 오류: $e');
       setError('로그아웃에 실패했습니다: ${e.toString()}');
     } finally {
       setLoading(false);
@@ -299,10 +318,16 @@ class AuthProvider with ChangeNotifier {
   Future<void> checkAuthStatus() async {
     try {
       setLoading(true);
+      print('[AuthProvider] === 인증 상태 확인 시작 ===');
 
       final token = StorageService().getToken();
-      if (token == null) {
-        print('[AuthProvider] 토큰 없음 - 로그인 필요');
+      final savedUserData = StorageService().getSavedUserData();
+      
+      print('[AuthProvider] 토큰 존재: ${token != null}');
+      print('[AuthProvider] 저장된 사용자 데이터 존재: ${savedUserData != null}');
+      
+      if (token == null || savedUserData == null) {
+        print('[AuthProvider] 토큰 또는 사용자 데이터 없음 - 로그인 필요');
         _currentUser = null;
         _isInitialized = true;
         notifyListeners();
@@ -311,13 +336,7 @@ class AuthProvider with ChangeNotifier {
 
       print('[AuthProvider] 토큰 발견 - 유효성 검증 시작');
 
-      // 1단계: 저장된 사용자 정보 확인
-      final savedUserData = StorageService().getSavedUserData();
-      if (savedUserData == null) {
-        print('[AuthProvider] 저장된 사용자 정보 없음 - 로그아웃');
-        await _performLogout();
-        return;
-      }
+      // 1단계: 저장된 사용자 정보 확인 (이미 위에서 확인했으므로 제거)
 
       // 2단계: 서버에 토큰 유효성 검증
       print('[AuthProvider] 서버 토큰 검증 시작');
@@ -425,12 +444,18 @@ class AuthProvider with ChangeNotifier {
   // 로그아웃 처리 (내부 메서드)
   Future<void> _performLogout() async {
     try {
+      print('[AuthProvider] === 내부 로그아웃 처리 시작 ===');
+      
+      // 모든 저장된 데이터 제거
       await StorageService().removeAll();
+      await StorageService().clear(); // 추가 보안
+      
       _currentUser = null;
       _isInitialized = true;
       clearError();
+      
+      print('[AuthProvider] 내부 로그아웃 처리 완료');
       notifyListeners();
-      print('[AuthProvider] 로그아웃 처리 완료');
     } catch (e) {
       print('[AuthProvider] 로그아웃 처리 중 오류: $e');
       _currentUser = null;
@@ -442,6 +467,27 @@ class AuthProvider with ChangeNotifier {
   void updateUser(User user) {
     _currentUser = user;
     notifyListeners();
+  }
+
+  // 강제 로그아웃 - 디버깅 및 응급상황용
+  Future<void> forceLogout() async {
+    try {
+      print('[AuthProvider] === 강제 로그아웃 시작 ===');
+      
+      // SharedPreferences 완전 초기화
+      await StorageService().clear();
+      
+      // 모든 상태 초기화
+      _currentUser = null;
+      _isInitialized = true;
+      _isLoading = false;
+      _errorMessage = '';
+      
+      print('[AuthProvider] 강제 로그아웃 완료');
+      notifyListeners();
+    } catch (e) {
+      print('[AuthProvider] 강제 로그아웃 중 오류: $e');
+    }
   }
 
   // 비밀번호 찾기

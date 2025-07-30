@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/vacation_provider.dart';
+import '../providers/subscription_provider.dart';
 import '../services/fcm_service.dart';
+import '../services/subscription_guard.dart';
 import '../utils/admin_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -14,6 +16,8 @@ import 'profile_screen.dart';
 import 'admin_dashboard_screen.dart';
 import '../providers/admin_provider.dart';
 import '../services/api_service.dart';
+import '../services/storage_service.dart';
+import '../models/admin_signin_response.dart';
 import '../widgets/common/index.dart';
 
 class MainScreen extends StatefulWidget {
@@ -71,10 +75,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       _currentIndex = 1;
     }
 
-    // 사용자 정보가 있으면 휴가 데이터 로드 및 FCM 토큰 전송
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 사용자 정보가 있으면 구독 체크, 휴가 데이터 로드 및 FCM 토큰 전송
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = context.read<AuthProvider>();
       final vacationProvider = context.read<VacationProvider>();
+      final subscriptionProvider = context.read<SubscriptionProvider>();
 
       print('[MainScreen] 메인 화면 초기화 - 사용자 정보 확인');
       print('[MainScreen] currentUser: ${authProvider.currentUser}');
@@ -82,16 +87,29 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       if (authProvider.currentUser != null) {
         final userId = authProvider.currentUser!.id;
         final companyId = authProvider.currentUser!.company?.id ?? '1';
+        final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
 
         print('[MainScreen] 로그인된 사용자 ID: $userId');
         print('[MainScreen] 회사 ID: $companyId');
+        print('[MainScreen] 관리자 여부: $isAdmin');
 
-        vacationProvider.loadCalendarData(DateTime.now(), companyId: companyId);
-        vacationProvider.loadMyVacationRequests(userId);
+        // 구독 정보를 실시간 API로 로드 (관리자, 일반 사용자 모두)
+        print('[MainScreen] 구독 정보 실시간 로드 시작');
+        await subscriptionProvider.loadSubscription();
+        print('[MainScreen] 구독 정보 실시간 로드 완료');
 
-        // FCM 토큰 서버 전송
-        print('[MainScreen] FCM 토큰 서버 전송 시작');
-        FCMService().sendTokenToServer(userId);
+        // 구독 상태 확인 및 필요시 리다이렉트
+        final canProceed = await SubscriptionGuard.checkSubscriptionAndRedirect(context);
+        
+        if (canProceed) {
+          // 구독 체크를 통과한 경우에만 데이터 로드
+          vacationProvider.loadCalendarData(DateTime.now(), companyId: companyId);
+          vacationProvider.loadMyVacationRequests(userId);
+
+          // FCM 토큰 서버 전송
+          print('[MainScreen] FCM 토큰 서버 전송 시작');
+          FCMService().sendTokenToServer(userId);
+        }
       } else {
         print('[MainScreen] 사용자 정보 없음 - FCM 토큰 전송 건너뜀');
       }
