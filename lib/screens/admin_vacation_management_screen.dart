@@ -22,7 +22,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
   bool _isLoading = false;
   String _statusFilter = 'pending'; // all, pending, approved, rejected - 초기값을 승인 대기로 설정
   String _roleFilter = 'all'; // all, caregiver, office
-  String _sortBy = 'latest'; // latest, name, role
+  String _sortBy = 'application'; // application, latest, name, role
+  String _searchQuery = ''; // 검색어
+  final TextEditingController _searchController = TextEditingController();
   
   // 개별 요청의 처리 상태 추적 (승인과 거절을 구분)
   Set<String> _approvingRequests = {};
@@ -32,6 +34,12 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -233,8 +241,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     final filteredRequests = _getFilteredRequests();
     print('[AdminVacationManagement] filteredRequests.length: ${filteredRequests.length}');
 
-    return CustomScrollView(
-      slivers: [
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: CustomScrollView(
+        slivers: [
         // 필터 섹션
         SliverToBoxAdapter(
           child: Container(
@@ -301,12 +311,58 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
+                      _buildSortFilterChip('신청순', 'application'),
+                      const SizedBox(width: 8),
                       _buildSortFilterChip('최신순', 'latest'),
                       const SizedBox(width: 8),
                       _buildSortFilterChip('이름순', 'name'),
                       const SizedBox(width: 8),
                       _buildSortFilterChip('직무순', 'role'),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // 검색 필드
+                TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: '이름, 직무로 검색...',
+                    hintStyle: TextStyle(color: AppSemanticColors.textSecondary),
+                    prefixIcon: Icon(Icons.search, color: AppSemanticColors.textSecondary),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                            icon: Icon(Icons.clear, color: AppSemanticColors.textSecondary),
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppSemanticColors.backgroundSecondary,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppSemanticColors.interactiveSecondaryDefault,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ],
@@ -344,7 +400,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
               ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -410,6 +467,16 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           .toList();
     }
 
+    // 검색 필터링
+    if (_searchQuery.isNotEmpty) {
+      final searchLower = _searchQuery.toLowerCase();
+      filteredRequests = filteredRequests.where((request) {
+        final userName = (request['userName'] ?? '').toLowerCase();
+        final role = _getRoleDisplayName(request['role'] ?? '').toLowerCase();
+        return userName.contains(searchLower) || role.contains(searchLower);
+      }).toList();
+    }
+
     // 정렬
     switch (_sortBy) {
       case 'name':
@@ -420,12 +487,28 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         filteredRequests.sort((a, b) => 
           (a['role'] ?? '').compareTo(b['role'] ?? ''));
         break;
-      case 'latest':
-      default:
+      case 'application':
+        // 신청순: 신청한 날짜(createdAt)가 빠른 순 (오름차순)
         filteredRequests.sort((a, b) {
           final dateA = DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
           final dateB = DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
-          return dateB.compareTo(dateA); // 최신순 (내림차순)
+          return dateA.compareTo(dateB); // 신청순 (오름차순)
+        });
+        break;
+      case 'latest':
+        // 최신순: 신청한 휴가 날짜(date)가 빠른 순 (오름차순)
+        filteredRequests.sort((a, b) {
+          final dateA = DateTime.tryParse(a['date'] ?? '') ?? DateTime.now();
+          final dateB = DateTime.tryParse(b['date'] ?? '') ?? DateTime.now();
+          return dateA.compareTo(dateB); // 휴가 날짜 빠른 순 (오름차순)
+        });
+        break;
+      default:
+        // 기본값은 신청순
+        filteredRequests.sort((a, b) {
+          final dateA = DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
+          final dateB = DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
+          return dateA.compareTo(dateB);
         });
         break;
     }
@@ -533,10 +616,25 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 ),
               ),
             ],
-            if (isPending) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                // 삭제 버튼 (모든 상태에 대해 표시)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showDeleteDialog(request['id'].toString()),
+                    icon: const Icon(Icons.delete, size: 16),
+                    label: const Text('삭제', style: TextStyle(fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade600,
+                      side: BorderSide(color: Colors.red.shade300),
+                      minimumSize: const Size(0, 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    ),
+                  ),
+                ),
+                if (isPending) ...[
+                  const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
@@ -548,7 +646,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
                               ),
                             )
                           : const Icon(Icons.close, size: 16),
@@ -557,14 +655,14 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                         style: const TextStyle(fontSize: 12),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red.shade600,
-                        side: BorderSide(color: Colors.red.shade300),
+                        foregroundColor: Colors.orange.shade600,
+                        side: BorderSide(color: Colors.orange.shade300),
                         minimumSize: const Size(0, 32),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
@@ -593,8 +691,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     ),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ],
         ),
       ),
@@ -1079,5 +1177,73 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         builder: (context) => const AdminVacationLimitsSettingScreen(),
       ),
     );
+  }
+
+  void _showDeleteDialog(String vacationId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('휴무 삭제'),
+          content: const Text('이 휴무를 영구적으로 삭제하시겠습니까?\n삭제된 휴무는 복구할 수 없습니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteVacation(vacationId);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('삭제'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteVacation(String vacationId) async {
+    try {
+      print('[AdminVacationManagement] 휴무 삭제 요청 시작 - vacationId: $vacationId');
+      
+      final result = await ApiService().deleteVacationByAdmin(
+        vacationId: vacationId,
+      );
+      
+      print('[AdminVacationManagement] 휴무 삭제 API 응답: $result');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('휴무가 성공적으로 삭제되었습니다'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // 목록 새로고침
+        await _loadData();
+      }
+    } catch (e) {
+      print('[AdminVacationManagement] 휴무 삭제 실패: $e');
+      
+      if (mounted) {
+        String errorMessage = e.toString()
+            .replaceAll('Exception: ', '')
+            .replaceAll('ApiException: ', '');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('휴무 삭제 실패: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

@@ -346,19 +346,19 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // 회원탈퇴
+  // 직원 회원탈퇴
   Future<bool> withdrawMember() async {
     try {
       setLoading(true);
       clearError();
 
-      print('[AuthProvider] 회원탈퇴 요청 시작');
+      print('[AuthProvider] 직원 회원탈퇴 요청 시작');
 
-      // 회원탈퇴 API 호출
+      // 직원 회원탈퇴 API 호출
       final response = await ApiService().withdrawMember();
 
       if (response['message'] != null) {
-        print('[AuthProvider] 회원탈퇴 성공: ${response['message']}');
+        print('[AuthProvider] 직원 회원탈퇴 성공: ${response['message']}');
 
         // 모든 로컬 데이터 삭제
         await StorageService().removeAll();
@@ -377,6 +377,39 @@ class AuthProvider with ChangeNotifier {
         setError(errorMsg.split(' (Status:')[0]);
       } else {
         setError('회원탈퇴 중 오류가 발생했습니다: ${e.toString()}');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 관리자 회원탈퇴
+  Future<bool> deleteAdminAccount() async {
+    try {
+      setLoading(true);
+      clearError();
+
+      print('[AuthProvider] 관리자 회원탈퇴 요청 시작');
+
+      // 관리자 회원탈퇴 API 호출
+      final response = await ApiService().deleteAdminAccount();
+
+      // DELETE 요청의 경우 성공시 빈 응답이거나 success가 있을 수 있음
+      print('[AuthProvider] 관리자 회원탈퇴 성공');
+
+      // 모든 로컬 데이터 삭제
+      await StorageService().removeAll();
+      _currentUser = null;
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      if (e.toString().contains('ApiException')) {
+        final errorMsg = e.toString().replaceAll('ApiException: ', '');
+        setError(errorMsg.split(' (Status:')[0]);
+      } else {
+        setError('관리자 회원탈퇴 중 오류가 발생했습니다: ${e.toString()}');
       }
       return false;
     } finally {

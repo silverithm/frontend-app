@@ -468,14 +468,24 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
                       final authProvider = context.read<AuthProvider>();
                       final vacationProvider = context.read<VacationProvider>();
+                      final user = authProvider.currentUser;
 
-                      final success = await vacationProvider
-                          .deleteMyVacationRequest(
-                            vacationId: request.id,
-                            userName: authProvider.currentUser?.name ?? '',
-                            userId: authProvider.currentUser?.id ?? '',
-                            password: '', // 빈 비밀번호로 전송
-                          );
+                      bool success = false;
+                      
+                      // 관리자인 경우 관리자용 API 사용
+                      if (user?.role == 'ADMIN') {
+                        success = await vacationProvider.deleteVacationByAdmin(
+                          vacationId: request.id,
+                        );
+                      } else {
+                        // 직원인 경우 기존 API 사용
+                        success = await vacationProvider.deleteMyVacationRequest(
+                          vacationId: request.id,
+                          userName: user?.name ?? '',
+                          userId: user?.id ?? '',
+                          password: '', // 빈 비밀번호로 전송
+                        );
+                      }
 
                       setState(() {
                         isDeleting = false;
@@ -1179,6 +1189,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
   Widget _buildRequestCard(VacationRequest request) {
     final canCancel = request.status == VacationStatus.pending;
+    final canDelete = true; // 모든 상태의 휴무를 삭제할 수 있도록 변경
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -1377,7 +1388,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     ],
                   ),
                 ),
-                if (canCancel)
+                if (canDelete)
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.red.shade50,
@@ -1389,7 +1400,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         Icons.delete_outlined,
                         color: Colors.red.shade600,
                       ),
-                      tooltip: '신청 삭제',
+                      tooltip: request.status == VacationStatus.pending 
+                          ? '신청 삭제' 
+                          : '휴무 삭제',
                     ),
                   ),
               ],

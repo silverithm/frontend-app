@@ -573,6 +573,31 @@ class ApiService {
     });
   }
 
+  // 관리자용 휴무 삭제
+  Future<Map<String, dynamic>> deleteVacationByAdmin({
+    required String vacationId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('https://silverithm.site/api/vacation/delete/$vacationId');
+      
+      print('[API] 관리자 휴무 삭제 요청: $uri');
+      
+      final requestBody = {
+        'isAdmin': true,
+      };
+      
+      print('[API] 관리자 휴무 삭제 요청 body: $requestBody');
+      
+      final headers = await _getHeaders();
+      
+      return await http.delete(
+        uri, 
+        headers: headers,
+        body: json.encode(requestBody),
+      );
+    });
+  }
+
   // 사용자 알림 조회
   Future<Map<String, dynamic>> getNotifications({
     required String userId,
@@ -1290,6 +1315,21 @@ class ApiService {
       default:
         return fallbackMessage ?? 'API 요청 실패 (${statusCode})';
     }
+  }
+
+
+  // 관리자 회원탈퇴
+  Future<Map<String, dynamic>> deleteAdminAccount() async {
+    return await _makeAuthenticatedRequest(() async {
+      final response = await http.delete(
+        Uri.parse('https://silverithm.site/api/v1/users'),
+        headers: await _getHeaders(includeAuth: true),
+      );
+      
+      print('[API] 관리자 회원탈퇴 요청 완료');
+      
+      return response;
+    });
   }
 }
 

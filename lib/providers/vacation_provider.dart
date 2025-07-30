@@ -360,6 +360,48 @@ class VacationProvider with ChangeNotifier {
     }
   }
 
+  // 관리자용 휴무 삭제 (Spring Boot API 연동)
+  Future<bool> deleteVacationByAdmin({
+    required String vacationId,
+  }) async {
+    try {
+      setLoading(true);
+      clearError();
+
+      print('[VacationProvider] 관리자 휴무 삭제 요청 시작 - ID: $vacationId');
+
+      // 관리자용 휴무 삭제 API 호출
+      final response = await ApiService().deleteVacationByAdmin(
+        vacationId: vacationId,
+      );
+
+      print('[VacationProvider] 관리자 휴무 삭제 API 응답: $response');
+
+      // 성공 시 로컬 데이터에서 제거
+      _vacationRequests.removeWhere((request) => request.id == vacationId);
+
+      // 캘린더 데이터에서도 제거
+      _calendarData.forEach((date, requests) {
+        requests.removeWhere((request) => request.id == vacationId);
+      });
+
+      print('[VacationProvider] 관리자 휴무 삭제 성공 - 로컬 데이터 업데이트 완료');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('[VacationProvider] 관리자 휴무 삭제 실패: $e');
+      if (e.toString().contains('ApiException')) {
+        final errorMsg = e.toString().replaceAll('ApiException: ', '');
+        setError(errorMsg.split(' (Status:')[0]);
+      } else {
+        setError('관리자 휴무 삭제에 실패했습니다: ${e.toString()}');
+      }
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   Future<void> loadVacationForDate(DateTime date, {String? companyId}) async {
     try {
       final response = await ApiService().getVacationForDate(

@@ -18,11 +18,10 @@ class AdminAllMembersScreen extends StatefulWidget {
 }
 
 class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
-
   @override
   void initState() {
     super.initState();
-    
+
     // 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
@@ -33,7 +32,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
     final authProvider = context.read<AuthProvider>();
     final adminProvider = context.read<AdminProvider>();
     final companyId = authProvider.currentUser?.company?.id ?? '';
-    
+
     if (companyId.isNotEmpty) {
       adminProvider.loadCompanyMembers(companyId);
     }
@@ -50,20 +49,10 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
         return Scaffold(
           backgroundColor: AppSemanticColors.backgroundPrimary,
           appBar: AppBar(
-            title: const Text('전체 회원', style: TextStyle(color: Colors.white),),
+            title: const Text('전체 회원', style: TextStyle(color: Colors.white)),
             backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
             foregroundColor: Colors.white,
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white),
-                onPressed: _loadData,
-              ),
-            ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(80),
               child: Container(
@@ -97,7 +86,10 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
@@ -131,11 +123,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red.shade400,
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
             const SizedBox(height: 16),
             Text(
               '관리자 권한이 필요합니다',
@@ -148,9 +136,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             const SizedBox(height: 8),
             Text(
               '회원 관리 기능을 사용하려면 관리자 권한이 필요합니다.',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
           ],
@@ -163,9 +149,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
     return Consumer<AdminProvider>(
       builder: (context, adminProvider, child) {
         if (adminProvider.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (adminProvider.errorMessage.isNotEmpty) {
@@ -173,11 +157,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red.shade400,
-                ),
+                Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
                 const SizedBox(height: 16),
                 Text(
                   '오류 발생',
@@ -192,9 +172,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
                     adminProvider.errorMessage,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -221,10 +199,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                 const SizedBox(height: 16),
                 Text(
                   '등록된 회원이 없습니다',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -248,13 +223,11 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
 
   Widget _buildMemberCard(User user) {
     final isActive = user.status == 'active';
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -263,13 +236,13 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: isActive 
-                      ? Colors.green.shade100 
+                  backgroundColor: isActive
+                      ? Colors.green.shade100
                       : Colors.grey.shade100,
                   child: Icon(
                     Icons.person,
-                    color: isActive 
-                        ? Colors.green.shade600 
+                    color: isActive
+                        ? Colors.green.shade600
                         : Colors.grey.shade600,
                   ),
                 ),
@@ -301,16 +274,16 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: isActive 
-                        ? Colors.green.shade100 
+                    color: isActive
+                        ? Colors.green.shade100
                         : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     AdminUtils.getStatusDisplayName(user.status),
                     style: TextStyle(
-                      color: isActive 
-                          ? Colors.green.shade800 
+                      color: isActive
+                          ? Colors.green.shade800
                           : Colors.grey.shade800,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -322,18 +295,11 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
-                  Icons.work_outline,
-                  size: 16,
-                  color: Colors.grey.shade600,
-                ),
+                Icon(Icons.work_outline, size: 16, color: Colors.grey.shade600),
                 const SizedBox(width: 4),
                 Text(
                   AdminUtils.getRoleDisplayName(user.role),
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
               ],
             ),
@@ -344,7 +310,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _toggleMemberStatus(user),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isActive 
+                      backgroundColor: isActive
                           ? Colors.orange.shade300
                           : Colors.green.shade300,
                       foregroundColor: Colors.white,
@@ -385,13 +351,11 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
   void _toggleMemberStatus(User user) {
     final newStatus = user.status == 'active' ? 'inactive' : 'active';
     final actionText = newStatus == 'active' ? '활성화' : '비활성화';
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(
@@ -412,23 +376,27 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             onPressed: () async {
               Navigator.of(context).pop();
               final adminProvider = context.read<AdminProvider>();
-              
+
               final success = await adminProvider.updateMemberStatus(
                 user.id,
                 newStatus,
               );
-              
+
               if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('${user.name}님을 ${actionText}했습니다.'),
-                    backgroundColor: newStatus == 'active' ? Colors.green : Colors.orange,
+                    backgroundColor: newStatus == 'active'
+                        ? Colors.green
+                        : Colors.orange,
                   ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: newStatus == 'active' ? Colors.green : Colors.orange,
+              backgroundColor: newStatus == 'active'
+                  ? Colors.green
+                  : Colors.orange,
               foregroundColor: Colors.white,
             ),
             child: Text(actionText),
@@ -442,9 +410,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
             Icon(Icons.warning, color: Colors.red),
@@ -459,10 +425,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             const SizedBox(height: 8),
             const Text(
               '이 작업은 되돌릴 수 없습니다.',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -475,9 +438,9 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             onPressed: () async {
               Navigator.of(context).pop();
               final adminProvider = context.read<AdminProvider>();
-              
+
               final success = await adminProvider.deleteMember(user.id);
-              
+
               if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
