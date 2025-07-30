@@ -102,5 +102,28 @@ class StorageService {
   Future<void> removeAll() async {
     await removeAllTokens();
     await removeUserData();
+    // 이메일 기억하기는 보존
+  }
+
+  // 이메일 기억하기 관련 메서드 (로그아웃 시에도 보존)
+  Future<void> saveRememberedEmail(String email) async {
+    await saveString('remembered_email', email);
+  }
+
+  String? getRememberedEmail() {
+    return getString('remembered_email');
+  }
+
+  Future<void> saveRememberEmailEnabled(bool enabled) async {
+    await saveBool('remember_email_enabled', enabled);
+  }
+
+  bool getRememberEmailEnabled() {
+    return getBool('remember_email_enabled') ?? false;
+  }
+
+  Future<void> clearRememberedEmail() async {
+    await remove('remembered_email');
+    await remove('remember_email_enabled');
   }
 }

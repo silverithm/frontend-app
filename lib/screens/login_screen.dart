@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/storage_service.dart';
 import '../utils/constants.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/index.dart';
@@ -42,9 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loadSavedEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('saved_email');
-    final rememberEmail = prefs.getBool('remember_email') ?? false;
+    await StorageService().init();
+    final savedEmail = StorageService().getRememberedEmail();
+    final rememberEmail = StorageService().getRememberEmailEnabled();
 
     // rememberEmail이 true이고 savedEmail이 있으면 이메일 복원
     if (rememberEmail && savedEmail != null && savedEmail.isNotEmpty) {
@@ -52,25 +53,25 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text = savedEmail;
         _rememberEmail = true;
       });
+      print('[LoginScreen] 저장된 이메일 복원: $savedEmail');
     } else {
       // rememberEmail 상태만 복원 (이메일은 복원하지 않음)
       setState(() {
         _rememberEmail = rememberEmail;
       });
+      print('[LoginScreen] 이메일 기억하기 상태: $rememberEmail');
     }
   }
 
   Future<void> _saveEmailPreference() async {
-    final prefs = await SharedPreferences.getInstance();
     if (_rememberEmail && _emailController.text.trim().isNotEmpty) {
       // 이메일 기억하기가 체크되어 있고 이메일이 입력되어 있으면 저장
-      await prefs.setString('saved_email', _emailController.text.trim());
-      await prefs.setBool('remember_email', true);
+      await StorageService().saveRememberedEmail(_emailController.text.trim());
+      await StorageService().saveRememberEmailEnabled(true);
       print('[LoginScreen] 이메일 기억하기 저장: ${_emailController.text.trim()}');
     } else {
       // 체크 해제되거나 이메일이 비어있으면 삭제
-      await prefs.remove('saved_email');
-      await prefs.setBool('remember_email', false);
+      await StorageService().clearRememberedEmail();
       print('[LoginScreen] 이메일 기억하기 해제');
     }
   }

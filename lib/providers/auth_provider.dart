@@ -323,6 +323,11 @@ class AuthProvider with ChangeNotifier {
       await AnalyticsService().logLogout();
       print('[AuthProvider] Analytics 로그아웃 이벤트 기록 완료');
 
+      // 이메일 기억하기 데이터 임시 저장
+      final rememberedEmail = StorageService().getRememberedEmail();
+      final rememberEmailEnabled = StorageService().getRememberEmailEnabled();
+      print('[AuthProvider] 이메일 기억하기 데이터 백업 - 이메일: $rememberedEmail, 활성화: $rememberEmailEnabled');
+
       // 모든 토큰과 사용자 정보 제거
       await StorageService().removeAll();
       print('[AuthProvider] StorageService.removeAll() 완료');
@@ -330,6 +335,13 @@ class AuthProvider with ChangeNotifier {
       // SharedPreferences 전체 클리어 (추가 보안)
       await StorageService().clear();
       print('[AuthProvider] StorageService.clear() 완료');
+
+      // 이메일 기억하기 데이터 복원
+      if (rememberEmailEnabled && rememberedEmail != null) {
+        await StorageService().saveRememberedEmail(rememberedEmail);
+        await StorageService().saveRememberEmailEnabled(true);
+        print('[AuthProvider] 이메일 기억하기 데이터 복원 완료');
+      }
 
       // 현재 사용자 상태 완전 초기화
       _currentUser = null;
@@ -560,9 +572,21 @@ class AuthProvider with ChangeNotifier {
     try {
       print('[AuthProvider] === 내부 로그아웃 처리 시작 ===');
       
+      // 이메일 기억하기 데이터 임시 저장
+      final rememberedEmail = StorageService().getRememberedEmail();
+      final rememberEmailEnabled = StorageService().getRememberEmailEnabled();
+      print('[AuthProvider] 내부 로그아웃 - 이메일 기억하기 데이터 백업 - 이메일: $rememberedEmail, 활성화: $rememberEmailEnabled');
+      
       // 모든 저장된 데이터 제거
       await StorageService().removeAll();
       await StorageService().clear(); // 추가 보안
+      
+      // 이메일 기억하기 데이터 복원
+      if (rememberEmailEnabled && rememberedEmail != null) {
+        await StorageService().saveRememberedEmail(rememberedEmail);
+        await StorageService().saveRememberEmailEnabled(true);
+        print('[AuthProvider] 내부 로그아웃 - 이메일 기억하기 데이터 복원 완료');
+      }
       
       _currentUser = null;
       _isInitialized = true;
