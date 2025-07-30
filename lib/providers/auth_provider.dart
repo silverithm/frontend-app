@@ -233,19 +233,27 @@ class AuthProvider with ChangeNotifier {
           print('회원가입 요청 성공 - ID: ${response['id']}, 상태: ${response['status']}');
           return true;
         } else {
-          setError(
-            response['error'] ?? response['message'] ?? '회원가입 요청에 실패했습니다.',
-          );
+          // 서버에서 온 에러 메시지를 그대로 사용
+          String errorMsg = response['error'] ?? response['message'] ?? '회원가입 요청에 실패했습니다.';
+          setError(errorMsg);
           return false;
         }
       }
     } catch (e) {
       if (e.toString().contains('ApiException')) {
-        // API 에러 메시지 그대로 사용
-        final errorMsg = e.toString().replaceAll('ApiException: ', '');
-        setError(errorMsg.split(' (Status:')[0]);
+        // API 에러 메시지에서 불필요한 접두사만 제거하고 서버 메시지 보존
+        final errorMsg = e.toString()
+            .replaceAll('ApiException: ', '')
+            .split(' (Status:')[0]; // 상태 코드 부분만 제거
+        setError(errorMsg);
       } else {
-        setError('회원가입 요청에 실패했습니다: ${e.toString()}');
+        // 네트워크 오류 등의 경우만 추가 정보 제공
+        String cleanMsg = e.toString().replaceAll('Exception: ', '');
+        if (cleanMsg.startsWith('네트워크 오류가 발생했습니다')) {
+          setError(cleanMsg);
+        } else {
+          setError('회원가입 요청 중 오류가 발생했습니다');
+        }
       }
       return false;
     } finally {
@@ -297,7 +305,10 @@ class AuthProvider with ChangeNotifier {
         final errorMsg = e.toString().replaceAll('ApiException: ', '');
         setError(errorMsg.split(' (Status:')[0]);
       } else {
-        setError('관리자 회원가입에 실패했습니다: ${e.toString()}');
+        final cleanMsg = e.toString()
+            .replaceAll('Exception: 관리자 회원가입 실패: ', '')
+            .replaceAll('Exception: ', '');
+        setError('관리자 회원가입에 실패했습니다: $cleanMsg');
       }
       return false;
     }

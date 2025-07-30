@@ -194,7 +194,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildStatItem(
-                        '이번 달 총 휴가',
+                        '${_currentDate.month}월 총 휴가',
                         _getMonthlyTotal(vacationProvider).toString(),
                         Colors.blue.shade500,
                       ),

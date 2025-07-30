@@ -23,6 +23,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
   String _statusFilter = 'pending'; // all, pending, approved, rejected - 초기값을 승인 대기로 설정
   String _roleFilter = 'all'; // all, caregiver, office
   String _sortBy = 'latest'; // latest, name, role
+  
+  // 개별 요청의 처리 상태 추적 (승인과 거절을 구분)
+  Set<String> _approvingRequests = {};
+  Set<String> _rejectingRequests = {};
 
   @override
   void initState() {
@@ -535,9 +539,23 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _rejectRequest(request['id'].toString()),
-                      icon: const Icon(Icons.close, size: 16),
-                      label: const Text('거절', style: TextStyle(fontSize: 12)),
+                      onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
+                          ? null 
+                          : () => _rejectRequest(request['id'].toString()),
+                      icon: _rejectingRequests.contains(request['id'].toString())
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                              ),
+                            )
+                          : const Icon(Icons.close, size: 16),
+                      label: Text(
+                        _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red.shade600,
                         side: BorderSide(color: Colors.red.shade300),
@@ -549,9 +567,23 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _approveRequest(request['id'].toString()),
-                      icon: const Icon(Icons.check, size: 16),
-                      label: const Text('승인', style: TextStyle(fontSize: 12)),
+                      onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
+                          ? null 
+                          : () => _approveRequest(request['id'].toString()),
+                      icon: _approvingRequests.contains(request['id'].toString())
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Icon(Icons.check, size: 16),
+                      label: Text(
+                        _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green.shade600,
                         foregroundColor: Colors.white,
@@ -698,9 +730,20 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _rejectRequest(request['id'].toString()),
-                        icon: const Icon(Icons.close),
-                        label: const Text('거절'),
+                        onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
+                            ? null 
+                            : () => _rejectRequest(request['id'].toString()),
+                        icon: _rejectingRequests.contains(request['id'].toString())
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                                ),
+                              )
+                            : const Icon(Icons.close),
+                        label: Text(_rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red.shade600,
                           side: BorderSide(color: Colors.red.shade300),
@@ -710,9 +753,20 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () => _approveRequest(request['id'].toString()),
-                        icon: const Icon(Icons.check),
-                        label: const Text('승인'),
+                        onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
+                            ? null 
+                            : () => _approveRequest(request['id'].toString()),
+                        icon: _approvingRequests.contains(request['id'].toString())
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.check),
+                        label: Text(_approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.teal.shade600,
                           foregroundColor: Colors.white,
@@ -914,40 +968,108 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
   }
 
   Future<void> _approveRequest(String requestId) async {
+    setState(() {
+      _approvingRequests.add(requestId);
+    });
+    
     try {
+      print('[AdminVacation] 승인 요청 시작 - requestId: $requestId');
       final result = await ApiService().approveVacationRequest(vacationId: requestId);
+      print('[AdminVacation] 승인 API 응답: $result');
       
-      if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('휴가 요청이 승인되었습니다')),
-        );
-        _loadData();
+      // 성공 판단: success가 true이거나, message가 있고 에러가 없으면 성공으로 처리
+      bool isSuccess = result['success'] == true || 
+                      (result['message'] != null && result['error'] == null) ||
+                      (result.isNotEmpty && result['error'] == null);
+      
+      if (isSuccess) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('휴가 요청이 승인되었습니다'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          print('[AdminVacation] 승인 성공 - 데이터 새로고침 시작');
+          await _loadData(); // 목록 새로고침
+          print('[AdminVacation] 데이터 새로고침 완료');
+        }
       } else {
-        throw Exception(result['message'] ?? '승인 실패');
+        throw Exception(result['message'] ?? result['error'] ?? '승인 실패');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('승인 실패: $e')),
-      );
+      print('[AdminVacation] 승인 중 오류: $e');
+      if (mounted) {
+        // Exception: 접두사 제거
+        String errorMessage = e.toString()
+            .replaceAll('Exception: ', '')
+            .replaceAll('ApiException: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('승인 실패: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _approvingRequests.remove(requestId);
+        });
+      }
     }
   }
 
   Future<void> _rejectRequest(String requestId) async {
+    setState(() {
+      _rejectingRequests.add(requestId);
+    });
+    
     try {
+      print('[AdminVacation] 거절 요청 시작 - requestId: $requestId');
       final result = await ApiService().rejectVacationRequest(vacationId: requestId);
+      print('[AdminVacation] 거절 API 응답: $result');
       
-      if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('휴가 요청이 거절되었습니다')),
-        );
-        _loadData();
+      // 성공 판단: success가 true이거나, message가 있고 에러가 없으면 성공으로 처리
+      bool isSuccess = result['success'] == true || 
+                      (result['message'] != null && result['error'] == null) ||
+                      (result.isNotEmpty && result['error'] == null);
+      
+      if (isSuccess) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('휴가 요청이 거절되었습니다'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          print('[AdminVacation] 거절 성공 - 데이터 새로고침 시작');
+          await _loadData(); // 목록 새로고침
+          print('[AdminVacation] 데이터 새로고침 완료');
+        }
       } else {
-        throw Exception(result['message'] ?? '거절 실패');
+        throw Exception(result['message'] ?? result['error'] ?? '거절 실패');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('거절 실패: $e')),
-      );
+      print('[AdminVacation] 거절 중 오류: $e');
+      if (mounted) {
+        // Exception: 접두사 제거
+        String errorMessage = e.toString()
+            .replaceAll('Exception: ', '')
+            .replaceAll('ApiException: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('거절 실패: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _rejectingRequests.remove(requestId);
+        });
+      }
     }
   }
 

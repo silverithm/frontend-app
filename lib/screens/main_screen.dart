@@ -76,7 +76,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
             // FCM 토큰 서버 전송
             print('[MainScreen] FCM 토큰 서버 전송 시작');
-            FCMService().sendTokenToServer(userId);
+            FCMService().sendAdminTokenToServer(userId);
           }
         } else {
           // 직원인 경우 구독 체크 없이 바로 데이터 로드

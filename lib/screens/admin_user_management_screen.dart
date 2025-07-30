@@ -18,6 +18,9 @@ class AdminUserManagementScreen extends StatefulWidget {
 }
 
 class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
+  // 개별 사용자 작업 상태 추적
+  Set<String> _processingStatusUsers = {};
+  Set<String> _processingDeleteUsers = {};
 
   @override
   void initState() {
@@ -557,7 +560,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => _toggleMemberStatus(user),
+                    onPressed: _processingStatusUsers.contains(user.id.toString()) 
+                        ? null 
+                        : () => _toggleMemberStatus(user),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isActive 
                           ? Colors.orange.shade600 
@@ -567,17 +572,32 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    icon: Icon(
-                      isActive ? Icons.pause : Icons.play_arrow,
-                      size: 18,
+                    icon: _processingStatusUsers.contains(user.id.toString())
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Icon(
+                            isActive ? Icons.pause : Icons.play_arrow,
+                            size: 18,
+                          ),
+                    label: Text(
+                      _processingStatusUsers.contains(user.id.toString()) 
+                          ? '처리중...' 
+                          : (isActive ? '비활성화' : '활성화')
                     ),
-                    label: Text(isActive ? '비활성화' : '활성화'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => _showDeleteDialog(user),
+                    onPressed: _processingDeleteUsers.contains(user.id.toString()) 
+                        ? null 
+                        : () => _showDeleteDialog(user),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade600,
                       foregroundColor: Colors.white,
@@ -585,8 +605,21 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    icon: const Icon(Icons.delete, size: 18),
-                    label: const Text('삭제'),
+                    icon: _processingDeleteUsers.contains(user.id.toString())
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.delete, size: 18),
+                    label: Text(
+                      _processingDeleteUsers.contains(user.id.toString()) 
+                          ? '처리중...' 
+                          : '삭제'
+                    ),
                   ),
                 ),
               ],
@@ -764,20 +797,34 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              final adminProvider = context.read<AdminProvider>();
               
-              final success = await adminProvider.updateMemberStatus(
-                user.id,
-                newStatus,
-              );
+              // 로딩 상태 시작
+              setState(() {
+                _processingStatusUsers.add(user.id.toString());
+              });
               
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${user.name}님을 ${actionText}했습니다.'),
-                    backgroundColor: newStatus == 'active' ? Colors.green : Colors.orange,
-                  ),
+              try {
+                final adminProvider = context.read<AdminProvider>();
+                final success = await adminProvider.updateMemberStatus(
+                  user.id,
+                  newStatus,
                 );
+                
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${user.name}님을 ${actionText}했습니다.'),
+                      backgroundColor: newStatus == 'active' ? Colors.green : Colors.orange,
+                    ),
+                  );
+                }
+              } finally {
+                // 로딩 상태 종료
+                if (mounted) {
+                  setState(() {
+                    _processingStatusUsers.remove(user.id.toString());
+                  });
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -827,17 +874,31 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           ElevatedButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              final adminProvider = context.read<AdminProvider>();
               
-              final success = await adminProvider.deleteMember(user.id);
+              // 로딩 상태 시작
+              setState(() {
+                _processingDeleteUsers.add(user.id.toString());
+              });
               
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${user.name}님을 삭제했습니다.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+              try {
+                final adminProvider = context.read<AdminProvider>();
+                final success = await adminProvider.deleteMember(user.id);
+                
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${user.name}님을 삭제했습니다.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } finally {
+                // 로딩 상태 종료
+                if (mounted) {
+                  setState(() {
+                    _processingDeleteUsers.remove(user.id.toString());
+                  });
+                }
               }
             },
             style: ElevatedButton.styleFrom(

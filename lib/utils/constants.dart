@@ -12,6 +12,7 @@ class Constants {
   static const String withdrawalEndpoint = '/v1/members/withdrawal';
   static const String companiesEndpoint = '/v1/members/companies';
   static const String fcmTokenEndpoint = '/v1/members';
+  static const String adminFcmTokenEndpoint = '/v1';
   static const String vacationCalendarEndpoint = '/vacation/calendar';
   static const String vacationDateEndpoint = '/vacation/date';
   static const String vacationSubmitEndpoint = '/vacation/submit';

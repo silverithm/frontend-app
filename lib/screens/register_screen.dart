@@ -982,6 +982,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                                 hint: const Text('회사를 선택해주세요'),
+                                // 선택된 항목을 표시할 때는 회사명만 보이도록
+                                selectedItemBuilder: (BuildContext context) {
+                                  return context
+                                      .watch<CompanyProvider>()
+                                      .companies
+                                      .map((company) => DropdownMenuItem<Company?>(
+                                            value: company,
+                                            child: Text(
+                                              company.name,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ))
+                                      .toList();
+                                },
                                 items: context
                                     .watch<CompanyProvider>()
                                     .companies

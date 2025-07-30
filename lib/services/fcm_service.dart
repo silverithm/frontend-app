@@ -245,21 +245,7 @@ class FCMService {
     
     log('[FCM] APNS 토큰 대기 시간 초과, FCM 토큰 획득을 계속 진행합니다.');
   }
-  
-  /// 서버에 FCM 토큰 전송
-  Future<void> _sendTokenToServer(String token) async {
-    try {
-      // TODO: 실제 사용자 ID를 얻어와야 함
-      // 현재는 임시로 '1'을 사용
-      await ApiService().updateFcmToken(
-        memberId: '1', // 실제 구현 시 로그인된 사용자 ID 사용
-        fcmToken: token,
-      );
-      log('[FCM] 서버에 FCM 토큰 전송 완료');
-    } catch (e) {
-      log('[FCM] 서버에 FCM 토큰 전송 실패: $e');
-    }
-  }
+
   
   /// 토큰 갱신 리스너 설정
   void _setupTokenRefreshListener() {
@@ -433,7 +419,46 @@ class FCMService {
       }
     }
   }
-}
+
+  /// 로그인 후 Admin 토큰 서버 전송
+  Future<void> sendAdminTokenToServer(String userId) async {
+    log('[FCM] sendTokenToServer 호출됨 (userId: $userId)');
+    log('[FCM] 현재 토큰 상태: ${_currentToken != null ? '있음 (${_currentToken!.length}자)' : '없음'}');
+
+    if (_currentToken != null && _currentToken!.isNotEmpty) {
+      try {
+        log('[FCM] 서버로 토큰 전송 시작...');
+        await ApiService().updateAdminFcmToken(
+          userId: userId,
+          fcmToken: _currentToken!,
+        );
+        log('[FCM] 로그인 후 토큰 전송 완료 (userId: $userId)');
+      } catch (e) {
+        log('[FCM] 로그인 후 토큰 전송 실패: $e');
+      }
+    } else {
+      log('[FCM] FCM 토큰이 없어 서버 전송 불가');
+      log('[FCM] 토큰 재획득 시도...');
+
+      // 토큰이 없다면 다시 획득 시도
+      await _getTokenOnly();
+
+      if (_currentToken != null && _currentToken!.isNotEmpty) {
+        try {
+          log('[FCM] 재획득된 토큰으로 서버 전송 시작...');
+          await ApiService().updateAdminFcmToken(
+            userId: userId,
+            fcmToken: _currentToken!,
+          );
+          log('[FCM] 토큰 재획득 후 전송 완료 (memberId: $userId)');
+        } catch (e) {
+          log('[FCM] 토큰 재획득 후 전송 실패: $e');
+        }
+      } else {
+        log('[FCM] 토큰 재획득도 실패 - 서버 전송 불가');
+      }
+    }
+  }}
 
 /// 백그라운드 메시지 핸들러 (최상위 함수로 정의)
 @pragma('vm:entry-point')

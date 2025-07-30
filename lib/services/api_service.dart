@@ -204,7 +204,12 @@ class ApiService {
       return _handleResponse(response);
     } catch (e) {
       print('회원가입 요청 중 예외 발생: $e');
-      throw Exception('회원가입 요청 실패: $e');
+      // ApiException은 그대로 전파하여 서버의 실제 에러 메시지 보존
+      if (e is ApiException) {
+        rethrow;
+      }
+      // 네트워크 오류 등만 generic 메시지로 wrapping
+      throw Exception('네트워크 오류가 발생했습니다: $e');
     }
   }
 
@@ -483,6 +488,23 @@ class ApiService {
       return _handleResponse(response);
     } catch (e) {
       throw Exception('회사 목록 조회 실패: $e');
+    }
+  }
+
+  // FCM 토큰 업데이트
+  Future<Map<String, dynamic>> updateAdminFcmToken({
+    required String userId,
+    required String fcmToken,
+  }) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token'),
+        headers: await _getHeaders(),
+        body: json.encode({'fcmToken': fcmToken}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      throw Exception('FCM 토큰 업데이트 실패: $e');
     }
   }
 
@@ -783,7 +805,7 @@ class ApiService {
     required String vacationId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/api/vacation/approve/$vacationId');
+      final uri = Uri.parse('$_baseUrl/vacation/approve/$vacationId');
 
       print('[API] 휴가 요청 승인: $uri');
 
@@ -799,7 +821,7 @@ class ApiService {
     required String vacationId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/api/vacation/reject/$vacationId');
+      final uri = Uri.parse('$_baseUrl/vacation/reject/$vacationId');
 
       print('[API] 휴가 요청 거부: $uri');
 
@@ -838,7 +860,7 @@ class ApiService {
   // 회사 프로필 조회
   Future<Map<String, dynamic>> getCompanyProfile() async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/api/v1/company/profile');
+      final uri = Uri.parse('$_baseUrl/v1/company/profile');
 
       print('[API] 회사 프로필 조회: $uri');
 
@@ -857,7 +879,7 @@ class ApiService {
     String? contactPhone,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/api/v1/company/profile');
+      final uri = Uri.parse('$_baseUrl/v1/company/profile');
 
       final body = <String, dynamic>{};
       if (name != null) body['name'] = name;
@@ -1243,6 +1265,8 @@ class ApiService {
   }
   
   void _throwMeaningfulError(int statusCode, String fallbackMessage) {
+
+
     final errorMessage = _getDefaultErrorMessage(statusCode, fallbackMessage);
     throw ApiException(errorMessage, statusCode);
   }
