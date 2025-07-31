@@ -78,7 +78,9 @@ class MyApp extends StatelessWidget {
         builder: (context, appProvider, child) {
           return MaterialApp(
             title: 'Frontend App',
-            theme: appProvider.isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme,
+            theme: appProvider.isDarkMode
+                ? AppTheme.darkTheme
+                : AppTheme.lightTheme,
             home: const AuthWrapper(),
             debugShowCheckedModeBanner: false,
             navigatorObservers: [AnalyticsService().observer],
@@ -111,10 +113,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       final appVersionProvider = context.read<AppVersionProvider>();
       await appVersionProvider.checkAppVersion();
 
-      // 버전 체크 후 로그인 상태 확인
-      if (!appVersionProvider.forceUpdate) {
-        context.read<AuthProvider>().checkAuthStatus();
-      }
+      context.read<AuthProvider>().checkAuthStatus();
     });
   }
 
@@ -123,7 +122,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return Consumer2<AuthProvider, AppVersionProvider>(
       builder: (context, authProvider, appVersionProvider, child) {
         // 버전 체크 또는 인증 체크가 완료되지 않았을 때
-        if (!appVersionProvider.isVersionChecked || !authProvider.isInitialized) {
+        if (!appVersionProvider.isVersionChecked ||
+            !authProvider.isInitialized) {
           return Scaffold(
             backgroundColor: Colors.black,
             body: Center(
@@ -133,7 +133,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                   Image.asset(
                     'assets/images/app_icon_with_text_3.png',
                     width: 200,
-                    height:200,
+                    height: 200,
                   ),
                   const SizedBox(height: 10),
                   const CircularProgressIndicator(
@@ -153,7 +153,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
         }
 
         // 업데이트가 필요한 경우 업데이트 다이얼로그 표시
-        if (appVersionProvider.needsUpdate && !appVersionProvider.forceUpdate && !_dialogShown) {
+        if (appVersionProvider.needsUpdate &&
+            !appVersionProvider.forceUpdate &&
+            !_dialogShown) {
           // 선택적 업데이트 - 다이얼로그를 한 번만 표시
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted && !_dialogShown) {
@@ -177,19 +179,24 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
         // 강제 업데이트가 필요한 경우 업데이트 화면만 표시
         if (appVersionProvider.forceUpdate) {
-          return Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: UpdateDialog(
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted && !_dialogShown) {
+              _dialogShown = true;
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                barrierColor: Colors.black.withOpacity(0.5),
+                builder: (context) => UpdateDialog(
                   currentVersion: appVersionProvider.currentVersion,
                   latestVersion: appVersionProvider.latestVersion,
                   updateMessage: appVersionProvider.updateMessage,
-                  forceUpdate: true,
+                  forceUpdate: appVersionProvider.forceUpdate,
                 ),
-              ),
-            ),
-          );
+              ).then((_) {
+                _dialogShown = false;
+              });
+            }
+          });
         }
 
         // 로그인 상태에 따라 화면 분기 (항상 백그라운드 화면 렌더링)
@@ -198,11 +205,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
           print('[AuthWrapper] 로그인된 사용자 정보:');
           print('[AuthWrapper] - 이름: ${authProvider.currentUser?.name}');
           print('[AuthWrapper] - 역할: ${authProvider.currentUser?.role}');
-          print('[AuthWrapper] - 회사: ${authProvider.currentUser?.company?.name}');
-          print('[AuthWrapper] - canAccessAdminPages: ${AdminUtils.canAccessAdminPages(authProvider.currentUser)}');
-          
+          print(
+            '[AuthWrapper] - 회사: ${authProvider.currentUser?.company?.name}',
+          );
+          print(
+            '[AuthWrapper] - canAccessAdminPages: ${AdminUtils.canAccessAdminPages(authProvider.currentUser)}',
+          );
+
           // 모든 사용자는 동일한 MainScreen을 사용 (역할에 따른 네비게이션은 MainScreen 내부에서 처리)
-          print('[AuthWrapper] 메인 화면 표시 (역할: ${authProvider.currentUser?.role})');
+          print(
+            '[AuthWrapper] 메인 화면 표시 (역할: ${authProvider.currentUser?.role})',
+          );
           backgroundScreen = const MainScreen();
         } else {
           backgroundScreen = const LoginScreen();

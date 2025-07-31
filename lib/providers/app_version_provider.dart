@@ -28,10 +28,14 @@ class AppVersionProvider with ChangeNotifier {
 
   Future<void> checkAppVersion() async {
     try {
+      print('[AppVersionProvider] === 앱 버전 체크 시작 ===');
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       _currentVersion = packageInfo.version;
+      print('[AppVersionProvider] 현재 앱 버전: $_currentVersion');
 
+      print('[AppVersionProvider] API 호출 시작: /v1/app-version');
       final data = await _apiService.get('/v1/app-version');
+      print('[AppVersionProvider] API 응답 수신: $data');
 
       String platformVersion = '';
       String minimumVersion = '';
@@ -66,12 +70,16 @@ class AppVersionProvider with ChangeNotifier {
         ;
       }
 
+      print('[AppVersionProvider] 버전 체크 완료 - needsUpdate: $_needsUpdate, forceUpdate: $_forceUpdate');
       _isVersionChecked = true;
       notifyListeners();
+      print('[AppVersionProvider] === 앱 버전 체크 성공 완료 ===');
     } catch (e) {
-      debugPrint('Error checking app version: $e');
+      print('[AppVersionProvider] 앱 버전 체크 실패: $e');
+      print('[AppVersionProvider] 실패해도 계속 진행...');
       _isVersionChecked = true;
       notifyListeners();
+      print('[AppVersionProvider] === 앱 버전 체크 실패 완료 ===');
     }
   }
 
