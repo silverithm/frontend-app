@@ -480,7 +480,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                       children: [
                         Expanded(
                           child: _buildStatItem(
-                            '${_currentDate.month}월 총 휴가',
+                            '${_currentDate.month}월 총 휴무',
                             _getMonthlyTotal(vacationProvider).toString(),
                             const Color(0xFF3B82F6), // blue.500
                           ),

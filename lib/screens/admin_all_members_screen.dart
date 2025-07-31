@@ -311,9 +311,12 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                     onPressed: () => _toggleMemberStatus(user),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isActive
-                          ? Colors.orange.shade300
-                          : Colors.green.shade300,
+                          ? AppColors.gray500
+                          : AppColors.blue600,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: const Size(0, 36),
+                      textStyle: const TextStyle(fontSize: 13),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -330,8 +333,11 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _showDeleteDialog(user),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade400,
+                      backgroundColor: AppColors.gray700,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: const Size(0, 36),
+                      textStyle: const TextStyle(fontSize: 13),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

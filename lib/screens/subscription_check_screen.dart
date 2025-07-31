@@ -442,7 +442,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
           const SizedBox(height: 16),
           ...[
             '직원 관리 및 승인',
-            '휴가 신청 및 관리',
+            '휴무 신청 및 관리',
             '실시간 캘린더',
             '알림 시스템',
             '모바일 앱 지원',

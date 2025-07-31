@@ -366,7 +366,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            '휴가자 이름 표시',
+                            '휴무자 이름 표시',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -458,7 +458,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       final cellWidth =
                           (screenWidth - horizontalPadding - (spacing * 6)) / 7;
 
-                      // 확장 모드일 때 최대 휴가자 수 계산 (세로 확장용)
+                      // 확장 모드일 때 최대 휴무자 수 계산 (세로 확장용)
                       int maxVacationsInDay = 0;
                       if (_isExpanded) {
                         for (final day in days) {
@@ -493,13 +493,13 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
 
                         return Column(
                           children: weeks.map((weekDays) {
-                            // 이번 주에서 가장 많은 휴가자 수 계산 (필터링 적용)
+                            // 이번 주에서 가장 많은 휴무자 수 계산 (필터링 적용)
                             int maxVacationsInWeek = 0;
                             for (final day in weekDays) {
                               if (_isSameMonth(day)) {
                                 // getVacationsForDate는 이미 roleFilter가 적용된 결과를 반환함
                                 final vacations = vacationProvider.getVacationsForDate(day);
-                                print('[Calendar] 날짜: ${day.day}, 필터링된 휴가자: ${vacations.length}, 필터: ${widget.roleFilter}');
+                                print('[Calendar] 날짜: ${day.day}, 필터링된 휴무자: ${vacations.length}, 필터: ${widget.roleFilter}');
                                 
                                 if (vacations.length > maxVacationsInWeek) {
                                   maxVacationsInWeek = vacations.length;
@@ -507,18 +507,18 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               }
                             }
                             
-                            print('[Calendar] 주별 최대 휴가자 수: $maxVacationsInWeek (필터: ${widget.roleFilter})');
+                            print('[Calendar] 주별 최대 휴무자 수: $maxVacationsInWeek (필터: ${widget.roleFilter})');
                             
                             // 주별 동적 높이 계산
                             // 기본 높이: 30 (날짜 + 패딩)
-                            // 휴가자당: 18 (이름 표시 공간)
+                            // 휴무자당: 18 (이름 표시 공간)
                             // 휴무 제한 표시 공간: 20 (전체 모드가 아닐 때만)
                             double baseHeight = 30.0;
                             double vacationHeight = maxVacationsInWeek * 18.0;
                             double limitHeight = widget.roleFilter != 'all' ? 20.0 : 0.0;
                             double weekHeight = math.max(50.0, baseHeight + vacationHeight + limitHeight);
                             
-                            print('[Calendar] 높이 계산 - 기본: $baseHeight, 휴가자: $vacationHeight, 제한: $limitHeight, 총: $weekHeight');
+                            print('[Calendar] 높이 계산 - 기본: $baseHeight, 휴무자: $vacationHeight, 제한: $limitHeight, 총: $weekHeight');
                             
                             return Container(
                               margin: EdgeInsets.only(bottom: spacing),
@@ -543,7 +543,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         );
                       } else {
                         // 기본 모드: 개선된 점 표시
-                        // 각 날짜의 최대 휴가 수 계산
+                        // 각 날짜의 최대 휴무 수 계산
                         int maxVacationsInWeek = 0;
                         for (int i = 0; i < days.length; i++) {
                           final vacations = vacationProvider.getVacationsForDate(days[i]);
@@ -765,7 +765,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         ),
                       ),
 
-                      // 휴가자 이름들 (가운데부터 위쪽으로)
+                      // 휴무자 이름들 (가운데부터 위쪽으로)
                       if (_isSameMonth(date) && vacations.isNotEmpty)
                         Positioned(
                           top: 18, // 날짜와 간격
@@ -853,7 +853,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       ),
 
 
-                      // 휴가자 표시 영역 (중앙)
+                      // 휴무자 표시 영역 (중앙)
                       if (_isSameMonth(date) && vacations.isNotEmpty)
                         Positioned(
                           top: 16,
@@ -926,7 +926,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     }
 
     if (_isExpanded) {
-      // 확장 모드: 휴가자 이름들을 표시 (동적 높이, overflow 방지)
+      // 확장 모드: 휴무자 이름들을 표시 (동적 높이, overflow 방지)
       return SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

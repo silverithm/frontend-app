@@ -13,7 +13,7 @@ class AdminProvider with ChangeNotifier {
   List<User> _pendingUsers = [];
   List<User> _companyMembers = [];
 
-  // 휴가 관리 데이터
+  // 휴무 관리 데이터
   List<VacationRequest> _vacationRequests = [];
   Map<String, VacationLimit> _vacationLimits = {};
 
@@ -240,9 +240,9 @@ class AdminProvider with ChangeNotifier {
     }
   }
 
-  // =============== 휴가 관리 기능 ===============
+  // =============== 휴무 관리 기능 ===============
 
-  /// 휴가 요청 목록 로드
+  /// 휴무 요청 목록 로드
   Future<void> loadVacationRequests(String companyId) async {
     try {
       _setLoading(true);
@@ -262,14 +262,14 @@ class AdminProvider with ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      _setError('휴가 요청 목록을 불러오는데 실패했습니다: ${e.toString()}');
+      _setError('휴무 요청 목록을 불러오는데 실패했습니다: ${e.toString()}');
       _vacationRequests = [];
     } finally {
       _setLoading(false);
     }
   }
 
-  /// 휴가 요청 승인
+  /// 휴무 요청 승인
   Future<bool> approveVacationRequest(String vacationId) async {
     try {
       _clearError();
@@ -287,12 +287,12 @@ class AdminProvider with ChangeNotifier {
 
       return true;
     } catch (e) {
-      _setError('휴가 요청 승인에 실패했습니다: ${e.toString()}');
+      _setError('휴무 요청 승인에 실패했습니다: ${e.toString()}');
       return false;
     }
   }
 
-  /// 휴가 요청 거부
+  /// 휴무 요청 거부
   Future<bool> rejectVacationRequest(String vacationId) async {
     try {
       _clearError();
@@ -310,12 +310,12 @@ class AdminProvider with ChangeNotifier {
 
       return true;
     } catch (e) {
-      _setError('휴가 요청 거부에 실패했습니다: ${e.toString()}');
+      _setError('휴무 요청 거부에 실패했습니다: ${e.toString()}');
       return false;
     }
   }
 
-  /// 휴가 한도 로드
+  /// 휴무 한도 로드
   Future<void> loadVacationLimits(String companyId, String startDate, String endDate) async {
     try {
       _setLoading(true);
@@ -337,14 +337,14 @@ class AdminProvider with ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      _setError('휴가 한도를 불러오는데 실패했습니다: ${e.toString()}');
+      _setError('휴무 한도를 불러오는데 실패했습니다: ${e.toString()}');
       _vacationLimits.clear();
     } finally {
       _setLoading(false);
     }
   }
 
-  /// 휴가 한도 저장
+  /// 휴무 한도 저장
   Future<bool> saveVacationLimits(String companyId, List<VacationLimit> limits) async {
     try {
       _clearError();
@@ -365,7 +365,7 @@ class AdminProvider with ChangeNotifier {
 
       return true;
     } catch (e) {
-      _setError('휴가 한도 저장에 실패했습니다: ${e.toString()}');
+      _setError('휴무 한도 저장에 실패했습니다: ${e.toString()}');
       return false;
     }
   }
@@ -381,7 +381,7 @@ class AdminProvider with ChangeNotifier {
   }
 }
 
-// 휴가 요청 모델
+// 휴무 요청 모델
 class VacationRequest {
   final String id;
   final String userId;
@@ -458,7 +458,7 @@ class VacationRequest {
   }
 }
 
-// 휴가 한도 모델
+// 휴무 한도 모델
 class VacationLimit {
   final String date;
   final int maxPeople;

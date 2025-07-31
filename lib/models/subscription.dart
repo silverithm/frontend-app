@@ -195,7 +195,7 @@ class SubscriptionPlan {
         features: [
           '모든 기본 기능',
           '직원 관리',
-          '휴가 관리',
+          '휴무 관리',
           '달력 기능',
           '30일 제한',
         ],
@@ -208,7 +208,7 @@ class SubscriptionPlan {
         paymentType: PaymentType.MONTHLY,
         features: [
           '무제한 직원 관리',
-          '고급 휴가 관리',
+          '고급 휴무 관리',
           '실시간 알림',
           '데이터 백업',
           '24/7 고객 지원',

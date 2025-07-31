@@ -49,7 +49,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       final authProvider = context.read<AuthProvider>();
       final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
       
-      // 휴가 요청 목록 로드
+      // 휴무 요청 목록 로드
       print('[AdminVacationManagement] API 호출 시작 - companyId: $companyId');
       final vacationResult = await ApiService().getVacationRequests(
         companyId: companyId,
@@ -59,7 +59,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       
       if (vacationResult.containsKey('requests')) {
         final requestsList = List<Map<String, dynamic>>.from(vacationResult['requests'] ?? []);
-        print('[AdminVacationManagement] 로드된 휴가 요청 수: ${requestsList.length}');
+        print('[AdminVacationManagement] 로드된 휴무 요청 수: ${requestsList.length}');
         if (requestsList.isNotEmpty) {
           print('[AdminVacationManagement] 첫 번째 요청 샘플: ${requestsList.first}');
         }
@@ -71,7 +71,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         print('[AdminVacationManagement] API 응답에 requests 키가 없음: ${vacationResult.keys}');
       }
 
-      // 휴가 한도 로드
+      // 휴무 한도 로드
       final now = DateTime.now();
       final start = DateTime(now.year, now.month, 1);
       final end = DateTime(now.year, now.month + 1, 0);
@@ -103,7 +103,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: const Text('휴가 관리', style: TextStyle(color: Colors.white),),
+        title: const Text('휴무 관리', style: TextStyle(color: Colors.white),),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -131,7 +131,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '휴가 승인 관리',
+                        '휴무 승인 관리',
                         style: AppTypography.bodyMedium.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
@@ -370,7 +370,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           ),
         ),
         
-        // 휴가 목록
+        // 휴무 목록
         if (filteredRequests.isEmpty)
           SliverFillRemaining(
             child: Center(
@@ -380,7 +380,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   Icon(Icons.event_available, size: 64, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
                   Text(
-                    '휴가 요청이 없습니다',
+                    '휴무 요청이 없습니다',
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
                   ),
                 ],
@@ -421,7 +421,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
             Icon(Icons.event_available, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
-              '휴가 요청이 없습니다',
+              '휴무 요청이 없습니다',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
             ),
           ],
@@ -447,6 +447,17 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         return '사무실';
       default:
         return role;
+    }
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return '알 수 없음';
+    
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '알 수 없음';
     }
   }
 
@@ -488,19 +499,19 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           (a['role'] ?? '').compareTo(b['role'] ?? ''));
         break;
       case 'application':
-        // 신청순: 신청한 날짜(createdAt)가 빠른 순 (오름차순)
+        // 신청순: 생성일(createdAt)이 늦은 순 (내림차순) - 최근 신청부터
         filteredRequests.sort((a, b) {
           final dateA = DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
           final dateB = DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
-          return dateA.compareTo(dateB); // 신청순 (오름차순)
+          return dateB.compareTo(dateA); // 생성일 늦은 순 (최근 신청부터)
         });
         break;
       case 'latest':
-        // 최신순: 신청한 휴가 날짜(date)가 빠른 순 (오름차순)
+        // 최신순: 휴무 사용일(date)이 늦은 순 (내림차순) - 가까운 휴무부터
         filteredRequests.sort((a, b) {
           final dateA = DateTime.tryParse(a['date'] ?? '') ?? DateTime.now();
           final dateB = DateTime.tryParse(b['date'] ?? '') ?? DateTime.now();
-          return dateA.compareTo(dateB); // 휴가 날짜 빠른 순 (오름차순)
+          return dateB.compareTo(dateA); // 휴무 사용일 늦은 순 (가까운 휴무부터)
         });
         break;
       default:
@@ -567,10 +578,17 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                         ),
                       ),
                       Text(
-                        '${_getRoleDisplayName(request['role'] ?? '')} • ${request['date'] ?? ''}',
+                        '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        '신청일: ${_formatDate(request['createdAt'])}',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -712,7 +730,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
             Icon(Icons.check_circle_outline, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
-              '승인 대기 중인 휴가 요청이 없습니다',
+              '승인 대기 중인 휴무 요청이 없습니다',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
             ),
           ],
@@ -898,7 +916,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                       Icon(Icons.info_outline, color: Colors.blue.shade600),
                       const SizedBox(width: 8),
                       const Text(
-                        '일일 휴가 한도 설정',
+                        '일일 휴무 한도 설정',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -908,7 +926,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    '각 날짜별로 승인 가능한 최대 휴가 인원을 설정할 수 있습니다.',
+                    '각 날짜별로 승인 가능한 최대 휴무 인원을 설정할 수 있습니다.',
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
@@ -963,7 +981,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
             Icon(Icons.history, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
-              '휴가 내역이 없습니다',
+              '휴무 내역이 없습니다',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
             ),
           ],
@@ -1084,7 +1102,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('휴가 요청이 승인되었습니다'),
+              content: Text('휴무 요청이 승인되었습니다'),
               backgroundColor: Colors.green,
             ),
           );
@@ -1137,7 +1155,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('휴가 요청이 거절되었습니다'),
+              content: Text('휴무 요청이 거절되었습니다'),
               backgroundColor: Colors.orange,
             ),
           );

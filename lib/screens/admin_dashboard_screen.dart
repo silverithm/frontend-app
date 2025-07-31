@@ -141,7 +141,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     1,
                     Icons.calendar_today,
                     Icons.calendar_today_outlined,
-                    '휴가관리',
+                    '휴무관리',
                   ),
                   _buildNavItem(2, Icons.event, Icons.event_outlined, '달력'),
                   _buildNavItem(
@@ -232,7 +232,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     '승인 대기',
                     '새로운 가입 요청',
                     Icons.pending_actions,
-                    Colors.orange.shade600,
+                    AppColors.purple600,
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -245,7 +245,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     '전체 회원',
                     '회원 목록 관리',
                     Icons.people,
-                    Colors.blue.shade600,
+                    AppColors.green600,
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -266,7 +266,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   Widget _buildVacationManagementTab(user) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('휴가 관리', style: TextStyle(color: Colors.white),),
+        title: const Text('휴무 관리', style: TextStyle(color: Colors.white),),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -298,7 +298,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '휴가 요청 승인 및 한도 설정',
+                        '휴무 요청 승인 및 한도 설정',
                         style: AppTypography.bodyMedium.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
@@ -337,8 +337,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               Column(
                 children: [
                   _buildActionCard(
-                    '휴가 승인',
-                    '대기 중인 휴가 요청',
+                    '휴무 승인',
+                    '대기 중인 휴무 요청',
                     Icons.approval,
                     Colors.orange.shade600,
                     () {
@@ -350,8 +350,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     },
                   ),
                   _buildActionCard(
-                    '휴가 한도',
-                    '일일 휴가 한도 설정',
+                    '휴무 한도',
+                    '일일 휴무 한도 설정',
                     Icons.event_available,
                     Colors.blue.shade600,
                     () {
@@ -363,8 +363,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     },
                   ),
                   _buildActionCard(
-                    '휴가 내역',
-                    '전체 휴가 내역 조회',
+                    '휴무 내역',
+                    '전체 휴무 내역 조회',
                     Icons.history,
                     Colors.green.shade600,
                     () {

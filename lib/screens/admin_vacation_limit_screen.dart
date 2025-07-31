@@ -160,7 +160,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('휴가 한도가 저장되었습니다.'),
+            content: Text('휴무 한도가 저장되었습니다.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -194,7 +194,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
         return Scaffold(
           appBar: AppBar(
             title: const Text(
-              '휴가 한도 설정',
+              '휴무 한도 설정',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -302,7 +302,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
   Widget _buildNoPermissionView() {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('휴가 한도 설정'),
+        title: const Text('휴무 한도 설정'),
         backgroundColor: Colors.red.shade600,
       ),
       body: Center(
@@ -325,7 +325,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              '휴가 한도 설정 기능을 사용하려면 관리자 권한이 필요합니다.',
+              '휴무 한도 설정 기능을 사용하려면 관리자 권한이 필요합니다.',
               style: TextStyle(
                 color: Colors.grey.shade600,
               ),

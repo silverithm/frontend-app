@@ -184,7 +184,7 @@ class VacationProvider with ChangeNotifier {
             .map((v) => VacationRequest.fromJson(v))
             .toList();
       } else {
-        setError(response['error'] ?? '휴가 신청 목록을 불러올 수 없습니다.');
+        setError(response['error'] ?? '휴무 신청 목록을 불러올 수 없습니다.');
         // 에러 시 빈 목록으로 초기화
         _vacationRequests = [];
       }
@@ -195,7 +195,7 @@ class VacationProvider with ChangeNotifier {
         final errorMsg = e.toString().replaceAll('ApiException: ', '');
         setError(errorMsg.split(' (Status:')[0]);
       } else {
-        setError('휴가 신청 목록 로딩에 실패했습니다: ${e.toString()}');
+        setError('휴무 신청 목록 로딩에 실패했습니다: ${e.toString()}');
       }
       // 에러 시 빈 목록으로 초기화
       _vacationRequests = [];
@@ -273,7 +273,7 @@ class VacationProvider with ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        setError(response['error'] ?? '휴가 신청에 실패했습니다.');
+        setError(response['error'] ?? '휴무 신청에 실패했습니다.');
         return false;
       }
     } catch (e) {
@@ -281,7 +281,7 @@ class VacationProvider with ChangeNotifier {
         final errorMsg = e.toString().replaceAll('ApiException: ', '');
         setError(errorMsg.split(' (Status:')[0]);
       } else {
-        setError('휴가 신청에 실패했습니다: ${e.toString()}');
+        setError('휴무 신청에 실패했습니다: ${e.toString()}');
       }
       return false;
     } finally {
@@ -294,7 +294,7 @@ class VacationProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      // TODO: 휴가 신청 취소 API 호출 구현 필요
+      // TODO: 휴무 신청 취소 API 호출 구현 필요
       // 현재는 로컬에서만 제거
       _vacationRequests.removeWhere((request) => request.id == requestId);
 
@@ -306,7 +306,7 @@ class VacationProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      setError('휴가 신청 취소에 실패했습니다: ${e.toString()}');
+      setError('휴무 신청 취소에 실패했습니다: ${e.toString()}');
       return false;
     } finally {
       setLoading(false);
@@ -344,7 +344,7 @@ class VacationProvider with ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        setError(response['error'] ?? '휴가 신청 삭제에 실패했습니다.');
+        setError(response['error'] ?? '휴무 신청 삭제에 실패했습니다.');
         return false;
       }
     } catch (e) {
@@ -352,7 +352,7 @@ class VacationProvider with ChangeNotifier {
         final errorMsg = e.toString().replaceAll('ApiException: ', '');
         setError(errorMsg.split(' (Status:')[0]);
       } else {
-        setError('휴가 신청 삭제에 실패했습니다: ${e.toString()}');
+        setError('휴무 신청 삭제에 실패했습니다: ${e.toString()}');
       }
       return false;
     } finally {
@@ -421,7 +421,7 @@ class VacationProvider with ChangeNotifier {
       }
     } catch (e) {
       // 에러 시 기존 데이터 유지
-      print('날짜별 휴가 데이터 로딩 실패: $e');
+      print('날짜별 휴무 데이터 로딩 실패: $e');
     }
   }
 
@@ -550,7 +550,7 @@ class VacationProvider with ChangeNotifier {
       );
     } catch (e) {
       print('[VacationProvider] vacation limits 로드 실패: $e');
-      setError('휴가 제한 정보를 불러오는데 실패했습니다: $e');
+      setError('휴무 제한 정보를 불러오는데 실패했습니다: $e');
     }
   }
 

@@ -366,7 +366,7 @@ class FCMService {
     // 예시: 알림 타입에 따른 화면 이동
     switch (data['type']) {
       case 'vacation':
-        // 휴가 관련 화면으로 이동
+        // 휴무 관련 화면으로 이동
         break;
       case 'schedule':
         // 일정 관련 화면으로 이동

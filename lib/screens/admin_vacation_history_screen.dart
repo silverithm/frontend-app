@@ -32,7 +32,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
       final authProvider = context.read<AuthProvider>();
       final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
       
-      // 휴가 요청 목록 로드
+      // 휴무 요청 목록 로드
       final vacationResult = await ApiService().getVacationRequests(companyId: companyId);
       if (vacationResult['success'] == true) {
         setState(() {
@@ -55,7 +55,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: const Text('휴가 내역'),
+        title: const Text('휴무 내역'),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -93,7 +93,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '전체 휴가 내역 조회',
+                        '전체 휴무 내역 조회',
                         style: AppTypography.bodyMedium.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
@@ -139,7 +139,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
             Icon(Icons.history, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
-              '휴가 내역이 없습니다',
+              '휴무 내역이 없습니다',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
             ),
           ],

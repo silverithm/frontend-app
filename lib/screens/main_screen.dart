@@ -42,7 +42,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     // 기본 인덱스 설정 (일반 사용자는 달력을 기본으로)
     _currentIndex = 1;
 
-    // 사용자 정보가 있으면 구독 체크, 휴가 데이터 로드 및 FCM 토큰 전송
+    // 사용자 정보가 있으면 구독 체크, 휴무 데이터 로드 및 FCM 토큰 전송
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = context.read<AuthProvider>();
       final vacationProvider = context.read<VacationProvider>();

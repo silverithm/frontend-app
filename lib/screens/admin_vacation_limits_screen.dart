@@ -33,7 +33,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
       final authProvider = context.read<AuthProvider>();
       final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
       
-      // 휴가 한도 로드
+      // 휴무 한도 로드
       final now = DateTime.now();
       final start = DateTime(now.year, now.month, 1);
       final end = DateTime(now.year, now.month + 1, 0);
@@ -65,7 +65,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: const Text('휴가 한도'),
+        title: const Text('휴무 한도'),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -103,7 +103,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '일일 휴가 한도 설정',
+                        '일일 휴무 한도 설정',
                         style: AppTypography.bodyMedium.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
@@ -153,7 +153,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                       Icon(Icons.info_outline, color: Colors.blue.shade600),
                       const SizedBox(width: 8),
                       const Text(
-                        '일일 휴가 한도 설정',
+                        '일일 휴무 한도 설정',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -163,7 +163,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    '각 날짜별로 승인 가능한 최대 휴가 인원을 설정할 수 있습니다.',
+                    '각 날짜별로 승인 가능한 최대 휴무 인원을 설정할 수 있습니다.',
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 16),

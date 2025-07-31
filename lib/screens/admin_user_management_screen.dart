@@ -411,8 +411,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                       child: ElevatedButton.icon(
                         onPressed: isProcessing ? null : () => _showApprovalDialog(user),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade500,
+                          backgroundColor: AppColors.green600,
                           foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: const Size(0, 36),
+                          textStyle: const TextStyle(fontSize: 13),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -435,8 +438,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                       child: ElevatedButton.icon(
                         onPressed: isProcessing ? null : () => _showRejectDialog(user),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.shade400,
+                          backgroundColor: AppColors.gray600,
                           foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: const Size(0, 36),
+                          textStyle: const TextStyle(fontSize: 13),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -565,9 +571,12 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         : () => _toggleMemberStatus(user),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isActive 
-                          ? Colors.orange.shade600 
-                          : Colors.green.shade600,
+                          ? AppColors.gray500 
+                          : AppColors.blue600,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: const Size(0, 36),
+                      textStyle: const TextStyle(fontSize: 13),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -599,8 +608,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         ? null 
                         : () => _showDeleteDialog(user),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade600,
+                      backgroundColor: AppColors.gray700,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: const Size(0, 36),
+                      textStyle: const TextStyle(fontSize: 13),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

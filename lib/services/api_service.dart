@@ -310,7 +310,7 @@ class ApiService {
     });
   }
 
-  // 휴가 캘린더 조회
+  // 휴무 캘린더 조회
   Future<Map<String, dynamic>> getVacationCalendar({
     required String startDate,
     required String endDate,
@@ -334,19 +334,19 @@ class ApiService {
         '$_baseUrl${Constants.vacationCalendarEndpoint}',
       ).replace(queryParameters: queryParams);
 
-      print('[API] 휴가 캘린더 조회 요청: $uri');
+      print('[API] 휴무 캘린더 조회 요청: $uri');
       print('[API] 요청 파라미터: $queryParams');
 
       final response = await http.get(uri, headers: await _getHeaders());
 
-      print('[API] 휴가 캘린더 응답 상태: ${response.statusCode}');
-      print('[API] 휴가 캘린더 응답 본문: ${response.body}');
+      print('[API] 휴무 캘린더 응답 상태: ${response.statusCode}');
+      print('[API] 휴무 캘린더 응답 본문: ${response.body}');
 
       return response;
     });
   }
 
-  // 특정 날짜 휴가 조회
+  // 특정 날짜 휴무 조회
   Future<Map<String, dynamic>> getVacationForDate({
     required String date,
     required String companyId,
@@ -368,11 +368,11 @@ class ApiService {
 
       return _handleResponse(response);
     } catch (e) {
-      throw Exception('날짜별 휴가 조회 실패: $e');
+      throw Exception('날짜별 휴무 조회 실패: $e');
     }
   }
 
-  // 휴가 신청 생성
+  // 휴무 신청 생성
   Future<Map<String, dynamic>> createVacationRequest({
     required String userName,
     required String date,
@@ -444,7 +444,7 @@ class ApiService {
     }
   }
 
-  // 휴가 제한 조회
+  // 휴무 제한 조회
   Future<Map<String, dynamic>> getVacationLimits({
     required String start,
     required String end,
@@ -462,13 +462,13 @@ class ApiService {
         '$_baseUrl${Constants.vacationLimitsEndpoint}',
       ).replace(queryParameters: queryParams);
 
-      print('[API] 휴가 제한 조회 요청: $uri');
+      print('[API] 휴무 제한 조회 요청: $uri');
       print('[API] 요청 파라미터: $queryParams');
 
       final response = await http.get(uri, headers: await _getHeaders());
 
-      print('[API] 휴가 제한 응답 상태: ${response.statusCode}');
-      print('[API] 휴가 제한 응답 본문: ${response.body}');
+      print('[API] 휴무 제한 응답 상태: ${response.statusCode}');
+      print('[API] 휴무 제한 응답 본문: ${response.body}');
 
       return response;
     });
@@ -807,7 +807,7 @@ class ApiService {
     });
   }
 
-  // 휴가 요청 목록 조회 (관리자용)
+  // 휴무 요청 목록 조회 (관리자용)
   Future<Map<String, dynamic>> getVacationRequests({
     required String companyId,
   }) async {
@@ -816,7 +816,7 @@ class ApiService {
         '$_baseUrl/vacation/requests',
       ).replace(queryParameters: {'companyId': companyId});
 
-      print('[API] 휴가 요청 목록 조회: $uri');
+      print('[API] 휴무 요청 목록 조회: $uri');
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
@@ -825,14 +825,14 @@ class ApiService {
     });
   }
 
-  // 휴가 요청 승인
+  // 휴무 요청 승인
   Future<Map<String, dynamic>> approveVacationRequest({
     required String vacationId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/vacation/approve/$vacationId');
 
-      print('[API] 휴가 요청 승인: $uri');
+      print('[API] 휴무 요청 승인: $uri');
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
@@ -841,14 +841,14 @@ class ApiService {
     });
   }
 
-  // 휴가 요청 거부
+  // 휴무 요청 거부
   Future<Map<String, dynamic>> rejectVacationRequest({
     required String vacationId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/vacation/reject/$vacationId');
 
-      print('[API] 휴가 요청 거부: $uri');
+      print('[API] 휴무 요청 거부: $uri');
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
@@ -858,7 +858,7 @@ class ApiService {
   }
 
 
-  // 휴가 한도 저장
+  // 휴무 한도 저장
   Future<Map<String, dynamic>> saveVacationLimits({
     required String companyId,
     required List<Map<String, dynamic>> limits,
@@ -868,7 +868,7 @@ class ApiService {
         '$_baseUrl/vacation/limits',
       ).replace(queryParameters: {'companyId': companyId});
 
-      print('[API] 휴가 한도 저장: $uri');
+      print('[API] 휴무 한도 저장: $uri');
       print('[API] 한도 데이터: $limits');
 
       final headers = await _getHeaders();

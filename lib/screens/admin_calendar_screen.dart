@@ -92,7 +92,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '전체 휴가 일정 관리',
+                        '전체 휴무 일정 관리',
                         style: AppTypography.bodyMedium.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
@@ -194,7 +194,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildStatItem(
-                        '${_currentDate.month}월 총 휴가',
+                        '${_currentDate.month}월 총 휴무',
                         _getMonthlyTotal(vacationProvider).toString(),
                         Colors.blue.shade500,
                       ),
@@ -440,7 +440,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                 ],
               ),
             ),
-            // 휴가 목록
+            // 휴무 목록
             Expanded(
               child: dayVacations.isEmpty
                   ? Center(
@@ -454,7 +454,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            '이 날에는 휴가가 없습니다',
+                            '이 날에는 휴무가 없습니다',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 16,
@@ -564,7 +564,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
       }
     }
     
-    print('[AdminCalendar] 이번 달 총 휴가: $total (필터: $_roleFilter)');
+    print('[AdminCalendar] 이번 달 총 휴무: $total (필터: $_roleFilter)');
     return total;
   }
 
@@ -616,9 +616,9 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
   String _getVacationTypeText(VacationType type) {
     switch (type) {
       case VacationType.mandatory:
-        return '의무 휴가';
+        return '필수 휴무';
       case VacationType.personal:
-        return '개인 휴가';
+        return '일반 휴무';
     }
   }
 }

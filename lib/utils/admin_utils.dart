@@ -68,7 +68,7 @@ class AdminUtils {
     return hasAdminPermission(user);
   }
 
-  /// 휴가 관리 권한 확인
+  /// 휴무 관리 권한 확인
   static bool canManageVacations(User? user) {
     return hasAdminPermission(user);
   }

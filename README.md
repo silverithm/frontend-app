@@ -35,20 +35,20 @@ flutter run
 ### ✅ 연결된 API
 - **회원가입 요청**: `POST /members/join-request`
   - DTO: `MemberJoinRequestDTO` (username, email, name, role, password)
-- **휴가 캘린더 조회**: `GET /vacations/calendar`
+- **휴무 캘린더 조회**: `GET /vacations/calendar`
   - DTO: `VacationCalendarResponseDTO` with `Map<String, VacationDateInfo>`
-- **특정 날짜 휴가 조회**: `GET /vacations/date/{date}`
+- **특정 날짜 휴무 조회**: `GET /vacations/date/{date}`
   - DTO: `VacationDateResponseDTO`
-- **휴가 신청 생성**: `POST /vacations/submit`
+- **휴무 신청 생성**: `POST /vacations/submit`
   - DTO: `VacationCreateRequestDTO` (userName, date, reason, role, password, type, userId)
-- **휴가 제한 조회**: `GET /vacations/limits`
+- **휴무 제한 조회**: `GET /vacations/limits`
   - DTO: `VacationLimitDTO` (id, date, maxPeople, role)
 
 ### ⏳ 연결 대기 중인 API
 - **로그인**: `POST /auth/login` (JWT 토큰 응답 필요)
 - **토큰 검증**: API 엔드포인트 필요
-- **사용자별 휴가 목록**: API 엔드포인트 필요
-- **휴가 신청 취소**: API 엔드포인트 필요
+- **사용자별 휴무 목록**: API 엔드포인트 필요
+- **휴무 신청 취소**: API 엔드포인트 필요
 
 ## 📁 프로젝트 구조
 
@@ -56,7 +56,7 @@ flutter run
 lib/
 ├── models/          # 데이터 모델 (User, VacationRequest)
 ├── providers/       # 상태 관리 (AuthProvider, VacationProvider)
-├── screens/         # 화면 위젯 (로그인, 회원가입, 캘린더, 휴가목록, 프로필)
+├── screens/         # 화면 위젯 (로그인, 회원가입, 캘린더, 휴무목록, 프로필)
 ├── services/        # API 서비스, 저장소 등
 ├── utils/           # 유틸리티 함수 및 상수
 ├── widgets/         # 재사용 가능한 위젯 (캘린더, 다이얼로그 등)
@@ -165,7 +165,7 @@ Provider 패턴을 사용하여 상태를 관리합니다:
 2. **Flutter 앱에서 확인**
    - 회원가입 시 승인 대기 메시지 표시 확인
    - 캘린더에서 데이터 로딩 확인
-   - 휴가 신청 시 비밀번호 입력 확인
+   - 휴무 신청 시 비밀번호 입력 확인
 
 3. **주요 API 응답 형식**
    ```json
@@ -181,7 +181,7 @@ Provider 패턴을 사용하여 상태를 관리합니다:
      }
    }
    
-   // 휴가 신청 응답
+   // 휴무 신청 응답
    {
      "success": true,
      "data": {
