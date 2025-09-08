@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
 import '../widgets/vacation_calendar_widget.dart';
 import '../widgets/vacation_request_dialog.dart';
+import '../widgets/admin_vacation_add_dialog.dart';
 import '../services/analytics_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -303,11 +304,21 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
     );
   }
 
-  void _showAddVacationDialog() {
-    // TODO: 휴무 추가 다이얼로그 구현
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('휴무 추가 기능은 개발 중입니다')),
+  void _showAddVacationDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AdminVacationAddDialog(
+        selectedDate: _selectedDate,
+      ),
     );
+    
+    if (result == true) {
+      // 휴무가 추가되면 달력 데이터 새로고침
+      final vacationProvider = context.read<VacationProvider>();
+      final authProvider = context.read<AuthProvider>();
+      final companyId = authProvider.currentUser?.company?.id ?? '1';
+      vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
+    }
   }
 
   void _showVacationLimitDialog() {

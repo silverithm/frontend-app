@@ -1,0 +1,462 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
+
+class AdminVacationAddDialog extends StatefulWidget {
+  final DateTime? selectedDate;
+  
+  const AdminVacationAddDialog({
+    super.key,
+    this.selectedDate,
+  });
+
+  @override
+  State<AdminVacationAddDialog> createState() => _AdminVacationAddDialogState();
+}
+
+class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _reasonController = TextEditingController();
+  
+  DateTime? _selectedDate;
+  String _selectedDuration = 'FULL_DAY';
+  int? _selectedMemberId;
+  List<Map<String, dynamic>> _members = [];
+  bool _isLoading = false;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.selectedDate;
+    _loadMembers();
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMembers() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
+      
+      print('[AdminVacationAddDialog] 회사 회원 조회 시작 - companyId: $companyId');
+      
+      final result = await ApiService().getCompanyMembers(companyId: companyId);
+      
+      print('[AdminVacationAddDialog] API 응답: $result');
+      
+      if (result['members'] != null) {
+        // 활성화된 회원만 필터링 (active 상태)
+        final allMembers = List<Map<String, dynamic>>.from(result['members']);
+        final activeMembers = allMembers.where((member) {
+          final status = member['status']?.toString().toLowerCase();
+          // active, approved 둘 다 허용
+          return status == 'active' || status == 'approved';
+        }).toList();
+        
+        setState(() {
+          _members = activeMembers;
+        });
+        print('[AdminVacationAddDialog] 전체 회원 수: ${allMembers.length}');
+        print('[AdminVacationAddDialog] 활성 회원 수: ${_members.length}');
+      }
+    } catch (e) {
+      print('[AdminVacationAddDialog] 직원 목록 로드 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('직원 목록을 불러올 수 없습니다: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)), // 1년 전부터 선택 가능
+      lastDate: DateTime.now().add(const Duration(days: 365)), // 1년 후까지 선택 가능
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppSemanticColors.interactiveSecondaryDefault,
+              onPrimary: Colors.white,
+              surface: AppSemanticColors.surfaceDefault,
+              onSurface: AppSemanticColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _submitVacation() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('휴무 날짜를 선택해주세요'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (_selectedMemberId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('직원을 선택해주세요'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
+      
+      final result = await ApiService().createVacationByAdmin(
+        companyId: companyId,
+        memberId: _selectedMemberId!,
+        date: '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
+        duration: _selectedDuration,
+        reason: _reasonController.text.isNotEmpty ? _reasonController.text : null,
+      );
+
+      if (mounted) {
+        if (result['success'] == true || result['data'] != null) {
+          Navigator.of(context).pop(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('휴무가 성공적으로 등록되었습니다'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          throw Exception(result['error'] ?? '휴무 등록 실패');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('휴무 등록 실패: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        // 키보드 숨기기
+        FocusScope.of(context).unfocus();
+      },
+      child: Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: GestureDetector(
+          onTap: () {}, // Dialog 내부 클릭 시 이벤트 전파 차단
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.event_note,
+                    color: AppSemanticColors.interactiveSecondaryDefault,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '휴무 추가',
+                    style: AppTypography.heading4.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // 직원 선택
+              Text(
+                '직원 선택',
+                style: AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : DropdownButtonFormField<int>(
+                      value: _selectedMemberId,
+                      decoration: InputDecoration(
+                        hintText: '직원을 선택하세요',
+                        filled: true,
+                        fillColor: AppSemanticColors.backgroundSecondary,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      items: _members.map((member) {
+                        final name = member['name'] ?? '이름 없음';
+                        final role = _getRoleDisplayName(member['role'] ?? '');
+                        return DropdownMenuItem<int>(
+                          value: member['id'],
+                          child: Text(
+                            '$name - $role',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedMemberId = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return '직원을 선택해주세요';
+                        }
+                        return null;
+                      },
+                    ),
+              const SizedBox(height: 16),
+              
+              // 날짜 선택
+              Text(
+                '휴무 날짜',
+                style: AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _selectDate,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.backgroundSecondary,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedDate != null
+                            ? AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.3)
+                            : Colors.transparent,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              color: _selectedDate != null
+                                  ? AppSemanticColors.interactiveSecondaryDefault
+                                  : AppSemanticColors.textSecondary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              _selectedDate != null
+                                  ? '${_selectedDate!.year}년 ${_selectedDate!.month}월 ${_selectedDate!.day}일'
+                                  : '날짜를 선택하세요',
+                              style: TextStyle(
+                                color: _selectedDate != null
+                                    ? AppSemanticColors.textPrimary
+                                    : AppSemanticColors.textSecondary,
+                                fontSize: 16,
+                                fontWeight: _selectedDate != null
+                                    ? FontWeight.w500
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // 휴무 기간
+              Text(
+                '휴무 기간',
+                style: AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _selectedDuration,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppSemanticColors.backgroundSecondary,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'FULL_DAY',
+                    child: Text('하루 종일 (연차)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'HALF_DAY_AM',
+                    child: Text('오전 반차'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'HALF_DAY_PM',
+                    child: Text('오후 반차'),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDuration = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // 휴무 사유
+              Text(
+                '휴무 사유 (선택)',
+                style: AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _reasonController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: '휴무 사유를 입력하세요',
+                  filled: true,
+                  fillColor: AppSemanticColors.backgroundSecondary,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // 버튼
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+                    child: const Text('취소'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _isSubmitting ? null : _submitVacation,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('휴무 등록'),
+                  ),
+                ],
+              ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  ),
+  );
+  }
+
+  String _getRoleDisplayName(String role) {
+    switch (role.toLowerCase()) {
+      case 'caregiver':
+        return '요양보호사';
+      case 'office':
+        return '사무실';
+      case 'admin':
+        return '관리자';
+      default:
+        return role;
+    }
+  }
+}

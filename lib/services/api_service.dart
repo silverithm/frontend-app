@@ -727,6 +727,7 @@ class ApiService {
     });
   }
 
+
   // 가입 요청 승인
   Future<Map<String, dynamic>> approveJoinRequest({
     required String userId,
@@ -857,6 +858,89 @@ class ApiService {
     });
   }
 
+  // 휴무 일괄 승인
+  Future<Map<String, dynamic>> bulkApproveVacations({
+    required List<String> vacationIds,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/vacation/bulk-approve');
+
+      print('[API] 휴무 일괄 승인: $uri');
+      print('[API] 요청 ID 목록: $vacationIds');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'vacationIds': vacationIds.map((id) => int.parse(id)).toList(),
+        }),
+      );
+    });
+  }
+
+  // 휴무 일괄 거절
+  Future<Map<String, dynamic>> bulkRejectVacations({
+    required List<String> vacationIds,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/vacation/bulk-reject');
+
+      print('[API] 휴무 일괄 거절: $uri');
+      print('[API] 요청 ID 목록: $vacationIds');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'vacationIds': vacationIds.map((id) => int.parse(id)).toList(),
+        }),
+      );
+    });
+  }
+
+  // 관리자가 직원 대신 휴무 신청
+  Future<Map<String, dynamic>> createVacationByAdmin({
+    required String companyId,
+    required int memberId,
+    required String date,
+    required String duration,
+    String? reason,
+    String? type,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/vacation/admin/submit-for-member?companyId=$companyId');
+
+      print('[API] 관리자가 직원 대신 휴무 신청: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      final body = {
+        'memberId': memberId,
+        'date': date,
+        'duration': duration,
+      };
+
+      if (reason != null && reason.isNotEmpty) {
+        body['reason'] = reason;
+      }
+      if (type != null && type.isNotEmpty) {
+        body['type'] = type;
+      }
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
 
   // 휴무 한도 저장
   Future<Map<String, dynamic>> saveVacationLimits({

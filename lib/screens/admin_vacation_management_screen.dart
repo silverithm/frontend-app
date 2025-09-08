@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/in_app_review_service.dart';
 import '../utils/constants.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -29,6 +30,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
   // 개별 요청의 처리 상태 추적 (승인과 거절을 구분)
   Set<String> _approvingRequests = {};
   Set<String> _rejectingRequests = {};
+  
+  // 체크박스 선택 관리
+  Set<String> _selectedRequests = {};
+  bool _isSelectMode = false;
+  bool _isBulkProcessing = false;
 
   @override
   void initState() {
@@ -315,6 +321,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                       const SizedBox(width: 8),
                       _buildSortFilterChip('최신순', 'latest'),
                       const SizedBox(width: 8),
+                      _buildSortFilterChip('오래된순', 'oldest'),
+                      const SizedBox(width: 8),
                       _buildSortFilterChip('이름순', 'name'),
                       const SizedBox(width: 8),
                       _buildSortFilterChip('직무순', 'role'),
@@ -370,12 +378,133 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           ),
         ),
         
+        // 일괄 처리 버튼 (승인 대기 상태일 때만 표시)
+        if (_statusFilter == 'pending' && filteredRequests.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 전체 선택 체크박스
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _selectedRequests.length == filteredRequests.length && 
+                               filteredRequests.isNotEmpty,
+                        onChanged: (value) {
+                          setState(() {
+                            if (value == true) {
+                              // 전체 선택
+                              _selectedRequests = filteredRequests
+                                  .map((r) => r['id'].toString())
+                                  .toSet();
+                            } else {
+                              // 전체 해제
+                              _selectedRequests.clear();
+                            }
+                            _isSelectMode = _selectedRequests.isNotEmpty;
+                          });
+                        },
+                        activeColor: AppSemanticColors.interactiveSecondaryDefault,
+                      ),
+                      Text(
+                        '전체 선택',
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _selectedRequests.isNotEmpty 
+                              ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${_selectedRequests.length}/${filteredRequests.length}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _selectedRequests.isNotEmpty 
+                                ? AppSemanticColors.interactiveSecondaryDefault
+                                : Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // 일괄 처리 버튼들
+                  if (_selectedRequests.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _isBulkProcessing ? null : _bulkReject,
+                            icon: _isBulkProcessing 
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.close, size: 18),
+                            label: Text(
+                              _isBulkProcessing ? '처리중...' : '선택 항목 거절',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.orange.shade600,
+                              side: BorderSide(color: Colors.orange.shade300),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isBulkProcessing ? null : _bulkApprove,
+                            icon: _isBulkProcessing 
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Icon(Icons.check, size: 18),
+                            label: Text(
+                              _isBulkProcessing ? '처리중...' : '선택 항목 승인',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade600,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  const Divider(),
+                ],
+              ),
+            ),
+          ),
+        
         // 휴무 목록
         if (filteredRequests.isEmpty)
           SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.event_available, size: 64, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
@@ -394,7 +523,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final request = filteredRequests[index];
-                  return _buildVacationCard(request);
+                  return _buildVacationCardWithCheckbox(request);
                 },
                 childCount: filteredRequests.length,
               ),
@@ -514,6 +643,14 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           return dateB.compareTo(dateA); // 휴무 사용일 늦은 순 (가까운 휴무부터)
         });
         break;
+      case 'oldest':
+        // 오래된순: 휴무 사용일(date)이 빠른 순 (오름차순) - 오래된 휴무부터
+        filteredRequests.sort((a, b) {
+          final dateA = DateTime.tryParse(a['date'] ?? '') ?? DateTime.now();
+          final dateB = DateTime.tryParse(b['date'] ?? '') ?? DateTime.now();
+          return dateA.compareTo(dateB); // 휴무 사용일 빠른 순 (오래된 휴무부터)
+        });
+        break;
       default:
         // 기본값은 신청순
         filteredRequests.sort((a, b) {
@@ -526,6 +663,287 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
 
     return filteredRequests;
   }
+
+  Widget _buildVacationCardWithCheckbox(Map<String, dynamic> request) {
+    final status = request['status'] ?? '';
+    final isPending = status == 'pending';
+    final requestId = request['id'].toString();
+    final isSelected = _selectedRequests.contains(requestId);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: isSelected ? 3 : 2,
+      color: isSelected 
+          ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.05) 
+          : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isSelected 
+            ? BorderSide(
+                color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.3),
+                width: 1.5,
+              )
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: isPending ? () {
+          setState(() {
+            if (_selectedRequests.contains(requestId)) {
+              _selectedRequests.remove(requestId);
+            } else {
+              _selectedRequests.add(requestId);
+            }
+            _isSelectMode = _selectedRequests.isNotEmpty;
+          });
+        } : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  if (isPending)
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        value: isSelected,
+                        onChanged: (value) {
+                          setState(() {
+                            if (value == true) {
+                              _selectedRequests.add(requestId);
+                            } else {
+                              _selectedRequests.remove(requestId);
+                            }
+                            _isSelectMode = _selectedRequests.isNotEmpty;
+                          });
+                        },
+                        activeColor: AppSemanticColors.interactiveSecondaryDefault,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  if (isPending) const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildVacationCardHeader(request),
+                  ),
+                ],
+              ),
+              if (request['reason'] != null && request['reason'].toString().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _buildReasonSection(request['reason']),
+              ],
+              if (!_isSelectMode) ...[
+                const SizedBox(height: 12),
+                _buildActionButtons(request, isPending),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVacationCardHeader(Map<String, dynamic> request) {
+    final status = request['status'] ?? '';
+    final isApproved = status == 'approved';
+    final isPending = status == 'pending';
+    final isRejected = status == 'rejected';
+
+    Color statusColor;
+    IconData statusIcon;
+    String statusText;
+
+    if (isApproved) {
+      statusColor = Colors.green;
+      statusIcon = Icons.check_circle;
+      statusText = '승인됨';
+    } else if (isPending) {
+      statusColor = Colors.orange;
+      statusIcon = Icons.pending;
+      statusText = '대기중';
+    } else {
+      statusColor = Colors.red;
+      statusIcon = Icons.cancel;
+      statusText = '거절됨';
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: statusColor.withValues(alpha: 0.1),
+          child: Icon(statusIcon, color: statusColor, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      request['userName'] ?? '알 수 없음',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '신청일: ${_formatDate(request['createdAt'])}',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReasonSection(String reason) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.message, size: 16, color: Colors.grey.shade600),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              reason,
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(Map<String, dynamic> request, bool isPending) {
+    return Row(
+      children: [
+        // 삭제 버튼 (모든 상태에 대해 표시)
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => _showDeleteDialog(request['id'].toString()),
+            icon: const Icon(Icons.delete, size: 16),
+            label: const Text('삭제', style: TextStyle(fontSize: 12)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red.shade600,
+              side: BorderSide(color: Colors.red.shade300),
+              minimumSize: const Size(0, 32),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            ),
+          ),
+        ),
+        if (isPending) ...[
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
+                  ? null 
+                  : () => _rejectRequest(request['id'].toString()),
+              icon: _rejectingRequests.contains(request['id'].toString())
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                      ),
+                    )
+                  : const Icon(Icons.close, size: 16),
+              label: Text(
+                _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
+                style: const TextStyle(fontSize: 12),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.orange.shade600,
+                side: BorderSide(color: Colors.orange.shade300),
+                minimumSize: const Size(0, 32),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
+                  ? null 
+                  : () => _approveRequest(request['id'].toString()),
+              icon: _approvingRequests.contains(request['id'].toString())
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.check, size: 16),
+              label: Text(
+                _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
+                style: const TextStyle(fontSize: 12),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(0, 32),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // 이제 이 메서드는 사용하지 않음 (_buildVacationCardHeader로 대체)
 
   Widget _buildVacationCard(Map<String, dynamic> request) {
     final status = request['status'] ?? '';
@@ -1107,6 +1525,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
             ),
           );
           print('[AdminVacation] 승인 성공 - 데이터 새로고침 시작');
+          
+          // 휴무 승인 카운트 증가 (인앱 리뷰 트리거)
+          await InAppReviewService().incrementVacationApprovalCount();
+          
           await _loadData(); // 목록 새로고침
           print('[AdminVacation] 데이터 새로고침 완료');
         }
@@ -1261,6 +1683,186 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
             backgroundColor: Colors.red,
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _bulkApprove() async {
+    if (_selectedRequests.isEmpty) return;
+    
+    final selectedList = _selectedRequests.toList();
+    
+    // 확인 다이얼로그 표시
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('일괄 승인'),
+        content: Text('선택한 ${selectedList.length}개의 휴무 요청을 모두 승인하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade600,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('승인'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed != true) return;
+    
+    setState(() {
+      _isBulkProcessing = true;
+    });
+    
+    try {
+      print('[AdminVacation] 일괄 승인 요청 시작 - ${selectedList.length}개');
+      final result = await ApiService().bulkApproveVacations(vacationIds: selectedList);
+      print('[AdminVacation] 일괄 승인 API 응답: $result');
+      
+      final successCount = result['successCount'] ?? 0;
+      final failureCount = result['failureCount'] ?? 0;
+      
+      if (mounted) {
+        String message;
+        Color bgColor;
+        
+        if (failureCount == 0) {
+          message = '$successCount개의 휴무가 승인되었습니다';
+          bgColor = Colors.green;
+        } else if (successCount == 0) {
+          message = '일괄 승인에 실패했습니다';
+          bgColor = Colors.red;
+        } else {
+          message = '$successCount개 승인 성공, $failureCount개 실패';
+          bgColor = Colors.orange;
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: bgColor,
+          ),
+        );
+        
+        // 선택 초기화 및 목록 새로고침
+        setState(() {
+          _selectedRequests.clear();
+          _isSelectMode = false;
+        });
+        await _loadData();
+      }
+    } catch (e) {
+      print('[AdminVacation] 일괄 승인 중 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('일괄 승인 실패: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBulkProcessing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _bulkReject() async {
+    if (_selectedRequests.isEmpty) return;
+    
+    final selectedList = _selectedRequests.toList();
+    
+    // 확인 다이얼로그 표시
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('일괄 거절'),
+        content: Text('선택한 ${selectedList.length}개의 휴무 요청을 모두 거절하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange.shade600,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('거절'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed != true) return;
+    
+    setState(() {
+      _isBulkProcessing = true;
+    });
+    
+    try {
+      print('[AdminVacation] 일괄 거절 요청 시작 - ${selectedList.length}개');
+      final result = await ApiService().bulkRejectVacations(vacationIds: selectedList);
+      print('[AdminVacation] 일괄 거절 API 응답: $result');
+      
+      final successCount = result['successCount'] ?? 0;
+      final failureCount = result['failureCount'] ?? 0;
+      
+      if (mounted) {
+        String message;
+        Color bgColor;
+        
+        if (failureCount == 0) {
+          message = '$successCount개의 휴무가 거절되었습니다';
+          bgColor = Colors.orange;
+        } else if (successCount == 0) {
+          message = '일괄 거절에 실패했습니다';
+          bgColor = Colors.red;
+        } else {
+          message = '$successCount개 거절 성공, $failureCount개 실패';
+          bgColor = Colors.orange;
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: bgColor,
+          ),
+        );
+        
+        // 선택 초기화 및 목록 새로고침
+        setState(() {
+          _selectedRequests.clear();
+          _isSelectMode = false;
+        });
+        await _loadData();
+      }
+    } catch (e) {
+      print('[AdminVacation] 일괄 거절 중 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('일괄 거절 실패: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBulkProcessing = false;
+        });
       }
     }
   }

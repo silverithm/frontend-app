@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../models/user.dart';
 import '../services/analytics_service.dart';
+import '../services/in_app_review_service.dart';
 import '../utils/admin_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -1203,6 +1204,50 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   ),
                                 ),
                               );
+                            },
+                          ),
+
+                          const Divider(height: 1, color: Colors.transparent),
+                          
+                          _buildSettingTile(
+                            icon: Icons.star_rate,
+                            title: '앱 평가하기',
+                            subtitle: '평점과 리뷰를 남겨주세요',
+                            trailing: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade100,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.star,
+                                color: Colors.amber.shade700,
+                                size: 20,
+                              ),
+                            ),
+                            onTap: () async {
+                              // Analytics 이벤트 로깅
+                              AnalyticsService().logCustomEvent(
+                                eventName: 'rate_app_clicked',
+                                parameters: {'source': 'profile_screen'},
+                              );
+                              
+                              // 리뷰 요청
+                              await InAppReviewService().requestReviewManually();
+                              
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('앱 평가 페이지로 이동합니다'),
+                                    backgroundColor: Colors.green.shade600,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
                             },
                           ),
 

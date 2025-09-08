@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -17,6 +18,7 @@ import 'services/storage_service.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
 import 'services/fcm_service.dart';
+import 'services/in_app_review_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/admin_utils.dart';
@@ -54,6 +56,10 @@ void main() async {
 
   // FCM 서비스 초기화
   await FCMService().initialize();
+  
+  // 인앱 리뷰 서비스 초기화
+  await InAppReviewService().initializeInstallDate();
+  await InAppReviewService().incrementLaunchCount();
 
   runApp(const MyApp());
 }
@@ -84,6 +90,16 @@ class MyApp extends StatelessWidget {
             home: const AuthWrapper(),
             debugShowCheckedModeBanner: false,
             navigatorObservers: [AnalyticsService().observer],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('ko', 'KR'),
+              Locale('en', 'US'),
+            ],
+            locale: const Locale('ko', 'KR'),
           );
         },
       ),

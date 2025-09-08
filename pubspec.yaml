@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.8+16
+version: 1.1.9+17
 
 environment:
   sdk: ^3.9.0-128.0.dev
@@ -29,6 +29,8 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
 
   # The following adds the Cupertino Icons font to your application.
@@ -70,6 +72,9 @@ dependencies:
   
   # 스플래시 스크린을 위한 패키지
   flutter_native_splash: ^2.4.0
+  
+  # 인앱 리뷰를 위한 패키지
+  in_app_review: ^2.0.9
 
 dev_dependencies:
   flutter_test:
