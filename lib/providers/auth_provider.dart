@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../models/user.dart';
 import '../models/admin_signin_response.dart';
 import '../models/member_signin_response.dart';
@@ -642,7 +643,7 @@ class AuthProvider with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message']),
-            backgroundColor: Colors.green.shade600,
+            backgroundColor: AppSemanticColors.statusSuccessIcon,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -650,7 +651,7 @@ class AuthProvider with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['error'] ?? '비밀번호 찾기에 실패했습니다.'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -670,7 +671,7 @@ class AuthProvider with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -694,7 +695,7 @@ class AuthProvider with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['message']),
-            backgroundColor: Colors.green.shade600,
+            backgroundColor: AppSemanticColors.statusSuccessIcon,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -702,7 +703,7 @@ class AuthProvider with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response['error'] ?? '관리자 비밀번호 찾기에 실패했습니다.'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -722,7 +723,7 @@ class AuthProvider with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -752,7 +753,7 @@ class AuthProvider with ChangeNotifier {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(response['message']),
-              backgroundColor: Colors.green.shade600,
+              backgroundColor: AppSemanticColors.statusSuccessIcon,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -768,7 +769,7 @@ class AuthProvider with ChangeNotifier {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMsg),
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: AppSemanticColors.statusErrorIcon,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -789,7 +790,7 @@ class AuthProvider with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_errorMessage),
-            backgroundColor: Colors.red.shade600,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

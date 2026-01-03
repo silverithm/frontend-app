@@ -11,6 +11,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common/index.dart';
 import 'login_screen.dart';
 import 'subscription_check_screen.dart';
 
@@ -32,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: AppTransitions.slowest,
       vsync: this,
     );
 
@@ -73,8 +74,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('링크를 열 수 없습니다: $url'),
-              backgroundColor: Colors.red.shade600,
+              content: Text(
+                '링크를 열 수 없습니다: $url',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textInverse,
+                ),
+              ),
+              backgroundColor: AppSemanticColors.statusErrorIcon,
             ),
           );
         }
@@ -82,81 +88,40 @@ class _ProfileScreenState extends State<ProfileScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('링크 열기 중 오류가 발생했습니다'),
-            backgroundColor: Colors.red.shade600,
-          ),
-        );
-      }
+            SnackBar(
+              content: Text(
+                '링크 열기 중 오류가 발생했습니다',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textInverse,
+                ),
+              ),
+              backgroundColor: AppSemanticColors.statusErrorIcon,
+            ),
+          );
+        }
     }
   }
 
   void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.logout, color: Colors.red.shade600, size: 24),
-            ),
-            const SizedBox(width: 12),
-            const Text('로그아웃', style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Text('정말 로그아웃하시겠습니까?', style: TextStyle(fontSize: 16)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('취소'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
+    AppDialog.showConfirm(
+      context,
+      title: '로그아웃',
+      message: '정말 로그아웃하시겠습니까?',
+      confirmText: '로그아웃',
+      confirmVariant: AppButtonVariant.primary,
+    ).then((confirmed) async {
+      if (confirmed != true) return;
 
-              final authProvider = context.read<AuthProvider>();
-              await authProvider.logout();
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.logout();
 
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              elevation: 0,
-            ),
-            child: const Text('로그아웃'),
-          ),
-        ],
-      ),
-    );
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    });
   }
 
   void _showPasswordChangeDialog(BuildContext dialogContext) {
@@ -167,223 +132,186 @@ class _ProfileScreenState extends State<ProfileScreen>
         final newPasswordController = TextEditingController();
         final confirmPasswordController = TextEditingController();
         bool isChanging = false;
-        bool showCurrentPassword = false;
-        bool showNewPassword = false;
-        bool showConfirmPassword = false;
 
         return StatefulBuilder(
           builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.lock, color: Colors.green.shade600, size: 24),
-              ),
-              const SizedBox(width: 12),
-              const Text('비밀번호 변경', style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            ),
+            title: Row(
               children: [
-                // 현재 비밀번호
-                TextFormField(
-                  controller: currentPasswordController,
-                  obscureText: !showCurrentPassword,
-                  decoration: InputDecoration(
-                    labelText: '현재 비밀번호',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        showCurrentPassword ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          showCurrentPassword = !showCurrentPassword;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // 새 비밀번호
-                TextFormField(
-                  controller: newPasswordController,
-                  obscureText: !showNewPassword,
-                  decoration: InputDecoration(
-                    labelText: '새 비밀번호',
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        showNewPassword ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          showNewPassword = !showNewPassword;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    helperText: '6자 이상 입력하세요',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // 새 비밀번호 확인
-                TextFormField(
-                  controller: confirmPasswordController,
-                  obscureText: !showConfirmPassword,
-                  decoration: InputDecoration(
-                    labelText: '새 비밀번호 확인',
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        showConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          showConfirmPassword = !showConfirmPassword;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.space2),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.shade200),
+                    color: AppSemanticColors.statusSuccessBackground,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '비밀번호는 영문, 숫자, 특수문자를 포함하여 6자 이상으로 설정하는 것을 권장합니다.',
-                          style: TextStyle(
-                            color: Colors.blue.shade700,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: const Icon(
+                    Icons.lock,
+                    color: AppSemanticColors.statusSuccessIcon,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.space3),
+                Text(
+                  '비밀번호 변경',
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
                   ),
                 ),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isChanging ? null : () {
-                Navigator.pop(context);
-              },
-              child: const Text('취소'),
-            ),
-            ElevatedButton(
-              onPressed: isChanging ? null : () async {
-                // 유효성 검사
-                if (currentPasswordController.text.isEmpty) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('현재 비밀번호를 입력해주세요'),
-                      backgroundColor: Colors.red,
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppPasswordInput(
+                    label: '현재 비밀번호',
+                    controller: currentPasswordController,
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                  AppPasswordInput(
+                    label: '새 비밀번호',
+                    controller: newPasswordController,
+                    helperText: '6자 이상 입력하세요',
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                  AppPasswordInput(
+                    label: '새 비밀번호 확인',
+                    controller: confirmPasswordController,
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                  AppStatusCard(
+                    status: AppStatusType.info,
+                    padding: const EdgeInsets.all(AppSpacing.space3),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: AppSemanticColors.statusInfoIcon,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Expanded(
+                          child: Text(
+                            '비밀번호는 영문, 숫자, 특수문자를 포함하여 6자 이상으로 설정하는 것을 권장합니다.',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                  return;
-                }
-                
-                if (newPasswordController.text.isEmpty) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('새 비밀번호를 입력해주세요'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-                
-                if (newPasswordController.text.length < 6) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('비밀번호는 6자 이상이어야 합니다'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-                
-                if (newPasswordController.text != confirmPasswordController.text) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('새 비밀번호가 일치하지 않습니다'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-                
-                setState(() {
-                  isChanging = true;
-                });
-                
-                final authProvider = context.read<AuthProvider>();
-                final success = await authProvider.changePassword(
-                  currentPassword: currentPasswordController.text,
-                  newPassword: newPasswordController.text,
-                  context: context,
-                );
-                
-                if (context.mounted) {
-                  if (success) {
-                    Navigator.pop(context);
-                  } else {
-                    setState(() {
-                      isChanging = false;
-                    });
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-                foregroundColor: Colors.white,
+                  ),
+                ],
               ),
-              child: isChanging
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('변경'),
             ),
-          ],
-        ),
-      );
+            actions: [
+              AppButton(
+                text: '취소',
+                variant: AppButtonVariant.outline,
+                onPressed: isChanging ? null : () => Navigator.pop(context),
+              ),
+              AppButton(
+                text: '변경',
+                isLoading: isChanging,
+                onPressed: isChanging
+                    ? null
+                    : () async {
+                        if (currentPasswordController.text.isEmpty) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '현재 비밀번호를 입력해주세요',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textInverse,
+                                ),
+                              ),
+                              backgroundColor:
+                                  AppSemanticColors.statusErrorIcon,
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (newPasswordController.text.isEmpty) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '새 비밀번호를 입력해주세요',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textInverse,
+                                ),
+                              ),
+                              backgroundColor:
+                                  AppSemanticColors.statusErrorIcon,
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (newPasswordController.text.length < 6) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '비밀번호는 6자 이상이어야 합니다',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textInverse,
+                                ),
+                              ),
+                              backgroundColor:
+                                  AppSemanticColors.statusErrorIcon,
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (newPasswordController.text !=
+                            confirmPasswordController.text) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '새 비밀번호가 일치하지 않습니다',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textInverse,
+                                ),
+                              ),
+                              backgroundColor:
+                                  AppSemanticColors.statusErrorIcon,
+                            ),
+                          );
+                          return;
+                        }
+
+                        setState(() {
+                          isChanging = true;
+                        });
+
+                        final authProvider = context.read<AuthProvider>();
+                        final success = await authProvider.changePassword(
+                          currentPassword: currentPasswordController.text,
+                          newPassword: newPasswordController.text,
+                          context: context,
+                        );
+
+                        if (context.mounted) {
+                          if (success) {
+                            Navigator.pop(context);
+                          } else {
+                            setState(() {
+                              isChanging = false;
+                            });
+                          }
+                        }
+                      },
+              ),
+            ],
+          ),
+        );
       },
     ).then((_) {
       // Dialog가 닫힌 후 자동으로 controller들이 dispose됩니다
@@ -404,10 +332,10 @@ class _ProfileScreenState extends State<ProfileScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
+                  color: AppColors.blue100,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.swap_horiz, color: Colors.blue.shade600, size: 24),
+                child: Icon(Icons.swap_horiz, color: AppSemanticColors.statusInfoIcon, size: 24),
               ),
               const SizedBox(width: 12),
               const Text('역할 변경', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -419,7 +347,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppColors.blue50,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -427,7 +355,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     RadioListTile<String>(
                       title: Row(
                         children: [
-                          Icon(Icons.favorite, color: Colors.pink.shade600, size: 20),
+                          Icon(Icons.favorite, color: AppColors.red500, size: 20),
                           const SizedBox(width: 8),
                           const Text('요양보호사'),
                         ],
@@ -445,7 +373,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     RadioListTile<String>(
                       title: Row(
                         children: [
-                          Icon(Icons.business, color: Colors.indigo.shade600, size: 20),
+                          Icon(Icons.business, color: AppColors.blue600, size: 20),
                           const SizedBox(width: 8),
                           const Text('사무직'),
                         ],
@@ -467,19 +395,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
+                    color: AppColors.orange50,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade200),
+                    border: Border.all(color: AppColors.orange200),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                      Icon(Icons.info_outline, color: AppColors.orange700, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           '역할 변경 시 권한이 변경됩니다.',
                           style: TextStyle(
-                            color: Colors.orange.shade700,
+                            color: AppColors.orange700,
                             fontSize: 13,
                           ),
                         ),
@@ -508,7 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('역할이 성공적으로 변경되었습니다.'),
-                      backgroundColor: Colors.green.shade600,
+                      backgroundColor: AppSemanticColors.statusSuccessIcon,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -526,7 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ? authProvider.errorMessage
                             : '역할 변경에 실패했습니다',
                       ),
-                      backgroundColor: Colors.red.shade600,
+                      backgroundColor: AppSemanticColors.statusErrorIcon,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -536,8 +464,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade600,
-                foregroundColor: Colors.white,
+                backgroundColor: AppSemanticColors.statusInfoIcon,
+                foregroundColor: AppColors.white,
               ),
               child: isChanging
                   ? const SizedBox(
@@ -545,7 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                       ),
                     )
                   : const Text('변경'),
@@ -565,24 +493,29 @@ class _ProfileScreenState extends State<ProfileScreen>
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           ),
           title: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.space2),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppSemanticColors.statusErrorBackground,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 ),
                 child: Icon(
                   Icons.person_remove,
-                  color: Colors.red.shade600,
+                  color: AppSemanticColors.statusErrorIcon,
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
-              const Text('회원탈퇴', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(width: AppSpacing.space3),
+              Text(
+                '회원탈퇴',
+                style: AppTypography.heading5.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
             ],
           ),
           content: Column(
@@ -590,61 +523,52 @@ class _ProfileScreenState extends State<ProfileScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.space4),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200),
+                  color: AppSemanticColors.statusErrorBackground,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  border: Border.all(
+                    color: AppSemanticColors.statusErrorBorder,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '⚠️ 주의사항',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red.shade800,
-                        fontSize: 16,
+                      style: AppTypography.labelLarge.copyWith(
+                        color: AppSemanticColors.statusErrorText,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.space2),
                     Text(
                       '• 계정이 영구적으로 삭제됩니다\n• 모든 휴무 신청 내역이 삭제됩니다\n• 삭제된 데이터는 복구할 수 없습니다\n• 재가입을 원하시면 새로 신청해야 합니다',
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontSize: 14,
-                        height: 1.5,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.statusErrorText,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
               Text(
                 '정말로 회원탈퇴를 진행하시겠습니까?',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade800,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: AppSemanticColors.textPrimary,
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(
+            AppButton(
+              text: '취소',
+              variant: AppButtonVariant.outline,
               onPressed: isWithdrawing ? null : () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('취소'),
             ),
-            ElevatedButton(
+            AppButton(
+              text: '탈퇴하기',
+              variant: AppButtonVariant.primary,
+              isLoading: isWithdrawing,
               onPressed: isWithdrawing
                   ? null
                   : () async {
@@ -664,83 +588,59 @@ class _ProfileScreenState extends State<ProfileScreen>
                           barrierDismissible: false,
                           builder: (context) => AlertDialog(
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius:
+                                  BorderRadius.circular(AppBorderRadius.xl),
                             ),
                             content: Container(
-                              padding: const EdgeInsets.all(24),
+                              padding: const EdgeInsets.all(AppSpacing.space6),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
-                                    width: 80,
-                                    height: 80,
+                                    width: AppSpacing.space14,
+                                    height: AppSpacing.space14,
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.green.shade400,
-                                          Colors.green.shade600,
-                                        ],
-                                      ),
+                                      color: AppSemanticColors
+                                          .statusSuccessBackground,
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
                                       Icons.check,
-                                      color: Colors.white,
+                                      color: AppSemanticColors
+                                          .statusSuccessIcon,
                                       size: 40,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: AppSpacing.space5),
                                   Text(
                                     '회원탈퇴 완료',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green.shade800,
+                                    style: AppTypography.heading5.copyWith(
+                                      color:
+                                          AppSemanticColors.statusSuccessIcon,
                                     ),
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: AppSpacing.space3),
                                   Text(
                                     '그동안 이용해주셔서 감사했습니다.',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontSize: 14,
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: AppSemanticColors.textPrimary,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.of(
-                                          context,
-                                        ).pushAndRemoveUntil(
-                                          MaterialPageRoute(
-                                            builder: (_) => const LoginScreen(),
-                                          ),
-                                          (route) => false,
-                                        );
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green.shade600,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
+                                  const SizedBox(height: AppSpacing.space5),
+                                  AppButton(
+                                    text: '확인',
+                                    isFullWidth: true,
+                                    onPressed: () {
+                                      Navigator.of(
+                                        context,
+                                      ).pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                          builder: (_) => const LoginScreen(),
                                         ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        '확인',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
+                                        (route) => false,
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -759,38 +659,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                               authProvider.errorMessage.isNotEmpty
                                   ? authProvider.errorMessage
                                   : '회원탈퇴에 실패했습니다',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textInverse,
+                              ),
                             ),
-                            backgroundColor: Colors.red.shade600,
+                            backgroundColor: AppSemanticColors.statusErrorIcon,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius:
+                                  BorderRadius.circular(AppBorderRadius.xl),
                             ),
                           ),
                         );
                       }
                     },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
-              ),
-              child: isWithdrawing
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('탈퇴하기'),
             ),
           ],
         ),
@@ -809,7 +691,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF6FF), // blue.50 - 파란계열 배경
+      backgroundColor: AppSemanticColors.backgroundSecondary,
       body: CustomScrollView(
         slivers: [
           // 파란계열 그라데이션 앱바
@@ -818,18 +700,16 @@ class _ProfileScreenState extends State<ProfileScreen>
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: Colors.transparent,
+            backgroundColor: AppColors.transparent,
             centerTitle: true,
-            title: const Text(
+            title: Text(
               '프로필',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-                fontSize: 20,
+              style: AppTypography.heading5.copyWith(
+                color: AppSemanticColors.textInverse,
                 shadows: [
                   Shadow(
-                    color: Colors.black26,
-                    offset: Offset(1, 1),
+                    color: AppColors.black.withValues(alpha: 0.26),
+                    offset: const Offset(1, 1),
                     blurRadius: 3,
                   ),
                 ],
@@ -841,9 +721,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF2563EB), // blue.600
-                    Color(0xFF3B82F6), // blue.500
-                    Color(0xFF60A5FA), // blue.400
+                    AppSemanticColors.interactivePrimaryActive,
+                    AppSemanticColors.interactivePrimaryDefault,
+                    AppSemanticColors.interactivePrimaryHover,
                   ],
                 ),
               ),
@@ -858,19 +738,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                 return SliverFillRemaining(
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(AppSpacing.space5),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.indigo.shade100,
-                            Colors.blue.shade100,
-                          ],
+                        color: AppSemanticColors.surfaceDefault,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                        border: Border.all(
+                          color: AppSemanticColors.borderDefault,
+                          width: 1,
                         ),
-                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.indigo.shade600,
+                          AppSemanticColors.interactivePrimaryDefault,
                         ),
                       ),
                     ),
@@ -891,12 +770,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Colors.white, Colors.indigo.shade50],
+                            colors: [AppColors.white, AppColors.blue50],
                           ),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: AppColors.black.withValues(alpha:0.1),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -918,15 +797,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Colors.indigo.shade400,
-                                        Colors.blue.shade300,
-                                        Colors.cyan.shade200,
+                                        AppColors.blue400,
+                                        AppColors.blue300,
+                                        AppColors.blue200,
                                       ],
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.indigo.shade200
-                                            .withOpacity(0.5),
+                                        color: AppColors.blue200
+                                            .withValues(alpha:0.5),
                                         blurRadius: 15,
                                         offset: const Offset(0, 8),
                                       ),
@@ -955,11 +834,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                               Container(
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: AppColors.black.withValues(alpha:0.05),
                                       blurRadius: 20,
                                       offset: const Offset(0, 5),
                                     ),
@@ -973,7 +852,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade800,
+                                        color: AppColors.grey800,
                                       ),
                                     ),
                                     const SizedBox(height: 20),
@@ -981,7 +860,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     // 이름
                                     _buildInfoRow(
                                       icon: Icons.person,
-                                      iconColor: Colors.blue.shade600,
+                                      iconColor: AppSemanticColors.statusInfoIcon,
                                       title: '이름',
                                       value: user.name,
                                     ),
@@ -990,7 +869,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     // 이메일
                                     _buildInfoRow(
                                       icon: Icons.email,
-                                      iconColor: Colors.green.shade600,
+                                      iconColor: AppSemanticColors.statusSuccessIcon,
                                       title: '이메일',
                                       value: user.email,
                                     ),
@@ -1011,8 +890,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                                     ? Icons.favorite
                                                     : Icons.business,
                                                 iconColor: user.role == 'CAREGIVER'
-                                                    ? Colors.pink.shade600
-                                                    : Colors.indigo.shade600,
+                                                    ? AppColors.red500
+                                                    : AppColors.blue600,
                                                 title: '직원 유형',
                                                 value: _getRoleDisplayName(user.role),
                                               ),
@@ -1020,13 +899,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             Container(
                                               padding: const EdgeInsets.all(4),
                                               decoration: BoxDecoration(
-                                                color: Colors.blue.shade100,
+                                                color: AppColors.blue100,
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: Icon(
                                                 Icons.edit,
                                                 size: 16,
-                                                color: Colors.blue.shade600,
+                                                color: AppSemanticColors.statusInfoIcon,
                                               ),
                                             ),
                                           ],
@@ -1042,7 +921,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         children: [
                                           _buildInfoRow(
                                             icon: Icons.business_center,
-                                            iconColor: Colors.orange.shade600,
+                                            iconColor: AppSemanticColors.statusWarningIcon,
                                             title: '부서',
                                             value: user.department!,
                                           ),
@@ -1069,7 +948,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     // 가입일
                                     _buildInfoRow(
                                       icon: Icons.calendar_today,
-                                      iconColor: Colors.teal.shade600,
+                                      iconColor: AppColors.green600,
                                       title: '가입일',
                                       value: _formatDate(user.createdAt),
                                     ),
@@ -1081,7 +960,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                           const SizedBox(height: 16),
                                           _buildInfoRow(
                                             icon: Icons.login,
-                                            iconColor: Colors.grey.shade600,
+                                            iconColor: AppSemanticColors.textSecondary,
                                             title: '마지막 로그인',
                                             value: _formatDateTime(
                                               user.lastLoginAt!,
@@ -1107,11 +986,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
+                            color: AppColors.black.withValues(alpha:0.08),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -1126,19 +1005,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.green.shade100,
+                                color: AppColors.green100,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
-                                color: Colors.green.shade600,
+                                color: AppSemanticColors.statusSuccessIcon,
                                 size: 20,
                               ),
                             ),
                             onTap: () => _showPasswordChangeDialog(context),
                           ),
 
-                          const Divider(height: 1, color: Colors.transparent),
+                          const Divider(height: 1, color: AppColors.transparent),
 
                           _buildSettingTile(
                             icon: Icons.notifications,
@@ -1151,20 +1030,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 gradient: LinearGradient(
                                   colors: _notificationsEnabled
                                       ? [
-                                          Colors.blue.shade400,
-                                          Colors.blue.shade600,
+                                          AppColors.blue400,
+                                          AppSemanticColors.statusInfoIcon,
                                         ]
                                       : [
-                                          Colors.grey.shade300,
-                                          Colors.grey.shade400,
+                                          AppColors.grey300,
+                                          AppSemanticColors.textDisabled,
                                         ],
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: _notificationsEnabled
                                     ? [
                                         BoxShadow(
-                                          color: Colors.blue.shade300
-                                              .withOpacity(0.4),
+                                          color: AppColors.blue300
+                                              .withValues(alpha:0.4),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -1178,7 +1057,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: const Text('알림 설정 기능은 준비 중입니다'),
-                                      backgroundColor: Colors.orange.shade600,
+                                      backgroundColor: AppSemanticColors.statusWarningIcon,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
@@ -1186,10 +1065,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     ),
                                   );
                                 },
-                                activeColor: Colors.white,
-                                inactiveThumbColor: Colors.white,
+                                activeColor: AppColors.white,
+                                inactiveThumbColor: AppColors.white,
                                 trackColor: MaterialStateProperty.all(
-                                  Colors.transparent,
+                                  AppColors.transparent,
                                 ),
                               ),
                             ),
@@ -1197,7 +1076,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: const Text('알림 설정 기능은 준비 중입니다'),
-                                  backgroundColor: Colors.orange.shade600,
+                                  backgroundColor: AppSemanticColors.statusWarningIcon,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -1207,7 +1086,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             },
                           ),
 
-                          const Divider(height: 1, color: Colors.transparent),
+                          const Divider(height: 1, color: AppColors.transparent),
                           
                           _buildSettingTile(
                             icon: Icons.star_rate,
@@ -1216,12 +1095,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.amber.shade100,
+                                color: AppColors.amber100,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.star,
-                                color: Colors.amber.shade700,
+                                color: AppColors.amber700,
                                 size: 20,
                               ),
                             ),
@@ -1239,7 +1118,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: const Text('앱 평가 페이지로 이동합니다'),
-                                    backgroundColor: Colors.green.shade600,
+                                    backgroundColor: AppSemanticColors.statusSuccessIcon,
                                     behavior: SnackBarBehavior.floating,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -1251,7 +1130,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             },
                           ),
 
-                          const Divider(height: 1, color: Colors.transparent),
+                          const Divider(height: 1, color: AppColors.transparent),
 
                           _buildSettingTile(
                             icon: Icons.help,
@@ -1260,12 +1139,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade100,
+                                color: AppColors.blue100,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
-                                color: Colors.blue.shade600,
+                                color: AppSemanticColors.statusInfoIcon,
                                 size: 20,
                               ),
                             ),
@@ -1273,7 +1152,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: const Text('도움말 기능은 준비 중입니다'),
-                                  backgroundColor: Colors.orange.shade600,
+                                  backgroundColor: AppSemanticColors.statusWarningIcon,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -1283,7 +1162,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             },
                           ),
 
-                          const Divider(height: 1, color: Colors.transparent),
+                          const Divider(height: 1, color: AppColors.transparent),
 
                           _buildSettingTile(
                             icon: Icons.info,
@@ -1305,7 +1184,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: const Text('앱 정보 기능은 준비 중입니다'),
-                                  backgroundColor: Colors.orange.shade600,
+                                  backgroundColor: AppSemanticColors.statusWarningIcon,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -1315,7 +1194,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             },
                           ),
 
-                          const Divider(height: 1, color: Colors.transparent),
+                          const Divider(height: 1, color: AppColors.transparent),
 
                           _buildSettingTile(
                             icon: Icons.person_remove,
@@ -1324,12 +1203,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.red.shade100,
+                                color: AppColors.red100,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
-                                color: Colors.red.shade600,
+                                color: AppSemanticColors.statusErrorIcon,
                                 size: 20,
                               ),
                             ),
@@ -1354,12 +1233,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Colors.white, Colors.grey.shade50],
+                            colors: [AppColors.white, AppSemanticColors.backgroundSecondary],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: AppColors.black.withValues(alpha:0.08),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -1377,15 +1256,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          Colors.grey.shade100,
-                                          Colors.grey.shade200,
+                                          AppColors.grey100,
+                                          AppColors.grey200,
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Icon(
                                       Icons.gavel,
-                                      color: Colors.grey.shade700,
+                                      color: AppSemanticColors.textPrimary,
                                       size: 24,
                                     ),
                                   ),
@@ -1395,7 +1274,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.grey.shade800,
+                                      color: AppColors.grey800,
                                     ),
                                   ),
                                 ],
@@ -1407,7 +1286,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               icon: Icons.privacy_tip,
                               title: '개인정보 처리방침',
                               subtitle: '개인정보 수집 및 이용에 대한 정책',
-                              iconColor: Colors.blue.shade600,
+                              iconColor: AppSemanticColors.statusInfoIcon,
                               onTap: () => _launchURL(
                                 'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
                               ),
@@ -1419,14 +1298,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                               margin: const EdgeInsets.symmetric(
                                 horizontal: 20,
                               ),
-                              color: Colors.grey.shade200,
+                              color: AppColors.grey200,
                             ),
 
                             _buildPolicyTile(
                               icon: Icons.description,
                               title: '서비스 이용약관',
                               subtitle: '서비스 이용에 대한 약관 및 조건',
-                              iconColor: Colors.green.shade600,
+                              iconColor: AppSemanticColors.statusSuccessIcon,
                               onTap: () => _launchURL(
                                 'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
                               ),
@@ -1451,15 +1330,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.red.shade400,
-                              Colors.red.shade600,
-                              Colors.red.shade800,
+                              AppColors.red400,
+                              AppSemanticColors.statusErrorIcon,
+                              AppColors.red800,
                             ],
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.shade300.withOpacity(0.4),
+                              color: AppColors.red300.withValues(alpha:0.4),
                               blurRadius: 15,
                               offset: const Offset(0, 6),
                             ),
@@ -1467,18 +1346,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ),
                         child: ElevatedButton.icon(
                           onPressed: () => _showLogoutDialog(context),
-                          icon: const Icon(Icons.logout, color: Colors.white),
+                          icon: const Icon(Icons.logout, color: AppColors.white),
                           label: const Text(
                             '로그아웃',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
+                            backgroundColor: AppColors.transparent,
+                            shadowColor: AppColors.transparent,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -1502,13 +1381,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: AppColors.grey100,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           'Version 1.0.0',
                           style: TextStyle(
-                            color: Colors.grey.shade500,
+                            color: AppSemanticColors.textTertiary,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1535,13 +1414,13 @@ class _ProfileScreenState extends State<ProfileScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.indigo.shade400,
-            Colors.blue.shade300,
-            Colors.cyan.shade200,
+            AppColors.blue400,
+            AppColors.blue300,
+            AppColors.blue200,
           ],
         ),
       ),
-      child: const Icon(Icons.person, size: 60, color: Colors.white),
+      child: const Icon(Icons.person, size: 60, color: AppColors.white),
     );
   }
 
@@ -1567,11 +1446,11 @@ class _ProfileScreenState extends State<ProfileScreen>
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.indigo.shade100, Colors.blue.shade100],
+              colors: [AppColors.blue100, AppColors.blue100],
             ),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: Colors.indigo.shade600, size: 24),
+          child: Icon(icon, color: AppColors.blue600, size: 24),
         ),
         title: Text(
           title,
@@ -1579,7 +1458,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          style: TextStyle(color: AppSemanticColors.textSecondary, fontSize: 13),
         ),
         trailing: trailing,
         onTap: onTap,
@@ -1605,7 +1484,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade800,
+              color: AppColors.grey800,
             ),
           ),
         ),
@@ -1616,7 +1495,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade700,
+              color: AppSemanticColors.textPrimary,
             ),
             // overflow와 maxLines 제거하여 2줄로 표시 가능
           ),
@@ -1628,13 +1507,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   Color _getRoleColor(String role) {
     switch (role) {
       case 'CAREGIVER':
-        return Colors.pink.shade400;
+        return AppColors.red400;
       case 'OFFICE':
-        return Colors.blue.shade500;
+        return AppSemanticColors.statusInfoIcon;
       case 'admin':
         return AppSemanticColors.interactiveSecondaryDefault;
       default:
-        return Colors.grey.shade500;
+        return AppSemanticColors.textTertiary;
     }
   }
 
@@ -1682,7 +1561,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.indigo.shade100, Colors.blue.shade100],
+            colors: [AppColors.blue100, AppColors.blue100],
           ),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -1694,7 +1573,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+        style: TextStyle(color: AppSemanticColors.textSecondary, fontSize: 13),
       ),
       onTap: onTap,
     );
@@ -1705,7 +1584,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (subscriptionProvider.isLoading) {
       return _buildInfoRow(
         icon: Icons.workspace_premium,
-        iconColor: Colors.grey.shade400,
+        iconColor: AppSemanticColors.textDisabled,
         title: '구독 정보',
         value: '로딩 중...',
       );
@@ -1730,12 +1609,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
+                  color: AppColors.orange100,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
                   Icons.workspace_premium,
-                  color: Colors.orange.shade600,
+                  color: AppSemanticColors.statusWarningIcon,
                   size: 20,
                 ),
               ),
@@ -1749,7 +1628,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade700,
+                        color: AppSemanticColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1758,7 +1637,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.orange.shade600,
+                        color: AppSemanticColors.statusWarningIcon,
                       ),
                     ),
                   ],
@@ -1766,7 +1645,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               Icon(
                 Icons.chevron_right,
-                color: Colors.orange.shade600,
+                color: AppSemanticColors.statusWarningIcon,
                 size: 20,
               ),
             ],
@@ -1778,10 +1657,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     // 구독이 있는 경우
     final subscription = subscriptionProvider.subscription!;
     final statusColor = subscription.isActive 
-        ? Colors.green.shade600 
+        ? AppSemanticColors.statusSuccessIcon 
         : subscription.isExpired 
-            ? Colors.red.shade600 
-            : Colors.orange.shade600;
+            ? AppSemanticColors.statusErrorIcon 
+            : AppSemanticColors.statusWarningIcon;
     
     final statusIcon = subscription.isActive 
         ? Icons.check_circle 
@@ -1802,7 +1681,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
@@ -1821,7 +1700,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade700,
+                      color: AppSemanticColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1832,7 +1711,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade800,
+                          color: AppColors.grey800,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1848,7 +1727,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         child: Text(
                           subscription.statusDisplayName,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1861,7 +1740,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             Icon(
               Icons.chevron_right,
-              color: Colors.grey.shade400,
+              color: AppSemanticColors.textDisabled,
               size: 20,
             ),
           ],
@@ -1880,8 +1759,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             Icon(
               Icons.workspace_premium,
               color: subscription.isActive 
-                  ? Colors.green.shade600 
-                  : Colors.orange.shade600,
+                  ? AppSemanticColors.statusSuccessIcon 
+                  : AppSemanticColors.statusWarningIcon,
             ),
             const SizedBox(width: 8),
             const Text('구독 정보'),
@@ -1947,7 +1826,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Text(
             '$label:',
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: AppSemanticColors.textSecondary,
               fontSize: 14,
             ),
           ),
@@ -1956,7 +1835,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Text(
             value,
             style: const TextStyle(
-              color: Colors.black87,
+              color: AppColors.black87,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),

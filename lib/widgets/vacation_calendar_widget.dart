@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/vacation_provider.dart';
 import '../models/vacation_request.dart';
+import '../theme/app_colors.dart';
 import 'dart:math' as math;
 
 class VacationCalendarWidget extends StatefulWidget {
@@ -159,7 +160,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
           opacity: _fadeAnimation,
           child: Container(
             decoration: const BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.all(Radius.circular(16)),
             ),
             child: Column(
@@ -173,9 +174,9 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.grey.shade50,
-                        Colors.grey.shade100,
-                        Colors.grey.shade200,
+                        AppSemanticColors.backgroundSecondary,
+                        AppColors.grey100,
+                        AppColors.grey200,
                       ],
                     ),
                     borderRadius: const BorderRadius.only(
@@ -183,7 +184,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       topRight: Radius.circular(16),
                     ),
                     border: Border(
-                      bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+                      bottom: BorderSide(color: AppColors.grey300, width: 1),
                     ),
                   ),
                   child: Row(
@@ -191,15 +192,15 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: AppColors.white.withValues(alpha:0.9),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.grey.shade300,
+                            color: AppColors.grey300,
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: AppColors.black.withValues(alpha:0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -209,11 +210,11 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           onPressed: _previousMonth,
                           icon: Icon(
                             Icons.chevron_left,
-                            color: Colors.grey.shade700,
+                            color: AppSemanticColors.textPrimary,
                             size: 20,
                           ),
                           style: IconButton.styleFrom(
-                            backgroundColor: Colors.transparent,
+                            backgroundColor: AppColors.transparent,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -226,22 +227,22 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: Colors.grey.shade800,
+                          color: AppColors.grey800,
                           letterSpacing: -0.5,
                         ),
                       ),
 
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: AppColors.white.withValues(alpha:0.9),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.grey.shade300,
+                            color: AppColors.grey300,
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: AppColors.black.withValues(alpha:0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -251,11 +252,11 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           onPressed: _nextMonth,
                           icon: Icon(
                             Icons.chevron_right,
-                            color: Colors.grey.shade700,
+                            color: AppSemanticColors.textPrimary,
                             size: 20,
                           ),
                           style: IconButton.styleFrom(
-                            backgroundColor: Colors.transparent,
+                            backgroundColor: AppColors.transparent,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -274,10 +275,10 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: AppSemanticColors.backgroundSecondary,
                       border: Border(
                         bottom: BorderSide(
-                          color: Colors.grey.shade200,
+                          color: AppColors.grey200,
                           width: 1,
                         ),
                       ),
@@ -306,9 +307,9 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppSemanticColors.backgroundSecondary,
                     border: Border(
-                      bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+                      bottom: BorderSide(color: AppColors.grey200, width: 1),
                     ),
                   ),
                   child: Row(
@@ -322,10 +323,10 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
                               color: index == 0
-                                  ? Colors.red.shade600
+                                  ? AppSemanticColors.statusErrorIcon
                                   : index == 6
-                                  ? Colors.blue.shade600
-                                  : Colors.grey.shade700,
+                                  ? AppSemanticColors.statusInfoIcon
+                                  : AppSemanticColors.textPrimary,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -342,9 +343,9 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.white,
                     border: Border(
-                      bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+                      bottom: BorderSide(color: AppColors.grey200, width: 1),
                     ),
                   ),
                   child: Row(
@@ -355,13 +356,13 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: AppColors.blue50,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               Icons.people_alt_outlined,
                               size: 16,
-                              color: Colors.blue.shade600,
+                              color: AppSemanticColors.statusInfoIcon,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -370,7 +371,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade700,
+                              color: AppSemanticColors.textPrimary,
                               letterSpacing: -0.2,
                             ),
                           ),
@@ -388,23 +389,23 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             gradient: _isExpanded
                                 ? LinearGradient(
                                     colors: [
-                                      Colors.blue.shade500,
-                                      Colors.blue.shade600,
+                                      AppColors.blue500,
+                                      AppSemanticColors.statusInfoIcon,
                                     ],
                                   )
                                 : null,
-                            color: _isExpanded ? null : Colors.grey.shade100,
+                            color: _isExpanded ? null : AppColors.grey100,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: _isExpanded
-                                  ? Colors.blue.shade600
-                                  : Colors.grey.shade300,
+                                  ? AppSemanticColors.statusInfoIcon
+                                  : AppColors.grey300,
                               width: 1,
                             ),
                             boxShadow: _isExpanded
                                 ? [
                                     BoxShadow(
-                                      color: Colors.blue.shade300.withOpacity(
+                                      color: AppColors.blue300.withValues(alpha:
                                         0.3,
                                       ),
                                       blurRadius: 8,
@@ -422,8 +423,8 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                                     : Icons.visibility_off,
                                 size: 16,
                                 color: _isExpanded
-                                    ? Colors.white
-                                    : Colors.grey.shade600,
+                                    ? AppColors.white
+                                    : AppSemanticColors.textSecondary,
                               ),
                               const SizedBox(width: 6),
                               Text(
@@ -432,8 +433,8 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: _isExpanded
-                                      ? Colors.white
-                                      : Colors.grey.shade600,
+                                      ? AppColors.white
+                                      : AppSemanticColors.textSecondary,
                                   letterSpacing: -0.2,
                                 ),
                               ),
@@ -591,13 +592,13 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppSemanticColors.backgroundSecondary,
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(16),
                       bottomRight: Radius.circular(16),
                     ),
                     border: Border(
-                      top: BorderSide(color: Colors.grey.shade200, width: 1),
+                      top: BorderSide(color: AppColors.grey200, width: 1),
                     ),
                   ),
                   child: Row(
@@ -606,17 +607,17 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       // 신청 상태
                       _buildCompactLegendItem(
                         '승인',
-                        Colors.green.shade400.withOpacity(0.8),
+                        AppColors.green400.withValues(alpha:0.8),
                         Icons.check_circle,
                       ),
                       _buildCompactLegendItem(
                         '대기',
-                        Colors.amber.shade400.withOpacity(0.8),
+                        AppColors.amber400.withValues(alpha:0.8),
                         Icons.schedule,
                       ),
                       _buildCompactLegendItem(
                         '거절',
-                        Colors.red.shade400.withOpacity(0.75),
+                        AppColors.red400.withValues(alpha:0.75),
                         Icons.cancel,
                       ),
 
@@ -624,22 +625,22 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       Container(
                         width: 1,
                         height: 12,
-                        color: Colors.grey.shade300,
+                        color: AppColors.grey300,
                       ),
 
                       // 연차/반차 구분
                       _buildDurationLegendItem(
                         '연차',
-                        Colors.blue.shade100,
-                        Colors.blue.shade300,
-                        Colors.blue.shade800,
+                        AppColors.blue100,
+                        AppColors.blue300,
+                        AppColors.blue800,
                         '연',
                       ),
                       _buildDurationLegendItem(
                         '반차',
-                        Colors.orange.shade100,
-                        Colors.orange.shade300,
-                        Colors.orange.shade800,
+                        AppColors.orange100,
+                        AppColors.orange300,
+                        AppColors.orange800,
                         '반',
                       ),
 
@@ -647,13 +648,13 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       Container(
                         width: 1,
                         height: 12,
-                        color: Colors.grey.shade300,
+                        color: AppColors.grey300,
                       ),
 
                       // 필수 휴무만 표시
                       _buildTypeLegendItem(
                         '필수',
-                        Colors.amber.shade500.withOpacity(0.9),
+                        AppColors.amber500.withValues(alpha:0.9),
                         Icons.star,
                       ),
                     ],
@@ -687,41 +688,41 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     Color? availabilityColor;
     if (_isSameMonth(date) && widget.roleFilter != 'all') {
       if (isAvailable) {
-        availabilityColor = Colors.green.shade50; // 여유 있음 - 연한 초록
+        availabilityColor = AppColors.green50; // 여유 있음 - 연한 초록
       } else {
-        availabilityColor = Colors.red.shade50; // 인원 초과 - 연한 빨강
+        availabilityColor = AppColors.red50; // 인원 초과 - 연한 빨강
       }
     }
 
     return Container(
       decoration: BoxDecoration(
         color: isSelected
-            ? Colors.blue.shade600
+            ? AppSemanticColors.statusInfoIcon
             : isToday
-            ? Colors.blue.shade50
-            : availabilityColor ?? Colors.transparent, // 여유 인원에 따른 색상
+            ? AppColors.blue50
+            : availabilityColor ?? AppColors.transparent, // 여유 인원에 따른 색상
         borderRadius: BorderRadius.circular(8),
         border: isToday && !isSelected
-            ? Border.all(color: Colors.blue.shade300, width: 1.5)
+            ? Border.all(color: AppColors.blue300, width: 1.5)
             : _isSameMonth(date) &&
                   widget.roleFilter != 'all' &&
                   !isAvailable &&
                   !isSelected
-            ? Border.all(color: Colors.red.shade300, width: 1) // 인원 초과 시 빨간 테두리
+            ? Border.all(color: AppColors.red300, width: 1) // 인원 초과 시 빨간 테두리
             : _isSameMonth(date) &&
                   widget.roleFilter != 'all' &&
                   isAvailable &&
                   !isSelected &&
                   !isToday
             ? Border.all(
-                color: Colors.green.shade300,
+                color: AppColors.green300,
                 width: 1,
               ) // 여유 있을 시 초록 테두리
             : null,
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: Colors.blue.shade300.withOpacity(0.4),
+                  color: AppColors.blue300.withValues(alpha:0.4),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -729,7 +730,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             : null,
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
@@ -751,16 +752,16 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: !_isSameMonth(date)
-                                ? Colors.grey.shade300
+                                ? AppColors.grey300
                                 : isSelected
-                                ? Colors.white
+                                ? AppColors.white
                                 : isToday
-                                ? Colors.blue.shade700
+                                ? AppColors.blue700
                                 : date.weekday == DateTime.sunday
-                                ? Colors.red.shade600
+                                ? AppSemanticColors.statusErrorIcon
                                 : date.weekday == DateTime.saturday
-                                ? Colors.blue.shade600
-                                : Colors.grey.shade800,
+                                ? AppSemanticColors.statusInfoIcon
+                                : AppColors.grey800,
                           ),
                         ),
                       ),
@@ -791,17 +792,17 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               ),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.white.withOpacity(0.2)
+                                    ? AppColors.white.withValues(alpha:0.2)
                                     : isAvailable
-                                    ? Colors.green.shade100
-                                    : Colors.red.shade100,
+                                    ? AppColors.green100
+                                    : AppColors.red100,
                                 borderRadius: BorderRadius.circular(3),
                                 border: Border.all(
                                   color: isSelected
-                                      ? Colors.white.withOpacity(0.4)
+                                      ? AppColors.white.withValues(alpha:0.4)
                                       : isAvailable
-                                      ? Colors.green.shade300
-                                      : Colors.red.shade300,
+                                      ? AppColors.green300
+                                      : AppColors.red300,
                                   width: 0.5,
                                 ),
                               ),
@@ -813,10 +814,10 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                     color: isSelected
-                                        ? Colors.white
+                                        ? AppColors.white
                                         : isAvailable
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade700,
+                                        ? AppColors.green700
+                                        : AppColors.red700,
                                   ),
                                 ),
                               ),
@@ -838,16 +839,16 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: !_isSameMonth(date)
-                                ? Colors.grey.shade300
+                                ? AppColors.grey300
                                 : isSelected
-                                ? Colors.white
+                                ? AppColors.white
                                 : isToday
-                                ? Colors.blue.shade700
+                                ? AppColors.blue700
                                 : date.weekday == DateTime.sunday
-                                ? Colors.red.shade600
+                                ? AppSemanticColors.statusErrorIcon
                                 : date.weekday == DateTime.saturday
-                                ? Colors.blue.shade600
-                                : Colors.grey.shade800,
+                                ? AppSemanticColors.statusInfoIcon
+                                : AppColors.grey800,
                           ),
                         ),
                       ),
@@ -877,17 +878,17 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               ),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.white.withOpacity(0.2)
+                                    ? AppColors.white.withValues(alpha:0.2)
                                     : isAvailable
-                                    ? Colors.green.shade100
-                                    : Colors.red.shade100,
+                                    ? AppColors.green100
+                                    : AppColors.red100,
                                 borderRadius: BorderRadius.circular(3),
                                 border: Border.all(
                                   color: isSelected
-                                      ? Colors.white.withOpacity(0.4)
+                                      ? AppColors.white.withValues(alpha:0.4)
                                       : isAvailable
-                                      ? Colors.green.shade300
-                                      : Colors.red.shade300,
+                                      ? AppColors.green300
+                                      : AppColors.red300,
                                   width: 0.5,
                                 ),
                               ),
@@ -899,10 +900,10 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                                     fontSize: 5,
                                     fontWeight: FontWeight.w600,
                                     color: isSelected
-                                        ? Colors.white
+                                        ? AppColors.white
                                         : isAvailable
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade700,
+                                        ? AppColors.green700
+                                        : AppColors.red700,
                                   ),
                                 ),
                               ),
@@ -941,7 +942,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
               borderRadius: BorderRadius.circular(4),
               boxShadow: [
                 BoxShadow(
-                  color: _getStatusColor(vacation.status).withOpacity(0.3),
+                  color: _getStatusColor(vacation.status).withValues(alpha:0.3),
                   blurRadius: 2,
                   offset: const Offset(0, 1),
                 ),
@@ -961,7 +962,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           style: const TextStyle(
                             fontSize: 7.0,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1030,7 +1031,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               color: _getStatusColor(vacation.status),
                               boxShadow: [
                                 BoxShadow(
-                                  color: _getStatusColor(vacation.status).withOpacity(0.3),
+                                  color: _getStatusColor(vacation.status).withValues(alpha:0.3),
                                   blurRadius: 1,
                                   offset: const Offset(0, 0.5),
                                 ),
@@ -1044,7 +1045,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                                       height: 3,
                                       child: CustomPaint(
                                         painter: StarPainter(
-                                          color: Colors.amber.shade700.withOpacity(0.9),
+                                          color: AppColors.amber700.withValues(alpha:0.9),
                                         ),
                                         size: const Size(3, 3),
                                       ),
@@ -1062,10 +1063,10 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           height: dotSize,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.grey.shade600,
+                            color: AppSemanticColors.textSecondary,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.shade400.withOpacity(0.3),
+                                color: AppSemanticColors.textDisabled.withValues(alpha:0.3),
                                 blurRadius: 1,
                                 offset: const Offset(0, 0.5),
                               ),
@@ -1077,7 +1078,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               style: const TextStyle(
                                 fontSize: 4,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: AppColors.white,
                               ),
                             ),
                           ),
@@ -1099,7 +1100,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               color: _getStatusColor(vacation.status),
                               boxShadow: [
                                 BoxShadow(
-                                  color: _getStatusColor(vacation.status).withOpacity(0.3),
+                                  color: _getStatusColor(vacation.status).withValues(alpha:0.3),
                                   blurRadius: 1,
                                   offset: const Offset(0, 0.5),
                                 ),
@@ -1113,7 +1114,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                                       height: 3,
                                       child: CustomPaint(
                                         painter: StarPainter(
-                                          color: Colors.amber.shade700.withOpacity(0.9),
+                                          color: AppColors.amber700.withValues(alpha:0.9),
                                         ),
                                         size: const Size(3, 3),
                                       ),
@@ -1140,7 +1141,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     if (vacation.type == VacationType.mandatory) {
       // 필수 휴무는 별표 표시 (우선순위)
       return CustomPaint(
-        painter: StarPainter(color: Colors.amber.shade600.withOpacity(0.9)),
+        painter: StarPainter(color: AppColors.amber600.withValues(alpha:0.9)),
         size: const Size(8, 8),
       );
     } else {
@@ -1165,14 +1166,14 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
 
       if (vacation.duration == VacationDuration.fullDay) {
         // 연차 - 파란색 계열
-        backgroundColor = Colors.blue.shade100.withOpacity(0.8);
-        borderColor = Colors.blue.shade300;
-        textColor = Colors.blue.shade800;
+        backgroundColor = AppColors.blue100.withValues(alpha:0.8);
+        borderColor = AppColors.blue300;
+        textColor = AppColors.blue800;
       } else {
         // 반차 - 오렌지색 계열
-        backgroundColor = Colors.orange.shade100.withOpacity(0.8);
-        borderColor = Colors.orange.shade300;
-        textColor = Colors.orange.shade800;
+        backgroundColor = AppColors.orange100.withValues(alpha:0.8);
+        borderColor = AppColors.orange300;
+        textColor = AppColors.orange800;
       }
 
       return Container(
@@ -1200,11 +1201,11 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
   Color _getStatusColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
-        return Colors.green.shade400.withOpacity(0.8); // 투명도가 있는 연한 초록색
+        return AppColors.green400.withValues(alpha:0.8); // 투명도가 있는 연한 초록색
       case VacationStatus.rejected:
-        return Colors.red.shade400.withOpacity(0.75); // 투명도가 있는 연한 빨간색
+        return AppColors.red400.withValues(alpha:0.75); // 투명도가 있는 연한 빨간색
       case VacationStatus.pending:
-        return Colors.amber.shade400.withOpacity(0.8); // 투명도가 있는 앰버색 (더 세련된 노란색)
+        return AppColors.amber400.withValues(alpha:0.8); // 투명도가 있는 앰버색 (더 세련된 노란색)
     }
   }
 
@@ -1223,7 +1224,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: AppSemanticColors.textPrimary,
           ),
         ),
       ],
@@ -1262,7 +1263,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: AppSemanticColors.textPrimary,
           ),
         ),
       ],
@@ -1304,7 +1305,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: AppSemanticColors.textPrimary,
           ),
         ),
       ],
@@ -1322,26 +1323,26 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         decoration: BoxDecoration(
           gradient: isSelected
               ? LinearGradient(
-                  colors: [Colors.blue.shade500, Colors.blue.shade600],
+                  colors: [AppColors.blue500, AppSemanticColors.statusInfoIcon],
                 )
               : null,
-          color: isSelected ? null : Colors.white,
+          color: isSelected ? null : AppColors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.blue.shade600 : Colors.grey.shade300,
+            color: isSelected ? AppSemanticColors.statusInfoIcon : AppColors.grey300,
             width: 1.5,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.blue.shade300.withOpacity(0.4),
+                    color: AppColors.blue300.withValues(alpha:0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.grey.shade200.withOpacity(0.5),
+                    color: AppColors.grey200.withValues(alpha:0.5),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   ),
@@ -1353,14 +1354,14 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             // Icon(
             //   icon,
             //   size: 16,
-            //   color: isSelected ? Colors.white : Colors.grey.shade600,
+            //   color: isSelected ? AppColors.white : AppSemanticColors.textSecondary,
             // ),
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.grey.shade700,
+                color: isSelected ? AppColors.white : AppSemanticColors.textPrimary,
               ),
             ),
           ],

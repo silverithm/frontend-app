@@ -50,7 +50,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             appBar: AppBar(
               title: const Text('회사 정보'),
               backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-              foregroundColor: Colors.white,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             body: const Center(
               child: Text('회사 정보를 불러올 수 없습니다.'),
@@ -59,17 +59,17 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         }
 
         return Scaffold(
-          backgroundColor: Colors.grey.shade50,
+          backgroundColor: AppSemanticColors.backgroundSecondary,
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               '회사 정보',
-              style: TextStyle(
+              style: AppTypography.heading6.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppSemanticColors.textInverse,
               ),
             ),
             backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-            foregroundColor: Colors.white,
+            foregroundColor: AppSemanticColors.textInverse,
             elevation: 0,
             centerTitle: true,
           ),
@@ -88,13 +88,13 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       end: Alignment.bottomRight,
                       colors: [
                         AppSemanticColors.interactiveSecondaryDefault,
-                        AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.8),
+                        AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.8),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.3),
+                        color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -106,12 +106,12 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.business,
-                          color: Colors.white,
+                          color: AppSemanticColors.textInverse,
                           size: 40,
                         ),
                       ),
@@ -119,7 +119,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       Text(
                         company.name,
                         style: AppTypography.heading4.copyWith(
-                          color: Colors.white,
+                          color: AppSemanticColors.textInverse,
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
@@ -128,7 +128,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       Text(
                         '관리자 계정으로 로그인됨',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withOpacity(0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -142,11 +142,11 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppSemanticColors.surfaceDefault,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: AppColors.black.withValues(alpha: 0.05),
                         blurRadius: 20,
                         offset: const Offset(0, 5),
                       ),
@@ -163,7 +163,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // 회사명
                       _buildInfoRow(
                         icon: Icons.business,
@@ -171,16 +171,16 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                         title: '회사명',
                         value: company.name,
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // 회사 주소
                       _buildInfoRow(
                         icon: Icons.location_on,
-                        iconColor: Colors.red.shade600,
+                        iconColor: AppSemanticColors.statusErrorIcon,
                         title: '주소',
-                        value: company.addressName.isNotEmpty 
-                            ? company.addressName 
+                        value: company.addressName.isNotEmpty
+                            ? company.addressName
                             : '주소 정보 없음',
                       ),
                     ],
@@ -193,11 +193,11 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppSemanticColors.surfaceDefault,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: AppColors.black.withValues(alpha: 0.05),
                         blurRadius: 20,
                         offset: const Offset(0, 5),
                       ),
@@ -214,17 +214,17 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // 관리자명
                       _buildInfoRow(
                         icon: Icons.person,
-                        iconColor: Colors.blue.shade600,
+                        iconColor: AppSemanticColors.statusInfoIcon,
                         title: '이름',
                         value: user!.name,
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // 역할
                       _buildInfoRow(
                         icon: Icons.admin_panel_settings,
@@ -244,11 +244,11 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                     return Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppSemanticColors.surfaceDefault,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: AppColors.black.withValues(alpha: 0.05),
                             blurRadius: 20,
                             offset: const Offset(0, 5),
                           ),
@@ -297,7 +297,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
@@ -313,19 +313,17 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 14,
+                style: AppTypography.bodySmall.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade600,
+                  color: AppSemanticColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 16,
+                style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
+                  color: AppSemanticColors.textPrimary,
                 ),
               ),
             ],
@@ -359,7 +357,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
           Text(
             '구독 정보를 불러오는 중...',
             style: AppTypography.bodyMedium.copyWith(
-              color: Colors.grey.shade600,
+              color: AppSemanticColors.textSecondary,
             ),
           ),
         ],
@@ -372,7 +370,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         children: [
           _buildInfoRow(
             icon: Icons.info_outline,
-            iconColor: Colors.orange.shade600,
+            iconColor: AppSemanticColors.statusWarningIcon,
             title: '구독 상태',
             value: '구독 정보 없음',
           ),
@@ -380,15 +378,15 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
+              color: AppSemanticColors.statusWarningBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange.shade200),
+              border: Border.all(color: AppSemanticColors.statusWarningBorder),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.warning_amber,
-                  color: Colors.orange.shade600,
+                  color: AppSemanticColors.statusWarningIcon,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -396,7 +394,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                   child: Text(
                     '관리자는 구독 상태와 관계없이 모든 기능을 사용할 수 있습니다.',
                     style: AppTypography.bodySmall.copyWith(
-                      color: Colors.orange.shade700,
+                      color: AppSemanticColors.statusWarningText,
                     ),
                   ),
                 ),
@@ -409,11 +407,11 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
 
     // 구독 정보가 있는 경우
     final subscription = subscriptionProvider.subscription!;
-    final statusColor = subscription.isActive 
-        ? Colors.green.shade600 
-        : subscription.isExpired 
-            ? Colors.red.shade600 
-            : Colors.orange.shade600;
+    final statusColor = subscription.isActive
+        ? AppSemanticColors.statusSuccessIcon
+        : subscription.isExpired
+            ? AppSemanticColors.statusErrorIcon
+            : AppSemanticColors.statusWarningIcon;
 
     return Column(
       children: [
@@ -434,7 +432,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
           const SizedBox(height: 20),
           _buildInfoRow(
             icon: Icons.schedule,
-            iconColor: Colors.teal.shade600,
+            iconColor: AppColors.green600,
             title: '만료일',
             value: _formatDate(subscription.endDate!),
           ),
@@ -442,7 +440,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             const SizedBox(height: 20),
             _buildInfoRow(
               icon: Icons.timer,
-              iconColor: Colors.blue.shade600,
+              iconColor: AppSemanticColors.statusInfoIcon,
               title: '남은 일수',
               value: '${subscription.daysRemaining}일',
             ),
@@ -457,15 +455,15 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
+            color: AppSemanticColors.statusSuccessBackground,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.green.shade200),
+            border: Border.all(color: AppSemanticColors.statusSuccessBorder),
           ),
           child: Row(
             children: [
               Icon(
                 Icons.admin_panel_settings,
-                color: Colors.green.shade600,
+                color: AppSemanticColors.statusSuccessIcon,
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -473,7 +471,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 child: Text(
                   '관리자 권한으로 구독 상태와 관계없이 모든 기능을 사용할 수 있습니다.',
                   style: AppTypography.bodySmall.copyWith(
-                    color: Colors.green.shade700,
+                    color: AppSemanticColors.statusSuccessText,
                   ),
                 ),
               ),
@@ -493,7 +491,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             label: const Text('결제 및 구독 관리'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-              foregroundColor: Colors.white,
+              foregroundColor: AppSemanticColors.textInverse,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -517,11 +515,11 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 5),
           ),
@@ -538,7 +536,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // 관리자 회원탈퇴 버튼
           SizedBox(
             width: double.infinity,
@@ -547,8 +545,8 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               icon: const Icon(Icons.person_remove),
               label: const Text('회원탈퇴'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red.shade600,
-                side: BorderSide(color: Colors.red.shade300),
+                foregroundColor: AppSemanticColors.statusErrorIcon,
+                side: BorderSide(color: AppSemanticColors.statusErrorBorder),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -556,9 +554,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               ),
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // 로그아웃 버튼
           SizedBox(
             width: double.infinity,
@@ -567,8 +565,8 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               icon: const Icon(Icons.logout),
               label: const Text('로그아웃'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.grey.shade700,
-                side: BorderSide(color: Colors.grey.shade300),
+                foregroundColor: AppSemanticColors.textSecondary,
+                side: BorderSide(color: AppSemanticColors.borderSubtle),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -588,7 +586,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.logout, color: Colors.orange.shade600),
+            Icon(Icons.logout, color: AppSemanticColors.statusWarningIcon),
             const SizedBox(width: 8),
             const Text('로그아웃'),
           ],
@@ -599,7 +597,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               '취소',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
             ),
           ),
           TextButton(
@@ -609,7 +607,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             },
             child: Text(
               '로그아웃',
-              style: TextStyle(color: Colors.orange.shade600),
+              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.statusWarningIcon),
             ),
           ),
         ],
@@ -632,7 +630,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('로그아웃 중 오류가 발생했습니다: ${e.toString()}'),
-            backgroundColor: Colors.orange.shade600,
+            backgroundColor: AppSemanticColors.statusWarningIcon,
           ),
         );
       }
@@ -649,9 +647,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.orange.shade50,
+          color: AppSemanticColors.statusWarningBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange.shade200),
+          border: Border.all(color: AppSemanticColors.statusWarningBorder),
         ),
         child: Row(
           children: [
@@ -660,14 +658,14 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusWarningIcon),
               ),
             ),
             const SizedBox(width: 12),
             Text(
               '결제 실패 정보를 확인 중...',
               style: AppTypography.bodyMedium.copyWith(
-                color: Colors.orange.shade700,
+                color: AppSemanticColors.statusWarningText,
               ),
             ),
           ],
@@ -683,9 +681,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     // 결제 실패가 있는 경우
     return Container(
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
+        color: AppSemanticColors.statusErrorBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.shade200),
+        border: Border.all(color: AppSemanticColors.statusErrorBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -704,7 +702,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 children: [
                   Icon(
                     Icons.error_outline,
-                    color: Colors.red.shade600,
+                    color: AppSemanticColors.statusErrorIcon,
                     size: 24,
                   ),
                   const SizedBox(width: 8),
@@ -712,7 +710,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                     child: Text(
                       '결제 실패 내역',
                       style: AppTypography.heading6.copyWith(
-                        color: Colors.red.shade700,
+                        color: AppSemanticColors.statusErrorText,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -720,23 +718,23 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade600,
+                      color: AppSemanticColors.statusErrorIcon,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${subscriptionProvider.paymentFailures.length}건',
                       style: AppTypography.bodySmall.copyWith(
-                        color: Colors.white,
+                        color: AppSemanticColors.textInverse,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Icon(
-                    _isPaymentFailuresExpanded 
-                        ? Icons.expand_less 
+                    _isPaymentFailuresExpanded
+                        ? Icons.expand_less
                         : Icons.expand_more,
-                    color: Colors.red.shade600,
+                    color: AppSemanticColors.statusErrorIcon,
                   ),
                 ],
               ),
@@ -752,7 +750,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                   Text(
                     '결제 정보를 확인하고 다시 시도해 주세요.',
                     style: AppTypography.bodyMedium.copyWith(
-                      color: Colors.red.shade700,
+                      color: AppSemanticColors.statusErrorText,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -768,7 +766,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                         child: Text(
                           '외 ${subscriptionProvider.paymentFailures.length - 5}건 더...',
                           style: AppTypography.bodySmall.copyWith(
-                            color: Colors.red.shade600,
+                            color: AppSemanticColors.statusErrorIcon,
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -788,9 +786,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.shade100),
+        border: Border.all(color: AppSemanticColors.statusErrorBackground),
       ),
       child: Row(
         children: [
@@ -802,14 +800,14 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                   failure.failureReasonKorean,
                   style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.red.shade700,
+                    color: AppSemanticColors.statusErrorText,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${failure.formattedAmount} • ${failure.formattedFailedAt}',
                   style: AppTypography.bodySmall.copyWith(
-                    color: Colors.grey.shade600,
+                    color: AppSemanticColors.textSecondary,
                   ),
                 ),
               ],
@@ -827,8 +825,8 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         Expanded(
           child: subscription.isActive
               ? OutlinedButton.icon(
-                  onPressed: subscriptionProvider.isLoading 
-                      ? null 
+                  onPressed: subscriptionProvider.isLoading
+                      ? null
                       : () => _showCancelSubscriptionDialog(subscriptionProvider),
                   icon: subscriptionProvider.isLoading
                       ? SizedBox(
@@ -836,14 +834,14 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                            valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusErrorIcon),
                           ),
                         )
                       : const Icon(Icons.pause_circle_outline),
                   label: Text(subscriptionProvider.isLoading ? '처리 중...' : '구독 일시정지'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red.shade600,
-                    side: BorderSide(color: Colors.red.shade300),
+                    foregroundColor: AppSemanticColors.statusErrorIcon,
+                    side: BorderSide(color: AppSemanticColors.statusErrorBorder),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -851,8 +849,8 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                   ),
                 )
               : ElevatedButton.icon(
-                  onPressed: subscriptionProvider.isLoading 
-                      ? null 
+                  onPressed: subscriptionProvider.isLoading
+                      ? null
                       : () => _showActivateSubscriptionDialog(subscriptionProvider),
                   icon: subscriptionProvider.isLoading
                       ? SizedBox(
@@ -860,14 +858,14 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                           ),
                         )
                       : const Icon(Icons.play_circle_outline),
                   label: Text(subscriptionProvider.isLoading ? '처리 중...' : '구독 재개'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade600,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppSemanticColors.statusSuccessIcon,
+                    foregroundColor: AppSemanticColors.textInverse,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -886,7 +884,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.pause_circle_outline, color: Colors.red.shade600),
+            Icon(Icons.pause_circle_outline, color: AppSemanticColors.statusErrorIcon),
             const SizedBox(width: 8),
             const Text('구독 일시정지'),
           ],
@@ -897,7 +895,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               '취소',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
             ),
           ),
           TextButton(
@@ -908,14 +906,14 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text('구독이 일시정지되었습니다'),
-                    backgroundColor: Colors.orange.shade600,
+                    backgroundColor: AppSemanticColors.statusWarningIcon,
                   ),
                 );
               }
             },
             child: Text(
               '일시정지',
-              style: TextStyle(color: Colors.red.shade600),
+              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.statusErrorIcon),
             ),
           ),
         ],
@@ -930,7 +928,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.play_circle_outline, color: Colors.green.shade600),
+            Icon(Icons.play_circle_outline, color: AppSemanticColors.statusSuccessIcon),
             const SizedBox(width: 8),
             const Text('구독 재개'),
           ],
@@ -941,7 +939,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               '취소',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
             ),
           ),
           TextButton(
@@ -952,14 +950,14 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text('구독이 재개되었습니다'),
-                    backgroundColor: Colors.green.shade600,
+                    backgroundColor: AppSemanticColors.statusSuccessIcon,
                   ),
                 );
               }
             },
             child: Text(
               '재개',
-              style: TextStyle(color: Colors.green.shade600),
+              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.statusSuccessIcon),
             ),
           ),
         ],
@@ -980,13 +978,13 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade100,
+                  color: AppSemanticColors.statusErrorBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.person_remove, color: Colors.red.shade600, size: 24),
+                child: Icon(Icons.person_remove, color: AppSemanticColors.statusErrorIcon, size: 24),
               ),
               const SizedBox(width: 12),
-              const Text('관리자 회원탈퇴', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('관리자 회원탈퇴', style: AppTypography.heading6.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
@@ -996,27 +994,25 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: AppSemanticColors.statusErrorBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200),
+                  border: Border.all(color: AppSemanticColors.statusErrorBorder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '⚠️ 주의사항',
-                      style: TextStyle(
+                      style: AppTypography.bodyLarge.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.red.shade800,
-                        fontSize: 16,
+                        color: AppSemanticColors.statusErrorText,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '• 관리자 계정이 영구적으로 삭제됩니다\n• 회사의 모든 데이터가 삭제됩니다\n• 직원들의 계정도 모두 삭제됩니다\n• 삭제된 데이터는 복구할 수 없습니다\n• 구독도 자동으로 취소됩니다',
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontSize: 14,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.statusErrorText,
                         height: 1.5,
                       ),
                     ),
@@ -1026,10 +1022,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               const SizedBox(height: 16),
               Text(
                 '정말로 관리자 회원탈퇴를 진행하시겠습니까?',
-                style: TextStyle(
-                  fontSize: 16,
+                style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade800,
+                  color: AppSemanticColors.textPrimary,
                 ),
               ),
             ],
@@ -1054,22 +1049,22 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       if (success && context.mounted) {
                         // 다이얼로그 닫기
                         Navigator.pop(context);
-                        
+
                         // 잠시 대기 후 로그인 화면으로 직접 이동
                         await Future.delayed(const Duration(milliseconds: 100));
-                        
+
                         if (context.mounted) {
                           // 모든 이전 화면을 제거하고 로그인 화면으로 이동
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (_) => const LoginScreen()),
                             (route) => false,
                           );
-                          
+
                           // 성공 메시지 표시
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: const Text('관리자 회원탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사했습니다.'),
-                              backgroundColor: Colors.green.shade600,
+                              backgroundColor: AppSemanticColors.statusSuccessIcon,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               duration: const Duration(seconds: 4),
@@ -1078,7 +1073,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                         }
                       } else if (context.mounted) {
                         setState(() => isWithdrawing = false);
-                        
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
@@ -1086,7 +1081,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                                   ? authProvider.errorMessage
                                   : '관리자 회원탈퇴에 실패했습니다',
                             ),
-                            backgroundColor: Colors.red.shade600,
+                            backgroundColor: AppSemanticColors.statusErrorIcon,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
@@ -1094,19 +1089,19 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                foregroundColor: Colors.white,
+                backgroundColor: AppSemanticColors.statusErrorIcon,
+                foregroundColor: AppSemanticColors.textInverse,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 elevation: 0,
               ),
               child: isWithdrawing
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                       ),
                     )
                   : const Text('탈퇴하기'),

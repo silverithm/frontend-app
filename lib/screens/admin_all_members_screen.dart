@@ -49,9 +49,9 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
         return Scaffold(
           backgroundColor: AppSemanticColors.backgroundPrimary,
           appBar: AppBar(
-            title: const Text('전체 회원', style: TextStyle(color: Colors.white)),
+            title: Text('전체 회원', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
             backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-            foregroundColor: Colors.white,
+            foregroundColor: AppSemanticColors.textInverse,
             elevation: 0,
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(80),
@@ -62,12 +62,12 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.people,
-                        color: Colors.white,
+                        color: AppSemanticColors.textInverse,
                         size: 24,
                       ),
                     ),
@@ -79,7 +79,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                           Text(
                             '전체 회원 목록 관리',
                             style: AppTypography.bodyMedium.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
@@ -91,13 +91,13 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         'ADMIN',
                         style: AppTypography.labelSmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -117,26 +117,26 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('전체 회원'),
-        backgroundColor: Colors.red.shade600,
+        backgroundColor: AppSemanticColors.statusErrorIcon,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+            Icon(Icons.error_outline, size: 64, color: AppSemanticColors.statusErrorIcon),
             const SizedBox(height: 16),
             Text(
               '관리자 권한이 필요합니다',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.red.shade600,
+              style: AppTypography.heading5.copyWith(
+                color: AppSemanticColors.statusErrorIcon,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               '회원 관리 기능을 사용하려면 관리자 권한이 필요합니다.',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -157,14 +157,12 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+                Icon(Icons.error_outline, size: 64, color: AppSemanticColors.statusErrorIcon),
                 const SizedBox(height: 16),
                 Text(
                   '오류 발생',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red.shade600,
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -172,7 +170,9 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
                     adminProvider.errorMessage,
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -194,12 +194,14 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                 Icon(
                   Icons.people_outline,
                   size: 64,
-                  color: Colors.grey.shade400,
+                  color: AppSemanticColors.textDisabled,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   '등록된 회원이 없습니다',
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  style: AppTypography.bodyLarge.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -237,13 +239,13 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
               children: [
                 CircleAvatar(
                   backgroundColor: isActive
-                      ? Colors.green.shade100
-                      : Colors.grey.shade100,
+                      ? AppSemanticColors.statusSuccessBackground
+                      : AppSemanticColors.backgroundTertiary,
                   child: Icon(
                     Icons.person,
                     color: isActive
-                        ? Colors.green.shade600
-                        : Colors.grey.shade600,
+                        ? AppSemanticColors.statusSuccessIcon
+                        : AppSemanticColors.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -253,16 +255,14 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                     children: [
                       Text(
                         user.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
                       ),
                       Text(
                         user.email,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.textSecondary,
                         ),
                       ),
                     ],
@@ -275,17 +275,16 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? Colors.green.shade100
-                        : Colors.grey.shade100,
+                        ? AppSemanticColors.statusSuccessBackground
+                        : AppSemanticColors.backgroundTertiary,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     AdminUtils.getStatusDisplayName(user.status),
-                    style: TextStyle(
+                    style: AppTypography.labelMedium.copyWith(
                       color: isActive
-                          ? Colors.green.shade800
-                          : Colors.grey.shade800,
-                      fontSize: 12,
+                          ? AppSemanticColors.statusSuccessText
+                          : AppSemanticColors.textSecondary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -295,11 +294,13 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.work_outline, size: 16, color: Colors.grey.shade600),
+                Icon(Icons.work_outline, size: 16, color: AppSemanticColors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   AdminUtils.getRoleDisplayName(user.role),
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -313,10 +314,10 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                       backgroundColor: isActive
                           ? AppColors.gray500
                           : AppColors.blue600,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppSemanticColors.textInverse,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       minimumSize: const Size(0, 36),
-                      textStyle: const TextStyle(fontSize: 13),
+                      textStyle: AppTypography.labelMedium,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -334,10 +335,10 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                     onPressed: () => _showDeleteDialog(user),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.gray700,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppSemanticColors.textInverse,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       minimumSize: const Size(0, 36),
-                      textStyle: const TextStyle(fontSize: 13),
+                      textStyle: AppTypography.labelMedium,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -366,7 +367,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
           children: [
             Icon(
               newStatus == 'active' ? Icons.play_arrow : Icons.pause,
-              color: newStatus == 'active' ? Colors.green : Colors.orange,
+              color: newStatus == 'active' ? AppSemanticColors.statusSuccessIcon : AppSemanticColors.statusWarningIcon,
             ),
             const SizedBox(width: 8),
             Text('회원 $actionText'),
@@ -393,17 +394,17 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                   SnackBar(
                     content: Text('${user.name}님을 ${actionText}했습니다.'),
                     backgroundColor: newStatus == 'active'
-                        ? Colors.green
-                        : Colors.orange,
+                        ? AppSemanticColors.statusSuccessIcon
+                        : AppSemanticColors.statusWarningIcon,
                   ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: newStatus == 'active'
-                  ? Colors.green
-                  : Colors.orange,
-              foregroundColor: Colors.white,
+                  ? AppSemanticColors.statusSuccessIcon
+                  : AppSemanticColors.statusWarningIcon,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             child: Text(actionText),
           ),
@@ -417,11 +418,11 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning, color: Colors.red),
-            SizedBox(width: 8),
-            Text('회원 삭제'),
+            Icon(Icons.warning, color: AppSemanticColors.statusErrorIcon),
+            const SizedBox(width: 8),
+            const Text('회원 삭제'),
           ],
         ),
         content: Column(
@@ -429,9 +430,12 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
           children: [
             Text('${user.name}님을 삭제하시겠습니까?'),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               '이 작업은 되돌릴 수 없습니다.',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.statusErrorIcon,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -451,14 +455,14 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('${user.name}님을 삭제했습니다.'),
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppSemanticColors.statusErrorIcon,
                   ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: AppSemanticColors.statusErrorIcon,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             child: const Text('삭제'),
           ),

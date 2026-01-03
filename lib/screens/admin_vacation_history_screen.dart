@@ -57,7 +57,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
       appBar: AppBar(
         title: const Text('휴무 내역'),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -65,7 +65,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: AppSemanticColors.textInverse),
             onPressed: _loadData,
           ),
         ],
@@ -78,12 +78,12 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.history,
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     size: 24,
                   ),
                 ),
@@ -95,7 +95,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
                       Text(
                         '전체 휴무 내역 조회',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -104,13 +104,13 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'ADMIN',
                     style: AppTypography.labelSmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -136,11 +136,13 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.history, size: 64, color: AppSemanticColors.textDisabled),
             const SizedBox(height: 16),
             Text(
               '휴무 내역이 없습니다',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -165,10 +167,10 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: isApproved ? Colors.green.shade100 : Colors.red.shade100,
+                      backgroundColor: isApproved ? AppSemanticColors.statusSuccessBackground : AppSemanticColors.statusErrorBackground,
                       child: Icon(
                         isApproved ? Icons.check : Icons.close,
-                        color: isApproved ? Colors.green.shade800 : Colors.red.shade800,
+                        color: isApproved ? AppSemanticColors.statusSuccessText : AppSemanticColors.statusErrorText,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -178,16 +180,14 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
                         children: [
                           Text(
                             request['user']?['name'] ?? '알 수 없음',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                            style: AppTypography.heading6.copyWith(
+                              color: AppSemanticColors.textPrimary,
                             ),
                           ),
                           Text(
                             '${request['startDate']} ~ ${request['endDate']}',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textSecondary,
                             ),
                           ),
                         ],
@@ -196,14 +196,13 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isApproved ? Colors.green.shade100 : Colors.red.shade100,
+                        color: isApproved ? AppSemanticColors.statusSuccessBackground : AppSemanticColors.statusErrorBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         isApproved ? '승인됨' : '거절됨',
-                        style: TextStyle(
-                          color: isApproved ? Colors.green.shade800 : Colors.red.shade800,
-                          fontSize: 12,
+                        style: AppTypography.labelMedium.copyWith(
+                          color: isApproved ? AppSemanticColors.statusSuccessText : AppSemanticColors.statusErrorText,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -215,18 +214,20 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: AppSemanticColors.backgroundSecondary,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.message, size: 16, color: Colors.grey.shade600),
+                        Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             request['reason'],
-                            style: TextStyle(color: Colors.grey.shade700),
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textSecondary,
+                            ),
                           ),
                         ),
                       ],

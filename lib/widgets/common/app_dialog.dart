@@ -3,6 +3,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import 'app_button.dart';
+import 'app_input.dart';
 
 class AppDialog {
   static Future<bool?> showConfirm(
@@ -141,38 +142,9 @@ class AppDialog {
             ],
             Form(
               key: formKey,
-              child: TextFormField(
+              child: AppInput(
                 controller: controller,
-                decoration: InputDecoration(
-                  hintText: hintText,
-                  filled: true,
-                  fillColor: AppSemanticColors.surfaceDefault,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    borderSide: const BorderSide(
-                      color: AppSemanticColors.borderDefault,
-                      width: 1,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    borderSide: const BorderSide(
-                      color: AppSemanticColors.borderDefault,
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    borderSide: const BorderSide(
-                      color: AppSemanticColors.borderFocus,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space4,
-                    vertical: AppSpacing.space3,
-                  ),
-                ),
+                hintText: hintText,
                 keyboardType: keyboardType,
                 maxLines: maxLines,
                 maxLength: maxLength,
@@ -248,7 +220,7 @@ class AppBottomSheet {
       isScrollControlled: height != null,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (context) => Container(
         height: height,
         decoration: const BoxDecoration(

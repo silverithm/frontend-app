@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 
 class NotificationProvider with ChangeNotifier {
@@ -114,13 +115,13 @@ class NotificationItem {
   Color get color {
     switch (type) {
       case 'vacation_approved':
-        return Colors.green;
+        return AppSemanticColors.statusSuccessIcon;
       case 'vacation_rejected':
-        return Colors.red;
+        return AppSemanticColors.statusErrorIcon;
       case 'system':
-        return Colors.blue;
+        return AppSemanticColors.statusInfoIcon;
       default:
-        return Colors.grey;
+        return AppSemanticColors.textDisabled;
     }
   }
 

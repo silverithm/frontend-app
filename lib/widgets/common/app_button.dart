@@ -111,7 +111,7 @@ class AppButton extends StatelessWidget {
           disabledBackgroundColor: AppSemanticColors.interactivePrimaryDisabled,
           disabledForegroundColor: AppSemanticColors.textDisabled,
           elevation: 0,
-          shadowColor: Colors.transparent,
+          shadowColor: AppColors.transparent,
         ).copyWith(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
@@ -133,7 +133,7 @@ class AppButton extends StatelessWidget {
           disabledBackgroundColor: AppSemanticColors.interactiveSecondaryDisabled,
           disabledForegroundColor: AppSemanticColors.textDisabled,
           elevation: 0,
-          shadowColor: Colors.transparent,
+          shadowColor: AppColors.transparent,
         ).copyWith(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
@@ -188,7 +188,7 @@ class AppButton extends StatelessWidget {
             if (states.contains(WidgetState.pressed)) {
               return AppSemanticColors.surfaceActive;
             }
-            return Colors.transparent;
+            return AppColors.transparent;
           }),
         );
       case AppButtonVariant.text:
@@ -203,7 +203,7 @@ class AppButton extends StatelessWidget {
             if (states.contains(WidgetState.pressed)) {
               return AppSemanticColors.surfaceActive;
             }
-            return Colors.transparent;
+            return AppColors.transparent;
           }),
         );
     }

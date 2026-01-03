@@ -55,7 +55,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           return Scaffold(
             appBar: AppBar(
               title: const Text('관리자 페이지'),
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: AppSemanticColors.statusErrorIcon,
             ),
             body: Center(
               child: Column(
@@ -64,21 +64,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: Colors.red.shade400,
+                    color: AppSemanticColors.statusErrorIcon,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     '관리자 권한이 필요합니다',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red.shade600,
+                    style: AppTypography.heading5.copyWith(
+                      color: AppSemanticColors.statusErrorIcon,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '이 페이지에 접근하려면 관리자 권한이 필요합니다.',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -102,11 +102,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.white, AppSemanticColors.backgroundSecondary],
+                colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.backgroundSecondary],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: AppColors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, -5),
                 ),
@@ -125,16 +125,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   });
                 },
                 type: BottomNavigationBarType.fixed,
-                backgroundColor: Colors.transparent,
+                backgroundColor: AppColors.transparent,
                 elevation: 0,
                 selectedItemColor:
                     AppSemanticColors.interactiveSecondaryDefault,
-                unselectedItemColor: Colors.grey.shade400,
-                selectedLabelStyle: const TextStyle(
+                unselectedItemColor: AppSemanticColors.textDisabled,
+                selectedLabelStyle: AppTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
-                unselectedLabelStyle: const TextStyle(fontSize: 11),
+                unselectedLabelStyle: AppTypography.labelSmall,
                 items: [
                   _buildNavItem(0, Icons.people, Icons.people_outline, '회원관리'),
                   _buildNavItem(
@@ -162,9 +161,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   Widget _buildUserManagementTab(user) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('회원 관리', style: TextStyle(color: Colors.white)),
+        title: Text('회원 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
@@ -175,12 +174,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.people_alt_rounded,
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     size: 24,
                   ),
                 ),
@@ -192,7 +191,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       Text(
                         '가입 승인 및 회원 관리',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -204,13 +203,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'ADMIN',
                     style: AppTypography.labelSmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -266,9 +265,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   Widget _buildVacationManagementTab(user) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('휴무 관리', style: TextStyle(color: Colors.white),),
+        title: Text('휴무 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -283,12 +282,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.event_note_rounded,
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     size: 24,
                   ),
                 ),
@@ -300,7 +299,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       Text(
                         '휴무 요청 승인 및 한도 설정',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -312,13 +311,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'ADMIN',
                     style: AppTypography.labelSmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -340,7 +339,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     '휴무 승인',
                     '대기 중인 휴무 요청',
                     Icons.approval,
-                    Colors.orange.shade600,
+                    AppSemanticColors.statusWarningIcon,
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -353,7 +352,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     '휴무 한도',
                     '일일 휴무 한도 설정',
                     Icons.event_available,
-                    Colors.blue.shade600,
+                    AppSemanticColors.statusInfoIcon,
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -366,7 +365,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     '휴무 내역',
                     '전체 휴무 내역 조회',
                     Icons.history,
-                    Colors.green.shade600,
+                    AppSemanticColors.statusSuccessIcon,
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -403,7 +402,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: Colors.white,
+              color: AppSemanticColors.surfaceDefault,
               border: Border.all(
                 color: AppSemanticColors.borderDefault.withValues(alpha: 0.2),
               ),
@@ -477,7 +476,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.construction, color: Colors.orange.shade600),
+            Icon(Icons.construction, color: AppSemanticColors.statusWarningIcon),
             const SizedBox(width: 8),
             const Text('개발 중'),
           ],
@@ -510,14 +509,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               ? AppSemanticColors.interactiveSecondaryDefault.withValues(
                   alpha: 0.1,
                 )
-              : Colors.transparent,
+              : AppColors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           isSelected ? selectedIcon : unselectedIcon,
           color: isSelected
               ? AppSemanticColors.interactiveSecondaryDefault
-              : Colors.grey.shade400,
+              : AppSemanticColors.textDisabled,
           size: isSelected ? 24 : 22,
         ),
       ),

@@ -6,6 +6,11 @@ class AppColors {
   static const Color black = Color(0xFF000000);
   static const Color transparent = Colors.transparent;
 
+  // Base color variants
+  static const Color white70 = Color(0xB3FFFFFF); // white with 70% opacity
+  static const Color black87 = Color(0xDE000000); // black with 87% opacity
+  static const Color black26 = Color(0x42000000); // black with 26% opacity
+
   // Gray palette
   static const Color gray50 = Color(0xFFF9FAFB);
   static const Color gray100 = Color(0xFFF3F4F6);
@@ -17,6 +22,18 @@ class AppColors {
   static const Color gray700 = Color(0xFF374151);
   static const Color gray800 = Color(0xFF1F2937);
   static const Color gray900 = Color(0xFF111827);
+
+  // Grey aliases (for backwards compatibility)
+  static const Color grey50 = gray50;
+  static const Color grey100 = gray100;
+  static const Color grey200 = gray200;
+  static const Color grey300 = gray300;
+  static const Color grey400 = gray400;
+  static const Color grey500 = gray500;
+  static const Color grey600 = gray600;
+  static const Color grey700 = gray700;
+  static const Color grey800 = gray800;
+  static const Color grey900 = gray900;
 
   // Blue palette
   static const Color blue50 = Color(0xFFEFF6FF);
@@ -77,6 +94,78 @@ class AppColors {
   static const Color purple700 = Color(0xFF7C3AED);
   static const Color purple800 = Color(0xFF6B21A8);
   static const Color purple900 = Color(0xFF581C87);
+
+  // Orange palette
+  static const Color orange50 = Color(0xFFFFF7ED);
+  static const Color orange100 = Color(0xFFFFEDD5);
+  static const Color orange200 = Color(0xFFFED7AA);
+  static const Color orange300 = Color(0xFFFDBA74);
+  static const Color orange400 = Color(0xFFFB923C);
+  static const Color orange500 = Color(0xFFF97316);
+  static const Color orange600 = Color(0xFFEA580C);
+  static const Color orange700 = Color(0xFFC2410C);
+  static const Color orange800 = Color(0xFF9A3412);
+  static const Color orange900 = Color(0xFF7C2D12);
+
+  // Amber palette
+  static const Color amber50 = Color(0xFFFFFBEB);
+  static const Color amber100 = Color(0xFFFEF3C7);
+  static const Color amber200 = Color(0xFFFDE68A);
+  static const Color amber300 = Color(0xFFFCD34D);
+  static const Color amber400 = Color(0xFFFBBF24);
+  static const Color amber500 = Color(0xFFF59E0B);
+  static const Color amber600 = Color(0xFFD97706);
+  static const Color amber700 = Color(0xFFB45309);
+  static const Color amber800 = Color(0xFF92400E);
+  static const Color amber900 = Color(0xFF78350F);
+
+  // Indigo palette
+  static const Color indigo50 = Color(0xFFEEF2FF);
+  static const Color indigo100 = Color(0xFFE0E7FF);
+  static const Color indigo200 = Color(0xFFC7D2FE);
+  static const Color indigo300 = Color(0xFFA5B4FC);
+  static const Color indigo400 = Color(0xFF818CF8);
+  static const Color indigo500 = Color(0xFF6366F1);
+  static const Color indigo600 = Color(0xFF4F46E5);
+  static const Color indigo700 = Color(0xFF4338CA);
+  static const Color indigo800 = Color(0xFF3730A3);
+  static const Color indigo900 = Color(0xFF312E81);
+
+  // Teal palette
+  static const Color teal50 = Color(0xFFF0FDFA);
+  static const Color teal100 = Color(0xFFCCFBF1);
+  static const Color teal200 = Color(0xFF99F6E4);
+  static const Color teal300 = Color(0xFF5EEAD4);
+  static const Color teal400 = Color(0xFF2DD4BF);
+  static const Color teal500 = Color(0xFF14B8A6);
+  static const Color teal600 = Color(0xFF0D9488);
+  static const Color teal700 = Color(0xFF0F766E);
+  static const Color teal800 = Color(0xFF115E59);
+  static const Color teal900 = Color(0xFF134E4A);
+
+  // Pink palette
+  static const Color pink50 = Color(0xFFFDF2F8);
+  static const Color pink100 = Color(0xFFFCE7F3);
+  static const Color pink200 = Color(0xFFFBCFE8);
+  static const Color pink300 = Color(0xFFF9A8D4);
+  static const Color pink400 = Color(0xFFF472B6);
+  static const Color pink500 = Color(0xFFEC4899);
+  static const Color pink600 = Color(0xFFDB2777);
+  static const Color pink700 = Color(0xFFBE185D);
+  static const Color pink800 = Color(0xFF9D174D);
+  static const Color pink900 = Color(0xFF831843);
+
+  // Cyan palette
+  static const Color cyan50 = Color(0xFFECFEFF);
+  static const Color cyan100 = Color(0xFFCFFAFE);
+  static const Color cyan200 = Color(0xFFA5F3FC);
+  static const Color cyan300 = Color(0xFF67E8F9);
+  static const Color cyan400 = Color(0xFF22D3EE);
+  static const Color cyan500 = Color(0xFF06B6D4);
+  static const Color cyan600 = Color(0xFF0891B2);
+  static const Color cyan700 = Color(0xFF0E7490);
+  static const Color cyan800 = Color(0xFF155E75);
+  static const Color cyan900 = Color(0xFF164E63);
 }
 
 class AppSemanticColors {
@@ -96,6 +185,7 @@ class AppSemanticColors {
 
   // Border colors
   static const Color borderDefault = AppColors.gray200;
+  static const Color borderSubtle = AppColors.gray100;
   static const Color borderHover = AppColors.gray300;
   static const Color borderFocus = AppColors.blue500;
   static const Color borderDisabled = AppColors.gray100;

@@ -65,9 +65,9 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: const Text('관리자 달력', style: TextStyle(color:Colors.white),),
+        title: Text('관리자 달력', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
@@ -78,12 +78,12 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.event,
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     size: 24,
                   ),
                 ),
@@ -95,7 +95,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                       Text(
                         '전체 휴무 일정 관리',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -104,13 +104,13 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'ADMIN',
                     style: AppTypography.labelSmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -132,7 +132,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: AppColors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -185,7 +185,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: AppColors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -197,22 +197,22 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                       _buildStatItem(
                         '${_currentDate.month}월 총 휴무',
                         _getMonthlyTotal(vacationProvider).toString(),
-                        Colors.blue.shade500,
+                        AppSemanticColors.statusInfoIcon,
                       ),
                       _buildStatItem(
                         '승인 대기',
                         _getMonthlyPending(vacationProvider).toString(),
-                        Colors.amber.shade400,
+                        AppSemanticColors.statusWarningIcon,
                       ),
                       _buildStatItem(
                         '승인됨',
                         _getMonthlyApproved(vacationProvider).toString(),
-                        Colors.green.shade400,
+                        AppSemanticColors.statusSuccessIcon,
                       ),
                       _buildStatItem(
                         '거절됨',
                         _getMonthlyRejected(vacationProvider).toString(),
-                        Colors.red.shade400,
+                        AppSemanticColors.statusErrorIcon,
                       ),
                     ],
                   ),
@@ -229,7 +229,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
       floatingActionButton: FloatingActionButton(
         onPressed: _showAdminActionDialog,
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: Icon(Icons.add, color: AppSemanticColors.textInverse),
       ),
     );
   }
@@ -251,7 +251,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AppSemanticColors.borderSubtle,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -260,16 +260,16 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
               style: AppTypography.heading5,
             ),
             const SizedBox(height: 20),
-            
+
             // 휴무 추가
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
+                  color: AppSemanticColors.statusInfoBackground,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.event_available, color: Colors.blue.shade600),
+                child: Icon(Icons.event_available, color: AppSemanticColors.statusInfoIcon),
               ),
               title: const Text('휴무 추가'),
               subtitle: const Text('직원의 휴무를 직접 추가합니다'),
@@ -278,18 +278,18 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                 _showAddVacationDialog();
               },
             ),
-            
+
             const Divider(),
-            
+
             // 휴무 제한 설정
             ListTile(
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
+                  color: AppSemanticColors.statusWarningBackground,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.settings, color: Colors.orange.shade600),
+                child: Icon(Icons.settings, color: AppSemanticColors.statusWarningIcon),
               ),
               title: const Text('휴무 제한 설정'),
               subtitle: const Text('날짜별 최대 휴무 인원을 설정합니다'),
@@ -334,8 +334,8 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
     return FilterChip(
       label: Text(
         label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : AppSemanticColors.textSecondary,
+        style: AppTypography.labelMedium.copyWith(
+          color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
@@ -356,7 +356,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
       },
       backgroundColor: AppSemanticColors.surfaceDefault,
       selectedColor: AppSemanticColors.interactiveSecondaryDefault,
-      checkmarkColor: Colors.white,
+      checkmarkColor: AppSemanticColors.textInverse,
     );
   }
 
@@ -373,10 +373,9 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
           child: Center(
             child: Text(
               value,
-              style: TextStyle(
+              style: AppTypography.bodyLarge.copyWith(
                 color: color,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
               ),
             ),
           ),
@@ -415,7 +414,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AppSemanticColors.borderSubtle,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -442,7 +441,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                     ),
                     child: Text(
                       '${dayVacations.length}건',
-                      style: TextStyle(
+                      style: AppTypography.labelMedium.copyWith(
                         color: AppSemanticColors.interactiveSecondaryDefault,
                         fontWeight: FontWeight.bold,
                       ),
@@ -461,14 +460,13 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
                           Icon(
                             Icons.event_available,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: AppSemanticColors.textDisabled,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             '이 날에는 휴무가 없습니다',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 16,
+                            style: AppTypography.bodyLarge.copyWith(
+                              color: AppSemanticColors.textSecondary,
                             ),
                           ),
                         ],
@@ -496,17 +494,17 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
 
     switch (vacation.status) {
       case VacationStatus.approved:
-        statusColor = Colors.green.shade400.withOpacity(0.8); // 투명도가 있는 연한 초록색
+        statusColor = AppSemanticColors.statusSuccessIcon;
         statusIcon = Icons.check_circle;
         statusText = '승인됨';
         break;
       case VacationStatus.rejected:
-        statusColor = Colors.red.shade400.withOpacity(0.75); // 투명도가 있는 연한 빨간색
-        statusIcon = Icons.cancel;  
+        statusColor = AppSemanticColors.statusErrorIcon;
+        statusIcon = Icons.cancel;
         statusText = '거절됨';
         break;
       default:
-        statusColor = Colors.amber.shade400.withOpacity(0.8); // 투명도가 있는 앰버색
+        statusColor = AppSemanticColors.statusWarningIcon;
         statusIcon = Icons.pending;
         statusText = '대기중';
     }
@@ -520,7 +518,7 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
         ),
         title: Text(
           vacation.userName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,9 +527,8 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
             if (vacation.reason != null && vacation.reason!.isNotEmpty)
               Text(
                 vacation.reason!,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppSemanticColors.textSecondary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -546,9 +543,8 @@ class _AdminCalendarScreenState extends State<AdminCalendarScreen>
           ),
           child: Text(
             statusText,
-            style: TextStyle(
+            style: AppTypography.labelSmall.copyWith(
               color: statusColor,
-              fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
           ),

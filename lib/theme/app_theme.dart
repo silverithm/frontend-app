@@ -48,13 +48,13 @@ class AppTheme {
         foregroundColor: AppSemanticColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 1,
-        shadowColor: Colors.black.withValues(alpha: 0.1),
-        surfaceTintColor: Colors.transparent,
+        shadowColor: AppColors.black.withValues(alpha: 0.1),
+        surfaceTintColor: AppColors.transparent,
         titleTextStyle: AppTypography.heading5.copyWith(
           color: AppSemanticColors.textPrimary,
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: AppColors.transparent,
           statusBarIconBrightness: Brightness.dark,
           statusBarBrightness: Brightness.light,
         ),
@@ -82,7 +82,7 @@ class AppTheme {
           disabledBackgroundColor: AppSemanticColors.interactivePrimaryDisabled,
           disabledForegroundColor: AppSemanticColors.textDisabled,
           elevation: 0,
-          shadowColor: Colors.transparent,
+          shadowColor: AppColors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppBorderRadius.lg),
           ),
@@ -384,7 +384,7 @@ class AppTheme {
           color: AppDarkColors.textPrimary,
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: AppColors.transparent,
           statusBarIconBrightness: Brightness.light,
           statusBarBrightness: Brightness.dark,
         ),

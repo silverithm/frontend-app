@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'theme/app_colors.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -141,7 +142,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (!appVersionProvider.isVersionChecked ||
             !authProvider.isInitialized) {
           return Scaffold(
-            backgroundColor: Colors.black,
+            backgroundColor: AppColors.black,
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -154,7 +155,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                   const SizedBox(height: 10),
                   const CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                   ),
                 ],
               ),
@@ -179,7 +180,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                barrierColor: Colors.black.withOpacity(0.5),
+                barrierColor: AppColors.black.withValues(alpha: 0.5),
                 builder: (context) => UpdateDialog(
                   currentVersion: appVersionProvider.currentVersion,
                   latestVersion: appVersionProvider.latestVersion,
@@ -201,7 +202,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                barrierColor: Colors.black.withOpacity(0.5),
+                barrierColor: AppColors.black.withValues(alpha: 0.5),
                 builder: (context) => UpdateDialog(
                   currentVersion: appVersionProvider.currentVersion,
                   latestVersion: appVersionProvider.latestVersion,

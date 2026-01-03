@@ -109,9 +109,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: const Text('휴무 관리', style: TextStyle(color: Colors.white),),
+        title: Text('휴무 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
@@ -122,12 +122,12 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.event_note,
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     size: 24,
                   ),
                 ),
@@ -139,7 +139,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                       Text(
                         '휴무 승인 관리',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -148,13 +148,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'ADMIN',
                     style: AppTypography.labelSmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -175,10 +175,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     return FilterChip(
       label: Text(
         label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : AppSemanticColors.textSecondary,
+        style: AppTypography.labelSmall.copyWith(
+          color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 12,
         ),
       ),
       selected: isSelected,
@@ -189,7 +188,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       },
       backgroundColor: AppSemanticColors.surfaceDefault,
       selectedColor: AppSemanticColors.interactiveSecondaryDefault,
-      checkmarkColor: Colors.white,
+      checkmarkColor: AppSemanticColors.textInverse,
     );
   }
 
@@ -198,10 +197,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     return FilterChip(
       label: Text(
         label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : AppSemanticColors.textSecondary,
+        style: AppTypography.labelSmall.copyWith(
+          color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 12,
         ),
       ),
       selected: isSelected,
@@ -211,8 +209,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         });
       },
       backgroundColor: AppSemanticColors.surfaceDefault,
-      selectedColor: Colors.blue.shade600,
-      checkmarkColor: Colors.white,
+      selectedColor: AppSemanticColors.statusInfoIcon,
+      checkmarkColor: AppSemanticColors.textInverse,
     );
   }
 
@@ -221,10 +219,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     return FilterChip(
       label: Text(
         label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : AppSemanticColors.textSecondary,
+        style: AppTypography.labelSmall.copyWith(
+          color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 12,
         ),
       ),
       selected: isSelected,
@@ -234,8 +231,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         });
       },
       backgroundColor: AppSemanticColors.surfaceDefault,
-      selectedColor: Colors.green.shade600,
-      checkmarkColor: Colors.white,
+      selectedColor: AppSemanticColors.statusSuccessIcon,
+      checkmarkColor: AppSemanticColors.textInverse,
     );
   }
 
@@ -259,7 +256,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
               color: AppSemanticColors.surfaceDefault,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: AppColors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -418,19 +415,18 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _selectedRequests.isNotEmpty 
+                          color: _selectedRequests.isNotEmpty
                               ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
-                              : Colors.grey.shade100,
+                              : AppSemanticColors.backgroundSecondary,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           '${_selectedRequests.length}/${filteredRequests.length}',
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: AppTypography.labelSmall.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: _selectedRequests.isNotEmpty 
+                            color: _selectedRequests.isNotEmpty
                                 ? AppSemanticColors.interactiveSecondaryDefault
-                                : Colors.grey.shade600,
+                                : AppSemanticColors.textSecondary,
                           ),
                         ),
                       ),
@@ -444,7 +440,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: _isBulkProcessing ? null : _bulkReject,
-                            icon: _isBulkProcessing 
+                            icon: _isBulkProcessing
                                 ? const SizedBox(
                                     width: 16,
                                     height: 16,
@@ -453,11 +449,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                                 : const Icon(Icons.close, size: 18),
                             label: Text(
                               _isBulkProcessing ? '처리중...' : '선택 항목 거절',
-                              style: const TextStyle(fontSize: 14),
+                              style: AppTypography.bodyMedium,
                             ),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.orange.shade600,
-                              side: BorderSide(color: Colors.orange.shade300),
+                              foregroundColor: AppSemanticColors.statusWarningIcon,
+                              side: BorderSide(color: AppColors.orange300),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             ),
                           ),
@@ -466,23 +462,23 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: _isBulkProcessing ? null : _bulkApprove,
-                            icon: _isBulkProcessing 
-                                ? const SizedBox(
+                            icon: _isBulkProcessing
+                                ? SizedBox(
                                     width: 16,
                                     height: 16,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                                     ),
                                   )
                                 : const Icon(Icons.check, size: 18),
                             label: Text(
                               _isBulkProcessing ? '처리중...' : '선택 항목 승인',
-                              style: const TextStyle(fontSize: 14),
+                              style: AppTypography.bodyMedium,
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade600,
-                              foregroundColor: Colors.white,
+                              backgroundColor: AppSemanticColors.statusSuccessIcon,
+                              foregroundColor: AppSemanticColors.textInverse,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             ),
                           ),
@@ -506,11 +502,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.event_available, size: 64, color: Colors.grey.shade400),
+                  Icon(Icons.event_available, size: 64, color: AppSemanticColors.textDisabled),
                   const SizedBox(height: 16),
                   Text(
                     '휴무 요청이 없습니다',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                    style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
                   ),
                 ],
               ),
@@ -547,11 +543,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_available, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.event_available, size: 64, color: AppSemanticColors.textDisabled),
             const SizedBox(height: 16),
             Text(
               '휴무 요청이 없습니다',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
             ),
           ],
         ),
@@ -673,9 +669,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: isSelected ? 3 : 2,
-      color: isSelected 
-          ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.05) 
-          : Colors.white,
+      color: isSelected
+          ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.05)
+          : AppSemanticColors.surfaceDefault,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: isSelected 
@@ -756,15 +752,15 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     String statusText;
 
     if (isApproved) {
-      statusColor = Colors.green;
+      statusColor = AppSemanticColors.statusSuccessIcon;
       statusIcon = Icons.check_circle;
       statusText = '승인됨';
     } else if (isPending) {
-      statusColor = Colors.orange;
+      statusColor = AppSemanticColors.statusWarningIcon;
       statusIcon = Icons.pending;
       statusText = '대기중';
     } else {
-      statusColor = Colors.red;
+      statusColor = AppSemanticColors.statusErrorIcon;
       statusIcon = Icons.cancel;
       statusText = '거절됨';
     }
@@ -817,9 +813,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
               const SizedBox(height: 4),
               Text(
                 '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textSecondary,
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
@@ -827,9 +822,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
               const SizedBox(height: 2),
               Text(
                 '신청일: ${_formatDate(request['createdAt'])}',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 12,
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppSemanticColors.textTertiary,
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
@@ -845,18 +839,18 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: AppSemanticColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.message, size: 16, color: Colors.grey.shade600),
+          Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               reason,
-              style: TextStyle(color: Colors.grey.shade700),
+              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
             ),
           ),
         ],
@@ -872,10 +866,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           child: OutlinedButton.icon(
             onPressed: () => _showDeleteDialog(request['id'].toString()),
             icon: const Icon(Icons.delete, size: 16),
-            label: const Text('삭제', style: TextStyle(fontSize: 12)),
+            label: Text('삭제', style: AppTypography.labelSmall),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red.shade600,
-              side: BorderSide(color: Colors.red.shade300),
+              foregroundColor: AppSemanticColors.statusErrorIcon,
+              side: BorderSide(color: AppColors.red300),
               minimumSize: const Size(0, 32),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             ),
@@ -886,7 +880,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
-                  ? null 
+                  ? null
                   : () => _rejectRequest(request['id'].toString()),
               icon: _rejectingRequests.contains(request['id'].toString())
                   ? SizedBox(
@@ -894,17 +888,17 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusWarningIcon),
                       ),
                     )
                   : const Icon(Icons.close, size: 16),
               label: Text(
                 _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
-                style: const TextStyle(fontSize: 12),
+                style: AppTypography.labelSmall,
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.orange.shade600,
-                side: BorderSide(color: Colors.orange.shade300),
+                foregroundColor: AppSemanticColors.statusWarningIcon,
+                side: BorderSide(color: AppColors.orange300),
                 minimumSize: const Size(0, 32),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               ),
@@ -914,25 +908,25 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           Expanded(
             child: ElevatedButton.icon(
               onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
-                  ? null 
+                  ? null
                   : () => _approveRequest(request['id'].toString()),
               icon: _approvingRequests.contains(request['id'].toString())
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                       ),
                     )
                   : const Icon(Icons.check, size: 16),
               label: Text(
                 _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
-                style: const TextStyle(fontSize: 12),
+                style: AppTypography.labelSmall,
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-                foregroundColor: Colors.white,
+                backgroundColor: AppSemanticColors.statusSuccessIcon,
+                foregroundColor: AppSemanticColors.textInverse,
                 minimumSize: const Size(0, 32),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               ),
@@ -956,15 +950,15 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     String statusText;
 
     if (isApproved) {
-      statusColor = Colors.green;
+      statusColor = AppSemanticColors.statusSuccessIcon;
       statusIcon = Icons.check_circle;
       statusText = '승인됨';
     } else if (isPending) {
-      statusColor = Colors.orange;
+      statusColor = AppSemanticColors.statusWarningIcon;
       statusIcon = Icons.pending;
       statusText = '대기중';
     } else {
-      statusColor = Colors.red;
+      statusColor = AppSemanticColors.statusErrorIcon;
       statusIcon = Icons.cancel;
       statusText = '거절됨';
     }
@@ -997,16 +991,14 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                       ),
                       Text(
                         '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.textSecondary,
                         ),
                       ),
                       Text(
                         '신청일: ${_formatDate(request['createdAt'])}',
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 12,
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
                         ),
                       ),
                     ],
@@ -1020,9 +1012,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   ),
                   child: Text(
                     statusText,
-                    style: TextStyle(
+                    style: AppTypography.labelSmall.copyWith(
                       color: statusColor,
-                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -1034,18 +1025,18 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: AppSemanticColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.message, size: 16, color: Colors.grey.shade600),
+                    Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         request['reason'],
-                        style: TextStyle(color: Colors.grey.shade700),
+                        style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                       ),
                     ),
                   ],
@@ -1060,10 +1051,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   child: OutlinedButton.icon(
                     onPressed: () => _showDeleteDialog(request['id'].toString()),
                     icon: const Icon(Icons.delete, size: 16),
-                    label: const Text('삭제', style: TextStyle(fontSize: 12)),
+                    label: Text('삭제', style: AppTypography.labelSmall),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade600,
-                      side: BorderSide(color: Colors.red.shade300),
+                      foregroundColor: AppSemanticColors.statusErrorIcon,
+                      side: BorderSide(color: AppColors.red300),
                       minimumSize: const Size(0, 32),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     ),
@@ -1074,7 +1065,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
-                          ? null 
+                          ? null
                           : () => _rejectRequest(request['id'].toString()),
                       icon: _rejectingRequests.contains(request['id'].toString())
                           ? SizedBox(
@@ -1082,17 +1073,17 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                                valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusWarningIcon),
                               ),
                             )
                           : const Icon(Icons.close, size: 16),
                       label: Text(
                         _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
-                        style: const TextStyle(fontSize: 12),
+                        style: AppTypography.labelSmall,
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.orange.shade600,
-                        side: BorderSide(color: Colors.orange.shade300),
+                        foregroundColor: AppSemanticColors.statusWarningIcon,
+                        side: BorderSide(color: AppColors.orange300),
                         minimumSize: const Size(0, 32),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       ),
@@ -1102,25 +1093,25 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
-                          ? null 
+                          ? null
                           : () => _approveRequest(request['id'].toString()),
                       icon: _approvingRequests.contains(request['id'].toString())
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                               ),
                             )
                           : const Icon(Icons.check, size: 16),
                       label: Text(
                         _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
-                        style: const TextStyle(fontSize: 12),
+                        style: AppTypography.labelSmall,
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade600,
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppSemanticColors.statusSuccessIcon,
+                        foregroundColor: AppSemanticColors.textInverse,
                         minimumSize: const Size(0, 32),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       ),
@@ -1145,11 +1136,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.check_circle_outline, size: 64, color: AppSemanticColors.textDisabled),
             const SizedBox(height: 16),
             Text(
               '승인 대기 중인 휴무 요청이 없습니다',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+              style: TextStyle(color: AppSemanticColors.textSecondary, fontSize: 16),
             ),
           ],
         ),
@@ -1172,11 +1163,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: Colors.teal.shade100,
+                      backgroundColor: AppColors.green100,
                       child: Text(
                         (request['user']?['name'] ?? '?')[0].toUpperCase(),
                         style: TextStyle(
-                          color: Colors.teal.shade800,
+                          color: AppColors.green800,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1196,7 +1187,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                           Text(
                             request['user']?['role'] ?? '',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: AppSemanticColors.textSecondary,
                               fontSize: 14,
                             ),
                           ),
@@ -1206,13 +1197,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
+                        color: AppColors.orange100,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '대기중',
                         style: TextStyle(
-                          color: Colors.orange.shade800,
+                          color: AppColors.orange800,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1224,7 +1215,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppSemanticColors.backgroundSecondary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -1232,7 +1223,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade600),
+                          Icon(Icons.calendar_today, size: 16, color: AppSemanticColors.textSecondary),
                           const SizedBox(width: 8),
                           Text(
                             '${request['startDate']} ~ ${request['endDate']}',
@@ -1245,12 +1236,12 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.message, size: 16, color: Colors.grey.shade600),
+                            Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 request['reason'],
-                                style: TextStyle(color: Colors.grey.shade700),
+                                style: TextStyle(color: AppSemanticColors.textPrimary),
                               ),
                             ),
                           ],
@@ -1273,14 +1264,14 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade600),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusErrorIcon),
                                 ),
                               )
                             : const Icon(Icons.close),
                         label: Text(_rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red.shade600,
-                          side: BorderSide(color: Colors.red.shade300),
+                          foregroundColor: AppSemanticColors.statusErrorIcon,
+                          side: BorderSide(color: AppColors.red300),
                         ),
                       ),
                     ),
@@ -1296,14 +1287,14 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                                 ),
                               )
                             : const Icon(Icons.check),
                         label: Text(_approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal.shade600,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.green600,
+                          foregroundColor: AppSemanticColors.textInverse,
                         ),
                       ),
                     ),
@@ -1331,7 +1322,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade600),
+                      Icon(Icons.info_outline, color: AppSemanticColors.statusInfoIcon),
                       const SizedBox(width: 8),
                       const Text(
                         '일일 휴무 한도 설정',
@@ -1345,7 +1336,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   const SizedBox(height: 16),
                   const Text(
                     '각 날짜별로 승인 가능한 최대 휴무 인원을 설정할 수 있습니다.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppSemanticColors.textTertiary),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
@@ -1353,8 +1344,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     icon: const Icon(Icons.settings),
                     label: const Text('한도 설정'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal.shade600,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.green600,
+                      foregroundColor: AppSemanticColors.textInverse,
                     ),
                   ),
                 ],
@@ -1396,11 +1387,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.history, size: 64, color: AppSemanticColors.textDisabled),
             const SizedBox(height: 16),
             Text(
               '휴무 내역이 없습니다',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+              style: TextStyle(color: AppSemanticColors.textSecondary, fontSize: 16),
             ),
           ],
         ),
@@ -1425,10 +1416,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: isApproved ? Colors.green.shade100 : Colors.red.shade100,
+                      backgroundColor: isApproved ? AppColors.green100 : AppColors.red100,
                       child: Icon(
                         isApproved ? Icons.check : Icons.close,
-                        color: isApproved ? Colors.green.shade800 : Colors.red.shade800,
+                        color: isApproved ? AppColors.green800 : AppColors.red800,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1446,7 +1437,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                           Text(
                             '${request['startDate']} ~ ${request['endDate']}',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: AppSemanticColors.textSecondary,
                               fontSize: 14,
                             ),
                           ),
@@ -1456,13 +1447,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isApproved ? Colors.green.shade100 : Colors.red.shade100,
+                        color: isApproved ? AppColors.green100 : AppColors.red100,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         isApproved ? '승인됨' : '거절됨',
                         style: TextStyle(
-                          color: isApproved ? Colors.green.shade800 : Colors.red.shade800,
+                          color: isApproved ? AppColors.green800 : AppColors.red800,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1475,18 +1466,18 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: AppSemanticColors.backgroundSecondary,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.message, size: 16, color: Colors.grey.shade600),
+                        Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             request['reason'],
-                            style: TextStyle(color: Colors.grey.shade700),
+                            style: TextStyle(color: AppSemanticColors.textPrimary),
                           ),
                         ),
                       ],
@@ -1521,7 +1512,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('휴무 요청이 승인되었습니다'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppSemanticColors.statusSuccessIcon,
             ),
           );
           print('[AdminVacation] 승인 성공 - 데이터 새로고침 시작');
@@ -1545,7 +1536,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('승인 실패: $errorMessage'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -1578,7 +1569,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('휴무 요청이 거절되었습니다'),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppSemanticColors.statusWarningIcon,
             ),
           );
           print('[AdminVacation] 거절 성공 - 데이터 새로고침 시작');
@@ -1598,7 +1589,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('거절 실패: $errorMessage'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -1637,8 +1628,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 _deleteVacation(vacationId);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                foregroundColor: Colors.white,
+                backgroundColor: AppSemanticColors.statusErrorIcon,
+                foregroundColor: AppSemanticColors.textInverse,
               ),
               child: const Text('삭제'),
             ),
@@ -1660,9 +1651,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('휴무가 성공적으로 삭제되었습니다'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('휴무가 성공적으로 삭제되었습니다'),
+            backgroundColor: AppSemanticColors.statusSuccessIcon,
           ),
         );
         
@@ -1680,7 +1671,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('휴무 삭제 실패: $errorMessage'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -1706,8 +1697,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade600,
-              foregroundColor: Colors.white,
+              backgroundColor: AppSemanticColors.statusSuccessIcon,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             child: const Text('승인'),
           ),
@@ -1735,13 +1726,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         
         if (failureCount == 0) {
           message = '$successCount개의 휴무가 승인되었습니다';
-          bgColor = Colors.green;
+          bgColor = AppSemanticColors.statusSuccessIcon;
         } else if (successCount == 0) {
           message = '일괄 승인에 실패했습니다';
-          bgColor = Colors.red;
+          bgColor = AppSemanticColors.statusErrorIcon;
         } else {
           message = '$successCount개 승인 성공, $failureCount개 실패';
-          bgColor = Colors.orange;
+          bgColor = AppSemanticColors.statusWarningIcon;
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1764,7 +1755,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('일괄 승인 실패: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -1796,8 +1787,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange.shade600,
-              foregroundColor: Colors.white,
+              backgroundColor: AppSemanticColors.statusWarningIcon,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             child: const Text('거절'),
           ),
@@ -1825,13 +1816,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         
         if (failureCount == 0) {
           message = '$successCount개의 휴무가 거절되었습니다';
-          bgColor = Colors.orange;
+          bgColor = AppSemanticColors.statusWarningIcon;
         } else if (successCount == 0) {
           message = '일괄 거절에 실패했습니다';
-          bgColor = Colors.red;
+          bgColor = AppSemanticColors.statusErrorIcon;
         } else {
           message = '$successCount개 거절 성공, $failureCount개 실패';
-          bgColor = Colors.orange;
+          bgColor = AppSemanticColors.statusWarningIcon;
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1854,7 +1845,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('일괄 거절 실패: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }

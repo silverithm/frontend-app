@@ -57,10 +57,10 @@ class DesignSystemColors {
   static const Color red800 = Color(0xFF991B1B);
   
   // Semantic colors
-  static const Color backgroundPrimary = Colors.white;
+  static const Color backgroundPrimary = AppColors.white;
   static const Color backgroundSecondary = gray50;
-  static const Color backgroundElevated = Colors.white;
-  static const Color surfaceDefault = Colors.white;
+  static const Color backgroundElevated = AppColors.white;
+  static const Color surfaceDefault = AppColors.white;
   static const Color surfaceHover = gray50;
   static const Color borderDefault = gray200;
   static const Color borderFocus = blue500;
@@ -88,12 +88,12 @@ class DesignSystemSpacing {
 class DesignSystemShadows {
   static List<BoxShadow> sm = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.1),
+      color: AppColors.black.withValues(alpha:0.1),
       blurRadius: 3,
       offset: const Offset(0, 1),
     ),
     BoxShadow(
-      color: Colors.black.withOpacity(0.06),
+      color: AppColors.black.withValues(alpha:0.06),
       blurRadius: 2,
       offset: const Offset(0, 1),
     ),
@@ -101,12 +101,12 @@ class DesignSystemShadows {
   
   static List<BoxShadow> md = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.1),
+      color: AppColors.black.withValues(alpha:0.1),
       blurRadius: 15,
       offset: const Offset(0, 10),
     ),
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
+      color: AppColors.black.withValues(alpha:0.05),
       blurRadius: 6,
       offset: const Offset(0, 4),
     ),
@@ -114,7 +114,7 @@ class DesignSystemShadows {
   
   static List<BoxShadow> xl = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.25),
+      color: AppColors.black.withValues(alpha:0.25),
       blurRadius: 50,
       offset: const Offset(0, 25),
     ),
@@ -317,21 +317,21 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    selectedColor.withOpacity(0.20),
-                    selectedColor.withOpacity(0.60),
+                    selectedColor.withValues(alpha:0.20),
+                    selectedColor.withValues(alpha:0.60),
                   ],
                 )
               : null,
           color: !isSelected ? DesignSystemColors.surfaceHover : null,
           borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
           border: Border.all(
-            color: isSelected ? selectedColor.withOpacity(0.6) : DesignSystemColors.borderDefault,
+            color: isSelected ? selectedColor.withValues(alpha:0.6) : DesignSystemColors.borderDefault,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected ? DesignSystemShadows.sm : null,
         ),
         child: Material(
-          color: Colors.transparent,
+          color: AppColors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
             onTap: onTap,
@@ -346,7 +346,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
-                    color: isSelected ? selectedTextColor.withOpacity(0.9) : DesignSystemColors.textSecondary,
+                    color: isSelected ? selectedTextColor.withValues(alpha:0.9) : DesignSystemColors.textSecondary,
                     letterSpacing: -0.025,
                   ),
                 ),
@@ -367,7 +367,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: Dialog(
-            backgroundColor: Colors.transparent,
+            backgroundColor: AppColors.transparent,
             elevation: 0,
             child: Container(
               constraints: const BoxConstraints(maxWidth: 400),
@@ -408,7 +408,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: DesignSystemColors.blue300.withOpacity(0.4),
+                                      color: DesignSystemColors.blue300.withValues(alpha:0.4),
                                       blurRadius: 8,
                                       offset: const Offset(0, 4),
                                     ),
@@ -416,7 +416,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 ),
                                 child: const Icon(
                                   Icons.event_note_rounded,
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   size: 24,
                                 ),
                               ),
@@ -469,7 +469,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             end: Alignment.bottomRight,
                             colors: [
                               DesignSystemColors.blue50,
-                              DesignSystemColors.blue100.withOpacity(0.6),
+                              DesignSystemColors.blue100.withValues(alpha:0.6),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
@@ -489,7 +489,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: DesignSystemColors.blue600.withOpacity(0.2),
+                                    color: DesignSystemColors.blue600.withValues(alpha:0.2),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -497,7 +497,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               ),
                               child: const Icon(
                                 Icons.calendar_today_rounded,
-                                color: Colors.white,
+                                color: AppColors.white,
                                 size: 20,
                               ),
                             ),
@@ -893,7 +893,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: DesignSystemColors.blue400.withOpacity(0.4),
+                                    color: DesignSystemColors.blue400.withValues(alpha:0.4),
                                     blurRadius: 15,
                                     offset: const Offset(0, 6),
                                   ),
@@ -902,8 +902,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               child: ElevatedButton(
                                 onPressed: _isSubmitting ? null : _submitRequest,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
+                                  backgroundColor: AppColors.transparent,
+                                  shadowColor: AppColors.transparent,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: DesignSystemSpacing.xl + 2,
                                   ),
@@ -921,7 +921,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             height: 20,
                                             child: CircularProgressIndicator(
                                               valueColor: AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
+                                                AppColors.white,
                                               ),
                                               strokeWidth: 2,
                                             ),
@@ -932,7 +932,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.white,
+                                              color: AppColors.white,
                                               letterSpacing: -0.025,
                                             ),
                                           ),
@@ -943,7 +943,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.white,
+                                          color: AppColors.white,
                                           letterSpacing: -0.025,
                                         ),
                                       ),

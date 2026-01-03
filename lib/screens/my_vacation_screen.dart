@@ -30,7 +30,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     WidgetsBinding.instance.addObserver(this);
 
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: AppTransitions.slowest,
       vsync: this,
     );
 
@@ -118,34 +118,42 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.surfaceDefault,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(AppBorderRadius.xl3),
+            topRight: Radius.circular(AppBorderRadius.xl3),
           ),
         ),
         child: Column(
           children: [
             // 핸들 바
             Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: AppSpacing.space10,
+              height: AppSpacing.space1,
+              margin: const EdgeInsets.symmetric(
+                vertical: AppSpacing.space3,
+              ),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+                color: AppSemanticColors.borderSubtle,
+                borderRadius: BorderRadius.circular(AppBorderRadius.sm),
               ),
             ),
             // 헤더
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space6,
+                vertical: AppSpacing.space4,
+              ),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+                  bottom: BorderSide(
+                    color: AppSemanticColors.borderDefault,
+                    width: 1,
+                  ),
                 ),
               ),
               child: Row(
@@ -154,24 +162,24 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(AppSpacing.space2),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppSemanticColors.statusInfoBackground,
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.xl,
+                          ),
                         ),
                         child: Icon(
                           Icons.notifications,
-                          color: Colors.blue.shade600,
+                          color: AppSemanticColors.statusInfoIcon,
                           size: 20,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
+                      const SizedBox(width: AppSpacing.space3),
+                      Text(
                         '알림',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                        style: AppTypography.heading5.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
                       ),
                     ],
@@ -180,9 +188,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       '닫기',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w600,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                        fontWeight: AppTypography.fontWeightSemibold,
                       ),
                     ),
                   ),
@@ -205,15 +213,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           Icon(
                             Icons.error_outline,
                             size: 48,
-                            color: Colors.red.shade300,
+                            color: AppSemanticColors.statusErrorBorder,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             notificationProvider.errorMessage,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
                             ),
                           ),
                         ],
@@ -229,14 +236,13 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           Icon(
                             Icons.notifications_off_outlined,
                             size: 48,
-                            color: Colors.grey.shade300,
+                            color: AppSemanticColors.borderSubtle,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             '알림이 없습니다',
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 14,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textTertiary,
                             ),
                           ),
                         ],
@@ -289,16 +295,16 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isUnread ? color.withOpacity(0.05) : Colors.grey.shade50,
+          color: isUnread ? color.withValues(alpha: 0.05) : AppSemanticColors.backgroundSecondary,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isUnread ? color.withOpacity(0.2) : Colors.grey.shade200,
+            color: isUnread ? color.withValues(alpha: 0.2) : AppSemanticColors.borderDefault,
             width: 1,
           ),
           boxShadow: isUnread
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -311,7 +317,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -326,10 +332,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: AppTypography.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
+                          color: AppSemanticColors.textPrimary,
                         ),
                       ),
                       if (isUnread)
@@ -346,18 +351,16 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                   const SizedBox(height: 4),
                   Text(
                     message,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textSecondary,
                       height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     time,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade500,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -385,19 +388,19 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade100,
+                  color: AppSemanticColors.statusErrorBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   Icons.delete_outline,
-                  color: Colors.red.shade600,
+                  color: AppSemanticColors.statusErrorIcon,
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 '휴무 신청 삭제',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: AppTypography.heading6.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -408,12 +411,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: AppSemanticColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '${request.date.month}월 ${request.date.day}일 휴무 신청을 삭제하시겠습니까?',
-                  style: const TextStyle(fontSize: 16),
+                  style: AppTypography.bodyLarge,
                 ),
               ),
               if (request.status == VacationStatus.approved) ...[
@@ -421,20 +424,19 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
+                    color: AppSemanticColors.statusWarningBackground,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade200),
+                    border: Border.all(color: AppSemanticColors.statusWarningBorder),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning_amber, color: Colors.orange.shade600),
+                      Icon(Icons.warning_amber, color: AppSemanticColors.statusWarningIcon),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           '승인된 휴무는 삭제 시 관리자에게 문의가 필요할 수 있습니다.',
-                          style: TextStyle(
-                            color: Colors.orange.shade700,
-                            fontSize: 12,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppSemanticColors.statusWarningText,
                           ),
                         ),
                       ),
@@ -498,7 +500,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text('휴무 신청이 삭제되었습니다'),
-                            backgroundColor: Colors.green.shade600,
+                            backgroundColor: AppSemanticColors.statusSuccessIcon,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -511,8 +513,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                foregroundColor: Colors.white,
+                backgroundColor: AppSemanticColors.statusErrorIcon,
+                foregroundColor: AppSemanticColors.textInverse,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 12,
@@ -523,12 +525,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                 elevation: 0,
               ),
               child: isDeleting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                       ),
                     )
                   : const Text('삭제'),
@@ -552,21 +554,19 @@ class _MyVacationScreenState extends State<MyVacationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF6FF), // blue.50 - 파란계열 배경
+      backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.transparent,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           '내 휴무 신청',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            fontSize: 20,
+          style: AppTypography.heading5.copyWith(
+            color: AppSemanticColors.textInverse,
             shadows: [
               Shadow(
-                color: Colors.black26,
-                offset: Offset(1, 1),
+                color: AppColors.black.withValues(alpha: 0.26),
+                offset: const Offset(1, 1),
                 blurRadius: 3,
               ),
             ],
@@ -578,29 +578,33 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF2563EB), // blue.600
-                Color(0xFF3B82F6), // blue.500
-                Color(0xFF60A5FA), // blue.400
+                AppSemanticColors.interactivePrimaryActive,
+                AppSemanticColors.interactivePrimaryDefault,
+                AppSemanticColors.interactivePrimaryHover,
               ],
             ),
           ),
         ),
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16),
+            margin: const EdgeInsets.only(right: AppSpacing.space4),
             child: Stack(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: AppSpacing.space10,
+                  height: AppSpacing.space10,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6), // gray.100
-                    borderRadius: BorderRadius.circular(8), // lg
+                    color: AppSemanticColors.surfaceDefault,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    border: Border.all(
+                      color: AppSemanticColors.borderDefault,
+                      width: 1,
+                    ),
                   ),
                   child: IconButton(
                     icon: const Icon(
                       Icons.notifications_outlined,
-                      color: Color(0xFF6B7280), // gray.500
+                      color: AppSemanticColors.textSecondary,
                       size: 20,
                     ),
                     onPressed: _showNotifications,
@@ -617,14 +621,19 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       if (unreadCount == 0) return const SizedBox.shrink();
 
                       return Container(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(AppSpacing.space1),
                         decoration: BoxDecoration(
-                          color: Colors.red.shade600,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 2),
+                          color: AppSemanticColors.statusErrorIcon,
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.full,
+                          ),
+                          border: Border.all(
+                            color: AppSemanticColors.textInverse,
+                            width: AppSpacing.space0_5,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.shade300.withOpacity(0.5),
+                              color: AppColors.red300.withValues(alpha: 0.5),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -636,9 +645,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         ),
                         child: Text(
                           unreadCount > 99 ? '99+' : unreadCount.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppSemanticColors.textInverse,
                             fontWeight: FontWeight.bold,
                           ),
                           textAlign: TextAlign.center,
@@ -670,24 +678,23 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.grey.shade100,
-                                  Colors.grey.shade50,
+                                  AppSemanticColors.backgroundSecondary,
+                                  AppSemanticColors.surfaceDefault,
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.grey.shade600,
+                                AppSemanticColors.textSecondary,
                               ),
                             ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             '데이터를 불러오는 중...',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 16,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -707,12 +714,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Colors.red.shade50, Colors.white],
+                              colors: [AppSemanticColors.statusErrorBackground, AppSemanticColors.surfaceDefault],
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.red.shade100.withOpacity(0.5),
+                                color: AppColors.red100.withValues(alpha: 0.5),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
@@ -724,22 +731,21 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.shade100,
+                                  color: AppColors.red100,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Icon(
                                   Icons.error_outline,
                                   size: 48,
-                                  color: Colors.red.shade600,
+                                  color: AppSemanticColors.statusErrorIcon,
                                 ),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 vacationProvider.errorMessage,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.red.shade700,
-                                  fontSize: 16,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.red700,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -749,8 +755,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                 icon: const Icon(Icons.refresh),
                                 label: const Text('다시 시도'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red.shade600,
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppSemanticColors.statusErrorIcon,
+                                  foregroundColor: AppSemanticColors.textInverse,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
                                     vertical: 12,
@@ -785,12 +791,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [Colors.white, Colors.grey.shade50],
+                                colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.backgroundSecondary],
                               ),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: AppColors.black.withValues(alpha: 0.08),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -804,8 +810,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Colors.grey.shade100,
-                                        Colors.grey.shade50,
+                                        AppSemanticColors.backgroundSecondary,
+                                        AppSemanticColors.surfaceDefault,
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(20),
@@ -813,15 +819,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   child: Icon(
                                     Icons.event_available,
                                     size: 64,
-                                    color: Colors.grey.shade600,
+                                    color: AppSemanticColors.textSecondary,
                                   ),
                                 ),
                                 const SizedBox(height: 24),
                                 Text(
                                   '휴무 신청 내역이 없습니다',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade700,
-                                    fontSize: 18,
+                                  style: AppTypography.heading6.copyWith(
+                                    color: AppSemanticColors.textPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -829,9 +834,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                 Text(
                                   '달력에서 날짜를 선택하여\n휴무를 신청해보세요',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 14,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textTertiary,
                                   ),
                                 ),
                               ],
@@ -864,12 +868,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Colors.white, Colors.grey.shade50],
+                            colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.backgroundSecondary],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: AppColors.black.withValues(alpha: 0.08),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -887,28 +891,25 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          Colors.indigo.shade400,
-                                          Colors.indigo.shade600,
+                                          AppColors.blue400,
+                                          AppColors.blue600,
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.analytics,
-                                      color: Colors.white,
+                                      color: AppSemanticColors.textInverse,
                                       size: 24,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     '신청 현황',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey.shade800,
-                                        ),
+                                    style: AppTypography.heading6.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppSemanticColors.textPrimary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -919,7 +920,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                     child: _buildStatusCard(
                                       '대기',
                                       pendingRequests.length,
-                                      Colors.orange.shade600,
+                                      AppSemanticColors.statusWarningIcon,
                                       Icons.schedule,
                                     ),
                                   ),
@@ -928,7 +929,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                     child: _buildStatusCard(
                                       '승인',
                                       approvedRequests.length,
-                                      Colors.green.shade600,
+                                      AppSemanticColors.statusSuccessIcon,
                                       Icons.check_circle,
                                     ),
                                   ),
@@ -937,7 +938,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                     child: _buildStatusCard(
                                       '거절',
                                       rejectedRequests.length,
-                                      Colors.red.shade600,
+                                      AppSemanticColors.statusErrorIcon,
                                       Icons.cancel,
                                     ),
                                   ),
@@ -958,7 +959,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         child: _buildSectionHeader(
                           '대기 중',
                           pendingRequests.length,
-                          Colors.orange.shade600,
+                          AppSemanticColors.statusWarningIcon,
                           Icons.schedule,
                         ),
                       ),
@@ -1001,7 +1002,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         child: _buildSectionHeader(
                           '승인됨',
                           approvedRequests.length,
-                          Colors.green.shade600,
+                          AppSemanticColors.statusSuccessIcon,
                           Icons.check_circle,
                         ),
                       ),
@@ -1045,7 +1046,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         child: _buildSectionHeader(
                           '거절됨',
                           rejectedRequests.length,
-                          Colors.red.shade600,
+                          AppSemanticColors.statusErrorIcon,
                           Icons.cancel,
                         ),
                       ),
@@ -1103,13 +1104,13 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1120,7 +1121,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -1128,16 +1129,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
           const SizedBox(height: 8),
           Text(
             count.toString(),
-            style: TextStyle(
-              fontSize: 24,
+            style: AppTypography.heading4.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTypography.labelSmall.copyWith(
               color: color,
               fontWeight: FontWeight.w500,
             ),
@@ -1158,10 +1157,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.1), Colors.white],
+          colors: [color.withValues(alpha: 0.1), AppSemanticColors.surfaceDefault],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
       child: Row(
         children: [
@@ -1171,15 +1170,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               color: color,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.white, size: 20),
+            child: Icon(icon, color: AppSemanticColors.textInverse, size: 20),
           ),
           const SizedBox(width: 12),
           Text(
             '$title ($count)',
-            style: TextStyle(
-              fontSize: 18,
+            style: AppTypography.heading6.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
+              color: AppSemanticColors.textPrimary,
             ),
           ),
         ],
@@ -1197,18 +1195,18 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white, _getStatusColor(request.status)],
+          colors: [AppSemanticColors.surfaceDefault, _getStatusColor(request.status)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: _getStatusTextColor(request.status).withOpacity(0.1),
+            color: _getStatusTextColor(request.status).withValues(alpha: 0.1),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
         ],
         border: Border.all(
-          color: _getStatusTextColor(request.status).withOpacity(0.2),
+          color: _getStatusTextColor(request.status).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -1231,7 +1229,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                             decoration: BoxDecoration(
                               color: _getStatusTextColor(
                                 request.status,
-                              ).withOpacity(0.1),
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
@@ -1247,10 +1245,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                               children: [
                                 Text(
                                   _formatDate(request.date),
-                                  style: const TextStyle(
-                                    fontSize: 16,
+                                  style: AppTypography.bodyMedium.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: AppSemanticColors.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -1267,7 +1264,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                             _getStatusTextColor(request.status),
                                             _getStatusTextColor(
                                               request.status,
-                                            ).withOpacity(0.8),
+                                            ).withValues(alpha: 0.8),
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(20),
@@ -1275,7 +1272,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                           BoxShadow(
                                             color: _getStatusTextColor(
                                               request.status,
-                                            ).withOpacity(0.3),
+                                            ).withValues(alpha: 0.3),
                                             blurRadius: 6,
                                             offset: const Offset(0, 3),
                                           ),
@@ -1283,9 +1280,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                       ),
                                       child: Text(
                                         request.statusText,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
+                                        style: AppTypography.labelSmall.copyWith(
+                                          color: AppSemanticColors.textInverse,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -1318,9 +1314,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                         ),
                                         child: Text(
                                           request.durationText,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
+                                          style: AppTypography.labelSmall.copyWith(
+                                            color: AppSemanticColors.textInverse,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -1336,8 +1331,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
-                                              Colors.orange.shade200,
-                                              Colors.orange.shade400,
+                                              AppColors.orange200,
+                                              AppColors.orange400,
                                             ],
                                           ),
                                           borderRadius: BorderRadius.circular(
@@ -1345,8 +1340,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.orange.shade200
-                                                  .withOpacity(0.4),
+                                              color: AppColors.orange200
+                                                  .withValues(alpha: 0.4),
                                               blurRadius: 6,
                                               offset: const Offset(0, 3),
                                             ),
@@ -1355,22 +1350,21 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Container(
+                                            SizedBox(
                                               width: 14,
                                               height: 14,
                                               child: CustomPaint(
                                                 painter: StarPainter(
-                                                  color: Colors.white,
+                                                  color: AppSemanticColors.textInverse,
                                                 ),
                                                 size: const Size(14, 14),
                                               ),
                                             ),
                                             const SizedBox(width: 4),
-                                            const Text(
+                                            Text(
                                               '필수',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
+                                              style: AppTypography.labelSmall.copyWith(
+                                                color: AppSemanticColors.textInverse,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -1391,14 +1385,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                 if (canDelete)
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: AppSemanticColors.statusErrorBackground,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
                       onPressed: () => _showDeleteDialog(request),
                       icon: Icon(
                         Icons.delete_outlined,
-                        color: Colors.red.shade600,
+                        color: AppSemanticColors.statusErrorIcon,
                       ),
                       tooltip: request.status == VacationStatus.pending 
                           ? '신청 삭제' 
@@ -1413,9 +1407,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: AppSemanticColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                  border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1423,15 +1417,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     Icon(
                       Icons.note_outlined,
                       size: 16,
-                      color: Colors.grey.shade600,
+                      color: AppSemanticColors.textSecondary,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         request.reason!,
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontSize: 14,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
                       ),
                     ),
@@ -1447,10 +1440,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.red.shade100, Colors.red.shade50],
+                    colors: [AppColors.red100, AppSemanticColors.statusErrorBackground],
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200, width: 1),
+                  border: Border.all(color: AppColors.red200, width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1460,14 +1453,13 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         Icon(
                           Icons.error_outline,
                           size: 16,
-                          color: Colors.red.shade600,
+                          color: AppSemanticColors.statusErrorIcon,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '거절 사유',
-                          style: TextStyle(
-                            color: Colors.red.shade800,
-                            fontSize: 12,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.red800,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1476,9 +1468,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     const SizedBox(height: 4),
                     Text(
                       request.rejectionReason!,
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontSize: 14,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.red700,
                       ),
                     ),
                   ],
@@ -1490,12 +1481,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppSemanticColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 '신청일: ${_formatDateTime(request.createdAt)}',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -1507,22 +1500,22 @@ class _MyVacationScreenState extends State<MyVacationScreen>
   Color _getStatusColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
-        return Colors.green.shade50;
+        return AppSemanticColors.statusSuccessBackground;
       case VacationStatus.rejected:
-        return Colors.red.shade50;
+        return AppSemanticColors.statusErrorBackground;
       case VacationStatus.pending:
-        return Colors.orange.shade50;
+        return AppSemanticColors.statusWarningBackground;
     }
   }
 
   Color _getStatusTextColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
-        return Colors.green.shade700;
+        return AppSemanticColors.statusSuccessText;
       case VacationStatus.rejected:
-        return Colors.red.shade700;
+        return AppSemanticColors.statusErrorText;
       case VacationStatus.pending:
-        return Colors.orange.shade700;
+        return AppSemanticColors.statusWarningText;
     }
   }
 }

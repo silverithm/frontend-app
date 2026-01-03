@@ -73,17 +73,17 @@ class _PaymentScreenState extends State<PaymentScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
         title: Text(
           '결제',
           style: AppTypography.heading5.copyWith(
-            color: Colors.white,
+            color: AppSemanticColors.textInverse,
             fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
       ),
       body: Consumer2<SubscriptionProvider, AuthProvider>(
@@ -125,13 +125,13 @@ class _PaymentScreenState extends State<PaymentScreen>
           end: Alignment.bottomRight,
           colors: [
             AppSemanticColors.interactiveSecondaryDefault,
-            AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.8),
+            AppSemanticColors.interactiveSecondaryDefault.withValues(alpha:0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.3),
+            color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha:0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -146,12 +146,12 @@ class _PaymentScreenState extends State<PaymentScreen>
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.workspace_premium,
-                  color: Colors.white,
+                  color: AppSemanticColors.textInverse,
                   size: 28,
                 ),
               ),
@@ -163,7 +163,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     Text(
                       widget.plan.name,
                       style: AppTypography.heading5.copyWith(
-                        color: Colors.white,
+                        color: AppSemanticColors.textInverse,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -171,7 +171,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     Text(
                       widget.plan.description,
                       style: AppTypography.bodySmall.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -183,7 +183,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: AppSemanticColors.textInverse.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -192,14 +192,14 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Text(
                   '월 구독료',
                   style: AppTypography.bodyLarge.copyWith(
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 Text(
                   '₩${_formatPrice(widget.plan.price)}',
                   style: AppTypography.heading4.copyWith(
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -215,11 +215,11 @@ class _PaymentScreenState extends State<PaymentScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -282,11 +282,11 @@ class _PaymentScreenState extends State<PaymentScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -306,7 +306,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: AppSemanticColors.statusInfoBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: AppSemanticColors.interactiveSecondaryDefault,
@@ -322,9 +322,9 @@ class _PaymentScreenState extends State<PaymentScreen>
                     color: AppSemanticColors.interactiveSecondaryDefault,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.credit_card,
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     size: 20,
                   ),
                 ),
@@ -359,17 +359,17 @@ class _PaymentScreenState extends State<PaymentScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
+        color: AppSemanticColors.statusSuccessBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.green.shade200,
+          color: AppSemanticColors.statusSuccessBorder,
         ),
       ),
       child: Row(
         children: [
           Icon(
             Icons.security,
-            color: Colors.green.shade600,
+            color: AppSemanticColors.statusSuccessIcon,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -380,7 +380,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Text(
                   '안전한 결제',
                   style: AppTypography.bodyMedium.copyWith(
-                    color: Colors.green.shade800,
+                    color: AppSemanticColors.statusSuccessText,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -388,7 +388,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Text(
                   '결제 정보는 암호화되어 안전하게 보호됩니다.\n언제든지 구독을 취소할 수 있습니다.',
                   style: AppTypography.bodySmall.copyWith(
-                    color: Colors.green.shade700,
+                    color: AppSemanticColors.statusSuccessText,
                   ),
                 ),
               ],
@@ -411,7 +411,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 : _startPayment,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-              foregroundColor: Colors.white,
+              foregroundColor: AppSemanticColors.textInverse,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -426,14 +426,14 @@ class _PaymentScreenState extends State<PaymentScreen>
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         '결제 진행 중...',
                         style: AppTypography.bodyLarge.copyWith(
-                          color: Colors.white,
+                          color: AppSemanticColors.textInverse,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -442,7 +442,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 : Text(
                     '₩${_formatPrice(widget.plan.price)} 결제하기',
                     style: AppTypography.bodyLarge.copyWith(
-                      color: Colors.white,
+                      color: AppSemanticColors.textInverse,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -681,17 +681,17 @@ class _PaymentScreenState extends State<PaymentScreen>
               height: 80,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.green.shade400, Colors.green.shade600],
+                  colors: [AppColors.green400, AppColors.green600],
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check, color: Colors.white, size: 40),
+              child: Icon(Icons.check, color: AppSemanticColors.textInverse, size: 40),
             ),
             const SizedBox(height: 20),
             Text(
               '결제 완료!',
               style: AppTypography.heading5.copyWith(
-                color: Colors.green.shade600,
+                color: AppSemanticColors.statusSuccessIcon,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -714,8 +714,8 @@ class _PaymentScreenState extends State<PaymentScreen>
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-                foregroundColor: Colors.white,
+                backgroundColor: AppSemanticColors.statusSuccessIcon,
+                foregroundColor: AppSemanticColors.textInverse,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -735,7 +735,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.error, color: Colors.red.shade600),
+            Icon(Icons.error, color: AppSemanticColors.statusErrorIcon),
             const SizedBox(width: 8),
             const Text('결제 실패'),
           ],
@@ -778,7 +778,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
   void _initializeWebView() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.white)
+      ..setBackgroundColor(AppColors.white)
       ..enableZoom(false)
       ..addJavaScriptChannel(
         'Console',
@@ -927,17 +927,17 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppSemanticColors.surfaceDefault,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '토스페이먼츠 결제',
-          style: TextStyle(
+          style: AppTypography.heading6.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppSemanticColors.textInverse,
           ),
         ),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -946,17 +946,16 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
                   Text(
                     '결제 페이지를 불러오는 중...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: AppSemanticColors.textSecondary,
                     ),
                   ),
                 ],

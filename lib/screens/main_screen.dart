@@ -35,7 +35,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: AppTransitions.slow,
       vsync: this,
     );
 
@@ -149,11 +149,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.white, AppSemanticColors.backgroundSecondary],
+                colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.backgroundSecondary],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: AppColors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, -5),
                 ),
@@ -161,22 +161,21 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             ),
             child: ClipRRect(
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
+                topLeft: Radius.circular(AppBorderRadius.xl3),
+                topRight: Radius.circular(AppBorderRadius.xl3),
               ),
               child: BottomNavigationBar(
                 currentIndex: _currentIndex.clamp(0, userNavItems.length - 1),
                 onTap: _onItemTapped,
                 type: BottomNavigationBarType.fixed,
-                backgroundColor: Colors.transparent,
+                backgroundColor: AppColors.transparent,
                 elevation: 0,
                 selectedItemColor: AppSemanticColors.interactivePrimaryDefault,
-                unselectedItemColor: Colors.grey.shade400,
-                selectedLabelStyle: const TextStyle(
+                unselectedItemColor: AppSemanticColors.textDisabled,
+                selectedLabelStyle: AppTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
-                unselectedLabelStyle: const TextStyle(fontSize: 11),
+                unselectedLabelStyle: AppTypography.labelSmall,
                 items: userNavItems,
               ),
             ),
@@ -196,7 +195,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final authProvider = context.read<AuthProvider>();
     final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
 
-    Color iconColor = Colors.grey.shade400;
+    Color iconColor = AppSemanticColors.textDisabled;
 
     if (isSelected) {
       if (isAdmin) {
@@ -208,8 +207,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
     return BottomNavigationBarItem(
       icon: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(isSelected ? 8 : 4),
+        duration: AppTransitions.normal,
+        padding: EdgeInsets.all(
+          isSelected ? AppSpacing.space2 : AppSpacing.space1,
+        ),
         decoration: BoxDecoration(
           color: isSelected
               ? (isAdmin
@@ -219,7 +220,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                     : AppSemanticColors.interactivePrimaryDefault.withValues(
                         alpha: 0.1,
                       ))
-              : Colors.transparent,
+              : AppColors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(

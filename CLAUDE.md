@@ -166,3 +166,192 @@ lib/
 - Claude는 `flutter run` 명령어를 사용하지 않습니다
 - 코드 수정 후 사용자가 직접 앱을 실행하여 테스트합니다
 - Claude는 코드 구현 및 수정에만 집중합니다
+
+---
+
+## 디자인 시스템 가이드라인
+
+### 1. 타이포그래피 매핑
+
+| 용도 | 크기 | AppTypography 매핑 | 설명 |
+|------|------|-------------------|------|
+| 화면 제목 | 20pt | `heading4` | 스크린 타이틀 |
+| 섹션 제목 | 18pt | `heading5` | 섹션 헤더 |
+| 소제목 | 16pt | `heading6` / `bodyLarge` | 카드 제목 등 |
+| 본문 | 14pt | `bodyMedium` | 일반 텍스트 |
+| 본문 (작은) | 12pt | `bodySmall` | 부가 설명 |
+| 레이블 | 14pt | `labelLarge` | 버튼, 폼 레이블 |
+| 레이블 (작은) | 12pt | `labelMedium` | 배지, 태그 |
+| 캡션 | 11pt | `caption` / `labelSmall` | 작은 정보 |
+| 오버라인 | 11pt | `overline` | 매우 작은 뱃지 |
+
+**사용 예시:**
+```dart
+// 화면 제목
+Text('프로필', style: AppTypography.heading4)
+
+// 본문 텍스트 (색상 지정)
+Text('설명', style: AppTypography.bodyMedium.copyWith(
+  color: AppSemanticColors.textSecondary,
+))
+```
+
+### 2. 간격 시스템 (8의 배수)
+
+| 용도 | 값 | AppSpacing 상수 |
+|------|-----|----------------|
+| 최소 간격 | 4px | `space1` |
+| 작은 간격 | 8px | `space2` |
+| 기본 간격 | 12px | `space3` |
+| 중간 간격 | 16px | `space4` |
+| 큰 간격 | 20px | `space5` |
+| 섹션 간격 | 24px | `space6` |
+| 대형 간격 | 32px | `space8` |
+
+**사용 예시:**
+```dart
+Padding(
+  padding: EdgeInsets.all(AppSpacing.space4), // 16px
+  child: ...
+)
+
+SizedBox(height: AppSpacing.space2) // 8px 간격
+```
+
+### 3. Border Radius
+
+| 용도 | 값 | AppBorderRadius 상수 |
+|------|-----|---------------------|
+| 작은 요소 | 4px | `base` |
+| 기본 요소 | 6px | `md` |
+| 버튼 | 8px | `lg` |
+| 카드 | 12px | `xl` |
+| 큰 카드 | 16px | `xl2` |
+| 원형 | 9999px | `full` |
+
+**사용 예시:**
+```dart
+Container(
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(AppBorderRadius.xl), // 12px
+  ),
+)
+```
+
+### 4. 애니메이션 시간
+
+| 용도 | 시간 | AppTransitions 상수 |
+|------|------|-------------------|
+| 매우 빠름 | 75ms | `fastest` |
+| 빠름 | 150ms | `fast` |
+| 보통 | 200ms | `normal` |
+| 느림 | 300ms | `slow` |
+| 매우 느림 | 500ms | `slowest` |
+
+**사용 예시:**
+```dart
+AnimatedContainer(
+  duration: AppTransitions.normal, // 200ms
+  child: ...
+)
+```
+
+### 5. 색상 사용 규칙
+
+#### 색상 매핑 테이블
+```dart
+// Before                          → After
+Colors.white                       → AppSemanticColors.surfaceDefault
+Colors.grey.shade50                → AppSemanticColors.backgroundSecondary
+Colors.grey.shade100               → AppSemanticColors.backgroundTertiary
+Colors.grey.shade200               → AppSemanticColors.borderDefault
+Colors.grey.shade500               → AppSemanticColors.textTertiary
+Colors.grey.shade600               → AppSemanticColors.textSecondary
+Colors.grey.shade900               → AppSemanticColors.textPrimary
+Colors.blue.shade600               → AppSemanticColors.interactivePrimaryDefault
+Colors.red.shade600                → AppSemanticColors.statusErrorIcon
+Colors.green.shade600              → AppSemanticColors.statusSuccessIcon
+Colors.yellow.shade600             → AppSemanticColors.statusWarningIcon
+```
+
+#### withOpacity() 대체 규칙
+**⚠️ 중요: `withOpacity()` 사용 금지 (deprecated)**
+
+```dart
+// ❌ 잘못된 방법
+color.withOpacity(0.5)
+
+// ✅ 올바른 방법
+color.withValues(alpha: 0.5)
+```
+
+### 6. forui 컴포넌트 가이드
+
+프로젝트에서 forui 라이브러리를 사용합니다.
+
+**Import:**
+```dart
+import 'package:forui/forui.dart';
+```
+
+#### 컴포넌트 매핑 테이블
+| Flutter 기본 | forui 대체 | 용도 |
+|-------------|-----------|------|
+| `TextField` | `FTextField` | 일반 텍스트 입력 |
+| `TextFormField` | `FTextFormField` | 폼 텍스트 입력 |
+| `Switch` | `FSwitch` | 토글 스위치 |
+| `Checkbox` | `FCheckbox` | 체크박스 |
+| `AlertDialog` | `FDialog` | 다이얼로그 |
+| `CircularProgressIndicator` | `FProgress` | 로딩 인디케이터 |
+
+#### FTextField 사용 예시
+```dart
+FTextField(
+  controller: _controller,
+  label: const Text('이메일'),
+  hint: 'example@email.com',
+)
+```
+
+#### FSwitch 사용 예시
+```dart
+FSwitch(
+  value: _isEnabled,
+  onChange: (value) => setState(() => _isEnabled = value),
+)
+```
+
+#### FDialog 사용 예시
+```dart
+showAdaptiveDialog(
+  context: context,
+  builder: (context) => FDialog(
+    direction: Axis.horizontal,
+    title: const Text('확인'),
+    body: const Text('정말 삭제하시겠습니까?'),
+    actions: [
+      FButton(
+        label: const Text('취소'),
+        onPress: () => Navigator.pop(context),
+        style: FButtonStyle.outline,
+      ),
+      FButton(
+        label: const Text('삭제'),
+        onPress: () => _delete(),
+        style: FButtonStyle.destructive,
+      ),
+    ],
+  ),
+);
+```
+
+### 7. 코드 스타일 체크리스트
+
+코드 작성 시 반드시 확인:
+- [ ] `withOpacity()` 대신 `withValues(alpha:)` 사용
+- [ ] 인라인 `TextStyle()` 대신 `AppTypography` 사용
+- [ ] 직접 `Colors` 대신 `AppSemanticColors` 사용
+- [ ] 하드코딩된 간격 대신 `AppSpacing` 상수 사용
+- [ ] 하드코딩된 radius 대신 `AppBorderRadius` 상수 사용
+- [ ] 하드코딩된 duration 대신 `AppTransitions` 상수 사용
+- [ ] 터치 영역 최소 32x32px 확보

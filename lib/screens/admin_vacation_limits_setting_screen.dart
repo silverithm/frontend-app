@@ -177,9 +177,9 @@ class _AdminVacationLimitsSettingScreenState
       if (result['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('휴무 제한이 성공적으로 저장되었습니다'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('휴무 제한이 성공적으로 저장되었습니다'),
+              backgroundColor: AppSemanticColors.statusSuccessIcon,
             ),
           );
         }
@@ -194,7 +194,7 @@ class _AdminVacationLimitsSettingScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('휴무 제한 저장 실패: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -244,9 +244,9 @@ class _AdminVacationLimitsSettingScreenState
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: const Text('휴무 제한 설정', style: TextStyle(color: Colors.white)),
+        title: Text('휴무 제한 설정', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
@@ -257,12 +257,12 @@ class _AdminVacationLimitsSettingScreenState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.settings,
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     size: 24,
                   ),
                 ),
@@ -274,7 +274,7 @@ class _AdminVacationLimitsSettingScreenState
                       Text(
                         '날짜별 최대 휴무 인원 설정',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -283,13 +283,13 @@ class _AdminVacationLimitsSettingScreenState
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'ADMIN',
                     style: AppTypography.labelSmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -307,10 +307,10 @@ class _AdminVacationLimitsSettingScreenState
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppSemanticColors.surfaceDefault,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: AppColors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -339,9 +339,9 @@ class _AdminVacationLimitsSettingScreenState
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
+                    color: AppSemanticColors.backgroundSecondary,
                     border: Border(
-                      bottom: BorderSide(color: Colors.grey.shade200),
+                      bottom: BorderSide(color: AppSemanticColors.borderSubtle),
                     ),
                   ),
                   child: Row(
@@ -362,10 +362,10 @@ class _AdminVacationLimitsSettingScreenState
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppSemanticColors.surfaceDefault,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: AppColors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         offset: const Offset(0, -2),
                       ),
@@ -383,21 +383,20 @@ class _AdminVacationLimitsSettingScreenState
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                                 ),
                               )
-                            : const Icon(Icons.save, color: Colors.white),
+                            : Icon(Icons.save, color: AppSemanticColors.textInverse),
                         label: Text(
                           _isSaving ? '저장 중...' : '휴무 제한 저장하기',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
+                          style: AppTypography.bodyLarge.copyWith(
+                            color: AppSemanticColors.textInverse,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-                          disabledBackgroundColor: Colors.grey.shade400,
+                          disabledBackgroundColor: AppSemanticColors.textDisabled,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -419,18 +418,18 @@ class _AdminVacationLimitsSettingScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppSemanticColors.interactiveSecondaryDefault : Colors.white,
+          color: isSelected ? AppSemanticColors.interactiveSecondaryDefault : AppSemanticColors.surfaceDefault,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected 
-                ? AppSemanticColors.interactiveSecondaryDefault 
-                : Colors.grey.shade300,
+            color: isSelected
+                ? AppSemanticColors.interactiveSecondaryDefault
+                : AppSemanticColors.borderSubtle,
           ),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade700,
+          style: AppTypography.bodyMedium.copyWith(
+            color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -457,20 +456,19 @@ class _AdminVacationLimitsSettingScreenState
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: AppSemanticColors.statusInfoBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade200),
+              border: Border.all(color: AppSemanticColors.statusInfoBorder),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
+                Icon(Icons.info_outline, color: AppSemanticColors.statusInfoIcon, size: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '각 날짜별로 최대 휴무 가능 인원을 설정하세요.',
-                    style: TextStyle(
-                      color: Colors.blue.shade700,
-                      fontSize: 14,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.statusInfoText,
                     ),
                   ),
                 ),
@@ -505,31 +503,31 @@ class _AdminVacationLimitsSettingScreenState
     
     if (isSunday) {
       // 일요일 - 빨간색
-      borderColor = Colors.red.shade200;
-      headerColor = Colors.red.shade100;
-      headerTextColor = Colors.red.shade700;
-      weekdayBgColor = Colors.red.shade50;
-      weekdayTextColor = Colors.red.shade600;
+      borderColor = AppSemanticColors.statusErrorBorder;
+      headerColor = AppSemanticColors.statusErrorBackground;
+      headerTextColor = AppSemanticColors.statusErrorText;
+      weekdayBgColor = AppSemanticColors.statusErrorBackground;
+      weekdayTextColor = AppSemanticColors.statusErrorIcon;
     } else if (isSaturday) {
       // 토요일 - 파란색
-      borderColor = Colors.blue.shade200;
-      headerColor = Colors.blue.shade100;
-      headerTextColor = Colors.blue.shade700;
-      weekdayBgColor = Colors.blue.shade50;
-      weekdayTextColor = Colors.blue.shade600;
+      borderColor = AppSemanticColors.statusInfoBorder;
+      headerColor = AppSemanticColors.statusInfoBackground;
+      headerTextColor = AppSemanticColors.statusInfoText;
+      weekdayBgColor = AppSemanticColors.statusInfoBackground;
+      weekdayTextColor = AppSemanticColors.statusInfoIcon;
     } else {
       // 평일 - 회색
-      borderColor = Colors.grey.shade200;
-      headerColor = Colors.grey.shade100;
-      headerTextColor = Colors.grey.shade800;
-      weekdayBgColor = Colors.grey.shade50;
-      weekdayTextColor = Colors.grey.shade600;
+      borderColor = AppSemanticColors.borderSubtle;
+      headerColor = AppSemanticColors.backgroundSecondary;
+      headerTextColor = AppSemanticColors.textPrimary;
+      weekdayBgColor = AppSemanticColors.backgroundSecondary;
+      weekdayTextColor = AppSemanticColors.textSecondary;
     }
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: borderColor,
@@ -537,7 +535,7 @@ class _AdminVacationLimitsSettingScreenState
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -559,8 +557,7 @@ class _AdminVacationLimitsSettingScreenState
                   ),
                   child: Text(
                     '${date.month}월 ${date.day}일',
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: AppTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
                       color: headerTextColor,
                     ),
@@ -575,8 +572,7 @@ class _AdminVacationLimitsSettingScreenState
                   ),
                   child: Text(
                     '$weekdayName요일',
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: AppTypography.labelSmall.copyWith(
                       color: weekdayTextColor,
                     ),
                   ),
@@ -603,13 +599,13 @@ class _AdminVacationLimitsSettingScreenState
   Widget _buildLimitInputCard(String title, String key, IconData icon) {
     final controller = _controllers[key];
     if (controller == null) return const SizedBox.shrink();
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: AppSemanticColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppSemanticColors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -617,14 +613,13 @@ class _AdminVacationLimitsSettingScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 16, color: Colors.grey.shade600),
+              Icon(icon, size: 16, color: AppSemanticColors.textSecondary),
               const SizedBox(width: 6),
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 14,
+                style: AppTypography.bodyMedium.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
+                  color: AppSemanticColors.textSecondary,
                 ),
               ),
             ],
@@ -634,11 +629,10 @@ class _AdminVacationLimitsSettingScreenState
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
+              Text(
                 '최대',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppSemanticColors.textTertiary,
                 ),
               ),
               const SizedBox(width: 8),
@@ -649,14 +643,13 @@ class _AdminVacationLimitsSettingScreenState
                   controller: controller,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyLarge.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: AppSemanticColors.borderSubtle),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -664,7 +657,7 @@ class _AdminVacationLimitsSettingScreenState
                     ),
                     contentPadding: const EdgeInsets.all(0),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppSemanticColors.surfaceDefault,
                   ),
                   onChanged: (value) {
                     // 빈 문자열이면 0으로 설정
@@ -690,11 +683,10 @@ class _AdminVacationLimitsSettingScreenState
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 '명',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppSemanticColors.textTertiary,
                 ),
               ),
             ],

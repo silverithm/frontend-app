@@ -31,11 +31,11 @@ class _CalendarScreenState extends State<CalendarScreen>
   void initState() {
     super.initState();
     _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: AppTransitions.slow,
       vsync: this,
     );
     _filterAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+      duration: AppTransitions.normal,
       vsync: this,
     );
 
@@ -66,11 +66,16 @@ class _CalendarScreenState extends State<CalendarScreen>
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('날짜를 먼저 선택해주세요'),
-          backgroundColor: Colors.orange.shade600,
+          content: Text(
+            '날짜를 먼저 선택해주세요',
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textInverse,
+            ),
+          ),
+          backgroundColor: AppSemanticColors.statusWarningIcon,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           ),
         ),
       );
@@ -101,7 +106,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF6FF), // blue.50 - 파란계열 배경
+      backgroundColor: AppSemanticColors.backgroundSecondary,
       body: CustomScrollView(
         slivers: [
           // 파란계열 그라데이션 앱바
@@ -110,18 +115,16 @@ class _CalendarScreenState extends State<CalendarScreen>
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: Colors.transparent,
+            backgroundColor: AppColors.transparent,
             centerTitle: true,
-            title: const Text(
+            title: Text(
               '휴무 캘린더',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-                fontSize: 20,
+              style: AppTypography.heading5.copyWith(
+                color: AppSemanticColors.textInverse,
                 shadows: [
                   Shadow(
-                    color: Colors.black26,
-                    offset: Offset(1, 1),
+                    color: AppColors.black.withValues(alpha: 0.26),
+                    offset: const Offset(1, 1),
                     blurRadius: 3,
                   ),
                 ],
@@ -133,9 +136,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF2563EB), // blue.600
-                    Color(0xFF3B82F6), // blue.500
-                    Color(0xFF60A5FA), // blue.400
+                    AppSemanticColors.interactivePrimaryActive,
+                    AppSemanticColors.interactivePrimaryDefault,
+                    AppSemanticColors.interactivePrimaryHover,
                   ],
                 ),
               ),
@@ -145,22 +148,22 @@ class _CalendarScreenState extends State<CalendarScreen>
           // 달력 위젯 - 디자인 시스템 스타일
           SliverToBoxAdapter(
             child: Container(
-              margin: const EdgeInsets.all(24), // spacing.6
+              margin: const EdgeInsets.all(AppSpacing.space6),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12), // xl
+                color: AppSemanticColors.surfaceDefault,
+                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 border: Border.all(
-                  color: const Color(0xFFE5E7EB), // gray.200
+                  color: AppSemanticColors.borderDefault,
                   width: 1,
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x0A000000), // shadows.sm
+                    color: AppColors.black.withValues(alpha: 0.04),
                     blurRadius: 3,
                     offset: Offset(0, 1),
                   ),
                   BoxShadow(
-                    color: Color(0x0F000000),
+                    color: AppColors.black.withValues(alpha: 0.06),
                     blurRadius: 2,
                     offset: Offset(0, 1),
                   ),
@@ -212,26 +215,34 @@ class _CalendarScreenState extends State<CalendarScreen>
           if (_selectedDate != null)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.space4,
+                  AppSpacing.space2,
+                  AppSpacing.space4,
+                  AppSpacing.space4,
+                ),
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Colors.white, AppSemanticColors.backgroundSecondary],
+                      colors: [
+                        AppSemanticColors.surfaceDefault,
+                        AppSemanticColors.backgroundSecondary,
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: AppColors.black.withValues(alpha: 0.1),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(AppSpacing.space5),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -242,37 +253,45 @@ class _CalendarScreenState extends State<CalendarScreen>
                               child: Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.all(
+                                      AppSpacing.space3,
+                                    ),
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
+                                          AppSemanticColors
+                                              .interactivePrimaryDefault
+                                              .withValues(alpha: 0.8),
                                           AppSemanticColors.interactivePrimaryDefault,
                                         ],
                                       ),
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.xl2,
+                                      ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.4),
+                                          color: AppSemanticColors
+                                              .interactivePrimaryDefault
+                                              .withValues(alpha: 0.4),
                                           blurRadius: 8,
                                           offset: const Offset(0, 4),
                                         ),
                                       ],
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.calendar_today,
-                                      color: Colors.white,
+                                      color: AppSemanticColors.textInverse,
                                       size: 20,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.space3),
                                   Expanded(
                                     child: Text(
                                       _formatSelectedDate(_selectedDate!),
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
+                                      style: AppTypography.heading6.copyWith(
+                                        fontWeight:
+                                            AppTypography.fontWeightBold,
+                                        color: AppSemanticColors.textPrimary,
                                       ),
                                     ),
                                   ),
@@ -286,21 +305,25 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 });
                               },
                               icon: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(10),
+                                padding: const EdgeInsets.all(
+                                  AppSpacing.space2,
                                 ),
-                                child: const Icon(
+                                decoration: BoxDecoration(
+                                  color: AppSemanticColors.backgroundSecondary,
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.xl,
+                                  ),
+                                ),
+                                child: Icon(
                                   Icons.close,
                                   size: 16,
-                                  color: Colors.grey,
+                                  color: AppSemanticColors.textTertiary,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.space4),
 
                         Consumer<VacationProvider>(
                           builder: (context, vacationProvider, child) {
@@ -309,12 +332,16 @@ class _CalendarScreenState extends State<CalendarScreen>
 
                             if (vacations.isEmpty) {
                               return Container(
-                                padding: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(
+                                  AppSpacing.space5,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(16),
+                                  color: AppSemanticColors.backgroundSecondary,
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.xl2,
+                                  ),
                                   border: Border.all(
-                                    color: Colors.grey.shade200,
+                                    color: AppSemanticColors.borderSubtle,
                                     width: 1,
                                   ),
                                 ),
@@ -322,15 +349,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   children: [
                                     Icon(
                                       Icons.event_available,
-                                      color: Colors.grey.shade400,
+                                      color: AppSemanticColors.textTertiary,
                                       size: 24,
                                     ),
-                                    const SizedBox(width: 12),
-                                    const Text(
+                                    const SizedBox(width: AppSpacing.space3),
+                                    Text(
                                       '이 날짜에는 휴무 신청이 없습니다.',
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 14,
+                                      style: AppTypography.bodySmall.copyWith(
+                                        color: AppSemanticColors.textTertiary,
                                       ),
                                     ),
                                   ],
@@ -343,47 +369,58 @@ class _CalendarScreenState extends State<CalendarScreen>
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                                    horizontal: AppSpacing.space3,
+                                    vertical: AppSpacing.space1_5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: AppSemanticColors
+                                        .interactivePrimaryDefault
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.full,
+                                    ),
                                   ),
                                   child: Text(
                                     '휴무자 ${vacations.length}명',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: AppSemanticColors.interactivePrimaryDefault,
-                                      fontSize: 14,
+                                    style: AppTypography.labelLarge.copyWith(
+                                      color: AppSemanticColors
+                                          .interactivePrimaryDefault,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.space3),
                                 ...vacations.map(
                                   (vacation) => Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    padding: const EdgeInsets.all(16),
+                                    margin: const EdgeInsets.only(
+                                      bottom: AppSpacing.space2,
+                                    ),
+                                    padding: const EdgeInsets.all(
+                                      AppSpacing.space4,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
+                                      color: AppSemanticColors.surfaceDefault,
+                                      borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.xl2,
+                                      ),
                                       border: Border.all(
                                         color: _getStatusTextColor(
                                           vacation.status,
-                                        ).withOpacity(0.2),
+                                        ).withValues(alpha:0.2),
                                         width: 1,
                                       ),
                                     ),
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.all(8),
+                                          padding: const EdgeInsets.all(
+                                            AppSpacing.space2,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: _getStatusTextColor(
                                               vacation.status,
-                                            ).withOpacity(0.1),
+                                            ).withValues(alpha:0.1),
                                             borderRadius: BorderRadius.circular(
-                                              10,
+                                              AppBorderRadius.xl,
                                             ),
                                           ),
                                           child: Icon(
@@ -394,20 +431,21 @@ class _CalendarScreenState extends State<CalendarScreen>
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
+                                        const SizedBox(width: AppSpacing.space3),
                                         Expanded(
                                           child: Row(
                                             children: [
                                               // 휴무 유형 도형
                                               _buildVacationTypeShape(vacation),
-                                              const SizedBox(width: 8),
+                                              const SizedBox(
+                                                width: AppSpacing.space2,
+                                              ),
                                               Expanded(
                                                 child: Text(
                                                   vacation.displayName,
-                                                  style: const TextStyle(
-                                                    color: Colors.black,
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 16,
+                                                  style: AppTypography.bodyLarge.copyWith(
+                                                    color: AppSemanticColors.textPrimary,
+                                                    fontWeight: AppTypography.fontWeightSemibold,
                                                   ),
                                                 ),
                                               ),
@@ -416,23 +454,22 @@ class _CalendarScreenState extends State<CalendarScreen>
                                         ),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
+                                            horizontal: AppSpacing.space2,
+                                            vertical: AppSpacing.space1,
                                           ),
                                           decoration: BoxDecoration(
                                             color: _getStatusTextColor(
                                               vacation.status,
                                             ),
                                             borderRadius: BorderRadius.circular(
-                                              8,
+                                              AppBorderRadius.lg,
                                             ),
                                           ),
                                           child: Text(
                                             vacation.statusText,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
+                                            style: AppTypography.labelSmall.copyWith(
+                                              color: AppSemanticColors.textInverse,
+                                              fontWeight: AppTypography.fontWeightBold,
                                             ),
                                           ),
                                         ),
@@ -457,24 +494,29 @@ class _CalendarScreenState extends State<CalendarScreen>
             child: Consumer<VacationProvider>(
               builder: (context, vacationProvider, child) {
                 return Container(
-                  margin: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                  margin: const EdgeInsets.fromLTRB(
+                    AppSpacing.space6,
+                    AppSpacing.space2,
+                    AppSpacing.space6,
+                    AppSpacing.space4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppSemanticColors.surfaceDefault,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                     border: Border.all(
-                      color: const Color(0xFFE5E7EB),
+                      color: AppSemanticColors.borderDefault,
                       width: 1,
                     ),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x0A000000),
+                        color: AppColors.black.withValues(alpha: 0.04),
                         blurRadius: 3,
                         offset: Offset(0, 1),
                       ),
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.space4),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -482,31 +524,31 @@ class _CalendarScreenState extends State<CalendarScreen>
                           child: _buildStatItem(
                             '${_currentDate.month}월 총 휴무',
                             _getMonthlyTotal(vacationProvider).toString(),
-                            const Color(0xFF3B82F6), // blue.500
+                            AppSemanticColors.interactivePrimaryDefault,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.space3),
                         Expanded(
                           child: _buildStatItem(
                             '승인 대기',
                             _getMonthlyPending(vacationProvider).toString(),
-                            const Color(0xFFF59E0B), // amber.500
+                            AppSemanticColors.statusWarningIcon,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.space3),
                         Expanded(
                           child: _buildStatItem(
                             '승인됨',
                             _getMonthlyApproved(vacationProvider).toString(),
-                            const Color(0xFF10B981), // emerald.500
+                            AppSemanticColors.statusSuccessIcon,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.space3),
                         Expanded(
                           child: _buildStatItem(
                             '거절됨',
                             _getMonthlyRejected(vacationProvider).toString(),
-                            const Color(0xFFEF4444), // red.500
+                            AppSemanticColors.statusErrorIcon,
                           ),
                         ),
                       ],
@@ -518,7 +560,11 @@ class _CalendarScreenState extends State<CalendarScreen>
           ),
 
           // 하단 여백 - 플로팅 액션 버튼이 잘리지 않도록 충분한 여백 확보
-          const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
+          SliverPadding(
+            padding: EdgeInsets.only(
+              bottom: AppSpacing.space20 + AppSpacing.space6,
+            ),
+          ),
         ],
       ),
       floatingActionButton: ScaleTransition(
@@ -529,15 +575,18 @@ class _CalendarScreenState extends State<CalendarScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
+                AppSemanticColors.interactivePrimaryDefault
+                    .withValues(alpha: 0.8),
                 AppSemanticColors.interactivePrimaryDefault,
-                AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 1.2, red: 0.8),
+                AppSemanticColors.interactivePrimaryDefault
+                    .withValues(alpha: 0.6),
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
             boxShadow: [
               BoxShadow(
-                color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.4),
+                color: AppSemanticColors.interactivePrimaryDefault
+                    .withValues(alpha: 0.4),
                 blurRadius: 15,
                 offset: const Offset(0, 6),
               ),
@@ -545,20 +594,17 @@ class _CalendarScreenState extends State<CalendarScreen>
           ),
           child: FloatingActionButton.extended(
             onPressed: _showVacationRequestDialog,
-            backgroundColor: Colors.transparent,
+            backgroundColor: AppColors.transparent,
             elevation: 0,
-            icon: const Icon(
+            icon: Icon(
               Icons.add_circle_outline,
-              color: Colors.white,
+              color: AppSemanticColors.textInverse,
               size: 24,
             ),
-            label: const Text(
+            label: Text(
               '휴무 추가',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.2,
+              style: AppTypography.buttonLarge.copyWith(
+                color: AppSemanticColors.textInverse,
               ),
             ),
           ),
@@ -570,22 +616,22 @@ class _CalendarScreenState extends State<CalendarScreen>
   Color _getStatusBgColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
-        return const Color(0xFFDCFCE7); // green.100
+        return AppSemanticColors.statusSuccessBackground;
       case VacationStatus.rejected:
-        return const Color(0xFFFEE2E2); // red.100
+        return AppSemanticColors.statusErrorBackground;
       case VacationStatus.pending:
-        return const Color(0xFFFEF3C7); // yellow.100
+        return AppSemanticColors.statusWarningBackground;
     }
   }
 
   Color _getStatusTextColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
-        return const Color(0xFF15803D); // green.700
+        return AppSemanticColors.statusSuccessText;
       case VacationStatus.rejected:
-        return const Color(0xFFB91C1C); // red.700
+        return AppSemanticColors.statusErrorText;
       case VacationStatus.pending:
-        return const Color(0xFFA16207); // yellow.700
+        return AppSemanticColors.statusWarningText;
     }
   }
 
@@ -607,7 +653,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         width: 16,
         height: 16,
         child: CustomPaint(
-          painter: StarPainter(color: Colors.yellow.shade600),
+          painter: StarPainter(color: AppSemanticColors.statusWarningIcon),
           size: const Size(16, 16),
         ),
       );
@@ -622,10 +668,13 @@ class _CalendarScreenState extends State<CalendarScreen>
     return FilterChip(
       label: Text(
         label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : const Color(0xFF6B7280), // gray.500
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          fontSize: 14,
+        style: AppTypography.bodySmall.copyWith(
+          color: isSelected
+              ? AppSemanticColors.textInverse
+              : AppSemanticColors.textSecondary,
+          fontWeight: isSelected
+              ? AppTypography.fontWeightSemibold
+              : AppTypography.fontWeightMedium,
         ),
       ),
       selected: isSelected,
@@ -639,11 +688,13 @@ class _CalendarScreenState extends State<CalendarScreen>
         final companyId = authProvider.currentUser?.company?.id ?? '1';
         vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
       },
-      backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF3B82F6), // blue.500
-      checkmarkColor: Colors.white,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      selectedColor: AppSemanticColors.interactivePrimaryDefault,
+      checkmarkColor: AppSemanticColors.textInverse,
       side: BorderSide(
-        color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFFE5E7EB),
+        color: isSelected
+            ? AppSemanticColors.interactivePrimaryDefault
+            : AppSemanticColors.borderSubtle,
         width: 1,
       ),
     );
@@ -653,30 +704,28 @@ class _CalendarScreenState extends State<CalendarScreen>
     return Column(
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: AppSpacing.space8,
+          height: AppSpacing.space8,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: color.withValues(alpha:0.1),
+            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
           ),
           child: Center(
             child: Text(
               value,
-              style: TextStyle(
+              style: AppTypography.labelLarge.copyWith(
                 color: color,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
+                fontWeight: AppTypography.fontWeightBold,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.space2),
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFF6B7280), // gray.500
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+          style: AppTypography.bodySmall.copyWith(
+            color: AppSemanticColors.textTertiary,
+            fontWeight: AppTypography.fontWeightMedium,
           ),
           textAlign: TextAlign.center,
         ),

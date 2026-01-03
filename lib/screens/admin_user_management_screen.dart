@@ -54,9 +54,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         return Scaffold(
           backgroundColor: AppSemanticColors.backgroundPrimary,
           appBar: AppBar(
-            title: const Text('회원 관리', style: TextStyle(color: Colors.white),),
+            title: Text('회원 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
             backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-            foregroundColor: Colors.white,
+            foregroundColor: AppSemanticColors.textInverse,
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
@@ -64,7 +64,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white),
+                icon: Icon(Icons.refresh, color: AppSemanticColors.textInverse),
                 onPressed: _loadData,
               ),
             ],
@@ -77,12 +77,12 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.pending_actions,
-                        color: Colors.white,
+                        color: AppSemanticColors.textInverse,
                         size: 24,
                       ),
                     ),
@@ -94,7 +94,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                           Text(
                             '승인 대기 회원 관리',
                             style: AppTypography.bodyMedium.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
@@ -103,13 +103,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         'ADMIN',
                         style: AppTypography.labelSmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -129,7 +129,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('회원 관리'),
-        backgroundColor: Colors.red.shade600,
+        backgroundColor: AppSemanticColors.statusErrorIcon,
       ),
       body: Center(
         child: Column(
@@ -138,22 +138,21 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red.shade400,
+              color: AppSemanticColors.statusErrorIcon,
             ),
             const SizedBox(height: 16),
             Text(
               '관리자 권한이 필요합니다',
-              style: TextStyle(
-                fontSize: 18,
+              style: AppTypography.heading6.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.red.shade600,
+                color: AppSemanticColors.statusErrorIcon,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               '회원 관리 기능을 사용하려면 관리자 권한이 필요합니다.',
-              style: TextStyle(
-                color: Colors.grey.shade600,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -180,15 +179,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Icon(
                   Icons.error_outline,
                   size: 64,
-                  color: Colors.red.shade400,
+                  color: AppSemanticColors.statusErrorIcon,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   '오류 발생',
-                  style: TextStyle(
-                    fontSize: 18,
+                  style: AppTypography.heading6.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.red.shade600,
+                    color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -196,8 +194,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
                     adminProvider.errorMessage,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -220,14 +218,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Icon(
                   Icons.check_circle_outline,
                   size: 64,
-                  color: Colors.green.shade400,
+                  color: AppSemanticColors.statusSuccessIcon,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   '승인 대기 중인 사용자가 없습니다',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
+                  style: AppTypography.bodyLarge.copyWith(
+                    color: AppSemanticColors.textSecondary,
                   ),
                 ),
               ],
@@ -267,15 +264,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Icon(
                   Icons.error_outline,
                   size: 64,
-                  color: Colors.red.shade400,
+                  color: AppSemanticColors.statusErrorIcon,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   '오류 발생',
-                  style: TextStyle(
-                    fontSize: 18,
+                  style: AppTypography.heading6.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.red.shade600,
+                    color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -283,8 +279,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
                     adminProvider.errorMessage,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -307,14 +303,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Icon(
                   Icons.people_outline,
                   size: 64,
-                  color: Colors.grey.shade400,
+                  color: AppSemanticColors.textTertiary,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   '등록된 회원이 없습니다',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
+                  style: AppTypography.bodyLarge.copyWith(
+                    color: AppSemanticColors.textSecondary,
                   ),
                 ),
               ],
@@ -356,10 +351,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: Colors.orange.shade100,
+                      backgroundColor: AppSemanticColors.statusWarningBackground,
                       child: Icon(
                         Icons.person,
-                        color: Colors.orange.shade600,
+                        color: AppSemanticColors.statusWarningIcon,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -369,16 +364,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         children: [
                           Text(
                             user.name,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: AppTypography.bodyLarge.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
                             user.email,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
                             ),
                           ),
                         ],
@@ -390,14 +383,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
+                        color: AppSemanticColors.statusWarningBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         AdminUtils.getRoleDisplayName(user.role),
-                        style: TextStyle(
-                          color: Colors.orange.shade800,
-                          fontSize: 12,
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppSemanticColors.statusWarningText,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -412,7 +404,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         onPressed: isProcessing ? null : () => _showApprovalDialog(user),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.green600,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppSemanticColors.textInverse,
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           minimumSize: const Size(0, 36),
                           textStyle: const TextStyle(fontSize: 13),
@@ -420,13 +412,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        icon: isProcessing 
+                        icon: isProcessing
                             ? SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                                 ),
                               )
                             : const Icon(Icons.check, size: 18),
@@ -439,7 +431,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         onPressed: isProcessing ? null : () => _showRejectDialog(user),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.gray600,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppSemanticColors.textInverse,
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           minimumSize: const Size(0, 36),
                           textStyle: const TextStyle(fontSize: 13),
@@ -447,13 +439,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        icon: isProcessing 
+                        icon: isProcessing
                             ? SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                                 ),
                               )
                             : const Icon(Icons.close, size: 18),
@@ -487,14 +479,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: isActive 
-                      ? Colors.green.shade100 
-                      : Colors.grey.shade100,
+                  backgroundColor: isActive
+                      ? AppSemanticColors.statusSuccessBackground
+                      : AppSemanticColors.backgroundSecondary,
                   child: Icon(
                     Icons.person,
-                    color: isActive 
-                        ? Colors.green.shade600 
-                        : Colors.grey.shade600,
+                    color: isActive
+                        ? AppSemanticColors.statusSuccessIcon
+                        : AppSemanticColors.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -504,16 +496,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     children: [
                       Text(
                         user.name,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: AppTypography.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         user.email,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textSecondary,
                         ),
                       ),
                     ],
@@ -525,18 +515,17 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: isActive 
-                        ? Colors.green.shade100 
-                        : Colors.grey.shade100,
+                    color: isActive
+                        ? AppSemanticColors.statusSuccessBackground
+                        : AppSemanticColors.backgroundSecondary,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     AdminUtils.getStatusDisplayName(user.status),
-                    style: TextStyle(
-                      color: isActive 
-                          ? Colors.green.shade800 
-                          : Colors.grey.shade800,
-                      fontSize: 12,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: isActive
+                          ? AppSemanticColors.statusSuccessText
+                          : AppSemanticColors.textSecondary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -549,14 +538,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Icon(
                   Icons.work_outline,
                   size: 16,
-                  color: Colors.grey.shade600,
+                  color: AppSemanticColors.textSecondary,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   AdminUtils.getRoleDisplayName(user.role),
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 14,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textSecondary,
                   ),
                 ),
               ],
@@ -570,10 +558,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         ? null 
                         : () => _toggleMemberStatus(user),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isActive 
-                          ? AppColors.gray500 
+                      backgroundColor: isActive
+                          ? AppColors.gray500
                           : AppColors.blue600,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppSemanticColors.textInverse,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       minimumSize: const Size(0, 36),
                       textStyle: const TextStyle(fontSize: 13),
@@ -587,7 +575,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                             ),
                           )
                         : Icon(
@@ -595,8 +583,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             size: 18,
                           ),
                     label: Text(
-                      _processingStatusUsers.contains(user.id.toString()) 
-                          ? '처리중...' 
+                      _processingStatusUsers.contains(user.id.toString())
+                          ? '처리중...'
                           : (isActive ? '비활성화' : '활성화')
                     ),
                   ),
@@ -604,12 +592,12 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: _processingDeleteUsers.contains(user.id.toString()) 
-                        ? null 
+                    onPressed: _processingDeleteUsers.contains(user.id.toString())
+                        ? null
                         : () => _showDeleteDialog(user),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.gray700,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppSemanticColors.textInverse,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       minimumSize: const Size(0, 36),
                       textStyle: const TextStyle(fontSize: 13),
@@ -623,7 +611,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                             ),
                           )
                         : const Icon(Icons.delete, size: 18),
@@ -649,11 +637,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green),
-            SizedBox(width: 8),
-            Text('가입 승인'),
+            Icon(Icons.check_circle, color: AppSemanticColors.statusSuccessIcon),
+            const SizedBox(width: 8),
+            const Text('가입 승인'),
           ],
         ),
         content: Text('${user.name}님의 가입을 승인하시겠습니까?'),
@@ -681,14 +669,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text('${user.name}님의 가입을 승인했습니다.'),
-                    backgroundColor: Colors.green,
+                    backgroundColor: AppSemanticColors.statusSuccessIcon,
                   ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
+              backgroundColor: AppSemanticColors.statusSuccessIcon,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             child: const Text('승인'),
           ),
@@ -706,11 +694,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.cancel, color: Colors.red),
-            SizedBox(width: 8),
-            Text('가입 거부'),
+            Icon(Icons.cancel, color: AppSemanticColors.statusErrorIcon),
+            const SizedBox(width: 8),
+            const Text('가입 거부'),
           ],
         ),
         content: Column(
@@ -738,9 +726,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             onPressed: () async {
               if (reasonController.text.trim().isEmpty) {
                 ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('거부 사유를 입력해주세요.'),
-                    backgroundColor: Colors.red,
+                  SnackBar(
+                    content: const Text('거부 사유를 입력해주세요.'),
+                    backgroundColor: AppSemanticColors.statusErrorIcon,
                   ),
                 );
                 return;
@@ -764,14 +752,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text('${user.name}님의 가입을 거부했습니다.'),
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppSemanticColors.statusErrorIcon,
                   ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: AppSemanticColors.statusErrorIcon,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             child: const Text('거부'),
           ),
@@ -794,7 +782,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           children: [
             Icon(
               newStatus == 'active' ? Icons.play_arrow : Icons.pause,
-              color: newStatus == 'active' ? Colors.green : Colors.orange,
+              color: newStatus == 'active' ? AppSemanticColors.statusSuccessIcon : AppSemanticColors.statusWarningIcon,
             ),
             const SizedBox(width: 8),
             Text('회원 $actionText'),
@@ -826,7 +814,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('${user.name}님을 ${actionText}했습니다.'),
-                      backgroundColor: newStatus == 'active' ? Colors.green : Colors.orange,
+                      backgroundColor: newStatus == 'active' ? AppSemanticColors.statusSuccessIcon : AppSemanticColors.statusWarningIcon,
                     ),
                   );
                 }
@@ -840,8 +828,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: newStatus == 'active' ? Colors.green : Colors.orange,
-              foregroundColor: Colors.white,
+              backgroundColor: newStatus == 'active' ? AppSemanticColors.statusSuccessIcon : AppSemanticColors.statusWarningIcon,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             child: Text(actionText),
           ),
@@ -857,11 +845,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning, color: Colors.red),
-            SizedBox(width: 8),
-            Text('회원 삭제'),
+            Icon(Icons.warning, color: AppSemanticColors.statusErrorIcon),
+            const SizedBox(width: 8),
+            const Text('회원 삭제'),
           ],
         ),
         content: Column(
@@ -869,10 +857,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           children: [
             Text('${user.name}님을 삭제하시겠습니까?'),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               '이 작업은 되돌릴 수 없습니다.',
-              style: TextStyle(
-                color: Colors.red,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.statusErrorIcon,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -900,7 +888,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('${user.name}님을 삭제했습니다.'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: AppSemanticColors.statusErrorIcon,
                     ),
                   );
                 }
@@ -914,8 +902,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: AppSemanticColors.statusErrorIcon,
+              foregroundColor: AppSemanticColors.textInverse,
             ),
             child: const Text('삭제'),
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
+import '../theme/app_colors.dart';
 
 class UpdateDialog extends StatelessWidget {
   final String currentVersion;
@@ -42,7 +43,7 @@ class UpdateDialog extends StatelessWidget {
     return WillPopScope(
       onWillPop: () async => !forceUpdate,
       child: AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppSemanticColors.surfaceDefault,
         title: const Text('업데이트 알림'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -52,11 +53,11 @@ class UpdateDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               '현재 버전: $currentVersion',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: const TextStyle(fontSize: 14, color: AppSemanticColors.textSecondary),
             ),
             Text(
               '최신 버전: $latestVersion',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: const TextStyle(fontSize: 14, color: AppSemanticColors.textSecondary),
             ),
           ],
         ),

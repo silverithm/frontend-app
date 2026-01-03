@@ -67,7 +67,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
       appBar: AppBar(
         title: const Text('휴무 한도'),
         backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-        foregroundColor: Colors.white,
+        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -75,7 +75,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: AppSemanticColors.textInverse),
             onPressed: _loadData,
           ),
         ],
@@ -88,12 +88,12 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.event_available,
-                    color: Colors.white,
+                    color: AppSemanticColors.textInverse,
                     size: 24,
                   ),
                 ),
@@ -105,7 +105,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                       Text(
                         '일일 휴무 한도 설정',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -114,13 +114,13 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'ADMIN',
                     style: AppTypography.labelSmall.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -150,21 +150,22 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade600),
+                      Icon(Icons.info_outline, color: AppSemanticColors.statusInfoIcon),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         '일일 휴무 한도 설정',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        style: AppTypography.heading5.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     '각 날짜별로 승인 가능한 최대 휴무 인원을 설정할 수 있습니다.',
-                    style: TextStyle(color: Colors.grey),
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textTertiary,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
@@ -172,8 +173,8 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                     icon: const Icon(Icons.settings),
                     label: const Text('한도 설정'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal.shade600,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+                      foregroundColor: AppSemanticColors.textInverse,
                     ),
                   ),
                 ],
@@ -182,11 +183,10 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
           ),
           const SizedBox(height: 16),
           if (_vacationLimits.isNotEmpty) ...[
-            const Text(
+            Text(
               '현재 설정된 한도',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+              style: AppTypography.heading6.copyWith(
+                color: AppSemanticColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -195,7 +195,9 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   _vacationLimits.toString(),
-                  style: const TextStyle(fontSize: 14),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
                 ),
               ),
             ),

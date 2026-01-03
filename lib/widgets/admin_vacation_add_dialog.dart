@@ -23,6 +23,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
   
   DateTime? _selectedDate;
   String _selectedDuration = 'FULL_DAY';
+  String _selectedType = 'personal'; // 'personal' = 일반, 'mandatory' = 필수
   int? _selectedMemberId;
   List<Map<String, dynamic>> _members = [];
   bool _isLoading = false;
@@ -75,7 +76,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('직원 목록을 불러올 수 없습니다: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -95,7 +96,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
               primary: AppSemanticColors.interactiveSecondaryDefault,
-              onPrimary: Colors.white,
+              onPrimary: AppColors.white,
               surface: AppSemanticColors.surfaceDefault,
               onSurface: AppSemanticColors.textPrimary,
             ),
@@ -118,7 +119,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('휴무 날짜를 선택해주세요'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppSemanticColors.statusErrorIcon,
         ),
       );
       return;
@@ -127,7 +128,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('직원을 선택해주세요'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppSemanticColors.statusErrorIcon,
         ),
       );
       return;
@@ -145,6 +146,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         date: '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
         duration: _selectedDuration,
         reason: _reasonController.text.isNotEmpty ? _reasonController.text : null,
+        type: _selectedType,
       );
 
       if (mounted) {
@@ -153,7 +155,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('휴무가 성공적으로 등록되었습니다'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppSemanticColors.statusSuccessIcon,
             ),
           );
         } else {
@@ -165,7 +167,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('휴무 등록 실패: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -278,7 +280,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               ),
               const SizedBox(height: 8),
               Material(
-                color: Colors.transparent,
+                color: AppColors.transparent,
                 child: InkWell(
                   onTap: _selectDate,
                   borderRadius: BorderRadius.circular(12),
@@ -292,8 +294,8 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _selectedDate != null
-                            ? AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.3)
-                            : Colors.transparent,
+                            ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha:0.3)
+                            : AppColors.transparent,
                         width: 1,
                       ),
                     ),
@@ -336,7 +338,42 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
+              // 휴무 타입 선택
+              Text(
+                '휴무 타입',
+                style: AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  // 일반 휴무 버튼
+                  Expanded(
+                    child: _buildTypeOptionButton(
+                      text: '일반',
+                      isSelected: _selectedType == 'personal',
+                      onTap: () => setState(() => _selectedType = 'personal'),
+                      selectedColor: Colors.blue.shade100,
+                      selectedTextColor: Colors.blue.shade700,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 필수 휴무 버튼
+                  Expanded(
+                    child: _buildTypeOptionButton(
+                      text: '필수',
+                      isSelected: _selectedType == 'mandatory',
+                      onTap: () => setState(() => _selectedType = 'mandatory'),
+                      selectedColor: Colors.red.shade100,
+                      selectedTextColor: Colors.red.shade700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
               // 휴무 기간
               Text(
                 '휴무 기간',
@@ -418,7 +455,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                     onPressed: _isSubmitting ? null : _submitVacation,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,
@@ -430,7 +467,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                             ),
                           )
                         : const Text('휴무 등록'),
@@ -445,6 +482,40 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
     ),
   ),
   );
+  }
+
+  Widget _buildTypeOptionButton({
+    required String text,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color selectedColor,
+    required Color selectedTextColor,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? selectedColor : AppSemanticColors.backgroundSecondary,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? selectedTextColor : AppSemanticColors.borderDefault,
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: isSelected ? selectedTextColor : AppSemanticColors.textSecondary,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   String _getRoleDisplayName(String role) {

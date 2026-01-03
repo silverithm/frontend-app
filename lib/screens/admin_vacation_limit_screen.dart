@@ -4,6 +4,9 @@ import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/admin_utils.dart';
 import '../utils/constants.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 
 class AdminVacationLimitScreen extends StatefulWidget {
   const AdminVacationLimitScreen({super.key});
@@ -159,9 +162,9 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
       
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('휴무 한도가 저장되었습니다.'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('휴무 한도가 저장되었습니다.'),
+            backgroundColor: AppSemanticColors.statusSuccessIcon,
           ),
         );
       }
@@ -170,7 +173,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('저장에 실패했습니다: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -193,25 +196,24 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               '휴무 한도 설정',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              style: AppTypography.heading6.copyWith(
+                color: AppSemanticColors.textInverse,
               ),
             ),
-            backgroundColor: Colors.purple.shade600,
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.purple600,
+            foregroundColor: AppSemanticColors.textInverse,
             elevation: 0,
             actions: [
               IconButton(
-                icon: _isSaving 
-                    ? const SizedBox(
+                icon: _isSaving
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                         ),
                       )
                     : const Icon(Icons.save),
@@ -225,7 +227,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.purple.shade600,
+                  color: AppColors.purple600,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(20),
                     bottomRight: Radius.circular(20),
@@ -236,43 +238,41 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                   children: [
                     IconButton(
                       onPressed: () => _changeWeek(-1),
-                      icon: const Icon(Icons.chevron_left, color: Colors.white),
+                      icon: Icon(Icons.chevron_left, color: AppSemanticColors.textInverse),
                     ),
                     Text(
                       '${_formatDisplayDate(_selectedDate.subtract(Duration(days: _selectedDate.weekday - 1)))} ~ ${_formatDisplayDate(_selectedDate.add(Duration(days: 7 - _selectedDate.weekday)))}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: AppSemanticColors.textInverse,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
                       onPressed: () => _changeWeek(1),
-                      icon: const Icon(Icons.chevron_right, color: Colors.white),
+                      icon: Icon(Icons.chevron_right, color: AppSemanticColors.textInverse),
                     ),
                   ],
                 ),
               ),
-              
+
               // 안내 텍스트
               Container(
                 padding: const EdgeInsets.all(16),
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppSemanticColors.statusInfoBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(color: AppSemanticColors.statusInfoBorder),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
+                    Icon(Icons.info_outline, color: AppSemanticColors.statusInfoIcon, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         '각 날짜별로 최대 휴무 가능 인원을 설정하세요.',
-                        style: TextStyle(
-                          color: Colors.blue.shade700,
-                          fontSize: 14,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.statusInfoText,
                         ),
                       ),
                     ),
@@ -303,7 +303,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('휴무 한도 설정'),
-        backgroundColor: Colors.red.shade600,
+        backgroundColor: AppSemanticColors.statusErrorIcon,
       ),
       body: Center(
         child: Column(
@@ -312,22 +312,20 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red.shade400,
+              color: AppSemanticColors.statusErrorIcon,
             ),
             const SizedBox(height: 16),
             Text(
               '관리자 권한이 필요합니다',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.red.shade600,
+              style: AppTypography.heading5.copyWith(
+                color: AppSemanticColors.statusErrorIcon,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               '휴무 한도 설정 기능을 사용하려면 관리자 권한이 필요합니다.',
-              style: TextStyle(
-                color: Colors.grey.shade600,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -338,11 +336,11 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
   }
 
   Widget _buildDateCard(DateTime date, String dateKey) {
-    final isToday = date.day == DateTime.now().day && 
-                   date.month == DateTime.now().month && 
+    final isToday = date.day == DateTime.now().day &&
+                   date.month == DateTime.now().month &&
                    date.year == DateTime.now().year;
     final isWeekend = date.weekday >= 6;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 4,
@@ -352,7 +350,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: isToday ? Border.all(color: Colors.purple.shade600, width: 2) : null,
+          border: isToday ? Border.all(color: AppColors.purple600, width: 2) : null,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -365,23 +363,22 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isToday 
-                          ? Colors.purple.shade600
-                          : isWeekend 
-                              ? Colors.red.shade100
-                              : Colors.blue.shade100,
+                      color: isToday
+                          ? AppColors.purple600
+                          : isWeekend
+                              ? AppSemanticColors.statusErrorBackground
+                              : AppSemanticColors.statusInfoBackground,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       _formatDisplayDate(date),
-                      style: TextStyle(
-                        color: isToday 
-                            ? Colors.white
-                            : isWeekend 
-                                ? Colors.red.shade800
-                                : Colors.blue.shade800,
+                      style: AppTypography.labelMedium.copyWith(
+                        color: isToday
+                            ? AppSemanticColors.textInverse
+                            : isWeekend
+                                ? AppSemanticColors.statusErrorText
+                                : AppSemanticColors.statusInfoText,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -390,14 +387,13 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade100,
+                        color: AppSemanticColors.statusWarningBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '오늘',
-                        style: TextStyle(
-                          color: Colors.orange.shade800,
-                          fontSize: 12,
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppSemanticColors.statusWarningText,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -405,9 +401,9 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                   ],
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // 요양보호사 한도 설정
               Row(
                 children: [
@@ -419,16 +415,15 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                           children: [
                             Icon(
                               Icons.favorite,
-                              color: Colors.pink.shade600,
+                              color: AppColors.red500,
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               '요양보호사',
-                              style: TextStyle(
-                                fontSize: 14,
+                              style: AppTypography.labelMedium.copyWith(
+                                color: AppSemanticColors.textPrimary,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade800,
                               ),
                             ),
                           ],
@@ -456,9 +451,9 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(width: 16),
-                  
+
                   // 사무실 한도 설정
                   Expanded(
                     child: Column(
@@ -468,16 +463,15 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                           children: [
                             Icon(
                               Icons.business,
-                              color: Colors.blue.shade600,
+                              color: AppSemanticColors.statusInfoIcon,
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               '사무실',
-                              style: TextStyle(
-                                fontSize: 14,
+                              style: AppTypography.labelMedium.copyWith(
+                                color: AppSemanticColors.textPrimary,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade800,
                               ),
                             ),
                           ],

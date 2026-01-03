@@ -43,7 +43,7 @@ class AppCard extends StatelessWidget {
         boxShadow: elevation != null && elevation! > 0
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: AppColors.black.withValues(alpha:0.1),
                   blurRadius: elevation!,
                   offset: Offset(0, elevation! / 2),
                 ),
@@ -55,7 +55,7 @@ class AppCard extends StatelessWidget {
 
     if (onTap != null) {
       return Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(borderRadius ?? AppBorderRadius.xl),

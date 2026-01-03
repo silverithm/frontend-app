@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../theme/app_colors.dart';
 import '../providers/subscription_provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/subscription_check_screen.dart';
@@ -100,7 +101,7 @@ class SubscriptionGuard {
           children: [
             Icon(
               Icons.workspace_premium,
-              color: Colors.orange.shade600,
+              color: AppSemanticColors.statusWarningIcon,
             ),
             const SizedBox(width: 8),
             const Text('구독 필요'),
@@ -141,7 +142,7 @@ class SubscriptionGuard {
             children: [
               Icon(
                 Icons.warning,
-                color: Colors.orange.shade600,
+                color: AppSemanticColors.statusWarningIcon,
               ),
               const SizedBox(width: 8),
               const Text('구독 만료 예정'),

@@ -27,6 +27,7 @@ class AppInput extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final String? Function(String?)? validator;
   final AutovalidateMode? autovalidateMode;
+  final bool autofocus;
 
   const AppInput({
     super.key,
@@ -52,6 +53,7 @@ class AppInput extends StatefulWidget {
     this.inputFormatters,
     this.validator,
     this.autovalidateMode,
+    this.autofocus = false,
   });
 
   @override
@@ -114,6 +116,7 @@ class _AppInputState extends State<AppInput> {
           inputFormatters: widget.inputFormatters,
           validator: widget.validator,
           autovalidateMode: widget.autovalidateMode,
+          autofocus: widget.autofocus,
           style: AppTypography.bodyMedium.copyWith(
             color: widget.enabled
                 ? AppSemanticColors.textPrimary

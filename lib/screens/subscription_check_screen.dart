@@ -65,7 +65,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppSemanticColors.backgroundPrimary,
       body: Consumer2<SubscriptionProvider, AuthProvider>(
         builder: (context, subscriptionProvider, authProvider, child) {
           if (subscriptionProvider.isLoading) {
@@ -114,8 +114,8 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.1),
-                  AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.05),
+                  AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1),
+                  AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
@@ -144,7 +144,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -152,7 +152,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             end: Alignment.bottomRight,
             colors: [
               AppSemanticColors.interactiveSecondaryDefault,
-              AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.8),
+              AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.8),
             ],
           ),
         ),
@@ -161,7 +161,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
           title: Text(
             '요금제 선택',
             style: AppTypography.heading5.copyWith(
-              color: Colors.white,
+              color: AppSemanticColors.textInverse,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -177,12 +177,12 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white, Colors.blue.shade50],
+          colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.statusInfoBackground],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: AppColors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -197,14 +197,14 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               gradient: LinearGradient(
                 colors: [
                   AppSemanticColors.interactiveSecondaryDefault,
-                  AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.7),
+                  AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.7),
                 ],
               ),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.business_center,
-              color: Colors.white,
+              color: AppSemanticColors.textInverse,
               size: 40,
             ),
           ),
@@ -275,8 +275,8 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white,
-                      AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.05),
+                      AppSemanticColors.surfaceDefault,
+                      AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.05),
                     ],
                   )
                 : null,
@@ -315,7 +315,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                                   child: Text(
                                     '추천',
                                     style: AppTypography.labelSmall.copyWith(
-                                      color: Colors.white,
+                                      color: AppSemanticColors.textInverse,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -340,7 +340,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                           Text(
                             '무료',
                             style: AppTypography.heading4.copyWith(
-                              color: Colors.green.shade600,
+                              color: AppSemanticColors.statusSuccessIcon,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -373,8 +373,8 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                       style: AppTypography.labelSmall.copyWith(fontSize: 11),
                     ),
                     backgroundColor: plan.isPopular
-                        ? AppSemanticColors.interactiveSecondaryDefault.withOpacity(0.1)
-                        : Colors.grey.shade100,
+                        ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
+                        : AppSemanticColors.backgroundSecondary,
                     side: BorderSide.none,
                   )).toList(),
                 ),
@@ -387,7 +387,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                       backgroundColor: plan.isPopular
                           ? AppSemanticColors.interactiveSecondaryDefault
                           : AppSemanticColors.interactivePrimaryDefault,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppSemanticColors.textInverse,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -395,13 +395,13 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                       elevation: 0,
                     ),
                     child: Text(
-                      !canUseFree 
+                      !canUseFree
                           ? '이미 사용함'
                           : plan.type == SubscriptionType.FREE
                               ? '무료 체험 시작'
                               : '구독하기',
                       style: AppTypography.bodyMedium.copyWith(
-                        color: Colors.white,
+                        color: AppSemanticColors.textInverse,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -419,11 +419,11 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 5),
           ),
@@ -452,7 +452,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               children: [
                 Icon(
                   Icons.check_circle,
-                  color: Colors.green.shade600,
+                  color: AppSemanticColors.statusSuccessIcon,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -474,7 +474,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: AppSemanticColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -579,17 +579,17 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               height: 60,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.green.shade400, Colors.green.shade600],
+                  colors: [AppColors.green400, AppColors.green600],
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check, color: Colors.white, size: 30),
+              child: Icon(Icons.check, color: AppSemanticColors.textInverse, size: 30),
             ),
             const SizedBox(height: 16),
             Text(
               '성공!',
               style: AppTypography.heading6.copyWith(
-                color: Colors.green.shade600,
+                color: AppSemanticColors.statusSuccessIcon,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -607,8 +607,8 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             child: ElevatedButton(
               onPressed: onConfirm,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-                foregroundColor: Colors.white,
+                backgroundColor: AppSemanticColors.statusSuccessIcon,
+                foregroundColor: AppSemanticColors.textInverse,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -628,7 +628,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.error, color: Colors.red.shade600),
+            Icon(Icons.error, color: AppSemanticColors.statusErrorIcon),
             const SizedBox(width: 8),
             const Text('오류'),
           ],
