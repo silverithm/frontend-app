@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 import '../services/storage_service.dart';
@@ -610,6 +612,36 @@ class ApiService {
       print('[API] 알림 조회 요청: $uri');
 
       return await http.get(uri, headers: await _getHeaders());
+    });
+  }
+
+  // 알림 읽음 처리
+  Future<Map<String, dynamic>> markNotificationAsRead({
+    required String notificationId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.notificationsEndpoint.replaceFirst('/user', '')}/$notificationId/read',
+      );
+
+      print('[API] 알림 읽음 처리 요청: $uri');
+
+      return await http.put(uri, headers: await _getHeaders());
+    });
+  }
+
+  // 전체 알림 읽음 처리
+  Future<Map<String, dynamic>> markAllNotificationsAsRead({
+    required String userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.notificationsEndpoint}/$userId/read-all',
+      );
+
+      print('[API] 전체 알림 읽음 처리 요청: $uri');
+
+      return await http.put(uri, headers: await _getHeaders());
     });
   }
 
@@ -1402,6 +1434,1280 @@ class ApiService {
   }
 
 
+  // ===================== 공지사항 API =====================
+
+  // 관리자용 공지사항 목록 조회 (필터링 지원)
+  Future<Map<String, dynamic>> getNotices({
+    required String companyId,
+    String? status,
+    String? priority,
+    String? search,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'companyId': companyId,
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+      if (priority != null && priority.isNotEmpty) {
+        queryParams['priority'] = priority;
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final uri = Uri.parse('$_baseUrl/v1/notices').replace(queryParameters: queryParams);
+
+      print('[API] 공지사항 목록 조회 (관리자): $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 직원용 게시된 공지사항 목록 조회
+  Future<Map<String, dynamic>> getPublishedNotices({
+    required String companyId,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'companyId': companyId,
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+
+      final uri = Uri.parse('$_baseUrl/v1/notices/published').replace(queryParameters: queryParams);
+
+      print('[API] 공지사항 목록 조회 (직원용): $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 공지사항 상세 조회
+  Future<Map<String, dynamic>> getNoticeDetail({
+    required int noticeId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId');
+
+      print('[API] 공지사항 상세 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 공지사항 등록
+  Future<Map<String, dynamic>> createNotice({
+    required String companyId,
+    required String title,
+    required String content,
+    String priority = 'NORMAL',
+    String status = 'DRAFT',
+    bool isPinned = false,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices').replace(
+        queryParameters: {'companyId': companyId},
+      );
+
+      final body = {
+        'title': title,
+        'content': content,
+        'priority': priority,
+        'status': status,
+        'isPinned': isPinned,
+      };
+
+      print('[API] 공지사항 등록: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 공지사항 수정
+  Future<Map<String, dynamic>> updateNotice({
+    required int noticeId,
+    required String title,
+    required String content,
+    String priority = 'NORMAL',
+    String status = 'DRAFT',
+    bool isPinned = false,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId');
+
+      final body = {
+        'title': title,
+        'content': content,
+        'priority': priority,
+        'status': status,
+        'isPinned': isPinned,
+      };
+
+      print('[API] 공지사항 수정: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 공지사항 삭제
+  Future<Map<String, dynamic>> deleteNotice({
+    required int noticeId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId');
+
+      print('[API] 공지사항 삭제: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 공지사항 조회수 증가
+  Future<Map<String, dynamic>> incrementNoticeViewCount({
+    required int noticeId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId/view');
+
+      print('[API] 공지사항 조회수 증가: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(uri, headers: headers);
+    });
+  }
+
+  // 공지사항 댓글 목록 조회
+  Future<Map<String, dynamic>> getNoticeComments({
+    required int noticeId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId/comments');
+
+      print('[API] 공지사항 댓글 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 공지사항 댓글 생성
+  Future<Map<String, dynamic>> createNoticeComment({
+    required int noticeId,
+    required String authorId,
+    required String authorName,
+    required String content,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId/comments');
+
+      final body = {
+        'authorId': authorId,
+        'authorName': authorName,
+        'content': content,
+      };
+
+      print('[API] 공지사항 댓글 생성: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 공지사항 댓글 삭제
+  Future<Map<String, dynamic>> deleteNoticeComment({
+    required int noticeId,
+    required int commentId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId/comments/$commentId');
+
+      print('[API] 공지사항 댓글 삭제: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 공지사항 읽은 사용자 목록 조회
+  Future<Map<String, dynamic>> getNoticeReaders({
+    required int noticeId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId/readers');
+
+      print('[API] 공지사항 읽은 사용자 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 공지사항 읽음 기록
+  Future<Map<String, dynamic>> markNoticeAsRead({
+    required int noticeId,
+    required String userId,
+    required String userName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId/readers');
+
+      print('[API] 공지사항 읽음 기록: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'userId': userId,
+          'userName': userName,
+        }),
+      );
+    });
+  }
+
+  // ===================== 전자결재 API =====================
+
+  // 결재 요청 목록 조회 (관리자용)
+  Future<Map<String, dynamic>> getApprovalRequests({
+    required String companyId,
+    String? status,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'companyId': companyId,
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+
+      final uri = Uri.parse('$_baseUrl/v1/approvals').replace(queryParameters: queryParams);
+
+      print('[API] 결재 요청 목록 조회 (관리자): $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 내 결재 요청 목록 조회 (직원용)
+  Future<Map<String, dynamic>> getMyApprovalRequests({
+    required String requesterId,
+    String? status,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'requesterId': requesterId,
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+
+      final uri = Uri.parse('$_baseUrl/v1/approvals/my').replace(queryParameters: queryParams);
+
+      print('[API] 내 결재 요청 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 결재 요청 상세 조회
+  Future<Map<String, dynamic>> getApprovalRequestDetail({
+    required int approvalId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId');
+
+      print('[API] 결재 요청 상세 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 결재 첨부파일 업로드 (S3)
+  Future<Map<String, dynamic>> uploadApprovalFile({
+    required dynamic file,
+  }) async {
+    try {
+      final url = '$_baseUrl/v1/approvals/files';
+      print('[API] 결재 파일 업로드: $url');
+
+      final token = StorageService().getToken();
+
+      // 파일 경로 얻기
+      String filePath;
+      if (file is String) {
+        filePath = file;
+      } else if (file is File) {
+        filePath = file.path;
+      } else {
+        filePath = file.path;
+      }
+
+      // 파일 크기 확인
+      final fileObj = File(filePath);
+      final fileSize = await fileObj.length();
+      final fileName = filePath.split('/').last;
+
+      print('[API] 업로드 파일명: $fileName, 크기: $fileSize bytes (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB)');
+
+      // dio FormData 생성
+      final formData = dio.FormData.fromMap({
+        'file': await dio.MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        ),
+      });
+
+      // dio 인스턴스 생성
+      final dioClient = dio.Dio();
+      dioClient.options.connectTimeout = const Duration(seconds: 30);
+      dioClient.options.receiveTimeout = const Duration(seconds: 60);
+      dioClient.options.sendTimeout = const Duration(seconds: 60);
+
+      final response = await dioClient.post(
+        url,
+        data: formData,
+        options: dio.Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'ngrok-skip-browser-warning': 'true',
+          },
+        ),
+        onSendProgress: (sent, total) {
+          final progress = (sent / total * 100).toStringAsFixed(1);
+          print('[API] 업로드 진행률: $progress% ($sent / $total)');
+        },
+      );
+
+      print('[API] 결재 파일 업로드 응답 상태: ${response.statusCode}');
+      print('[API] 결재 파일 업로드 응답: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.data is Map<String, dynamic>) {
+          return response.data;
+        } else if (response.data is String) {
+          return json.decode(response.data);
+        } else {
+          return {'success': true, 'data': response.data};
+        }
+      } else {
+        final errorMsg = response.data is Map
+            ? (response.data['error'] ?? '파일 업로드 실패')
+            : '파일 업로드 실패';
+        throw ApiException(errorMsg, response.statusCode ?? 500);
+      }
+    } on dio.DioException catch (e) {
+      print('[API] 결재 파일 업로드 Dio 에러: ${e.message}');
+      print('[API] 에러 응답: ${e.response?.data}');
+
+      String errorMessage = '파일 업로드 실패';
+      if (e.response?.data != null) {
+        if (e.response!.data is Map) {
+          errorMessage = e.response!.data['error'] ?? errorMessage;
+        } else if (e.response!.data is String) {
+          try {
+            final errorJson = json.decode(e.response!.data);
+            errorMessage = errorJson['error'] ?? errorMessage;
+          } catch (_) {
+            errorMessage = e.response!.data;
+          }
+        }
+      }
+      throw ApiException(errorMessage, e.response?.statusCode ?? 500);
+    } catch (e) {
+      print('[API] 결재 파일 업로드 에러: $e');
+      throw Exception('파일 업로드 실패: $e');
+    }
+  }
+
+  // 결재 요청 생성
+  Future<Map<String, dynamic>> createApprovalRequest({
+    required String companyId,
+    required String requesterId,
+    required String requesterName,
+    required int templateId,
+    required String title,
+    String? attachmentUrl,
+    String? attachmentFileName,
+    int? attachmentFileSize,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals').replace(
+        queryParameters: {
+          'companyId': companyId,
+          'requesterId': requesterId,
+          'requesterName': requesterName,
+        },
+      );
+
+      final body = <String, dynamic>{
+        'templateId': templateId,
+        'title': title,
+      };
+
+      if (attachmentUrl != null) body['attachmentUrl'] = attachmentUrl;
+      if (attachmentFileName != null) body['attachmentFileName'] = attachmentFileName;
+      if (attachmentFileSize != null) body['attachmentFileSize'] = attachmentFileSize;
+
+      print('[API] 결재 요청 생성: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 결재 요청 승인
+  Future<Map<String, dynamic>> approveApprovalRequest({
+    required int approvalId,
+    required String processedBy,
+    required String processedByName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/approve').replace(
+        queryParameters: {
+          'processedBy': processedBy,
+          'processedByName': processedByName,
+        },
+      );
+
+      print('[API] 결재 요청 승인: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers);
+    });
+  }
+
+  // 결재 요청 거절
+  Future<Map<String, dynamic>> rejectApprovalRequest({
+    required int approvalId,
+    required String processedBy,
+    required String processedByName,
+    required String reason,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/reject').replace(
+        queryParameters: {
+          'processedBy': processedBy,
+          'processedByName': processedByName,
+        },
+      );
+
+      print('[API] 결재 요청 거절: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'reason': reason}),
+      );
+    });
+  }
+
+  // 결재 요청 일괄 승인
+  Future<Map<String, dynamic>> bulkApproveApprovalRequests({
+    required List<int> approvalIds,
+    required String processedBy,
+    required String processedByName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/bulk-approve').replace(
+        queryParameters: {
+          'processedBy': processedBy,
+          'processedByName': processedByName,
+        },
+      );
+
+      print('[API] 결재 요청 일괄 승인: $uri');
+      print('[API] 요청 ID 목록: $approvalIds');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'ids': approvalIds}),
+      );
+    });
+  }
+
+  // 결재 요청 일괄 거절
+  Future<Map<String, dynamic>> bulkRejectApprovalRequests({
+    required List<int> approvalIds,
+    required String processedBy,
+    required String processedByName,
+    required String reason,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/bulk-reject').replace(
+        queryParameters: {
+          'processedBy': processedBy,
+          'processedByName': processedByName,
+        },
+      );
+
+      print('[API] 결재 요청 일괄 거절: $uri');
+      print('[API] 요청 ID 목록: $approvalIds');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'ids': approvalIds,
+          'reason': reason,
+        }),
+      );
+    });
+  }
+
+  // 결재 요청 취소 (삭제)
+  Future<Map<String, dynamic>> deleteApprovalRequest({
+    required int approvalId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId');
+
+      print('[API] 결재 요청 취소: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // ===================== 결재 양식 API =====================
+
+  // 결재 양식 목록 조회 (관리자용)
+  Future<Map<String, dynamic>> getApprovalTemplates({
+    required String companyId,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'companyId': companyId,
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+
+      final uri = Uri.parse('$_baseUrl/v1/approval-templates').replace(queryParameters: queryParams);
+
+      print('[API] 결재 양식 목록 조회 (관리자): $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 활성 결재 양식 목록 조회 (직원용)
+  Future<Map<String, dynamic>> getActiveApprovalTemplates({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {'companyId': companyId};
+
+      final uri = Uri.parse('$_baseUrl/v1/approval-templates/active').replace(queryParameters: queryParams);
+
+      print('[API] 활성 결재 양식 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 결재 양식 상세 조회
+  Future<Map<String, dynamic>> getApprovalTemplateDetail({
+    required int templateId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approval-templates/$templateId');
+
+      print('[API] 결재 양식 상세 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 결재 양식 생성
+  Future<Map<String, dynamic>> createApprovalTemplate({
+    required String companyId,
+    required String name,
+    String? description,
+    String? fileUrl,
+    String? fileName,
+    int? fileSize,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approval-templates').replace(
+        queryParameters: {'companyId': companyId},
+      );
+
+      final body = <String, dynamic>{
+        'name': name,
+      };
+
+      if (description != null) body['description'] = description;
+      if (fileUrl != null) body['fileUrl'] = fileUrl;
+      if (fileName != null) body['fileName'] = fileName;
+      if (fileSize != null) body['fileSize'] = fileSize;
+
+      print('[API] 결재 양식 생성: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 결재 양식 수정
+  Future<Map<String, dynamic>> updateApprovalTemplate({
+    required int templateId,
+    required String name,
+    String? description,
+    String? fileUrl,
+    String? fileName,
+    int? fileSize,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approval-templates/$templateId');
+
+      final body = <String, dynamic>{
+        'name': name,
+      };
+
+      if (description != null) body['description'] = description;
+      if (fileUrl != null) body['fileUrl'] = fileUrl;
+      if (fileName != null) body['fileName'] = fileName;
+      if (fileSize != null) body['fileSize'] = fileSize;
+
+      print('[API] 결재 양식 수정: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 결재 양식 활성화 토글
+  Future<Map<String, dynamic>> toggleApprovalTemplateActive({
+    required int templateId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approval-templates/$templateId/toggle-active');
+
+      print('[API] 결재 양식 활성화 토글: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers);
+    });
+  }
+
+  // 결재 양식 삭제
+  Future<Map<String, dynamic>> deleteApprovalTemplate({
+    required int templateId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approval-templates/$templateId');
+
+      print('[API] 결재 양식 삭제: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // ===================== 채팅 API =====================
+
+  // 채팅방 목록 조회
+  Future<Map<String, dynamic>> getChatRooms({
+    required String companyId,
+    required String userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'companyId': companyId,
+        'userId': userId,
+      };
+
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms').replace(queryParameters: queryParams);
+
+      print('[API] 채팅방 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 채팅방 생성
+  Future<Map<String, dynamic>> createChatRoom({
+    required String companyId,
+    required String name,
+    String? description,
+    required String createdBy,
+    required String createdByName,
+    required List<String> participantIds,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms').replace(
+        queryParameters: {'companyId': companyId},
+      );
+
+      final body = {
+        'name': name,
+        'description': description,
+        'createdBy': createdBy,
+        'createdByName': createdByName,
+        'participantIds': participantIds,
+      };
+
+      print('[API] 채팅방 생성: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 채팅방 상세 조회
+  Future<Map<String, dynamic>> getChatRoomDetail({
+    required int roomId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId');
+
+      print('[API] 채팅방 상세 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 채팅방 수정
+  Future<Map<String, dynamic>> updateChatRoom({
+    required int roomId,
+    required String name,
+    String? description,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId');
+
+      final body = <String, dynamic>{
+        'name': name,
+      };
+      if (description != null) body['description'] = description;
+
+      print('[API] 채팅방 수정: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 채팅방 나가기
+  Future<Map<String, dynamic>> leaveChatRoom({
+    required int roomId,
+    required String userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/leave').replace(
+        queryParameters: {'userId': userId},
+      );
+
+      print('[API] 채팅방 나가기: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(uri, headers: headers);
+    });
+  }
+
+  // 채팅방 삭제
+  Future<Map<String, dynamic>> deleteChatRoom({
+    required int roomId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId');
+
+      print('[API] 채팅방 삭제: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 채팅방 참가자 목록 조회
+  Future<Map<String, dynamic>> getChatParticipants({
+    required int roomId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/participants');
+
+      print('[API] 채팅방 참가자 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 채팅방 참가자 추가
+  Future<Map<String, dynamic>> addChatParticipants({
+    required int roomId,
+    required List<String> userIds,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/participants');
+
+      final body = {
+        'userIds': userIds,
+      };
+
+      print('[API] 채팅방 참가자 추가: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 채팅방 참가자 제거/강퇴
+  Future<Map<String, dynamic>> removeChatParticipant({
+    required int roomId,
+    required String userId,
+    bool isKicked = false,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/participants/$userId').replace(
+        queryParameters: {'isKicked': isKicked.toString()},
+      );
+
+      print('[API] 채팅방 참가자 제거: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 메시지 목록 조회
+  Future<Map<String, dynamic>> getChatMessages({
+    required int roomId,
+    int page = 0,
+    int size = 50,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'page': page.toString(),
+        'size': size.toString(),
+      };
+
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages').replace(queryParameters: queryParams);
+
+      print('[API] 채팅 메시지 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 메시지 전송
+  Future<Map<String, dynamic>> sendChatMessage({
+    required int roomId,
+    required String content,
+    required String type,
+    required String senderId,
+    required String senderName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages');
+
+      final body = {
+        'content': content,
+        'type': type,
+        'senderId': senderId,
+        'senderName': senderName,
+      };
+
+      print('[API] 메시지 전송: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 메시지 삭제
+  Future<Map<String, dynamic>> deleteChatMessage({
+    required int roomId,
+    required int messageId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId');
+
+      print('[API] 메시지 삭제: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 읽음 처리
+  Future<Map<String, dynamic>> markChatAsRead({
+    required int roomId,
+    required int lastMessageId,
+    required String userId,
+    required String userName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/read');
+
+      final body = {
+        'lastMessageId': lastMessageId,
+        'userId': userId,
+        'userName': userName,
+      };
+
+      print('[API] 채팅 읽음 처리: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(body),
+      );
+    });
+  }
+
+  // 메시지 읽은 사람 목록 조회
+  Future<Map<String, dynamic>> getChatMessageReaders({
+    required int roomId,
+    required int messageId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/readers');
+
+      print('[API] 메시지 읽은 사람 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 공유 파일 목록 조회
+  Future<Map<String, dynamic>> getChatSharedMedia({
+    required int roomId,
+    String? type,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = <String, String>{};
+      if (type != null) queryParams['type'] = type;
+
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/files').replace(queryParameters: queryParams);
+
+      print('[API] 공유 파일 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 파일 업로드 (dio 사용 - 더 안정적인 multipart 처리)
+  Future<Map<String, dynamic>> uploadChatFile({
+    required int roomId,
+    required dynamic file,
+    required String senderId,
+    required String senderName,
+  }) async {
+    try {
+      final url = '$_baseUrl/v1/chat/rooms/$roomId/files';
+      print('[API] 채팅 파일 업로드: $url');
+
+      final token = StorageService().getToken();
+
+      // 파일 경로 얻기
+      String filePath;
+      if (file is String) {
+        filePath = file;
+      } else if (file is File) {
+        filePath = file.path;
+      } else {
+        filePath = file.path;
+      }
+
+      // 파일 크기 확인
+      final fileObj = File(filePath);
+      final fileSize = await fileObj.length();
+      final fileName = filePath.split('/').last;
+
+      print('[API] 업로드 파일명: $fileName, 크기: $fileSize bytes (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB)');
+
+      // dio FormData 생성
+      final formData = dio.FormData.fromMap({
+        'file': await dio.MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        ),
+        'senderId': senderId,
+        'senderName': senderName,
+      });
+
+      // dio 인스턴스 생성
+      final dioClient = dio.Dio();
+      dioClient.options.connectTimeout = const Duration(seconds: 30);
+      dioClient.options.receiveTimeout = const Duration(seconds: 60);
+      dioClient.options.sendTimeout = const Duration(seconds: 60);
+
+      final response = await dioClient.post(
+        url,
+        data: formData,
+        options: dio.Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'ngrok-skip-browser-warning': 'true',
+          },
+        ),
+        onSendProgress: (sent, total) {
+          final progress = (sent / total * 100).toStringAsFixed(1);
+          print('[API] 업로드 진행률: $progress% ($sent / $total)');
+        },
+      );
+
+      print('[API] 파일 업로드 응답 상태: ${response.statusCode}');
+      print('[API] 파일 업로드 응답: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.data is Map<String, dynamic>) {
+          return response.data;
+        } else if (response.data is String) {
+          return json.decode(response.data);
+        } else {
+          return {'success': true, 'data': response.data};
+        }
+      } else {
+        final errorMsg = response.data is Map
+            ? (response.data['error'] ?? '파일 업로드 실패')
+            : '파일 업로드 실패';
+        throw ApiException(errorMsg, response.statusCode ?? 500);
+      }
+    } on dio.DioException catch (e) {
+      print('[API] 파일 업로드 Dio 에러: ${e.message}');
+      print('[API] 에러 응답: ${e.response?.data}');
+
+      String errorMessage = '파일 업로드 실패';
+      if (e.response?.data != null) {
+        if (e.response!.data is Map) {
+          errorMessage = e.response!.data['error'] ?? errorMessage;
+        } else if (e.response!.data is String) {
+          try {
+            final errorJson = json.decode(e.response!.data);
+            errorMessage = errorJson['error'] ?? errorMessage;
+          } catch (_) {
+            errorMessage = e.response!.data;
+          }
+        }
+      }
+      throw ApiException(errorMessage, e.response?.statusCode ?? 500);
+    } catch (e) {
+      print('[API] 파일 업로드 에러: $e');
+      throw Exception('파일 업로드 실패: $e');
+    }
+  }
+
+  // 채팅 메시지 리액션 토글 (추가/삭제)
+  Future<Map<String, dynamic>> toggleChatReaction({
+    required int roomId,
+    required int messageId,
+    required String userId,
+    required String userName,
+    required String emoji,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/reactions');
+
+      print('[API] 리액션 토글: roomId=$roomId, messageId=$messageId, emoji=$emoji');
+
+      return await http.post(
+        uri,
+        headers: await _getHeaders(),
+        body: json.encode({
+          'userId': userId,
+          'userName': userName,
+          'emoji': emoji,
+        }),
+      );
+    });
+  }
+
+  // 채팅 메시지 리액션 조회
+  Future<Map<String, dynamic>> getChatReactions({
+    required int roomId,
+    required int messageId,
+    String? userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      var uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/reactions');
+      if (userId != null) {
+        uri = uri.replace(queryParameters: {'userId': userId});
+      }
+
+      return await http.get(uri, headers: await _getHeaders());
+    });
+  }
+
   // 관리자 회원탈퇴
   Future<Map<String, dynamic>> deleteAdminAccount() async {
     try {
@@ -1450,6 +2756,53 @@ class ApiService {
       print('[API] 관리자 회원탈퇴 오류: $e');
       throw ApiException('네트워크 오류가 발생했습니다', 0);
     }
+  }
+
+  // ===================== 일정 API =====================
+
+  // 일정 목록 조회
+  Future<Map<String, dynamic>> getSchedules({
+    required String companyId,
+    String? startDate,
+    String? endDate,
+    String? category,
+    int? labelId,
+    String? searchQuery,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = <String, String>{
+        'companyId': companyId,
+      };
+
+      if (startDate != null) queryParams['startDate'] = startDate;
+      if (endDate != null) queryParams['endDate'] = endDate;
+      if (category != null) queryParams['category'] = category;
+      if (labelId != null) queryParams['labelId'] = labelId.toString();
+      if (searchQuery != null) queryParams['searchQuery'] = searchQuery;
+
+      final uri = Uri.parse('$_baseUrl/v1/schedules').replace(queryParameters: queryParams);
+
+      print('[API] 일정 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 일정 상세 조회
+  Future<Map<String, dynamic>> getScheduleDetail({required int scheduleId}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId');
+
+      print('[API] 일정 상세 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
   }
 }
 

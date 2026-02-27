@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
-import '../providers/notification_provider.dart';
+import '../widgets/common/notification_bell.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/app_theme.dart';
 import 'dart:math' as math;
 
 class MyVacationScreen extends StatefulWidget {
-  const MyVacationScreen({super.key});
+  final bool showAppBar;
+
+  const MyVacationScreen({super.key, this.showAppBar = true});
 
   @override
   State<MyVacationScreen> createState() => _MyVacationScreenState();
@@ -106,283 +108,13 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     }
   }
 
-  void _showNotifications() {
-    // 알림 데이터 로드
-    final authProvider = context.read<AuthProvider>();
-    final notificationProvider = context.read<NotificationProvider>();
-
-    if (authProvider.currentUser != null) {
-      notificationProvider.loadNotifications(authProvider.currentUser!.id);
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: AppSemanticColors.surfaceDefault,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(AppBorderRadius.xl3),
-            topRight: Radius.circular(AppBorderRadius.xl3),
-          ),
-        ),
-        child: Column(
-          children: [
-            // 핸들 바
-            Container(
-              width: AppSpacing.space10,
-              height: AppSpacing.space1,
-              margin: const EdgeInsets.symmetric(
-                vertical: AppSpacing.space3,
-              ),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.borderSubtle,
-                borderRadius: BorderRadius.circular(AppBorderRadius.sm),
-              ),
-            ),
-            // 헤더
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space6,
-                vertical: AppSpacing.space4,
-              ),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: AppSemanticColors.borderDefault,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.space2),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.statusInfoBackground,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.xl,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.notifications,
-                          color: AppSemanticColors.statusInfoIcon,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space3),
-                      Text(
-                        '알림',
-                        style: AppTypography.heading5.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      '닫기',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textSecondary,
-                        fontWeight: AppTypography.fontWeightSemibold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // 알림 목록
-            Expanded(
-              child: Consumer<NotificationProvider>(
-                builder: (context, notificationProvider, child) {
-                  if (notificationProvider.isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (notificationProvider.errorMessage.isNotEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: AppSemanticColors.statusErrorBorder,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            notificationProvider.errorMessage,
-                            textAlign: TextAlign.center,
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (notificationProvider.notifications.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.notifications_off_outlined,
-                            size: 48,
-                            color: AppSemanticColors.borderSubtle,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '알림이 없습니다',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: notificationProvider.notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification =
-                          notificationProvider.notifications[index];
-                      return _buildNotificationItem(
-                        notification.title,
-                        notification.message,
-                        notification.icon,
-                        notification.color,
-                        notification.timeAgo,
-                        notification.isUnread,
-                        onTap: () {
-                          if (notification.isUnread) {
-                            notificationProvider.markAsRead(notification.id);
-                          }
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotificationItem(
-    String title,
-    String message,
-    IconData icon,
-    Color color,
-    String time,
-    bool isUnread, {
-    VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isUnread ? color.withValues(alpha: 0.05) : AppSemanticColors.backgroundSecondary,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isUnread ? color.withValues(alpha: 0.2) : AppSemanticColors.borderDefault,
-            width: 1,
-          ),
-          boxShadow: isUnread
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        title,
-                        style: AppTypography.bodyLarge.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppSemanticColors.textPrimary,
-                        ),
-                      ),
-                      if (isUnread)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    message,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    time,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showDeleteDialog(VacationRequest request) {
     bool isDeleting = false;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+        builder: (context, setState) => shadcn.AlertDialog(
           title: Row(
             children: [
               Container(
@@ -447,20 +179,11 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             ],
           ),
           actions: [
-            TextButton(
+            shadcn.OutlineButton(
               onPressed: isDeleting ? null : () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
               child: const Text('취소'),
             ),
-            ElevatedButton(
+            shadcn.DestructiveButton(
               onPressed: isDeleting
                   ? null
                   : () async {
@@ -473,7 +196,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       final user = authProvider.currentUser;
 
                       bool success = false;
-                      
+
                       // 관리자인 경우 관리자용 API 사용
                       if (user?.role == 'ADMIN') {
                         success = await vacationProvider.deleteVacationByAdmin(
@@ -512,18 +235,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         // 에러 메시지는 VacationProvider에서 처리됨
                       }
                     },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppSemanticColors.statusErrorIcon,
-                foregroundColor: AppSemanticColors.textInverse,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
-              ),
               child: isDeleting
                   ? SizedBox(
                       width: 16,
@@ -554,112 +265,26 @@ class _MyVacationScreenState extends State<MyVacationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.transparent,
-        centerTitle: true,
-        title: Text(
-          '내 휴무 신청',
-          style: AppTypography.heading5.copyWith(
-            color: AppSemanticColors.textInverse,
-            shadows: [
-              Shadow(
-                color: AppColors.black.withValues(alpha: 0.26),
-                offset: const Offset(1, 1),
-                blurRadius: 3,
+      backgroundColor: AppSemanticColors.backgroundPrimary,
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: Text(
+                '내 휴무',
+                style: AppTypography.heading6.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
               ),
-            ],
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppSemanticColors.interactivePrimaryActive,
-                AppSemanticColors.interactivePrimaryDefault,
-                AppSemanticColors.interactivePrimaryHover,
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: AppSpacing.space4),
-            child: Stack(
-              children: [
+              backgroundColor: AppSemanticColors.backgroundPrimary,
+              elevation: 0,
+              centerTitle: true,
+              actions: [
                 Container(
-                  width: AppSpacing.space10,
-                  height: AppSpacing.space10,
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    border: Border.all(
-                      color: AppSemanticColors.borderDefault,
-                      width: 1,
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.notifications_outlined,
-                      color: AppSemanticColors.textSecondary,
-                      size: 20,
-                    ),
-                    onPressed: _showNotifications,
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-                // 알림 뱃지
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Consumer<NotificationProvider>(
-                    builder: (context, notificationProvider, child) {
-                      final unreadCount = notificationProvider.unreadCount;
-                      if (unreadCount == 0) return const SizedBox.shrink();
-
-                      return Container(
-                        padding: const EdgeInsets.all(AppSpacing.space1),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.statusErrorIcon,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.full,
-                          ),
-                          border: Border.all(
-                            color: AppSemanticColors.textInverse,
-                            width: AppSpacing.space0_5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.red300.withValues(alpha: 0.5),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 20,
-                          minHeight: 20,
-                        ),
-                        child: Text(
-                          unreadCount > 99 ? '99+' : unreadCount.toString(),
-                          style: AppTypography.labelSmall.copyWith(
-                            color: AppSemanticColors.textInverse,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    },
-                  ),
+                  margin: const EdgeInsets.only(right: AppSpacing.space4),
+                  child: const NotificationBell(),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
+            )
+          : null,
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: CustomScrollView(
@@ -676,13 +301,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppSemanticColors.backgroundSecondary,
-                                  AppSemanticColors.surfaceDefault,
-                                ],
-                              ),
+                              color: AppSemanticColors.surfaceDefault,
                               borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: AppSemanticColors.borderDefault,
+                                width: 1,
+                              ),
                             ),
                             child: CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(
@@ -713,17 +337,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           margin: const EdgeInsets.all(32),
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppSemanticColors.statusErrorBackground, AppSemanticColors.surfaceDefault],
-                            ),
+                            color: AppSemanticColors.surfaceDefault,
                             borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.red100.withValues(alpha: 0.5),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
+                            border: Border.all(
+                              color: AppSemanticColors.statusErrorBorder,
+                              width: 1,
+                            ),
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -731,7 +350,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: AppColors.red100,
+                                  color: AppSemanticColors.statusErrorBackground,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Icon(
@@ -745,27 +364,15 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                 vacationProvider.errorMessage,
                                 textAlign: TextAlign.center,
                                 style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.red700,
+                                  color: AppSemanticColors.statusErrorText,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const SizedBox(height: 20),
-                              ElevatedButton.icon(
+                              shadcn.PrimaryButton(
                                 onPressed: _refreshData,
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('다시 시도'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppSemanticColors.statusErrorIcon,
-                                  foregroundColor: AppSemanticColors.textInverse,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 0,
-                                ),
+                                leading: const Icon(Icons.refresh),
+                                child: const Text('다시 시도'),
                               ),
                             ],
                           ),
@@ -788,19 +395,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                             margin: const EdgeInsets.all(32),
                             padding: const EdgeInsets.all(32),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.backgroundSecondary],
-                              ),
+                              color: AppSemanticColors.surfaceDefault,
                               borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.black.withValues(alpha: 0.08),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
+                              border: Border.all(
+                                color: AppSemanticColors.borderDefault,
+                                width: 1,
+                              ),
                             ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -808,18 +408,13 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                 Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppSemanticColors.backgroundSecondary,
-                                        AppSemanticColors.surfaceDefault,
-                                      ],
-                                    ),
+                                    color: AppSemanticColors.backgroundSecondary,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Icon(
                                     Icons.event_available,
                                     size: 64,
-                                    color: AppSemanticColors.textSecondary,
+                                    color: AppSemanticColors.textTertiary,
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -865,19 +460,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       child: Container(
                         margin: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.backgroundSecondary],
-                          ),
+                          color: AppSemanticColors.surfaceDefault,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.black.withValues(alpha: 0.08),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
+                          border: Border.all(
+                            color: AppSemanticColors.borderDefault,
+                            width: 1,
+                          ),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(20),
@@ -889,17 +477,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppColors.blue400,
-                                          AppColors.blue600,
-                                        ],
-                                      ),
+                                      color: AppSemanticColors.backgroundTertiary,
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Icon(
                                       Icons.analytics,
-                                      color: AppSemanticColors.textInverse,
+                                      color: AppSemanticColors.textSecondary,
                                       size: 24,
                                     ),
                                   ),
@@ -1101,20 +684,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
-        ),
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
       ),
       child: Column(
         children: [
@@ -1156,11 +728,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withValues(alpha: 0.1), AppSemanticColors.surfaceDefault],
-        ),
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
+        border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
       ),
       child: Row(
         children: [
@@ -1192,21 +762,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppSemanticColors.surfaceDefault, _getStatusColor(request.status)],
-        ),
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: _getStatusTextColor(request.status).withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
         border: Border.all(
-          color: _getStatusTextColor(request.status).withValues(alpha: 0.2),
+          color: AppSemanticColors.borderDefault,
           width: 1,
         ),
       ),
@@ -1259,24 +818,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                         vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            _getStatusTextColor(request.status),
-                                            _getStatusTextColor(
-                                              request.status,
-                                            ).withValues(alpha: 0.8),
-                                          ],
-                                        ),
+                                        color: _getStatusTextColor(request.status),
                                         borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: _getStatusTextColor(
-                                              request.status,
-                                            ).withValues(alpha: 0.3),
-                                            blurRadius: 6,
-                                            offset: const Offset(0, 3),
-                                          ),
-                                        ],
                                       ),
                                       child: Text(
                                         request.statusText,
@@ -1295,19 +838,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors:
-                                                request.duration ==
-                                                    VacationDuration.fullDay
-                                                ? [
-                                                    AppSemanticColors.interactiveSecondaryDefault,
-                                                    AppSemanticColors.interactiveSecondaryDefault,
-                                                  ]
-                                                : [
-                                                    AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.7),
-                                                    AppSemanticColors.interactiveSecondaryDefault,
-                                                  ],
-                                          ),
+                                          color: AppSemanticColors.interactiveSecondaryDefault,
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -1329,23 +860,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppColors.orange200,
-                                              AppColors.orange400,
-                                            ],
-                                          ),
+                                          color: AppSemanticColors.statusWarningIcon,
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: AppColors.orange200
-                                                  .withValues(alpha: 0.4),
-                                              blurRadius: 6,
-                                              offset: const Offset(0, 3),
-                                            ),
-                                          ],
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -1439,11 +957,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.red100, AppSemanticColors.statusErrorBackground],
-                  ),
+                  color: AppSemanticColors.statusErrorBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.red200, width: 1),
+                  border: Border.all(color: AppSemanticColors.statusErrorBorder, width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1459,7 +975,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         Text(
                           '거절 사유',
                           style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.red800,
+                            color: AppSemanticColors.statusErrorText,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1469,7 +985,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     Text(
                       request.rejectionReason!,
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.red700,
+                        color: AppSemanticColors.statusErrorText,
                       ),
                     ),
                   ],

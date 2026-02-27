@@ -3,22 +3,17 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/subscription_provider.dart';
+import '../providers/notification_provider.dart';
 import '../services/fcm_service.dart';
 import '../services/subscription_guard.dart';
 import '../utils/admin_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/app_theme.dart';
 import 'calendar_screen.dart';
-import 'my_vacation_screen.dart';
 import 'profile_screen.dart';
-import 'admin_dashboard_screen.dart';
-import '../providers/admin_provider.dart';
-import '../services/api_service.dart';
-import '../services/storage_service.dart';
-import '../models/admin_signin_response.dart';
-import '../widgets/common/index.dart';
+import 'chat_room_list_screen.dart';
+import 'home_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -27,20 +22,27 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
-  int _currentIndex = 1; // 달력을 기본으로 설정
+class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
+  int _currentIndex = 0;
   late AnimationController _animationController;
+
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    CalendarScreen(),
+    ChatRoomListScreen(),
+    ProfileScreen(),
+  ];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _animationController = AnimationController(
       duration: AppTransitions.slow,
       vsync: this,
     );
 
-    // 기본 인덱스 설정 (일반 사용자는 달력을 기본으로)
-    _currentIndex = 1;
+    _currentIndex = 0;
 
     // 사용자 정보가 있으면 구독 체크, 휴무 데이터 로드 및 FCM 토큰 전송
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -66,17 +68,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           await subscriptionProvider.loadSubscription();
           print('[MainScreen] 관리자 - 구독 정보 실시간 로드 완료');
 
+          // FCM 토큰 서버 전송 (구독 상태와 무관하게 항상 전송)
+          print('[MainScreen] 관리자 FCM 토큰 서버 전송 시작');
+          FCMService().sendAdminTokenToServer(userId);
+
           // 구독 상태 확인 및 필요시 리다이렉트 (관리자만)
           final canProceed = await SubscriptionGuard.checkSubscriptionAndRedirect(context);
-          
+
           if (canProceed) {
             // 구독 체크를 통과한 경우에만 데이터 로드
             vacationProvider.loadCalendarData(DateTime.now(), companyId: companyId);
             vacationProvider.loadMyVacationRequests(userId);
-
-            // FCM 토큰 서버 전송
-            print('[MainScreen] FCM 토큰 서버 전송 시작');
-            FCMService().sendAdminTokenToServer(userId);
           }
         } else {
           // 직원인 경우 구독 체크 없이 바로 데이터 로드
@@ -88,6 +90,19 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           print('[MainScreen] FCM 토큰 서버 전송 시작');
           FCMService().sendTokenToServer(userId);
         }
+        // 초기 알림 로드
+        context.read<NotificationProvider>().loadNotifications(
+          authProvider.currentUser!.id.toString(),
+        );
+
+        // FCM 포그라운드 메시지 콜백 설정
+        FCMService().onForegroundMessage = (message) {
+          if (mounted && authProvider.currentUser != null) {
+            context.read<NotificationProvider>().loadNotifications(
+              authProvider.currentUser!.id.toString(),
+            );
+          }
+        };
       } else {
         print('[MainScreen] 사용자 정보 없음 - FCM 토큰 전송 건너뜀');
       }
@@ -95,7 +110,20 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final authProvider = context.read<AuthProvider>();
+      if (authProvider.currentUser != null) {
+        context.read<NotificationProvider>().loadNotifications(
+          authProvider.currentUser!.id.toString(),
+        );
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     super.dispose();
   }
@@ -114,70 +142,46 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
-        
-        // 관리자는 AdminDashboardScreen 직접 반환
-        if (isAdmin) {
-          return const AdminDashboardScreen();
-        }
-        
-        // 일반 사용자 화면 및 네비게이션 아이템 정의 (실시간)
-        final userScreens = [
-          const MyVacationScreen(),
-          const CalendarScreen(),
-          const ProfileScreen(),
+
+        final selectedColor = isAdmin
+            ? AppSemanticColors.interactiveSecondaryDefault
+            : AppSemanticColors.interactivePrimaryDefault;
+
+        final navItems = [
+          _buildNavItem(0, Icons.home, Icons.home_outlined, '홈', isAdmin),
+          _buildNavItem(1, Icons.calendar_month, Icons.calendar_month_outlined, '달력', isAdmin),
+          _buildNavItem(2, Icons.chat_bubble, Icons.chat_bubble_outline, '채팅', isAdmin),
+          _buildNavItem(3, Icons.person, Icons.person_outline, '프로필', isAdmin),
         ];
-        
-        final userNavItems = [
-          _buildNavItem(0, Icons.list_alt, Icons.list_alt_outlined, '내 휴무'),
-          _buildNavItem(
-            1,
-            Icons.calendar_month,
-            Icons.calendar_month_outlined,
-            '달력',
-          ),
-          _buildNavItem(2, Icons.person, Icons.person_outline, '프로필'),
-        ];
-        
-        // 일반 사용자는 기존 구조 유지
+
         return Scaffold(
           body: IndexedStack(
-            index: _currentIndex.clamp(0, userScreens.length - 1), 
-            children: userScreens,
+            index: _currentIndex.clamp(0, _screens.length - 1),
+            children: _screens,
           ),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.backgroundSecondary],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha: 0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, -5),
+              color: AppSemanticColors.surfaceDefault,
+              border: Border(
+                top: BorderSide(
+                  color: AppSemanticColors.borderDefault,
+                  width: 1,
                 ),
-              ],
+              ),
             ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppBorderRadius.xl3),
-                topRight: Radius.circular(AppBorderRadius.xl3),
+            child: BottomNavigationBar(
+              currentIndex: _currentIndex.clamp(0, navItems.length - 1),
+              onTap: _onItemTapped,
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: AppColors.transparent,
+              elevation: 0,
+              selectedItemColor: selectedColor,
+              unselectedItemColor: AppSemanticColors.textDisabled,
+              selectedLabelStyle: AppTypography.labelMedium.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-              child: BottomNavigationBar(
-                currentIndex: _currentIndex.clamp(0, userNavItems.length - 1),
-                onTap: _onItemTapped,
-                type: BottomNavigationBarType.fixed,
-                backgroundColor: AppColors.transparent,
-                elevation: 0,
-                selectedItemColor: AppSemanticColors.interactivePrimaryDefault,
-                unselectedItemColor: AppSemanticColors.textDisabled,
-                selectedLabelStyle: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                unselectedLabelStyle: AppTypography.labelSmall,
-                items: userNavItems,
-              ),
+              unselectedLabelStyle: AppTypography.labelSmall,
+              items: navItems,
             ),
           ),
         );
@@ -190,19 +194,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     IconData selectedIcon,
     IconData unselectedIcon,
     String label,
+    bool isAdmin,
   ) {
     final isSelected = _currentIndex == index;
-    final authProvider = context.read<AuthProvider>();
-    final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
 
     Color iconColor = AppSemanticColors.textDisabled;
 
     if (isSelected) {
-      if (isAdmin) {
-        iconColor = AppSemanticColors.interactiveSecondaryDefault;
-      } else {
-        iconColor = AppSemanticColors.interactivePrimaryDefault;
-      }
+      iconColor = isAdmin
+          ? AppSemanticColors.interactiveSecondaryDefault
+          : AppSemanticColors.interactivePrimaryDefault;
     }
 
     return BottomNavigationBarItem(
@@ -213,13 +214,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? (isAdmin
-                    ? AppSemanticColors.interactiveSecondaryDefault.withValues(
-                        alpha: 0.1,
-                      )
-                    : AppSemanticColors.interactivePrimaryDefault.withValues(
-                        alpha: 0.1,
-                      ))
+              ? iconColor.withValues(alpha: 0.1)
               : AppColors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -232,5 +227,4 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       label: label,
     );
   }
-
 }

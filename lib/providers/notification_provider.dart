@@ -53,21 +53,35 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  void markAsRead(String notificationId) {
-    final notification = _notifications.firstWhere(
-      (n) => n.id == notificationId,
-      orElse: () => throw Exception('알림을 찾을 수 없습니다'),
-    );
+  Future<void> markAsRead(String notificationId) async {
+    final index = _notifications.indexWhere((n) => n.id == notificationId);
+    if (index == -1) return;
 
-    notification.isUnread = false;
+    // 즉시 UI 업데이트
+    _notifications[index].isUnread = false;
     notifyListeners();
+
+    // 백엔드 API 호출
+    try {
+      await ApiService().markNotificationAsRead(notificationId: notificationId);
+    } catch (e) {
+      print('[NotificationProvider] 읽음 처리 API 실패: $e');
+    }
   }
 
-  void markAllAsRead() {
+  Future<void> markAllAsRead(String userId) async {
+    // 즉시 UI 업데이트
     for (var notification in _notifications) {
       notification.isUnread = false;
     }
     notifyListeners();
+
+    // 백엔드 API 호출
+    try {
+      await ApiService().markAllNotificationsAsRead(userId: userId);
+    } catch (e) {
+      print('[NotificationProvider] 전체 읽음 처리 API 실패: $e');
+    }
   }
 }
 
@@ -95,7 +109,7 @@ class NotificationItem {
       message: json['message'] ?? '',
       type: json['type'] ?? 'system',
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      isUnread: !(json['sent'] ?? false),
+      isUnread: !(json['isRead'] ?? false),
     );
   }
 

@@ -1,10 +1,16 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../services/api_service.dart';
 import '../models/fcm_token_update_dto.dart';
+import '../screens/my_vacation_screen.dart';
+import '../screens/approval_list_screen.dart';
+import '../screens/notice_detail_screen.dart';
+import '../screens/chat_room_list_screen.dart';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -12,34 +18,53 @@ class FCMService {
   FCMService._internal();
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = 
+  final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
-  
+
   String? _currentToken;
-  
+
+  // 토큰 재갱신 시 서버 전송을 위한 사용자 정보 저장
+  String? _currentUserId;
+  bool _isAdmin = false;
+
+  BuildContext? _globalContext;
+  void Function(RemoteMessage)? onForegroundMessage;
+
+  void setGlobalContext(BuildContext context) {
+    _globalContext = context;
+  }
+
   /// FCM 서비스 초기화
   Future<void> initialize() async {
     try {
       // 로컬 알림 설정 (권한 요청보다 먼저)
       await _initializeLocalNotifications();
-      
+
       // 알림 권한 요청
       await _requestPermissions();
-      
-      // iOS에서 APNS 토큰 수동 설정
+
+      // iOS 포그라운드 알림 표시 옵션 설정
       if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await _firebaseMessaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        log('[FCM] iOS 포그라운드 알림 표시 옵션 설정 완료');
+
+        // iOS에서 APNS 토큰 수동 설정
         await _setAPNSToken();
       }
-      
+
       // FCM 토큰 획득 (서버 전송은 로그인 후 실행)
       await _getTokenOnly();
-      
+
       // 토큰 갱신 리스너 설정
       _setupTokenRefreshListener();
-      
+
       // 메시지 리스너 설정
       _setupMessageListeners();
-      
+
       log('[FCM] FCM 서비스 초기화 완료');
     } catch (e) {
       log('[FCM] FCM 서비스 초기화 실패: $e');
@@ -249,11 +274,32 @@ class FCMService {
   
   /// 토큰 갱신 리스너 설정
   void _setupTokenRefreshListener() {
-    _firebaseMessaging.onTokenRefresh.listen((newToken) {
-      log('[FCM] FCM 토큰 갱신: ${newToken.substring(0, 20)}...');
+    _firebaseMessaging.onTokenRefresh.listen((newToken) async {
+      log('[FCM] FCM 토큰 갱신됨: ${newToken.substring(0, 20)}...');
       _currentToken = newToken;
-      // 토큰 갱신 시에도 로그인 상태인 경우에만 서버 전송
-      // 이는 sendTokenToServer 메서드에서 처리
+
+      // 로그인 상태인 경우 (사용자 ID가 저장되어 있는 경우) 서버로 재전송
+      if (_currentUserId != null && _currentUserId!.isNotEmpty) {
+        log('[FCM] 토큰 갱신 - 서버로 재전송 시작 (userId: $_currentUserId, isAdmin: $_isAdmin)');
+        try {
+          if (_isAdmin) {
+            await ApiService().updateAdminFcmToken(
+              userId: _currentUserId!,
+              fcmToken: newToken,
+            );
+          } else {
+            await ApiService().updateFcmToken(
+              memberId: _currentUserId!,
+              fcmToken: newToken,
+            );
+          }
+          log('[FCM] 토큰 갱신 후 서버 전송 완료');
+        } catch (e) {
+          log('[FCM] 토큰 갱신 후 서버 전송 실패: $e');
+        }
+      } else {
+        log('[FCM] 토큰 갱신됨 - 로그인 상태 아님, 서버 전송 건너뜀');
+      }
     });
   }
   
@@ -274,9 +320,11 @@ class FCMService {
     log('[FCM] 포그라운드 메시지 수신: ${message.notification?.title}');
     log('[FCM] 메시지 내용: ${message.notification?.body}');
     log('[FCM] 메시지 데이터: ${message.data}');
-    
-    // 포그라운드에서 로컬 알림 표시
+
     _showLocalNotification(message);
+
+    // 포그라운드 콜백 호출
+    onForegroundMessage?.call(message);
   }
   
   /// 로컬 알림 표시
@@ -325,7 +373,7 @@ class FCMService {
           notification.title,
           notification.body,
           platformChannelSpecifics,
-          payload: message.data.toString(),
+          payload: json.encode(message.data),
         );
         log('[FCM] 로컬 알림 표시 완료 (ID: $notificationId)');
       } catch (e) {
@@ -354,37 +402,66 @@ class FCMService {
   /// 로컬 알림 클릭 처리
   void _onNotificationTapped(NotificationResponse response) {
     log('[FCM] 로컬 알림 클릭: ${response.payload}');
-    // TODO: 알림 클릭 시 적절한 화면 이동 로직 구현
+    if (response.payload == null || response.payload!.isEmpty) return;
+
+    try {
+      final data = json.decode(response.payload!) as Map<String, dynamic>;
+      _navigateByType(data);
+    } catch (e) {
+      log('[FCM] 알림 페이로드 파싱 실패: $e');
+    }
   }
-  
+
   /// 알림 클릭 시 네비게이션 처리
   void _handleNotificationNavigation(RemoteMessage message) {
-    // TODO: 메시지 데이터에 따른 적절한 화면 이동 로직 구현
-    final data = message.data;
-    log('[FCM] 알림 데이터: $data');
-    
-    // 예시: 알림 타입에 따른 화면 이동
-    switch (data['type']) {
-      case 'vacation':
-        // 휴무 관련 화면으로 이동
-        break;
-      case 'schedule':
-        // 일정 관련 화면으로 이동
-        break;
-      default:
-        // 기본 홈 화면으로 이동
-        break;
+    log('[FCM] 알림 네비게이션: ${message.data}');
+    _navigateByType(message.data);
+  }
+
+  /// 타입별 화면 이동 (공통)
+  void _navigateByType(Map<String, dynamic> data) {
+    final context = _globalContext;
+    if (context == null || !context.mounted) return;
+
+    final type = data['type']?.toString() ?? '';
+
+    // 백엔드 타입: vacation_approved, vacation_rejected, vacation_submitted, chat, notice, approval
+    if (type.startsWith('vacation')) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const MyVacationScreen()),
+      );
+    } else if (type == 'approval') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const ApprovalListScreen()),
+      );
+    } else if (type == 'notice') {
+      final noticeId = int.tryParse(data['noticeId']?.toString() ?? '');
+      if (noticeId != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => NoticeDetailScreen(noticeId: noticeId),
+          ),
+        );
+      }
+    } else if (type == 'chat') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const ChatRoomListScreen()),
+      );
     }
   }
   
   /// 현재 FCM 토큰 반환
   String? get currentToken => _currentToken;
   
-  /// 로그인 후 토큰 서버 전송
+  /// 로그인 후 토큰 서버 전송 (직원용)
   Future<void> sendTokenToServer(String memberId) async {
     log('[FCM] sendTokenToServer 호출됨 (memberId: $memberId)');
     log('[FCM] 현재 토큰 상태: ${_currentToken != null ? '있음 (${_currentToken!.length}자)' : '없음'}');
-    
+
+    // 토큰 재갱신 시 사용할 사용자 정보 저장
+    _currentUserId = memberId;
+    _isAdmin = false;
+
     if (_currentToken != null && _currentToken!.isNotEmpty) {
       try {
         log('[FCM] 서버로 토큰 전송 시작...');
@@ -399,10 +476,10 @@ class FCMService {
     } else {
       log('[FCM] FCM 토큰이 없어 서버 전송 불가');
       log('[FCM] 토큰 재획득 시도...');
-      
+
       // 토큰이 없다면 다시 획득 시도
       await _getTokenOnly();
-      
+
       if (_currentToken != null && _currentToken!.isNotEmpty) {
         try {
           log('[FCM] 재획득된 토큰으로 서버 전송 시작...');
@@ -420,10 +497,14 @@ class FCMService {
     }
   }
 
-  /// 로그인 후 Admin 토큰 서버 전송
+  /// 로그인 후 Admin 토큰 서버 전송 (관리자용)
   Future<void> sendAdminTokenToServer(String userId) async {
-    log('[FCM] sendTokenToServer 호출됨 (userId: $userId)');
+    log('[FCM] sendAdminTokenToServer 호출됨 (userId: $userId)');
     log('[FCM] 현재 토큰 상태: ${_currentToken != null ? '있음 (${_currentToken!.length}자)' : '없음'}');
+
+    // 토큰 재갱신 시 사용할 사용자 정보 저장
+    _currentUserId = userId;
+    _isAdmin = true;
 
     if (_currentToken != null && _currentToken!.isNotEmpty) {
       try {
@@ -450,7 +531,7 @@ class FCMService {
             userId: userId,
             fcmToken: _currentToken!,
           );
-          log('[FCM] 토큰 재획득 후 전송 완료 (memberId: $userId)');
+          log('[FCM] 토큰 재획득 후 전송 완료 (userId: $userId)');
         } catch (e) {
           log('[FCM] 토큰 재획득 후 전송 실패: $e');
         }
@@ -458,7 +539,15 @@ class FCMService {
         log('[FCM] 토큰 재획득도 실패 - 서버 전송 불가');
       }
     }
-  }}
+  }
+
+  /// 로그아웃 시 사용자 정보 초기화
+  void clearUserInfo() {
+    log('[FCM] 사용자 정보 초기화');
+    _currentUserId = null;
+    _isAdmin = false;
+  }
+}
 
 /// 백그라운드 메시지 핸들러 (최상위 함수로 정의)
 @pragma('vm:entry-point')

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'theme/app_colors.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +16,10 @@ import 'providers/notification_provider.dart';
 import 'providers/app_version_provider.dart';
 import 'providers/admin_provider.dart';
 import 'providers/subscription_provider.dart';
+import 'providers/notice_provider.dart';
+import 'providers/approval_provider.dart';
+import 'providers/chat_provider.dart';
+import 'providers/schedule_provider.dart';
 import 'services/storage_service.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
@@ -24,7 +29,6 @@ import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/admin_utils.dart';
 import 'widgets/update_dialog.dart';
-import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,26 +84,37 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppVersionProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+        ChangeNotifierProvider(create: (_) => NoticeProvider()),
+        ChangeNotifierProvider(create: (_) => ApprovalProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => ScheduleProvider()),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
-          return MaterialApp(
+          return shadcn.ShadcnApp(
             title: 'Frontend App',
-            theme: appProvider.isDarkMode
-                ? AppTheme.darkTheme
-                : AppTheme.lightTheme,
+            theme: shadcn.ThemeData(
+              colorScheme: shadcn.ColorSchemes.lightZinc,
+              radius: 0.5,
+            ),
+            darkTheme: shadcn.ThemeData(
+              colorScheme: shadcn.ColorSchemes.darkZinc,
+              radius: 0.5,
+            ),
+            themeMode: appProvider.isDarkMode
+                ? shadcn.ThemeMode.dark
+                : shadcn.ThemeMode.light,
             home: const AuthWrapper(),
-            debugShowCheckedModeBanner: false,
             navigatorObservers: [AnalyticsService().observer],
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            supportedLocales: const [
-              Locale('ko', 'KR'),
-              Locale('en', 'US'),
-            ],
+            supportedLocales: {
+              const Locale('ko', 'KR'),
+              const Locale('en', 'US'),
+            },
             locale: const Locale('ko', 'KR'),
           );
         },
@@ -125,6 +140,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // ApiService에 글로벌 context 설정
       ApiService().setGlobalContext(context);
+      FCMService().setGlobalContext(context);
 
       // 앱 버전 체크
       final appVersionProvider = context.read<AppVersionProvider>();
