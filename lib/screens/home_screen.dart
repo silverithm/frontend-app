@@ -112,23 +112,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     AppSpacing.space5,
                     AppSpacing.space2,
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // 중앙 타이틀
-                      Text(
-                        '홈',
-                        style: AppTypography.heading5.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                          fontWeight: AppTypography.fontWeightBold,
+                  child: SizedBox(
+                    height: 48,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        // 중앙 타이틀
+                        Text(
+                          '홈',
+                          style: AppTypography.heading5.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            fontWeight: AppTypography.fontWeightBold,
+                          ),
                         ),
-                      ),
-                      // 오른쪽 알림 벨
-                      Positioned(
-                        right: 0,
-                        child: const NotificationBell(),
-                      ),
-                    ],
+                        // 오른쪽 알림 벨
+                        Positioned(
+                          right: 0,
+                          child: const NotificationBell(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -159,16 +163,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Center(child: CircularProgressIndicator()),
               )
             else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space5,
-                  0,
-                  AppSpacing.space5,
-                  AppSpacing.space8,
-                ),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate(
-                    isAdmin
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space5,
+                    0,
+                    AppSpacing.space5,
+                    AppSpacing.space8,
+                  ),
+                  child: Column(
+                    children: isAdmin
                         ? _buildAdminCards()
                         : _buildEmployeeCards(),
                   ),
@@ -184,49 +189,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Widget> _buildEmployeeCards() {
     return [
-      Consumer<VacationProvider>(
-        builder: (context, provider, _) {
-          final total = provider.vacationRequests.length;
-          return _HomeTile(
-            icon: Icons.calendar_today_rounded,
-            title: '내 휴무',
-            subtitle: '휴무 신청 및 현황 확인',
-            badgeCount: total,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MyVacationScreen()),
-            ),
-          );
-        },
+      Expanded(
+        child: Consumer<VacationProvider>(
+          builder: (context, provider, _) {
+            final total = provider.vacationRequests.length;
+            return _HomeTile(
+              icon: Icons.calendar_today_rounded,
+              title: '내 휴무',
+              subtitle: '휴무 신청 및 현황 확인',
+              badgeCount: total,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MyVacationScreen()),
+              ),
+            );
+          },
+        ),
       ),
       const SizedBox(height: AppSpacing.space3),
-      Consumer<ApprovalProvider>(
-        builder: (context, provider, _) {
-          final total = provider.myApprovalRequests.length;
-          return _HomeTile(
-            icon: Icons.description_outlined,
-            title: '결재',
-            subtitle: '결재 요청 및 승인 현황',
-            badgeCount: total,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ApprovalListScreen()),
-            ),
-          );
-        },
+      Expanded(
+        child: Consumer<ApprovalProvider>(
+          builder: (context, provider, _) {
+            final total = provider.myApprovalRequests.length;
+            return _HomeTile(
+              icon: Icons.description_outlined,
+              title: '결재',
+              subtitle: '결재 요청 및 승인 현황',
+              badgeCount: total,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ApprovalListScreen()),
+              ),
+            );
+          },
+        ),
       ),
       const SizedBox(height: AppSpacing.space3),
-      Consumer<NoticeProvider>(
-        builder: (context, provider, _) {
-          final total = provider.publishedNotices.length;
-          return _HomeTile(
-            icon: Icons.campaign_outlined,
-            title: '공지사항',
-            subtitle: '회사 공지 확인',
-            badgeCount: total,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NoticeListScreen()),
-            ),
-          );
-        },
+      Expanded(
+        child: Consumer<NoticeProvider>(
+          builder: (context, provider, _) {
+            final total = provider.publishedNotices.length;
+            return _HomeTile(
+              icon: Icons.campaign_outlined,
+              title: '공지사항',
+              subtitle: '회사 공지 확인',
+              badgeCount: total,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const NoticeListScreen()),
+              ),
+            );
+          },
+        ),
       ),
     ];
   }
@@ -235,52 +246,58 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Widget> _buildAdminCards() {
     return [
-      Consumer<ApprovalProvider>(
-        builder: (context, provider, _) {
-          final total = provider.approvalRequests.length;
-          return _HomeTile(
-            icon: Icons.fact_check_outlined,
-            title: '결재관리',
-            subtitle: '결재 요청 승인 및 관리',
-            badgeCount: total,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                  builder: (_) => const AdminUnifiedApprovalScreen()),
-            ),
-          );
-        },
+      Expanded(
+        child: Consumer<ApprovalProvider>(
+          builder: (context, provider, _) {
+            final total = provider.approvalRequests.length;
+            return _HomeTile(
+              icon: Icons.fact_check_outlined,
+              title: '결재관리',
+              subtitle: '결재 요청 승인 및 관리',
+              badgeCount: total,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => const AdminUnifiedApprovalScreen()),
+              ),
+            );
+          },
+        ),
       ),
       const SizedBox(height: AppSpacing.space3),
-      Consumer<NoticeProvider>(
-        builder: (context, provider, _) {
-          final total = provider.notices.length;
-          return _HomeTile(
-            icon: Icons.campaign_outlined,
-            title: '공지관리',
-            subtitle: '공지사항 작성 및 관리',
-            badgeCount: total,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                  builder: (_) => const AdminNoticeManagementScreen()),
-            ),
-          );
-        },
+      Expanded(
+        child: Consumer<NoticeProvider>(
+          builder: (context, provider, _) {
+            final total = provider.notices.length;
+            return _HomeTile(
+              icon: Icons.campaign_outlined,
+              title: '공지관리',
+              subtitle: '공지사항 작성 및 관리',
+              badgeCount: total,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => const AdminNoticeManagementScreen()),
+              ),
+            );
+          },
+        ),
       ),
       const SizedBox(height: AppSpacing.space3),
-      Consumer<AdminProvider>(
-        builder: (context, provider, _) {
-          final pendingCount = provider.pendingUsers.length;
-          return _HomeTile(
-            icon: Icons.people_outline_rounded,
-            title: '회원관리',
-            subtitle: '회원 승인 및 관리',
-            badgeCount: pendingCount,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                  builder: (_) => const AdminUserManagementScreen()),
-            ),
-          );
-        },
+      Expanded(
+        child: Consumer<AdminProvider>(
+          builder: (context, provider, _) {
+            final pendingCount = provider.pendingUsers.length;
+            return _HomeTile(
+              icon: Icons.people_outline_rounded,
+              title: '회원관리',
+              subtitle: '회원 승인 및 관리',
+              badgeCount: pendingCount,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => const AdminUserManagementScreen()),
+              ),
+            );
+          },
+        ),
       ),
     ];
   }
