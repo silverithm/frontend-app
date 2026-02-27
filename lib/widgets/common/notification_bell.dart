@@ -12,18 +12,15 @@ class NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 배지가 밖으로 튀어나오므로 여유 공간 확보
-    return Padding(
-      padding: const EdgeInsets.only(top: 4, right: 4),
-      child: SizedBox(
-        width: AppSpacing.space10,
-        height: AppSpacing.space10,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: AppSpacing.space10,
-              height: AppSpacing.space10,
+    return SizedBox(
+      width: AppSpacing.space10,
+      height: AppSpacing.space10,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: AppSpacing.space10,
+            height: AppSpacing.space10,
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceDefault,
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -84,8 +81,7 @@ class NotificationBell extends StatelessWidget {
               },
             ),
           ),
-          ],
-        ),
+        ],
       ),
     );
   }
