@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
@@ -124,10 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          ),
+        builder: (context, setState) => shadcn.AlertDialog(
           title: Row(
             children: [
               Icon(Icons.lock_reset, color: AppSemanticColors.statusInfoIcon),
@@ -200,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: isAdminPasswordReset
-                              ? AppSemanticColors.interactiveSecondaryDefault
+                              ? AppSemanticColors.interactivePrimaryDefault
                               : AppSemanticColors.borderSubtle,
                           width: 2,
                         ),
@@ -330,10 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             _isAdminLogin ? '관리자 계정으로 로그인' : '직원 계정으로 로그인',
                             style: AppTypography.bodySmall.copyWith(
-                              color: _isAdminLogin
-                                  ? AppSemanticColors
-                                        .interactiveSecondaryDefault
-                                  : AppSemanticColors.interactivePrimaryDefault,
+                              color: AppSemanticColors.interactivePrimaryDefault,
                               fontWeight: AppTypography.fontWeightMedium,
                             ),
                             textAlign: TextAlign.center,
@@ -544,7 +539,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: _isAdminLogin
-                      ? AppSemanticColors.interactiveSecondaryDefault
+                      ? AppSemanticColors.interactivePrimaryDefault
                       : AppColors.transparent,
                   borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(AppBorderRadius.lg),
