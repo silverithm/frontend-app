@@ -112,23 +112,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     AppSpacing.space5,
                     AppSpacing.space2,
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // 중앙 타이틀
-                      Text(
-                        '홈',
-                        style: AppTypography.heading5.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                          fontWeight: AppTypography.fontWeightBold,
+                  child: SizedBox(
+                    height: 48,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        // 중앙 타이틀
+                        Text(
+                          '홈',
+                          style: AppTypography.heading5.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            fontWeight: AppTypography.fontWeightBold,
+                          ),
                         ),
-                      ),
-                      // 오른쪽 알림 벨
-                      Positioned(
-                        right: 0,
-                        child: const NotificationBell(),
-                      ),
-                    ],
+                        // 오른쪽 알림 벨
+                        Positioned(
+                          right: 0,
+                          child: const NotificationBell(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -12,15 +12,17 @@ class NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: AppSpacing.space10,
-      height: AppSpacing.space10,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: AppSpacing.space10,
-            height: AppSpacing.space10,
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, right: 4),
+      child: SizedBox(
+        width: AppSpacing.space10,
+        height: AppSpacing.space10,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: AppSpacing.space10,
+              height: AppSpacing.space10,
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceDefault,
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -81,7 +83,8 @@ class NotificationBell extends StatelessWidget {
               },
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
