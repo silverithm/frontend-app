@@ -54,6 +54,8 @@
 		<false/>
 		<key>io.flutter.embedded_views_preview</key>
 		<true/>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>결재 문서 및 채팅에서 사진을 첨부하기 위해 사진 라이브러리 접근 권한이 필요합니다.</string>
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<!-- 카드사 -->

@@ -56,7 +56,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: const Text('휴무 내역'),
-        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         leading: IconButton(
@@ -136,7 +136,7 @@ class _AdminVacationHistoryScreenState extends State<AdminVacationHistoryScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 64, color: AppSemanticColors.textDisabled),
+            Icon(Icons.history, size: 64, color: AppSemanticColors.textTertiary),
             const SizedBox(height: 16),
             Text(
               '휴무 내역이 없습니다',

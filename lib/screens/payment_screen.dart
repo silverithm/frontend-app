@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,7 +16,6 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import 'main_screen.dart';
-import 'admin_dashboard_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
   final SubscriptionPlan plan;
@@ -82,7 +82,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
       ),
@@ -124,8 +124,8 @@ class _PaymentScreenState extends State<PaymentScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppSemanticColors.interactiveSecondaryDefault,
-            AppSemanticColors.interactiveSecondaryDefault.withValues(alpha:0.8),
+            AppSemanticColors.interactivePrimaryDefault,
+            AppSemanticColors.interactivePrimaryDefault.withValues(alpha:0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -319,7 +319,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppSemanticColors.interactiveSecondaryDefault,
+                    color: AppSemanticColors.interactivePrimaryDefault,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -405,18 +405,10 @@ class _PaymentScreenState extends State<PaymentScreen>
         SizedBox(
           width: double.infinity,
           height: 56,
-          child: ElevatedButton(
+          child: shadcn.PrimaryButton(
             onPressed: _isProcessing || subscriptionProvider.isLoading
                 ? null
                 : _startPayment,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-              foregroundColor: AppSemanticColors.textInverse,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
             child: _isProcessing || subscriptionProvider.isLoading
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -671,8 +663,8 @@ class _PaymentScreenState extends State<PaymentScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
+        title: const Text('결제 완료!'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -704,24 +696,14 @@ class _PaymentScreenState extends State<PaymentScreen>
           ],
         ),
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const MainScreen()),
-                  (route) => false,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppSemanticColors.statusSuccessIcon,
-                foregroundColor: AppSemanticColors.textInverse,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('시작하기'),
-            ),
+          shadcn.PrimaryButton(
+            onPressed: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const MainScreen()),
+                (route) => false,
+              );
+            },
+            child: const Text('시작하기'),
           ),
         ],
       ),
@@ -731,8 +713,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(Icons.error, color: AppSemanticColors.statusErrorIcon),
@@ -742,7 +723,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         ),
         content: Text(message),
         actions: [
-          TextButton(
+          shadcn.GhostButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('확인'),
           ),
@@ -936,7 +917,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
             color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         centerTitle: true,

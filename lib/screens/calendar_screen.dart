@@ -16,9 +16,8 @@ import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 import '../providers/notice_provider.dart';
-import '../widgets/notice/notice_card.dart';
 import 'notice_detail_screen.dart';
-import 'notice_list_screen.dart';
+import 'dart:async';
 import 'dart:math' as math;
 
 class CalendarScreen extends StatefulWidget {
@@ -36,6 +35,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   late AnimationController _fabAnimationController;
   late AnimationController _filterAnimationController;
   late TabController _tabController;
+
+  // 공지 티커용 상태
+  int _currentNoticeIndex = 0;
+  Timer? _noticeTimer;
 
   // 일정 달력용 상태
   DateTime _scheduleCurrentDate = DateTime.now();
@@ -69,6 +72,9 @@ class _CalendarScreenState extends State<CalendarScreen>
 
       _fabAnimationController.forward();
 
+      // 공지 티커 타이머 시작
+      _startNoticeTimer();
+
       // Analytics 화면 조회 이벤트
       AnalyticsService().logScreenView(screenName: 'calendar_screen');
       AnalyticsService().logCalendarView(
@@ -82,8 +88,21 @@ class _CalendarScreenState extends State<CalendarScreen>
     });
   }
 
+  void _startNoticeTimer() {
+    _noticeTimer?.cancel();
+    _noticeTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      final notices = context.read<NoticeProvider>().publishedNotices;
+      if (notices.length > 1) {
+        setState(() {
+          _currentNoticeIndex = (_currentNoticeIndex + 1) % notices.length;
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _noticeTimer?.cancel();
     _tabController.dispose();
     _fabAnimationController.dispose();
     _filterAnimationController.dispose();
@@ -177,6 +196,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
               ),
             ),
+            // 공지사항 티커
+            SliverToBoxAdapter(
+              child: _buildNoticeTicker(),
+            ),
           ];
         },
         body: TabBarView(
@@ -227,9 +250,6 @@ class _CalendarScreenState extends State<CalendarScreen>
               // 선택된 날짜 정보
               if (_scheduleSelectedDate != null)
                 _buildScheduleDateDetail(scheduleProvider),
-
-              // 공지사항 섹션
-              _buildNoticeSection(),
 
               // 하단 여백
               const SizedBox(height: AppSpacing.space20),
@@ -683,109 +703,95 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
-  Widget _buildNoticeSection() {
+  Widget _buildNoticeTicker() {
     return Consumer<NoticeProvider>(
       builder: (context, noticeProvider, child) {
         final notices = noticeProvider.publishedNotices;
         if (notices.isEmpty) return const SizedBox.shrink();
 
-        // 최신 3개만 표시
-        final displayNotices = notices.take(3).toList();
+        final safeIndex = _currentNoticeIndex % notices.length;
+        final currentNotice = notices[safeIndex];
 
-        return Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space6,
-          ),
-          decoration: BoxDecoration(
-            color: AppSemanticColors.surfaceDefault,
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            border: Border.all(
-              color: AppSemanticColors.borderDefault,
-              width: 1,
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => NoticeDetailScreen(noticeId: currentNotice.id),
+              ),
+            );
+          },
+          child: Container(
+            color: AppSemanticColors.backgroundPrimary,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space2,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.black.withValues(alpha: 0.04),
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // 헤더
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space4,
-                  AppSpacing.space4,
-                  AppSpacing.space2,
-                  AppSpacing.space2,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space2,
+                    vertical: AppSpacing.space1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.statusInfoBackground,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.base),
+                  ),
+                  child: Text(
+                    '공지',
+                    style: AppTypography.caption.copyWith(
+                      color: AppSemanticColors.statusInfoIcon,
+                      fontWeight: AppTypography.fontWeightSemibold,
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.space2),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.statusInfoBackground,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      ),
-                      child: Icon(
-                        Icons.campaign_outlined,
-                        color: AppSemanticColors.statusInfoIcon,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.space3),
-                    Expanded(
-                      child: Text(
-                        '공지사항',
-                        style: AppTypography.labelLarge.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                          fontWeight: AppTypography.fontWeightSemibold,
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const NoticeListScreen(),
-                          ),
-                        );
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                const SizedBox(width: AppSpacing.space2),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: AppTransitions.slow,
+                    layoutBuilder: (currentChild, previousChildren) {
+                      return Stack(
+                        alignment: Alignment.centerLeft,
                         children: [
-                          Text(
-                            '더보기',
-                            style: AppTypography.labelMedium.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            size: 16,
-                            color: AppSemanticColors.textTertiary,
-                          ),
+                          ...previousChildren,
+                          if (currentChild != null) currentChild,
                         ],
+                      );
+                    },
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.5),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      currentNotice.title,
+                      key: ValueKey(currentNotice.id),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              // 공지 목록
-              ...displayNotices.map((notice) => NoticeCardCompact(
-                notice: notice,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => NoticeDetailScreen(noticeId: notice.id),
+                if (notices.length > 1) ...[
+                  const SizedBox(width: AppSpacing.space2),
+                  Text(
+                    '${safeIndex + 1}/${notices.length}',
+                    style: AppTypography.caption.copyWith(
+                      color: AppSemanticColors.textTertiary,
                     ),
-                  );
-                },
-              )),
-              const SizedBox(height: AppSpacing.space2),
-            ],
+                  ),
+                ],
+              ],
+            ),
           ),
         );
       },
@@ -1135,9 +1141,6 @@ class _CalendarScreenState extends State<CalendarScreen>
             },
           ),
 
-          // 공지사항 섹션
-          _buildNoticeSection(),
-
           // 하단 여백
           const SizedBox(height: AppSpacing.space20 + AppSpacing.space6),
         ],
@@ -1323,7 +1326,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         child: FloatingActionButton(
           heroTag: 'admin_calendar_fab',
           onPressed: _showAdminActionDialog,
-          backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+          backgroundColor: AppSemanticColors.interactivePrimaryDefault,
           child: Icon(Icons.add, color: AppSemanticColors.textInverse),
         ),
       );

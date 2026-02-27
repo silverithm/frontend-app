@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/subscription_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/subscription.dart';
@@ -114,15 +115,15 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1),
-                  AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.05),
+                  AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+                  AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
             ),
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(
-                AppSemanticColors.interactiveSecondaryDefault,
+                AppSemanticColors.interactivePrimaryDefault,
               ),
             ),
           ),
@@ -151,8 +152,8 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppSemanticColors.interactiveSecondaryDefault,
-              AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.8),
+              AppSemanticColors.interactivePrimaryDefault,
+              AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
             ],
           ),
         ),
@@ -196,8 +197,8 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppSemanticColors.interactiveSecondaryDefault,
-                  AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.7),
+                  AppSemanticColors.interactivePrimaryDefault,
+                  AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.7),
                 ],
               ),
               shape: BoxShape.circle,
@@ -262,7 +263,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
           borderRadius: BorderRadius.circular(16),
           side: plan.isPopular
               ? BorderSide(
-                  color: AppSemanticColors.interactiveSecondaryDefault,
+                  color: AppSemanticColors.interactivePrimaryDefault,
                   width: 2,
                 )
               : BorderSide.none,
@@ -276,7 +277,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                     end: Alignment.bottomRight,
                     colors: [
                       AppSemanticColors.surfaceDefault,
-                      AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.05),
+                      AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.05),
                     ],
                   )
                 : null,
@@ -309,7 +310,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppSemanticColors.interactiveSecondaryDefault,
+                                    color: AppSemanticColors.interactivePrimaryDefault,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -381,29 +382,14 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: shadcn.PrimaryButton(
                     onPressed: canUseFree ? () => _selectPlan(plan, subscriptionProvider) : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: plan.isPopular
-                          ? AppSemanticColors.interactiveSecondaryDefault
-                          : AppSemanticColors.interactivePrimaryDefault,
-                      foregroundColor: AppSemanticColors.textInverse,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
                     child: Text(
                       !canUseFree
                           ? '이미 사용함'
                           : plan.type == SubscriptionType.FREE
                               ? '무료 체험 시작'
                               : '구독하기',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textInverse,
-                        fontWeight: FontWeight.bold,
-                      ),
                     ),
                   ),
                 ),
@@ -548,13 +534,13 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (context) => shadcn.AlertDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(
-                AppSemanticColors.interactiveSecondaryDefault,
+                AppSemanticColors.interactivePrimaryDefault,
               ),
             ),
             const SizedBox(height: 16),
@@ -569,8 +555,8 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
+        title: const Text('성공!'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -602,19 +588,9 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
           ],
         ),
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onConfirm,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppSemanticColors.statusSuccessIcon,
-                foregroundColor: AppSemanticColors.textInverse,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('확인'),
-            ),
+          shadcn.PrimaryButton(
+            onPressed: onConfirm,
+            child: const Text('확인'),
           ),
         ],
       ),
@@ -624,8 +600,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(Icons.error, color: AppSemanticColors.statusErrorIcon),
@@ -635,7 +610,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
         ),
         content: Text(message),
         actions: [
-          TextButton(
+          shadcn.GhostButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('확인'),
           ),

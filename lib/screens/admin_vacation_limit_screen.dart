@@ -202,7 +202,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                 color: AppSemanticColors.textInverse,
               ),
             ),
-            backgroundColor: AppColors.purple600,
+            backgroundColor: AppSemanticColors.interactivePrimaryDefault,
             foregroundColor: AppSemanticColors.textInverse,
             elevation: 0,
             actions: [
@@ -227,7 +227,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.purple600,
+                  color: AppSemanticColors.interactivePrimaryDefault,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(20),
                     bottomRight: Radius.circular(20),
@@ -350,7 +350,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: isToday ? Border.all(color: AppColors.purple600, width: 2) : null,
+          border: isToday ? Border.all(color: AppSemanticColors.interactivePrimaryDefault, width: 2) : null,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -364,7 +364,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isToday
-                          ? AppColors.purple600
+                          ? AppSemanticColors.interactivePrimaryDefault
                           : isWeekend
                               ? AppSemanticColors.statusErrorBackground
                               : AppSemanticColors.statusInfoBackground,
@@ -415,7 +415,7 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
                           children: [
                             Icon(
                               Icons.favorite,
-                              color: AppColors.red500,
+                              color: AppSemanticColors.statusErrorIcon,
                               size: 16,
                             ),
                             const SizedBox(width: 4),

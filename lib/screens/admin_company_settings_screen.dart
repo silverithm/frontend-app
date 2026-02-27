@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/auth_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../models/payment_failure.dart';
@@ -485,18 +486,10 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         // 결제 관리 버튼
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton.icon(
+          child: shadcn.PrimaryButton(
             onPressed: _navigateToPayment,
-            icon: const Icon(Icons.payment),
-            label: const Text('결제 및 구독 관리'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-              foregroundColor: AppSemanticColors.textInverse,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+            leading: const Icon(Icons.payment),
+            child: const Text('결제 및 구독 관리'),
           ),
         ),
       ],
@@ -540,18 +533,10 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
           // 관리자 회원탈퇴 버튼
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: shadcn.DestructiveButton(
               onPressed: () => _showAdminWithdrawalDialog(authProvider),
-              icon: const Icon(Icons.person_remove),
-              label: const Text('회원탈퇴'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppSemanticColors.statusErrorIcon,
-                side: BorderSide(color: AppSemanticColors.statusErrorBorder),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              leading: const Icon(Icons.person_remove),
+              child: const Text('회원탈퇴'),
             ),
           ),
 
@@ -560,18 +545,10 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
           // 로그아웃 버튼
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: shadcn.OutlineButton(
               onPressed: () => _showLogoutDialog(authProvider),
-              icon: const Icon(Icons.logout),
-              label: const Text('로그아웃'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppSemanticColors.textSecondary,
-                side: BorderSide(color: AppSemanticColors.borderSubtle),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              leading: const Icon(Icons.logout),
+              child: const Text('로그아웃'),
             ),
           ),
         ],
@@ -582,8 +559,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
   void _showLogoutDialog(AuthProvider authProvider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(Icons.logout, color: AppSemanticColors.statusWarningIcon),
@@ -591,24 +567,23 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             const Text('로그아웃'),
           ],
         ),
-        content: const Text('정말 로그아웃하시겠습니까?'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('정말 로그아웃하시겠습니까?'),
+          ],
+        ),
         actions: [
-          TextButton(
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              '취소',
-              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
-            ),
+            child: const Text('취소'),
           ),
-          TextButton(
+          shadcn.GhostButton(
             onPressed: () async {
-              Navigator.of(context).pop(); // 다이얼로그 닫기
+              Navigator.of(context).pop();
               await _performLogout(authProvider);
             },
-            child: Text(
-              '로그아웃',
-              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.statusWarningIcon),
-            ),
+            child: const Text('로그아웃'),
           ),
         ],
       ),
@@ -824,53 +799,31 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
         // 구독 취소/활성화 버튼
         Expanded(
           child: subscription.isActive
-              ? OutlinedButton.icon(
+              ? shadcn.OutlineButton(
                   onPressed: subscriptionProvider.isLoading
                       ? null
                       : () => _showCancelSubscriptionDialog(subscriptionProvider),
-                  icon: subscriptionProvider.isLoading
-                      ? SizedBox(
+                  leading: subscriptionProvider.isLoading
+                      ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusErrorIcon),
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.pause_circle_outline),
-                  label: Text(subscriptionProvider.isLoading ? '처리 중...' : '구독 일시정지'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppSemanticColors.statusErrorIcon,
-                    side: BorderSide(color: AppSemanticColors.statusErrorBorder),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  child: Text(subscriptionProvider.isLoading ? '처리 중...' : '구독 일시정지'),
                 )
-              : ElevatedButton.icon(
+              : shadcn.PrimaryButton(
                   onPressed: subscriptionProvider.isLoading
                       ? null
                       : () => _showActivateSubscriptionDialog(subscriptionProvider),
-                  icon: subscriptionProvider.isLoading
-                      ? SizedBox(
+                  leading: subscriptionProvider.isLoading
+                      ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.play_circle_outline),
-                  label: Text(subscriptionProvider.isLoading ? '처리 중...' : '구독 재개'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppSemanticColors.statusSuccessIcon,
-                    foregroundColor: AppSemanticColors.textInverse,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  child: Text(subscriptionProvider.isLoading ? '처리 중...' : '구독 재개'),
                 ),
         ),
       ],
@@ -880,8 +833,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
   void _showCancelSubscriptionDialog(SubscriptionProvider subscriptionProvider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(Icons.pause_circle_outline, color: AppSemanticColors.statusErrorIcon),
@@ -889,16 +841,18 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             const Text('구독 일시정지'),
           ],
         ),
-        content: const Text('구독을 일시정지하시겠습니까?\n다음 결제일에 자동 결제가 중단됩니다.'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('구독을 일시정지하시겠습니까?\n다음 결제일에 자동 결제가 중단됩니다.'),
+          ],
+        ),
         actions: [
-          TextButton(
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              '취소',
-              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
-            ),
+            child: const Text('취소'),
           ),
-          TextButton(
+          shadcn.GhostButton(
             onPressed: () async {
               Navigator.of(context).pop();
               final success = await subscriptionProvider.cancelSubscription();
@@ -911,10 +865,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 );
               }
             },
-            child: Text(
-              '일시정지',
-              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.statusErrorIcon),
-            ),
+            child: const Text('일시정지'),
           ),
         ],
       ),
@@ -924,8 +875,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
   void _showActivateSubscriptionDialog(SubscriptionProvider subscriptionProvider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(Icons.play_circle_outline, color: AppSemanticColors.statusSuccessIcon),
@@ -933,16 +883,18 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             const Text('구독 재개'),
           ],
         ),
-        content: const Text('구독을 재개하시겠습니까?\n다음 결제일부터 자동 결제가 재개됩니다.'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('구독을 재개하시겠습니까?\n다음 결제일부터 자동 결제가 재개됩니다.'),
+          ],
+        ),
         actions: [
-          TextButton(
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              '취소',
-              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
-            ),
+            child: const Text('취소'),
           ),
-          TextButton(
+          shadcn.PrimaryButton(
             onPressed: () async {
               Navigator.of(context).pop();
               final success = await subscriptionProvider.activateSubscription();
@@ -955,10 +907,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 );
               }
             },
-            child: Text(
-              '재개',
-              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.statusSuccessIcon),
-            ),
+            child: const Text('재개'),
           ),
         ],
       ),
@@ -971,8 +920,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        builder: (context, setState) => shadcn.AlertDialog(
           title: Row(
             children: [
               Container(
@@ -1030,15 +978,11 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             ],
           ),
           actions: [
-            TextButton(
+            shadcn.OutlineButton(
               onPressed: isWithdrawing ? null : () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
               child: const Text('취소'),
             ),
-            ElevatedButton(
+            shadcn.DestructiveButton(
               onPressed: isWithdrawing
                   ? null
                   : () async {
@@ -1047,20 +991,16 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       final success = await authProvider.deleteAdminAccount();
 
                       if (success && context.mounted) {
-                        // 다이얼로그 닫기
                         Navigator.pop(context);
 
-                        // 잠시 대기 후 로그인 화면으로 직접 이동
                         await Future.delayed(const Duration(milliseconds: 100));
 
                         if (context.mounted) {
-                          // 모든 이전 화면을 제거하고 로그인 화면으로 이동
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (_) => const LoginScreen()),
                             (route) => false,
                           );
 
-                          // 성공 메시지 표시
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: const Text('관리자 회원탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사했습니다.'),
@@ -1088,21 +1028,11 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                         );
                       }
                     },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppSemanticColors.statusErrorIcon,
-                foregroundColor: AppSemanticColors.textInverse,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
-              ),
               child: isWithdrawing
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text('탈퇴하기'),
             ),

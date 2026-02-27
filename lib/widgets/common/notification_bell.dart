@@ -130,7 +130,7 @@ class _NotificationBottomSheet extends StatelessWidget {
               vertical: AppSpacing.space3,
             ),
             decoration: BoxDecoration(
-              color: AppSemanticColors.borderSubtle,
+              color: AppSemanticColors.borderDefault,
               borderRadius: BorderRadius.circular(AppBorderRadius.sm),
             ),
           ),
@@ -226,7 +226,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                         Icon(
                           Icons.notifications_off_outlined,
                           size: 48,
-                          color: AppSemanticColors.borderSubtle,
+                          color: AppSemanticColors.textDisabled,
                         ),
                         const SizedBox(height: 16),
                         Text(

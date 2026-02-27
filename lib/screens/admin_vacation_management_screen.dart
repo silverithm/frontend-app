@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/in_app_review_service.dart';
@@ -110,7 +111,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('휴무 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
-        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         bottom: PreferredSize(
@@ -187,7 +188,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         });
       },
       backgroundColor: AppSemanticColors.surfaceDefault,
-      selectedColor: AppSemanticColors.interactiveSecondaryDefault,
+      selectedColor: AppSemanticColors.interactivePrimaryDefault,
       checkmarkColor: AppSemanticColors.textInverse,
     );
   }
@@ -360,7 +361,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: AppSemanticColors.interactiveSecondaryDefault,
+                        color: AppSemanticColors.borderFocus,
                         width: 2,
                       ),
                     ),
@@ -438,48 +439,35 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton.icon(
+                          child: shadcn.OutlineButton(
                             onPressed: _isBulkProcessing ? null : _bulkReject,
-                            icon: _isBulkProcessing
+                            leading: _isBulkProcessing
                                 ? const SizedBox(
                                     width: 16,
                                     height: 16,
                                     child: CircularProgressIndicator(strokeWidth: 2),
                                   )
                                 : const Icon(Icons.close, size: 18),
-                            label: Text(
+                            child: Text(
                               _isBulkProcessing ? '처리중...' : '선택 항목 거절',
                               style: AppTypography.bodyMedium,
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppSemanticColors.statusWarningIcon,
-                              side: BorderSide(color: AppColors.orange300),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: ElevatedButton.icon(
+                          child: shadcn.PrimaryButton(
                             onPressed: _isBulkProcessing ? null : _bulkApprove,
-                            icon: _isBulkProcessing
-                                ? SizedBox(
+                            leading: _isBulkProcessing
+                                ? const SizedBox(
                                     width: 16,
                                     height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                                    ),
+                                    child: CircularProgressIndicator(strokeWidth: 2),
                                   )
                                 : const Icon(Icons.check, size: 18),
-                            label: Text(
+                            child: Text(
                               _isBulkProcessing ? '처리중...' : '선택 항목 승인',
                               style: AppTypography.bodyMedium,
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppSemanticColors.statusSuccessIcon,
-                              foregroundColor: AppSemanticColors.textInverse,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             ),
                           ),
                         ),
@@ -863,72 +851,48 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       children: [
         // 삭제 버튼 (모든 상태에 대해 표시)
         Expanded(
-          child: OutlinedButton.icon(
+          child: shadcn.DestructiveButton(
             onPressed: () => _showDeleteDialog(request['id'].toString()),
-            icon: const Icon(Icons.delete, size: 16),
-            label: Text('삭제', style: AppTypography.labelSmall),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppSemanticColors.statusErrorIcon,
-              side: BorderSide(color: AppColors.red300),
-              minimumSize: const Size(0, 32),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            ),
+            leading: const Icon(Icons.delete, size: 16),
+            child: Text('삭제', style: AppTypography.labelSmall),
           ),
         ),
         if (isPending) ...[
           const SizedBox(width: 8),
           Expanded(
-            child: OutlinedButton.icon(
+            child: shadcn.OutlineButton(
               onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
                   ? null
                   : () => _rejectRequest(request['id'].toString()),
-              icon: _rejectingRequests.contains(request['id'].toString())
-                  ? SizedBox(
+              leading: _rejectingRequests.contains(request['id'].toString())
+                  ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusWarningIcon),
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.close, size: 16),
-              label: Text(
+              child: Text(
                 _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
                 style: AppTypography.labelSmall,
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppSemanticColors.statusWarningIcon,
-                side: BorderSide(color: AppColors.orange300),
-                minimumSize: const Size(0, 32),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               ),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: ElevatedButton.icon(
+            child: shadcn.PrimaryButton(
               onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
                   ? null
                   : () => _approveRequest(request['id'].toString()),
-              icon: _approvingRequests.contains(request['id'].toString())
-                  ? SizedBox(
+              leading: _approvingRequests.contains(request['id'].toString())
+                  ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.check, size: 16),
-              label: Text(
+              child: Text(
                 _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
                 style: AppTypography.labelSmall,
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppSemanticColors.statusSuccessIcon,
-                foregroundColor: AppSemanticColors.textInverse,
-                minimumSize: const Size(0, 32),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               ),
             ),
           ),
@@ -1048,72 +1012,48 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
               children: [
                 // 삭제 버튼 (모든 상태에 대해 표시)
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: shadcn.DestructiveButton(
                     onPressed: () => _showDeleteDialog(request['id'].toString()),
-                    icon: const Icon(Icons.delete, size: 16),
-                    label: Text('삭제', style: AppTypography.labelSmall),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppSemanticColors.statusErrorIcon,
-                      side: BorderSide(color: AppColors.red300),
-                      minimumSize: const Size(0, 32),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    ),
+                    leading: const Icon(Icons.delete, size: 16),
+                    child: Text('삭제', style: AppTypography.labelSmall),
                   ),
                 ),
                 if (isPending) ...[
                   const SizedBox(width: 8),
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: shadcn.OutlineButton(
                       onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
                           ? null
                           : () => _rejectRequest(request['id'].toString()),
-                      icon: _rejectingRequests.contains(request['id'].toString())
-                          ? SizedBox(
+                      leading: _rejectingRequests.contains(request['id'].toString())
+                          ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusWarningIcon),
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.close, size: 16),
-                      label: Text(
+                      child: Text(
                         _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
                         style: AppTypography.labelSmall,
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppSemanticColors.statusWarningIcon,
-                        side: BorderSide(color: AppColors.orange300),
-                        minimumSize: const Size(0, 32),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: shadcn.PrimaryButton(
                       onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
                           ? null
                           : () => _approveRequest(request['id'].toString()),
-                      icon: _approvingRequests.contains(request['id'].toString())
-                          ? SizedBox(
+                      leading: _approvingRequests.contains(request['id'].toString())
+                          ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.check, size: 16),
-                      label: Text(
+                      child: Text(
                         _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
                         style: AppTypography.labelSmall,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppSemanticColors.statusSuccessIcon,
-                        foregroundColor: AppSemanticColors.textInverse,
-                        minimumSize: const Size(0, 32),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       ),
                     ),
                   ),
@@ -1254,48 +1194,34 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: shadcn.OutlineButton(
                         onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
-                            ? null 
+                            ? null
                             : () => _rejectRequest(request['id'].toString()),
-                        icon: _rejectingRequests.contains(request['id'].toString())
-                            ? SizedBox(
+                        leading: _rejectingRequests.contains(request['id'].toString())
+                            ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusErrorIcon),
-                                ),
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.close),
-                        label: Text(_rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppSemanticColors.statusErrorIcon,
-                          side: BorderSide(color: AppColors.red300),
-                        ),
+                        child: Text(_rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton.icon(
+                      child: shadcn.PrimaryButton(
                         onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
-                            ? null 
+                            ? null
                             : () => _approveRequest(request['id'].toString()),
-                        icon: _approvingRequests.contains(request['id'].toString())
+                        leading: _approvingRequests.contains(request['id'].toString())
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                                ),
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.check),
-                        label: Text(_approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.green600,
-                          foregroundColor: AppSemanticColors.textInverse,
-                        ),
+                        child: Text(_approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인'),
                       ),
                     ),
                   ],
@@ -1339,14 +1265,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     style: TextStyle(color: AppSemanticColors.textTertiary),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
+                  shadcn.PrimaryButton(
                     onPressed: _showLimitSettingDialog,
-                    icon: const Icon(Icons.settings),
-                    label: const Text('한도 설정'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.green600,
-                      foregroundColor: AppSemanticColors.textInverse,
-                    ),
+                    leading: const Icon(Icons.settings),
+                    child: const Text('한도 설정'),
                   ),
                 ],
               ),
@@ -1614,23 +1536,24 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return shadcn.AlertDialog(
           title: const Text('휴무 삭제'),
-          content: const Text('이 휴무를 영구적으로 삭제하시겠습니까?\n삭제된 휴무는 복구할 수 없습니다.'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('이 휴무를 영구적으로 삭제하시겠습니까?\n삭제된 휴무는 복구할 수 없습니다.'),
+            ],
+          ),
           actions: [
-            TextButton(
+            shadcn.OutlineButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('취소'),
             ),
-            ElevatedButton(
+            shadcn.DestructiveButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 _deleteVacation(vacationId);
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppSemanticColors.statusErrorIcon,
-                foregroundColor: AppSemanticColors.textInverse,
-              ),
               child: const Text('삭제'),
             ),
           ],
@@ -1686,20 +1609,21 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     // 확인 다이얼로그 표시
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => shadcn.AlertDialog(
         title: const Text('일괄 승인'),
-        content: Text('선택한 ${selectedList.length}개의 휴무 요청을 모두 승인하시겠습니까?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('선택한 ${selectedList.length}개의 휴무 요청을 모두 승인하시겠습니까?'),
+          ],
+        ),
         actions: [
-          TextButton(
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('취소'),
           ),
-          ElevatedButton(
+          shadcn.PrimaryButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppSemanticColors.statusSuccessIcon,
-              foregroundColor: AppSemanticColors.textInverse,
-            ),
             child: const Text('승인'),
           ),
         ],
@@ -1776,20 +1700,21 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     // 확인 다이얼로그 표시
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => shadcn.AlertDialog(
         title: const Text('일괄 거절'),
-        content: Text('선택한 ${selectedList.length}개의 휴무 요청을 모두 거절하시겠습니까?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('선택한 ${selectedList.length}개의 휴무 요청을 모두 거절하시겠습니까?'),
+          ],
+        ),
         actions: [
-          TextButton(
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('취소'),
           ),
-          ElevatedButton(
+          shadcn.DestructiveButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppSemanticColors.statusWarningIcon,
-              foregroundColor: AppSemanticColors.textInverse,
-            ),
             child: const Text('거절'),
           ),
         ],

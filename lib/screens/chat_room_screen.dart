@@ -903,7 +903,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ],
         ),
         backgroundColor: isAdmin
-            ? AppSemanticColors.interactiveSecondaryDefault
+            ? AppSemanticColors.interactivePrimaryDefault
             : AppSemanticColors.surfaceDefault,
         foregroundColor: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
         elevation: 0,
@@ -1002,7 +1002,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Widget _buildMessageBubble(ChatMessage message, bool isMyMessage, bool showSenderName, bool isAdmin) {
     final bubbleColor = isMyMessage
-        ? (isAdmin ? AppSemanticColors.interactiveSecondaryDefault : AppSemanticColors.interactivePrimaryDefault)
+        ? AppSemanticColors.interactivePrimaryDefault
         : AppSemanticColors.surfaceDefault;
 
     final textColor = isMyMessage
@@ -1303,9 +1303,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isAdmin
-                    ? AppSemanticColors.interactiveSecondaryDefault
-                    : AppSemanticColors.interactivePrimaryDefault,
+                color: AppSemanticColors.interactivePrimaryDefault,
                 shape: BoxShape.circle,
               ),
               child: Icon(

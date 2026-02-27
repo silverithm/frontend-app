@@ -143,9 +143,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin, 
       builder: (context, authProvider, child) {
         final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
 
-        final selectedColor = isAdmin
-            ? AppSemanticColors.interactiveSecondaryDefault
-            : AppSemanticColors.interactivePrimaryDefault;
+        final selectedColor = AppSemanticColors.interactivePrimaryDefault;
 
         final navItems = [
           _buildNavItem(0, Icons.home, Icons.home_outlined, '홈', isAdmin),
@@ -175,8 +173,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin, 
               type: BottomNavigationBarType.fixed,
               backgroundColor: AppColors.transparent,
               elevation: 0,
-              selectedItemColor: selectedColor,
-              unselectedItemColor: AppSemanticColors.textDisabled,
+              selectedItemColor: AppSemanticColors.interactivePrimaryDefault,
+              unselectedItemColor: AppSemanticColors.textTertiary,
               selectedLabelStyle: AppTypography.labelMedium.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -198,12 +196,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin, 
   ) {
     final isSelected = _currentIndex == index;
 
-    Color iconColor = AppSemanticColors.textDisabled;
+    Color iconColor = AppSemanticColors.textTertiary;
 
     if (isSelected) {
-      iconColor = isAdmin
-          ? AppSemanticColors.interactiveSecondaryDefault
-          : AppSemanticColors.interactivePrimaryDefault;
+      iconColor = AppSemanticColors.interactivePrimaryDefault;
     }
 
     return BottomNavigationBarItem(

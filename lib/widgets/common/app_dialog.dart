@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
@@ -17,7 +18,7 @@ class AppDialog {
   }) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => shadcn.AlertDialog(
         title: Text(
           title,
           style: AppTypography.heading5.copyWith(
@@ -31,29 +32,15 @@ class AppDialog {
           ),
         ),
         actions: [
-          AppButton(
-            text: cancelText,
-            variant: cancelVariant,
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(false),
+            child: Text(cancelText),
           ),
-          const SizedBox(width: AppSpacing.space2),
-          AppButton(
-            text: confirmText,
-            variant: confirmVariant,
+          shadcn.PrimaryButton(
             onPressed: () => Navigator.of(context).pop(true),
+            child: Text(confirmText),
           ),
         ],
-        actionsAlignment: MainAxisAlignment.end,
-        actionsPadding: const EdgeInsets.fromLTRB(
-          AppSpacing.space6,
-          0,
-          AppSpacing.space6,
-          AppSpacing.space6,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
       ),
     );
   }
@@ -67,7 +54,7 @@ class AppDialog {
   }) {
     return showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => shadcn.AlertDialog(
         title: Text(
           title,
           style: AppTypography.heading5.copyWith(
@@ -81,23 +68,11 @@ class AppDialog {
           ),
         ),
         actions: [
-          AppButton(
-            text: buttonText,
-            variant: buttonVariant,
+          shadcn.PrimaryButton(
             onPressed: () => Navigator.of(context).pop(),
+            child: Text(buttonText),
           ),
         ],
-        actionsAlignment: MainAxisAlignment.end,
-        actionsPadding: const EdgeInsets.fromLTRB(
-          AppSpacing.space6,
-          0,
-          AppSpacing.space6,
-          AppSpacing.space6,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
       ),
     );
   }
@@ -120,7 +95,7 @@ class AppDialog {
 
     return showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => shadcn.AlertDialog(
         title: Text(
           title,
           style: AppTypography.heading5.copyWith(
@@ -155,33 +130,19 @@ class AppDialog {
           ],
         ),
         actions: [
-          AppButton(
-            text: cancelText,
-            variant: AppButtonVariant.outline,
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(),
+            child: Text(cancelText),
           ),
-          const SizedBox(width: AppSpacing.space2),
-          AppButton(
-            text: confirmText,
-            variant: AppButtonVariant.primary,
+          shadcn.PrimaryButton(
             onPressed: () {
               if (formKey.currentState?.validate() ?? true) {
                 Navigator.of(context).pop(controller.text);
               }
             },
+            child: Text(confirmText),
           ),
         ],
-        actionsAlignment: MainAxisAlignment.end,
-        actionsPadding: const EdgeInsets.fromLTRB(
-          AppSpacing.space6,
-          0,
-          AppSpacing.space6,
-          AppSpacing.space6,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
       ),
     );
   }

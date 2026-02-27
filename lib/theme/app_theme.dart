@@ -10,35 +10,35 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       
-      // Color scheme
+      // Color scheme (shadcn zinc - black/white minimal)
       colorScheme: const ColorScheme.light(
         primary: AppSemanticColors.interactivePrimaryDefault,
         onPrimary: AppSemanticColors.textInverse,
-        primaryContainer: AppColors.blue100,
-        onPrimaryContainer: AppColors.blue900,
-        
+        primaryContainer: Color(0xFFF4F4F5), // zinc-100
+        onPrimaryContainer: Color(0xFF09090B), // zinc-950
+
         secondary: AppSemanticColors.interactiveSecondaryDefault,
-        onSecondary: AppSemanticColors.textInverse,
-        secondaryContainer: AppColors.gray100,
-        onSecondaryContainer: AppColors.gray900,
-        
-        tertiary: AppColors.purple600,
+        onSecondary: Color(0xFF09090B), // zinc-950
+        secondaryContainer: Color(0xFFF4F4F5), // zinc-100
+        onSecondaryContainer: Color(0xFF09090B), // zinc-950
+
+        tertiary: Color(0xFF18181B), // zinc-900
         onTertiary: AppSemanticColors.textInverse,
-        tertiaryContainer: AppColors.purple100,
-        onTertiaryContainer: AppColors.purple900,
-        
+        tertiaryContainer: Color(0xFFF4F4F5), // zinc-100
+        onTertiaryContainer: Color(0xFF09090B), // zinc-950
+
         error: AppSemanticColors.statusErrorIcon,
         onError: AppSemanticColors.textInverse,
         errorContainer: AppSemanticColors.statusErrorBackground,
         onErrorContainer: AppSemanticColors.statusErrorText,
-        
+
         surface: AppSemanticColors.surfaceDefault,
         onSurface: AppSemanticColors.textPrimary,
         surfaceContainerHighest: AppSemanticColors.backgroundSecondary,
-        
+
         outline: AppSemanticColors.borderDefault,
         outlineVariant: AppSemanticColors.borderHover,
-        
+
         scrim: AppSemanticColors.backgroundOverlay,
       ),
       
@@ -272,11 +272,11 @@ class AppTheme {
       ),
       
       // Floating action button theme
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 6,
-        shape: CircleBorder(),
+        // shape를 지정하지 않으면 기본값 사용 (일반 FAB은 원형, extended는 StadiumBorder)
       ),
       
       // Snack bar theme

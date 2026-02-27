@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
 import '../theme/app_colors.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class UpdateDialog extends StatelessWidget {
   final String currentVersion;
@@ -42,8 +43,7 @@ class UpdateDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async => !forceUpdate,
-      child: AlertDialog(
-        backgroundColor: AppSemanticColors.surfaceDefault,
+      child: shadcn.AlertDialog(
         title: const Text('업데이트 알림'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -63,11 +63,11 @@ class UpdateDialog extends StatelessWidget {
         ),
         actions: [
           if (!forceUpdate)
-            TextButton(
+            shadcn.GhostButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('나중에'),
             ),
-          ElevatedButton(
+          shadcn.PrimaryButton(
             onPressed: _launchStore,
             child: const Text('업데이트'),
           ),

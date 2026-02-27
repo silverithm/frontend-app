@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/subscription_provider.dart';
@@ -7,6 +8,7 @@ import '../models/user.dart';
 import '../services/analytics_service.dart';
 import '../services/in_app_review_service.dart';
 import '../utils/admin_utils.dart';
+import 'admin_company_settings_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -332,10 +334,10 @@ class _ProfileScreenState extends State<ProfileScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.blue100,
+                  color: AppSemanticColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.swap_horiz, color: AppSemanticColors.statusInfoIcon, size: 24),
+                child: Icon(Icons.swap_horiz, color: AppSemanticColors.textSecondary, size: 24),
               ),
               const SizedBox(width: 12),
               const Text('역할 변경', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -347,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.blue50,
+                  color: AppSemanticColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -355,7 +357,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     RadioListTile<String>(
                       title: Row(
                         children: [
-                          Icon(Icons.favorite, color: AppColors.red500, size: 20),
+                          Icon(Icons.favorite, color: AppSemanticColors.statusErrorIcon, size: 20),
                           const SizedBox(width: 8),
                           const Text('요양보호사'),
                         ],
@@ -373,7 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     RadioListTile<String>(
                       title: Row(
                         children: [
-                          Icon(Icons.business, color: AppColors.blue600, size: 20),
+                          Icon(Icons.business, color: AppSemanticColors.textSecondary, size: 20),
                           const SizedBox(width: 8),
                           const Text('사무직'),
                         ],
@@ -395,19 +397,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.orange50,
+                    color: AppSemanticColors.statusWarningBackground,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.orange200),
+                    border: Border.all(color: AppSemanticColors.statusWarningBorder),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: AppColors.orange700, size: 20),
+                      Icon(Icons.info_outline, color: AppSemanticColors.statusWarningIcon, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           '역할 변경 시 권한이 변경됩니다.',
                           style: TextStyle(
-                            color: AppColors.orange700,
+                            color: AppSemanticColors.statusWarningText,
                             fontSize: 13,
                           ),
                         ),
@@ -418,11 +420,11 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ),
           actions: [
-            TextButton(
+            shadcn.OutlineButton(
               onPressed: isChanging ? null : () => Navigator.pop(context),
               child: const Text('취소'),
             ),
-            ElevatedButton(
+            shadcn.PrimaryButton(
               onPressed: (isChanging || selectedRole == user.role) ? null : () async {
                 setState(() {
                   isChanging = true;
@@ -463,10 +465,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                   );
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppSemanticColors.statusInfoIcon,
-                foregroundColor: AppColors.white,
-              ),
               child: isChanging
                   ? const SizedBox(
                       width: 16,
@@ -694,38 +692,18 @@ class _ProfileScreenState extends State<ProfileScreen>
       backgroundColor: AppSemanticColors.backgroundSecondary,
       body: CustomScrollView(
         slivers: [
-          // 파란계열 그라데이션 앱바
+          // 흰색 배경 앱바
           SliverAppBar(
-            expandedHeight: 64.0,
+            expandedHeight: 56.0,
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: AppColors.transparent,
+            backgroundColor: AppSemanticColors.backgroundPrimary,
             centerTitle: true,
             title: Text(
               '프로필',
-              style: AppTypography.heading5.copyWith(
-                color: AppSemanticColors.textInverse,
-                shadows: [
-                  Shadow(
-                    color: AppColors.black.withValues(alpha: 0.26),
-                    offset: const Offset(1, 1),
-                    blurRadius: 3,
-                  ),
-                ],
-              ),
-            ),
-            flexibleSpace: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppSemanticColors.interactivePrimaryActive,
-                    AppSemanticColors.interactivePrimaryDefault,
-                    AppSemanticColors.interactivePrimaryHover,
-                  ],
-                ),
+              style: AppTypography.heading6.copyWith(
+                color: AppSemanticColors.textPrimary,
               ),
             ),
           ),
@@ -764,24 +742,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                     opacity: _fadeAnimation,
                     child: SlideTransition(
                       position: _slideAnimation,
-                      child: Container(
-                        margin: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [AppColors.white, AppColors.blue50],
-                          ),
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.black.withValues(alpha:0.1),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: shadcn.Card(
                           padding: const EdgeInsets.all(24),
                           child: Column(
                             children: [
@@ -793,23 +756,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   height: 120,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        AppColors.blue400,
-                                        AppColors.blue300,
-                                        AppColors.blue200,
-                                      ],
+                                    color: AppSemanticColors.backgroundTertiary,
+                                    border: Border.all(
+                                      color: AppSemanticColors.borderDefault,
+                                      width: 2,
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.blue200
-                                            .withValues(alpha:0.5),
-                                        blurRadius: 15,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
                                   ),
                                   child: user.profileImage != null
                                       ? ClipOval(
@@ -834,25 +785,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                               Container(
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
-                                  color: AppColors.white,
+                                  color: AppSemanticColors.surfaceDefault,
                                   borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.black.withValues(alpha:0.05),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 5),
-                                    ),
-                                  ],
+                                  border: Border.all(
+                                    color: AppSemanticColors.borderDefault,
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       '기본 정보',
-                                      style: TextStyle(
-                                        fontSize: 18,
+                                      style: AppTypography.heading6.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: AppColors.grey800,
+                                        color: AppSemanticColors.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 20),
@@ -890,8 +837,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                                     ? Icons.favorite
                                                     : Icons.business,
                                                 iconColor: user.role == 'CAREGIVER'
-                                                    ? AppColors.red500
-                                                    : AppColors.blue600,
+                                                    ? AppSemanticColors.statusErrorIcon
+                                                    : AppSemanticColors.textSecondary,
                                                 title: '직원 유형',
                                                 value: _getRoleDisplayName(user.role),
                                               ),
@@ -899,13 +846,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             Container(
                                               padding: const EdgeInsets.all(4),
                                               decoration: BoxDecoration(
-                                                color: AppColors.blue100,
+                                                color: AppSemanticColors.backgroundTertiary,
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: Icon(
                                                 Icons.edit,
                                                 size: 16,
-                                                color: AppSemanticColors.statusInfoIcon,
+                                                color: AppSemanticColors.textSecondary,
                                               ),
                                             ),
                                           ],
@@ -948,7 +895,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     // 가입일
                                     _buildInfoRow(
                                       icon: Icons.calendar_today,
-                                      iconColor: AppColors.green600,
+                                      iconColor: AppSemanticColors.textSecondary,
                                       title: '가입일',
                                       value: _formatDate(user.createdAt),
                                     ),
@@ -983,21 +930,42 @@ class _ProfileScreenState extends State<ProfileScreen>
                   // 설정 섹션
                   FadeTransition(
                     opacity: _fadeAnimation,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.black.withValues(alpha:0.08),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: shadcn.Card(
+                        padding: EdgeInsets.zero,
+                        child: Column(
                         children: [
+                          // 관리자 회사 정보 메뉴
+                          if (AdminUtils.canAccessAdminPages(user))
+                            _buildSettingTile(
+                              icon: Icons.business,
+                              title: '회사 정보',
+                              subtitle: '회사 정보 및 구독 관리',
+                              trailing: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.chevron_right,
+                                  color: AppSemanticColors.interactiveSecondaryDefault,
+                                  size: 20,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const AdminCompanySettingsScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+
+                          if (AdminUtils.canAccessAdminPages(user))
+                            const Divider(height: 1, color: AppColors.transparent),
+
                           _buildSettingTile(
                             icon: Icons.lock,
                             title: '비밀번호 변경',
@@ -1005,12 +973,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.green100,
+                                color: AppSemanticColors.backgroundTertiary,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
-                                color: AppSemanticColors.statusSuccessIcon,
+                                color: AppSemanticColors.textSecondary,
                                 size: 20,
                               ),
                             ),
@@ -1025,52 +993,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                             subtitle: _notificationsEnabled
                                 ? '푸시 알림이 활성화되어 있습니다'
                                 : '푸시 알림이 비활성화되어 있습니다',
-                            trailing: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: _notificationsEnabled
-                                      ? [
-                                          AppColors.blue400,
-                                          AppSemanticColors.statusInfoIcon,
-                                        ]
-                                      : [
-                                          AppColors.grey300,
-                                          AppSemanticColors.textDisabled,
-                                        ],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: _notificationsEnabled
-                                    ? [
-                                        BoxShadow(
-                                          color: AppColors.blue300
-                                              .withValues(alpha:0.4),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Switch(
-                                value: _notificationsEnabled,
-                                onChanged: (value) {
-                                  // 기존 상태로 되돌리기
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text('알림 설정 기능은 준비 중입니다'),
-                                      backgroundColor: AppSemanticColors.statusWarningIcon,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                            trailing: Switch(
+                              value: _notificationsEnabled,
+                              onChanged: (value) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('알림 설정 기능은 준비 중입니다'),
+                                    backgroundColor: AppSemanticColors.statusWarningIcon,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                  );
-                                },
-                                activeColor: AppColors.white,
-                                inactiveThumbColor: AppColors.white,
-                                trackColor: MaterialStateProperty.all(
-                                  AppColors.transparent,
-                                ),
-                              ),
+                                  ),
+                                );
+                              },
+                              activeColor: AppSemanticColors.interactivePrimaryDefault,
                             ),
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -1095,12 +1032,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.amber100,
+                                color: AppSemanticColors.backgroundTertiary,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
-                                Icons.star,
-                                color: AppColors.amber700,
+                                Icons.chevron_right,
+                                color: AppSemanticColors.textSecondary,
                                 size: 20,
                               ),
                             ),
@@ -1139,12 +1076,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.blue100,
+                                color: AppSemanticColors.backgroundTertiary,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
-                                color: AppSemanticColors.statusInfoIcon,
+                                color: AppSemanticColors.textSecondary,
                                 size: 20,
                               ),
                             ),
@@ -1203,12 +1140,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                             trailing: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.red100,
+                                color: AppSemanticColors.backgroundTertiary,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
-                                color: AppSemanticColors.statusErrorIcon,
+                                color: AppSemanticColors.textSecondary,
                                 size: 20,
                               ),
                             ),
@@ -1216,6 +1153,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             isLast: true,
                           ),
                         ],
+                        ),
                       ),
                     ),
                   ),
@@ -1227,24 +1165,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                     opacity: _fadeAnimation,
                     child: SlideTransition(
                       position: _slideAnimation,
-                      child: Container(
-                        margin: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [AppColors.white, AppSemanticColors.backgroundSecondary],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.black.withValues(alpha:0.08),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Column(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: shadcn.Card(
+                          padding: EdgeInsets.zero,
+                          child: Column(
                           children: [
                             // 섹션 헤더
                             Container(
@@ -1254,27 +1179,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppColors.grey100,
-                                          AppColors.grey200,
-                                        ],
-                                      ),
+                                      color: AppSemanticColors.backgroundTertiary,
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Icon(
                                       Icons.gavel,
-                                      color: AppSemanticColors.textPrimary,
+                                      color: AppSemanticColors.textSecondary,
                                       size: 24,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
                                     '약관 및 정책',
-                                    style: TextStyle(
-                                      fontSize: 18,
+                                    style: AppTypography.heading6.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.grey800,
+                                      color: AppSemanticColors.textPrimary,
                                     ),
                                   ),
                                 ],
@@ -1298,7 +1217,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               margin: const EdgeInsets.symmetric(
                                 horizontal: 20,
                               ),
-                              color: AppColors.grey200,
+                              color: AppSemanticColors.borderDefault,
                             ),
 
                             _buildPolicyTile(
@@ -1312,6 +1231,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               isLast: true,
                             ),
                           ],
+                          ),
                         ),
                       ),
                     ),
@@ -1322,47 +1242,24 @@ class _ProfileScreenState extends State<ProfileScreen>
                   // 로그아웃 버튼
                   FadeTransition(
                     opacity: _fadeAnimation,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.red400,
-                              AppSemanticColors.statusErrorIcon,
-                              AppColors.red800,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.red300.withValues(alpha:0.4),
-                              blurRadius: 15,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton.icon(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: shadcn.DestructiveButton(
                           onPressed: () => _showLogoutDialog(context),
-                          icon: const Icon(Icons.logout, color: AppColors.white),
-                          label: const Text(
-                            '로그아웃',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.white,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.transparent,
-                            shadowColor: AppColors.transparent,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.logout, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                '로그아웃',
+                                style: AppTypography.labelLarge.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1375,22 +1272,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.grey100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Version 1.0.0',
-                          style: TextStyle(
-                            color: AppSemanticColors.textTertiary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      child: Text(
+                        'Version 1.0.0',
+                        style: AppTypography.caption.copyWith(
+                          color: AppSemanticColors.textTertiary,
                         ),
                       ),
                     ),
@@ -1410,17 +1295,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.blue400,
-            AppColors.blue300,
-            AppColors.blue200,
-          ],
-        ),
+        color: AppSemanticColors.backgroundTertiary,
       ),
-      child: const Icon(Icons.person, size: 60, color: AppColors.white),
+      child: Icon(Icons.person, size: 60, color: AppSemanticColors.textSecondary),
     );
   }
 
@@ -1445,20 +1322,18 @@ class _ProfileScreenState extends State<ProfileScreen>
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.blue100, AppColors.blue100],
-            ),
+            color: AppSemanticColors.backgroundTertiary,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppColors.blue600, size: 24),
+          child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
         ),
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(color: AppSemanticColors.textSecondary, fontSize: 13),
+          style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
         ),
         trailing: trailing,
         onTap: onTap,
@@ -1478,13 +1353,12 @@ class _ProfileScreenState extends State<ProfileScreen>
         Icon(icon, color: iconColor, size: 20),
         const SizedBox(width: 8),
         SizedBox(
-          width: 60, // 라벨 너비를 더 줄임
+          width: 60,
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: 14,
+            style: AppTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.w500,
-              color: AppColors.grey800,
+              color: AppSemanticColors.textSecondary,
             ),
           ),
         ),
@@ -1492,12 +1366,10 @@ class _ProfileScreenState extends State<ProfileScreen>
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              fontSize: 14,
+            style: AppTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.w500,
               color: AppSemanticColors.textPrimary,
             ),
-            // overflow와 maxLines 제거하여 2줄로 표시 가능
           ),
         ),
       ],
@@ -1507,11 +1379,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   Color _getRoleColor(String role) {
     switch (role) {
       case 'CAREGIVER':
-        return AppColors.red400;
+        return AppSemanticColors.statusErrorIcon;
       case 'OFFICE':
-        return AppSemanticColors.statusInfoIcon;
+        return AppSemanticColors.textSecondary;
       case 'admin':
-        return AppSemanticColors.interactiveSecondaryDefault;
+        return AppSemanticColors.textSecondary;
       default:
         return AppSemanticColors.textTertiary;
     }
@@ -1560,20 +1432,23 @@ class _ProfileScreenState extends State<ProfileScreen>
       leading: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.blue100, AppColors.blue100],
-          ),
+          color: AppSemanticColors.backgroundTertiary,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: iconColor, size: 24),
+        child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
       ),
       title: Text(
         title,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: AppSemanticColors.textSecondary, fontSize: 13),
+        style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: AppSemanticColors.textTertiary,
+        size: 20,
       ),
       onTap: onTap,
     );
@@ -1609,7 +1484,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.orange100,
+                  color: AppSemanticColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
@@ -1708,10 +1583,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                     children: [
                       Text(
                         subscription.planDisplayName,
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: AppTypography.bodyMedium.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: AppColors.grey800,
+                          color: AppSemanticColors.textPrimary,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1797,7 +1671,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         actions: [
           if (!subscription.isActive)
-            ElevatedButton(
+            shadcn.PrimaryButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(
@@ -1808,7 +1682,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               },
               child: const Text('구독 갱신'),
             ),
-          TextButton(
+          shadcn.GhostButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('확인'),
           ),

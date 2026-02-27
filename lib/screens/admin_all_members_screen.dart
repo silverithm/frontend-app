@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
@@ -50,7 +51,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
           backgroundColor: AppSemanticColors.backgroundPrimary,
           appBar: AppBar(
             title: Text('전체 회원', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
-            backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+            backgroundColor: AppSemanticColors.interactivePrimaryDefault,
             foregroundColor: AppSemanticColors.textInverse,
             elevation: 0,
             bottom: PreferredSize(
@@ -177,7 +178,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
+                shadcn.PrimaryButton(
                   onPressed: _loadData,
                   child: const Text('다시 시도'),
                 ),
@@ -194,7 +195,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                 Icon(
                   Icons.people_outline,
                   size: 64,
-                  color: AppSemanticColors.textDisabled,
+                  color: AppSemanticColors.textTertiary,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -308,43 +309,21 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: shadcn.PrimaryButton(
                     onPressed: () => _toggleMemberStatus(user),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isActive
-                          ? AppColors.gray500
-                          : AppColors.blue600,
-                      foregroundColor: AppSemanticColors.textInverse,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      minimumSize: const Size(0, 36),
-                      textStyle: AppTypography.labelMedium,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: Icon(
+                    leading: Icon(
                       isActive ? Icons.pause : Icons.play_arrow,
                       size: 18,
                     ),
-                    label: Text(isActive ? '비활성화' : '활성화'),
+                    child: Text(isActive ? '비활성화' : '활성화'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: shadcn.DestructiveButton(
                     onPressed: () => _showDeleteDialog(user),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.gray700,
-                      foregroundColor: AppSemanticColors.textInverse,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      minimumSize: const Size(0, 36),
-                      textStyle: AppTypography.labelMedium,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: const Icon(Icons.delete, size: 18),
-                    label: const Text('삭제'),
+                    leading: const Icon(Icons.delete, size: 18),
+                    child: const Text('삭제'),
                   ),
                 ),
               ],
@@ -361,8 +340,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(
@@ -373,22 +351,25 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
             Text('회원 $actionText'),
           ],
         ),
-        content: Text('${user.name}님을 ${actionText}하시겠습니까?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${user.name}님을 ${actionText}하시겠습니까?'),
+          ],
+        ),
         actions: [
-          TextButton(
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('취소'),
           ),
-          ElevatedButton(
+          shadcn.PrimaryButton(
             onPressed: () async {
               Navigator.of(context).pop();
               final adminProvider = context.read<AdminProvider>();
-
               final success = await adminProvider.updateMemberStatus(
                 user.id,
                 newStatus,
               );
-
               if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -400,12 +381,6 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: newStatus == 'active'
-                  ? AppSemanticColors.statusSuccessIcon
-                  : AppSemanticColors.statusWarningIcon,
-              foregroundColor: AppSemanticColors.textInverse,
-            ),
             child: Text(actionText),
           ),
         ],
@@ -416,8 +391,7 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
   void _showDeleteDialog(User user) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(Icons.warning, color: AppSemanticColors.statusErrorIcon),
@@ -440,17 +414,15 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
           ],
         ),
         actions: [
-          TextButton(
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('취소'),
           ),
-          ElevatedButton(
+          shadcn.DestructiveButton(
             onPressed: () async {
               Navigator.of(context).pop();
               final adminProvider = context.read<AdminProvider>();
-
               final success = await adminProvider.deleteMember(user.id);
-
               if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -460,10 +432,6 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppSemanticColors.statusErrorIcon,
-              foregroundColor: AppSemanticColors.textInverse,
-            ),
             child: const Text('삭제'),
           ),
         ],

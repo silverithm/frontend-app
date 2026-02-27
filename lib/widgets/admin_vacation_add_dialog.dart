@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class AdminVacationAddDialog extends StatefulWidget {
   final DateTime? selectedDate;
@@ -355,8 +356,8 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                       text: '일반',
                       isSelected: _selectedType == 'personal',
                       onTap: () => setState(() => _selectedType = 'personal'),
-                      selectedColor: Colors.blue.shade100,
-                      selectedTextColor: Colors.blue.shade700,
+                      selectedColor: AppSemanticColors.statusInfoBackground,
+                      selectedTextColor: AppSemanticColors.statusInfoText,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -366,8 +367,8 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                       text: '필수',
                       isSelected: _selectedType == 'mandatory',
                       onTap: () => setState(() => _selectedType = 'mandatory'),
-                      selectedColor: Colors.red.shade100,
-                      selectedTextColor: Colors.red.shade700,
+                      selectedColor: AppSemanticColors.statusErrorBackground,
+                      selectedTextColor: AppSemanticColors.statusErrorText,
                     ),
                   ),
                 ],
@@ -446,21 +447,13 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  shadcn.GhostButton(
                     onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
                     child: const Text('취소'),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton(
+                  shadcn.PrimaryButton(
                     onPressed: _isSubmitting ? null : _submitVacation,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-                      foregroundColor: AppColors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
                     child: _isSubmitting
                         ? const SizedBox(
                             width: 20,

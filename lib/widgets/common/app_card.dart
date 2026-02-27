@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 
@@ -28,38 +29,68 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Container(
-      margin: margin ?? const EdgeInsets.all(AppSpacing.space4),
-      padding: padding ?? const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(borderRadius ?? AppBorderRadius.xl),
-        border: hasBorder
-            ? Border.all(
-                color: borderColor ?? AppSemanticColors.borderDefault,
-                width: 1,
-              )
-            : null,
-        boxShadow: elevation != null && elevation! > 0
-            ? [
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha:0.1),
-                  blurRadius: elevation!,
-                  offset: Offset(0, elevation! / 2),
-                ),
-              ]
-            : null,
-      ),
+    final effectivePadding =
+        padding ?? const EdgeInsets.all(AppSpacing.space4);
+    final effectiveRadius = borderRadius ?? AppBorderRadius.xl;
+
+    Widget card = shadcn.Card(
+      padding: effectivePadding,
+      filled: backgroundColor != null,
+      fillColor: backgroundColor,
+      borderRadius: BorderRadius.circular(effectiveRadius),
+      borderColor: hasBorder
+          ? (borderColor ?? AppSemanticColors.borderDefault)
+          : Colors.transparent,
+      borderWidth: hasBorder ? 1 : 0,
+      boxShadow: elevation != null && elevation! > 0
+          ? [
+              BoxShadow(
+                color: AppColors.black.withValues(alpha: 0.1),
+                blurRadius: elevation!,
+                offset: Offset(0, elevation! / 2),
+              ),
+            ]
+          : null,
       child: child,
     );
 
+    // Apply margin via Container wrapper
+    if (margin != null || onTap == null) {
+      card = Container(
+        margin: margin ?? const EdgeInsets.all(AppSpacing.space4),
+        child: card,
+      );
+    }
+
     if (onTap != null) {
-      return Material(
-        color: AppColors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(borderRadius ?? AppBorderRadius.xl),
-          child: card,
+      return Container(
+        margin: margin ?? const EdgeInsets.all(AppSpacing.space4),
+        child: Material(
+          color: AppColors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(effectiveRadius),
+            child: shadcn.Card(
+              padding: effectivePadding,
+              filled: backgroundColor != null,
+              fillColor: backgroundColor,
+              borderRadius: BorderRadius.circular(effectiveRadius),
+              borderColor: hasBorder
+                  ? (borderColor ?? AppSemanticColors.borderDefault)
+                  : Colors.transparent,
+              borderWidth: hasBorder ? 1 : 0,
+              boxShadow: elevation != null && elevation! > 0
+                  ? [
+                      BoxShadow(
+                        color: AppColors.black.withValues(alpha: 0.1),
+                        blurRadius: elevation!,
+                        offset: Offset(0, elevation! / 2),
+                      ),
+                    ]
+                  : null,
+              child: child,
+            ),
+          ),
         ),
       );
     }

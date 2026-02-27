@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class AdminVacationLimitsSettingScreen extends StatefulWidget {
   const AdminVacationLimitsSettingScreen({super.key});
@@ -245,7 +246,7 @@ class _AdminVacationLimitsSettingScreenState
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('휴무 제한 설정', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
-        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         bottom: PreferredSize(
@@ -375,9 +376,9 @@ class _AdminVacationLimitsSettingScreenState
                     child: SizedBox(
                       width: double.infinity,
                       height: 48,
-                      child: ElevatedButton.icon(
+                      child: shadcn.PrimaryButton(
                         onPressed: _isSaving ? null : _saveVacationLimits,
-                        icon: _isSaving 
+                        leading: _isSaving
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
@@ -387,20 +388,12 @@ class _AdminVacationLimitsSettingScreenState
                                 ),
                               )
                             : Icon(Icons.save, color: AppSemanticColors.textInverse),
-                        label: Text(
+                        child: Text(
                           _isSaving ? '저장 중...' : '휴무 제한 저장하기',
                           style: AppTypography.bodyLarge.copyWith(
                             color: AppSemanticColors.textInverse,
                             fontWeight: FontWeight.bold,
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-                          disabledBackgroundColor: AppSemanticColors.textDisabled,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
                         ),
                       ),
                     ),
@@ -418,11 +411,11 @@ class _AdminVacationLimitsSettingScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppSemanticColors.interactiveSecondaryDefault : AppSemanticColors.surfaceDefault,
+          color: isSelected ? AppSemanticColors.interactivePrimaryDefault : AppSemanticColors.surfaceDefault,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? AppSemanticColors.interactiveSecondaryDefault
+                ? AppSemanticColors.interactivePrimaryDefault
                 : AppSemanticColors.borderSubtle,
           ),
         ),
@@ -653,7 +646,7 @@ class _AdminVacationLimitsSettingScreenState
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppSemanticColors.interactiveSecondaryDefault, width: 2),
+                      borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
                     ),
                     contentPadding: const EdgeInsets.all(0),
                     filled: true,

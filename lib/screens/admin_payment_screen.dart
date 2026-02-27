@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -56,7 +57,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
             color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         centerTitle: true,
@@ -97,14 +98,14 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppSemanticColors.interactiveSecondaryDefault,
-            AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.8),
+            AppSemanticColors.interactivePrimaryDefault,
+            AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.3),
+            color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -368,18 +369,10 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
         SizedBox(
           width: double.infinity,
           height: 56,
-          child: ElevatedButton(
+          child: shadcn.PrimaryButton(
             onPressed: _isProcessing || subscriptionProvider.isLoading || !_agreeToTerms
                 ? null
                 : _processPayment,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
-              foregroundColor: AppSemanticColors.textInverse,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
             child: _isProcessing || subscriptionProvider.isLoading
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -720,8 +713,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -755,20 +747,13 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
         actions: [
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: shadcn.PrimaryButton(
               onPressed: () {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const MainScreen()),
                   (route) => false,
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppSemanticColors.statusSuccessIcon,
-                foregroundColor: AppSemanticColors.textInverse,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
               child: const Text('완료'),
             ),
           ),
@@ -780,8 +765,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(Icons.error, color: AppSemanticColors.statusErrorIcon),
@@ -789,9 +773,14 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
             const Text('결제 실패'),
           ],
         ),
-        content: Text(message),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message),
+          ],
+        ),
         actions: [
-          TextButton(
+          shadcn.OutlineButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('확인'),
           ),
@@ -1000,7 +989,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
             color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         centerTitle: true,

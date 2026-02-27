@@ -5,6 +5,7 @@ import '../providers/subscription_provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/subscription_check_screen.dart';
 import '../utils/admin_utils.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class SubscriptionGuard {
   static const String _tag = '[SubscriptionGuard]';
@@ -95,8 +96,7 @@ class SubscriptionGuard {
   static void showSubscriptionRequiredDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(
@@ -111,11 +111,11 @@ class SubscriptionGuard {
           '이 기능을 사용하려면 구독이 필요합니다.\n구독 화면으로 이동하시겠습니까?',
         ),
         actions: [
-          TextButton(
+          shadcn.GhostButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('취소'),
           ),
-          ElevatedButton(
+          shadcn.PrimaryButton(
             onPressed: () {
               Navigator.of(context).pop();
               final isAdmin = AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser);
@@ -136,8 +136,7 @@ class SubscriptionGuard {
     if (daysRemaining <= 7 && daysRemaining > 0) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        builder: (context) => shadcn.AlertDialog(
           title: Row(
             children: [
               Icon(
@@ -152,11 +151,11 @@ class SubscriptionGuard {
             '구독이 ${daysRemaining}일 후에 만료됩니다.\n계속 서비스를 이용하려면 구독을 연장해주세요.',
           ),
           actions: [
-            TextButton(
+            shadcn.GhostButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('나중에'),
             ),
-            ElevatedButton(
+            shadcn.PrimaryButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 final isAdmin = AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser);

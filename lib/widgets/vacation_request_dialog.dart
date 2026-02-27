@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 // Design System Colors - Following design_system_guide_v2.json
 class DesignSystemColors {
@@ -899,19 +900,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   ),
                                 ],
                               ),
-                              child: ElevatedButton(
+                              child: shadcn.PrimaryButton(
                                 onPressed: _isSubmitting ? null : _submitRequest,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.transparent,
-                                  shadowColor: AppColors.transparent,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: DesignSystemSpacing.xl + 2,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
-                                  ),
-                                  elevation: 0,
-                                ),
                                 child: _isSubmitting
                                     ? Row(
                                         mainAxisAlignment: MainAxisAlignment.center,

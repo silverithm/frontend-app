@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.2.1+19
+version: 1.2.2+23
 
 environment:
   sdk: ^3.9.0-128.0.dev
@@ -48,6 +48,9 @@ dependencies:
   
   # SharedPreferences를 위한 패키지
   shared_preferences: ^2.2.2
+
+  # 날짜 포맷팅을 위한 패키지
+  intl: any
   
   # JSON 직렬화를 위한 패키지
   json_annotation: ^4.8.1
@@ -77,7 +80,25 @@ dependencies:
   in_app_review: ^2.0.9
 
   # UI 컴포넌트 라이브러리
-  forui: ^0.16.0
+  shadcn_flutter: ^0.0.51
+
+  # 이미지 선택을 위한 패키지 (Photo Picker API 사용, 권한 불필요)
+  image_picker: ^1.0.7
+
+  # 문서 선택을 위한 패키지 (SAF API 사용, 권한 불필요)
+  file_selector: ^1.0.3
+
+  # 이미지 압축을 위한 패키지
+  flutter_image_compress: ^2.3.0
+
+  # WebSocket/STOMP 통신을 위한 패키지
+  stomp_dart_client: ^2.0.0
+  web_socket_channel: ^3.0.0
+
+  # 파일 다운로드/열기를 위한 패키지
+  path_provider: ^2.1.2
+  open_filex: ^4.5.0
+  dio: ^5.4.0
 
 dev_dependencies:
   flutter_test:

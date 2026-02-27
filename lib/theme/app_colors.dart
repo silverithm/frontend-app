@@ -169,83 +169,83 @@ class AppColors {
 }
 
 class AppSemanticColors {
-  // Background colors
+  // Background colors (shadcn zinc - clean white base)
   static const Color backgroundPrimary = AppColors.white;
-  static const Color backgroundSecondary = AppColors.gray50;
-  static const Color backgroundTertiary = AppColors.gray100;
+  static const Color backgroundSecondary = Color(0xFFFAFAFA); // zinc-50
+  static const Color backgroundTertiary = Color(0xFFF4F4F5); // zinc-100
   static const Color backgroundElevated = AppColors.white;
-  static const Color backgroundOverlay = Color(0x80000000); // rgba(0, 0, 0, 0.5)
+  static const Color backgroundOverlay = Color(0x80000000);
 
   // Surface colors
   static const Color surfaceDefault = AppColors.white;
-  static const Color surfaceHover = AppColors.gray50;
-  static const Color surfaceActive = AppColors.gray100;
-  static const Color surfaceDisabled = AppColors.gray200;
-  static const Color surfaceSelected = AppColors.blue50;
+  static const Color surfaceHover = Color(0xFFFAFAFA); // zinc-50
+  static const Color surfaceActive = Color(0xFFF4F4F5); // zinc-100
+  static const Color surfaceDisabled = Color(0xFFE4E4E7); // zinc-200
+  static const Color surfaceSelected = Color(0xFFF4F4F5); // zinc-100
 
-  // Border colors
-  static const Color borderDefault = AppColors.gray200;
-  static const Color borderSubtle = AppColors.gray100;
-  static const Color borderHover = AppColors.gray300;
-  static const Color borderFocus = AppColors.blue500;
-  static const Color borderDisabled = AppColors.gray100;
+  // Border colors (subtle zinc borders)
+  static const Color borderDefault = Color(0xFFE4E4E7); // zinc-200
+  static const Color borderSubtle = Color(0xFFF4F4F5); // zinc-100
+  static const Color borderHover = Color(0xFFD4D4D8); // zinc-300
+  static const Color borderFocus = Color(0xFF18181B); // zinc-900 (shadcn ring)
+  static const Color borderDisabled = Color(0xFFF4F4F5); // zinc-100
 
-  // Text colors
-  static const Color textPrimary = AppColors.gray900;
-  static const Color textSecondary = AppColors.gray700;
-  static const Color textTertiary = AppColors.gray500;
-  static const Color textDisabled = AppColors.gray400;
+  // Text colors (high contrast black/white)
+  static const Color textPrimary = Color(0xFF09090B); // zinc-950
+  static const Color textSecondary = Color(0xFF3F3F46); // zinc-700
+  static const Color textTertiary = Color(0xFF71717A); // zinc-500
+  static const Color textDisabled = Color(0xFFA1A1AA); // zinc-400
   static const Color textInverse = AppColors.white;
-  static const Color textLink = AppColors.blue600;
+  static const Color textLink = Color(0xFF18181B); // zinc-900
   static const Color textError = AppColors.red600;
 
-  // Interactive colors
-  static const Color interactivePrimaryDefault = AppColors.blue600;
-  static const Color interactivePrimaryHover = AppColors.blue700;
-  static const Color interactivePrimaryActive = AppColors.blue800;
-  static const Color interactivePrimaryDisabled = AppColors.blue300;
+  // Interactive colors (shadcn default: near-black primary)
+  static const Color interactivePrimaryDefault = Color(0xFF18181B); // zinc-900
+  static const Color interactivePrimaryHover = Color(0xFF27272A); // zinc-800
+  static const Color interactivePrimaryActive = Color(0xFF3F3F46); // zinc-700
+  static const Color interactivePrimaryDisabled = Color(0xFFA1A1AA); // zinc-400
 
-  static const Color interactiveSecondaryDefault = AppColors.gray600;
-  static const Color interactiveSecondaryHover = AppColors.gray700;
-  static const Color interactiveSecondaryActive = AppColors.gray800;
-  static const Color interactiveSecondaryDisabled = AppColors.gray300;
+  static const Color interactiveSecondaryDefault = Color(0xFFF4F4F5); // zinc-100
+  static const Color interactiveSecondaryHover = Color(0xFFE4E4E7); // zinc-200
+  static const Color interactiveSecondaryActive = Color(0xFFD4D4D8); // zinc-300
+  static const Color interactiveSecondaryDisabled = Color(0xFFF4F4F5); // zinc-100
 
-  // Status colors
-  static const Color statusSuccessBackground = AppColors.green50;
-  static const Color statusSuccessBorder = AppColors.green200;
-  static const Color statusSuccessText = AppColors.green800;
-  static const Color statusSuccessIcon = AppColors.green600;
+  // Status colors (functional - kept for clarity)
+  static const Color statusSuccessBackground = Color(0xFFF0FDF4);
+  static const Color statusSuccessBorder = Color(0xFFBBF7D0);
+  static const Color statusSuccessText = Color(0xFF166534);
+  static const Color statusSuccessIcon = Color(0xFF16A34A);
 
-  static const Color statusWarningBackground = AppColors.yellow50;
-  static const Color statusWarningBorder = AppColors.yellow200;
-  static const Color statusWarningText = AppColors.yellow800;
-  static const Color statusWarningIcon = AppColors.yellow600;
+  static const Color statusWarningBackground = Color(0xFFFEFCE8);
+  static const Color statusWarningBorder = Color(0xFFFEF08A);
+  static const Color statusWarningText = Color(0xFF854D0E);
+  static const Color statusWarningIcon = Color(0xFFCA8A04);
 
-  static const Color statusErrorBackground = AppColors.red50;
-  static const Color statusErrorBorder = AppColors.red200;
-  static const Color statusErrorText = AppColors.red800;
-  static const Color statusErrorIcon = AppColors.red600;
+  static const Color statusErrorBackground = Color(0xFFFEF2F2);
+  static const Color statusErrorBorder = Color(0xFFFECACA);
+  static const Color statusErrorText = Color(0xFF991B1B);
+  static const Color statusErrorIcon = Color(0xFFDC2626);
 
-  static const Color statusInfoBackground = AppColors.blue50;
-  static const Color statusInfoBorder = AppColors.blue200;
-  static const Color statusInfoText = AppColors.blue800;
-  static const Color statusInfoIcon = AppColors.blue600;
+  static const Color statusInfoBackground = Color(0xFFFAFAFA); // zinc-50 (neutral)
+  static const Color statusInfoBorder = Color(0xFFE4E4E7); // zinc-200
+  static const Color statusInfoText = Color(0xFF3F3F46); // zinc-700
+  static const Color statusInfoIcon = Color(0xFF71717A); // zinc-500
 }
 
 class AppDarkColors {
-  // Dark mode overrides
-  static const Color backgroundPrimary = AppColors.gray900;
-  static const Color backgroundSecondary = AppColors.gray800;
-  static const Color backgroundTertiary = AppColors.gray700;
+  // Dark mode overrides (shadcn zinc dark)
+  static const Color backgroundPrimary = Color(0xFF09090B); // zinc-950
+  static const Color backgroundSecondary = Color(0xFF18181B); // zinc-900
+  static const Color backgroundTertiary = Color(0xFF27272A); // zinc-800
 
-  static const Color surfaceDefault = AppColors.gray800;
-  static const Color surfaceHover = AppColors.gray700;
-  static const Color surfaceActive = AppColors.gray600;
+  static const Color surfaceDefault = Color(0xFF09090B); // zinc-950
+  static const Color surfaceHover = Color(0xFF18181B); // zinc-900
+  static const Color surfaceActive = Color(0xFF27272A); // zinc-800
 
-  static const Color borderDefault = AppColors.gray700;
-  static const Color borderHover = AppColors.gray600;
+  static const Color borderDefault = Color(0xFF27272A); // zinc-800
+  static const Color borderHover = Color(0xFF3F3F46); // zinc-700
 
-  static const Color textPrimary = AppColors.gray50;
-  static const Color textSecondary = AppColors.gray200;
-  static const Color textTertiary = AppColors.gray400;
+  static const Color textPrimary = Color(0xFFFAFAFA); // zinc-50
+  static const Color textSecondary = Color(0xFFD4D4D8); // zinc-300
+  static const Color textTertiary = Color(0xFFA1A1AA); // zinc-400
 }

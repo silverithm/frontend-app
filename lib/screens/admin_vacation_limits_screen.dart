@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import 'admin_vacation_limits_setting_screen.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class AdminVacationLimitsScreen extends StatefulWidget {
   const AdminVacationLimitsScreen({super.key});
@@ -66,7 +67,7 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: const Text('휴무 한도'),
-        backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         leading: IconButton(
@@ -168,14 +169,10 @@ class _AdminVacationLimitsScreenState extends State<AdminVacationLimitsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
+                  shadcn.PrimaryButton(
                     onPressed: _showLimitSettingDialog,
-                    icon: const Icon(Icons.settings),
-                    label: const Text('한도 설정'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-                      foregroundColor: AppSemanticColors.textInverse,
-                    ),
+                    leading: const Icon(Icons.settings),
+                    child: const Text('한도 설정'),
                   ),
                 ],
               ),

@@ -13,6 +13,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'main_screen.dart';
 import 'login_screen.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -410,7 +411,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.blue800,
+                  color: AppSemanticColors.interactivePrimaryDefault,
                 ),
               ),
               const SizedBox(height: Constants.smallPadding),
@@ -437,12 +438,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [AppColors.white, AppColors.blue50],
+                          colors: [AppColors.white, AppSemanticColors.backgroundSecondary],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.blue100.withValues(alpha:0.5),
+                            color: AppSemanticColors.backgroundTertiary.withValues(alpha:0.5),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -455,7 +456,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.blue900,
+                              color: AppSemanticColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -511,31 +512,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [AppColors.orange400, AppSemanticColors.statusWarningIcon],
+                          colors: [AppColors.gray500, AppSemanticColors.statusWarningIcon],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.orange300.withValues(alpha:0.4),
+                            color: AppColors.gray400.withValues(alpha:0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: TextButton.icon(
+                      child: shadcn.GhostButton(
                         onPressed: () => _launchURL('https://youtu.be/x2cJedS6vaU'),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: const Icon(
+                        leading: const Icon(
                           Icons.play_circle_filled,
                           color: AppColors.white,
                           size: 24,
                         ),
-                        label: const Text(
+                        child: const Text(
                           '사용방법 보러가기',
                           style: TextStyle(
                             color: AppColors.white,
@@ -568,10 +563,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.blue50,
+                            color: AppSemanticColors.backgroundSecondary,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppColors.blue200,
+                              color: AppSemanticColors.borderDefault,
                               width: 1,
                             ),
                           ),
@@ -590,7 +585,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     '가입 유형 선택',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.blue800,
+                                      color: AppSemanticColors.interactivePrimaryDefault,
                                       fontSize: 16,
                                     ),
                                   ),
@@ -740,7 +735,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.blue500,
+                                color: AppSemanticColors.borderFocus,
                               ),
                             ),
                           ),
@@ -776,7 +771,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.blue500,
+                                color: AppSemanticColors.borderFocus,
                               ),
                             ),
                           ),
@@ -813,7 +808,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppColors.blue500,
+                                  color: AppSemanticColors.borderFocus,
                                 ),
                               ),
                             ),
@@ -862,7 +857,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     borderSide: BorderSide(
                                       color: _companyErrorMessage != null
                                           ? AppColors.red500
-                                          : AppColors.blue500,
+                                          : AppSemanticColors.borderFocus,
                                     ),
                                   ),
                                 ),
@@ -961,7 +956,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppColors.blue500,
+                                  color: AppSemanticColors.borderFocus,
                                 ),
                               ),
                             ),
@@ -1001,7 +996,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppColors.blue500,
+                                  color: AppSemanticColors.borderFocus,
                                 ),
                               ),
                             ),
@@ -1047,7 +1042,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.blue500,
+                                color: AppSemanticColors.borderFocus,
                               ),
                             ),
                           ),
@@ -1095,7 +1090,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.blue500,
+                                color: AppSemanticColors.borderFocus,
                               ),
                             ),
                           ),
@@ -1233,19 +1228,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: AppColors.blue50,
+                                            color: AppSemanticColors.backgroundSecondary,
                                             borderRadius: BorderRadius.circular(
                                               6,
                                             ),
                                             border: Border.all(
-                                              color: AppColors.blue200,
+                                              color: AppSemanticColors.borderDefault,
                                               width: 1,
                                             ),
                                           ),
                                           child: Text(
                                             '보기',
                                             style: TextStyle(
-                                              color: AppColors.blue700,
+                                              color: AppSemanticColors.textSecondary,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -1334,19 +1329,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: AppColors.blue50,
+                                            color: AppSemanticColors.backgroundSecondary,
                                             borderRadius: BorderRadius.circular(
                                               6,
                                             ),
                                             border: Border.all(
-                                              color: AppColors.blue200,
+                                              color: AppSemanticColors.borderDefault,
                                               width: 1,
                                             ),
                                           ),
                                           child: Text(
                                             '보기',
                                             style: TextStyle(
-                                              color: AppColors.blue700,
+                                              color: AppSemanticColors.textSecondary,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -1459,24 +1454,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             final isFormValid =
                                 _agreeToPrivacyPolicy && _agreeToTermsOfService;
 
-                            return ElevatedButton(
+                            return shadcn.PrimaryButton(
                               onPressed:
                                   (authProvider.isLoading || !isFormValid)
                                   ? null
                                   : _handleRegister,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isFormValid
-                                    ? AppSemanticColors.statusInfoIcon
-                                    : AppSemanticColors.textDisabled,
-                                foregroundColor: AppColors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: isFormValid ? 2 : 0,
-                              ),
                               child: authProvider.isLoading
                                   ? const SizedBox(
                                       height: 20,
@@ -1706,7 +1688,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<Color> _getGradientColors(String gradientString) {
     switch (gradientString) {
       case 'from-blue-400 to-indigo-500':
-        return [AppColors.blue400, AppColors.blue500];
+        return [AppColors.gray400, AppSemanticColors.borderFocus];
       case 'from-indigo-400 to-purple-500':
         return [AppSemanticColors.interactivePrimaryDefault, AppSemanticColors.interactiveSecondaryDefault];
       case 'from-green-400 to-teal-500':
@@ -1714,7 +1696,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       case 'from-purple-400 to-pink-500':
         return [AppSemanticColors.interactiveSecondaryDefault, AppSemanticColors.statusErrorBackground];
       default:
-        return [AppColors.blue400, AppSemanticColors.statusInfoIcon];
+        return [AppColors.gray400, AppSemanticColors.statusInfoIcon];
     }
   }
 }

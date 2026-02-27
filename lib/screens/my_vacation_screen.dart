@@ -838,7 +838,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppSemanticColors.interactiveSecondaryDefault,
+                                          color: AppSemanticColors.interactivePrimaryDefault,
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
