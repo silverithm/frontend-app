@@ -121,22 +121,16 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showForgotPasswordDialog() {
     bool isAdminPasswordReset = false;
     final emailController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => shadcn.AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.lock_reset, color: AppSemanticColors.statusInfoIcon),
-              const SizedBox(width: AppSpacing.space2),
-              Text(
-                '비밀번호 찾기',
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-            ],
+          title: Text(
+            '비밀번호 찾기',
+            style: AppTypography.heading5.copyWith(
+              color: AppSemanticColors.textPrimary,
+            ),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -149,86 +143,40 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
-              
-              // 사용자 타입 선택
+
+              // 사용자 타입 선택 토글
               Text(
-                '사용자 타입 선택',
+                '사용자 타입',
                 style: AppTypography.labelLarge.copyWith(
                   color: AppSemanticColors.textPrimary,
                 ),
               ),
               const SizedBox(height: AppSpacing.space2),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: !isAdminPasswordReset
-                              ? AppSemanticColors.interactivePrimaryDefault
-                              : AppSemanticColors.borderSubtle,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      ),
-                      child: RadioListTile<bool>(
-                        title: Text(
-                          '직원',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                        value: false,
-                        groupValue: isAdminPasswordReset,
-                        onChanged: (value) {
-                          setState(() {
-                            isAdminPasswordReset = value ?? false;
-                          });
-                        },
-                        dense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.space2,
-                        ),
-                      ),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                  border: Border.all(color: AppSemanticColors.borderDefault),
+                  color: AppSemanticColors.backgroundSecondary,
+                ),
+                child: Row(
+                  children: [
+                    _buildTypeOption(
+                      label: '직원',
+                      isSelected: !isAdminPasswordReset,
+                      isFirst: true,
+                      onTap: () => setState(() => isAdminPasswordReset = false),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.space2),
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isAdminPasswordReset
-                              ? AppSemanticColors.interactivePrimaryDefault
-                              : AppSemanticColors.borderSubtle,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      ),
-                      child: RadioListTile<bool>(
-                        title: Text(
-                          '관리자',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                        value: true,
-                        groupValue: isAdminPasswordReset,
-                        onChanged: (value) {
-                          setState(() {
-                            isAdminPasswordReset = value ?? false;
-                          });
-                        },
-                        dense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.space2,
-                        ),
-                      ),
+                    _buildTypeOption(
+                      label: '관리자',
+                      isSelected: isAdminPasswordReset,
+                      isFirst: false,
+                      onTap: () => setState(() => isAdminPasswordReset = true),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.space4),
-              
+
               // 이메일 입력
               AppInput(
                 controller: emailController,
@@ -240,18 +188,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
           actions: [
-            AppButton(
-              text: '취소',
-              variant: AppButtonVariant.outline,
+            shadcn.OutlineButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('취소'),
             ),
             Consumer<AuthProvider>(
-              builder: (context, authProvider, child) => AppButton(
-                text: '비밀번호 찾기',
-                isLoading: authProvider.isLoading,
-                variant: isAdminPasswordReset
-                    ? AppButtonVariant.secondary
-                    : AppButtonVariant.primary,
+              builder: (context, authProvider, child) => shadcn.PrimaryButton(
                 onPressed: authProvider.isLoading
                     ? null
                     : () async {
@@ -265,24 +207,58 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: AppSemanticColors.textInverse,
                                 ),
                               ),
-                              backgroundColor:
-                                  AppSemanticColors.statusErrorIcon,
+                              backgroundColor: AppSemanticColors.statusErrorIcon,
                             ),
                           );
                           return;
                         }
-
                         Navigator.of(dialogContext).pop();
-
                         if (isAdminPasswordReset) {
                           await authProvider.findAdminPassword(email, context);
                         } else {
                           await authProvider.findPassword(email, context);
                         }
                       },
+                child: const Text('비밀번호 찾기'),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeOption({
+    required String label,
+    required bool isSelected,
+    required bool isFirst,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppSemanticColors.interactivePrimaryDefault
+                : AppColors.transparent,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(isFirst ? AppBorderRadius.lg : 0),
+              bottomLeft: Radius.circular(isFirst ? AppBorderRadius.lg : 0),
+              topRight: Radius.circular(isFirst ? 0 : AppBorderRadius.lg),
+              bottomRight: Radius.circular(isFirst ? 0 : AppBorderRadius.lg),
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTypography.buttonMedium.copyWith(
+              color: isSelected
+                  ? AppSemanticColors.textInverse
+                  : AppSemanticColors.textTertiary,
+            ),
+          ),
         ),
       ),
     );

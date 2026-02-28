@@ -12,6 +12,9 @@ class DesignTestScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('디자인 시스템 테스트'),
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        foregroundColor: AppSemanticColors.textInverse,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.space6),

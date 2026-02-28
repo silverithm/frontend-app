@@ -141,13 +141,12 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
         title: Text(
           '새 채팅방',
           style: AppTypography.heading6.copyWith(
-            color: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
+            color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: isAdmin
-            ? AppSemanticColors.interactivePrimaryDefault
-            : AppSemanticColors.surfaceDefault,
-        foregroundColor: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        foregroundColor: AppSemanticColors.textInverse,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         actions: [
           shadcn.GhostButton(
@@ -155,9 +154,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
             child: Text(
               '만들기',
               style: AppTypography.labelLarge.copyWith(
-                color: isAdmin
-                    ? AppSemanticColors.textInverse
-                    : AppSemanticColors.interactivePrimaryDefault,
+                color: AppSemanticColors.textInverse,
               ),
             ),
           ),
@@ -264,9 +261,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                           child: Text(
                             '전체 선택',
                             style: AppTypography.labelMedium.copyWith(
-                              color: isAdmin
-                                  ? AppSemanticColors.interactiveSecondaryDefault
-                                  : AppSemanticColors.interactivePrimaryDefault,
+                              color: AppSemanticColors.interactivePrimaryDefault,
                             ),
                           ),
                         ),
@@ -323,9 +318,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                                   child: Text(
                                     memberName.isNotEmpty ? memberName[0] : '?',
                                     style: AppTypography.bodyLarge.copyWith(
-                                      color: isAdmin
-                                          ? AppSemanticColors.interactiveSecondaryDefault
-                                          : AppSemanticColors.interactivePrimaryDefault,
+                                      color: AppSemanticColors.interactivePrimaryDefault,
                                     ),
                                   ),
                                 ),
@@ -359,9 +352,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                                             }
                                           });
                                         },
-                                        activeColor: isAdmin
-                                            ? AppSemanticColors.interactiveSecondaryDefault
-                                            : AppSemanticColors.interactivePrimaryDefault,
+                                        activeColor: AppSemanticColors.interactivePrimaryDefault,
                                       ),
                                 onTap: isCurrentUser
                                     ? null

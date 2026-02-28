@@ -131,10 +131,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         title: Text(
           '공지사항',
           style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textPrimary,
+            color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(

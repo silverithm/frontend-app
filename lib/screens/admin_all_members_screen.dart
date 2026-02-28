@@ -118,7 +118,9 @@ class _AdminAllMembersScreenState extends State<AdminAllMembersScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('전체 회원'),
-        backgroundColor: AppSemanticColors.statusErrorIcon,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        foregroundColor: AppSemanticColors.textInverse,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
       ),
       body: Center(
         child: Column(

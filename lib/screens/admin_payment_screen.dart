@@ -340,7 +340,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
                       _agreeToTerms = value ?? false;
                     });
                   },
-                  activeColor: AppSemanticColors.interactiveSecondaryDefault,
+                  activeColor: AppSemanticColors.interactivePrimaryDefault,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -722,7 +722,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
               height: 80,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.green400, AppColors.green600],
+                  colors: [AppSemanticColors.statusSuccessIcon, AppSemanticColors.statusSuccessIcon],
                 ),
                 shape: BoxShape.circle,
               ),

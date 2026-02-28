@@ -389,10 +389,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
-        backgroundColor: AppColors.transparent,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppSemanticColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: AppSemanticColors.textInverse),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -512,12 +513,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [AppColors.gray500, AppSemanticColors.statusWarningIcon],
+                          colors: [AppSemanticColors.textTertiary, AppSemanticColors.statusWarningIcon],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.gray400.withValues(alpha:0.4),
+                            color: AppSemanticColors.textDisabled.withValues(alpha:0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -612,7 +613,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           border: Border.all(
                                             color: _userType == 'admin'
                                                 ? AppSemanticColors.statusInfoIcon
-                                                : AppColors.grey300,
+                                                : AppSemanticColors.borderHover,
                                             width: 2,
                                           ),
                                         ),
@@ -641,7 +642,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               '근무표 관리',
                                               style: TextStyle(
                                                 color: _userType == 'admin'
-                                                    ? AppColors.white70
+                                                    ? AppSemanticColors.textInverse.withValues(alpha: 0.7)
                                                     : AppSemanticColors.textSecondary,
                                                 fontSize: 12,
                                               ),
@@ -670,7 +671,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           border: Border.all(
                                             color: _userType == 'employee'
                                                 ? AppSemanticColors.statusSuccessIcon
-                                                : AppColors.grey300,
+                                                : AppSemanticColors.borderHover,
                                             width: 2,
                                           ),
                                         ),
@@ -699,7 +700,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               '근무표 작성',
                                               style: TextStyle(
                                                 color: _userType == 'employee'
-                                                    ? AppColors.white70
+                                                    ? AppSemanticColors.textInverse.withValues(alpha: 0.7)
                                                     : AppSemanticColors.textSecondary,
                                                 fontSize: 12,
                                               ),
@@ -729,7 +730,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.grey300,
+                                color: AppSemanticColors.borderHover,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -765,7 +766,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.grey300,
+                                color: AppSemanticColors.borderHover,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -802,7 +803,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppColors.grey300,
+                                  color: AppSemanticColors.borderHover,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -848,15 +849,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
                                       color: _companyErrorMessage != null
-                                          ? AppColors.red300
-                                          : AppColors.grey300,
+                                          ? AppSemanticColors.statusErrorBorder
+                                          : AppSemanticColors.borderHover,
                                     ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
                                       color: _companyErrorMessage != null
-                                          ? AppColors.red500
+                                          ? AppSemanticColors.statusErrorIcon
                                           : AppSemanticColors.borderFocus,
                                     ),
                                   ),
@@ -950,7 +951,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppColors.grey300,
+                                  color: AppSemanticColors.borderHover,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -990,7 +991,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppColors.grey300,
+                                  color: AppSemanticColors.borderHover,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -1036,7 +1037,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.grey300,
+                                color: AppSemanticColors.borderHover,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -1084,7 +1085,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: AppColors.grey300,
+                                color: AppSemanticColors.borderHover,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
@@ -1114,8 +1115,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: _agreementErrorMessage != null
-                                  ? AppColors.red300
-                                  : AppColors.grey200,
+                                  ? AppSemanticColors.statusErrorBorder
+                                  : AppSemanticColors.borderDefault,
                               width: 1,
                             ),
                           ),
@@ -1134,7 +1135,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     '약관 동의',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.grey800,
+                                      color: AppSemanticColors.textPrimary,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -1355,7 +1356,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                               // 전체 동의 체크박스
                               const SizedBox(height: 12),
-                              Container(height: 1, color: AppColors.grey300),
+                              Container(height: 1, color: AppSemanticColors.borderHover),
                               const SizedBox(height: 12),
                               InkWell(
                                 onTap: () {
@@ -1410,7 +1411,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       Text(
                                         '위 약관에 모두 동의합니다',
                                         style: TextStyle(
-                                          color: AppColors.grey800,
+                                          color: AppSemanticColors.textPrimary,
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -1493,9 +1494,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: AppColors.red50,
+                                    color: AppSemanticColors.statusErrorBackground,
                                     border: Border.all(
-                                      color: AppColors.red200,
+                                      color: AppSemanticColors.statusErrorBorder,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -1511,7 +1512,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         child: Text(
                                           authProvider.errorMessage,
                                           style: TextStyle(
-                                            color: AppColors.red700,
+                                            color: AppSemanticColors.statusErrorText,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -1552,7 +1553,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               shape: BoxShape.circle,
               color: isActive ? color : AppColors.white,
               border: Border.all(
-                color: isActive ? color : AppColors.grey300,
+                color: isActive ? color : AppSemanticColors.borderHover,
                 width: 2,
               ),
               boxShadow: isActive
@@ -1605,10 +1606,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.grey200),
+        border: Border.all(color: AppSemanticColors.borderDefault),
         boxShadow: [
           BoxShadow(
-            color: AppColors.grey200,
+            color: AppSemanticColors.borderDefault,
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1688,15 +1689,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<Color> _getGradientColors(String gradientString) {
     switch (gradientString) {
       case 'from-blue-400 to-indigo-500':
-        return [AppColors.gray400, AppSemanticColors.borderFocus];
+        return [AppSemanticColors.interactivePrimaryActive, AppSemanticColors.borderFocus];
       case 'from-indigo-400 to-purple-500':
-        return [AppSemanticColors.interactivePrimaryDefault, AppSemanticColors.interactiveSecondaryDefault];
+        return [AppSemanticColors.interactivePrimaryDefault, AppSemanticColors.interactivePrimaryActive];
       case 'from-green-400 to-teal-500':
-        return [AppColors.green400, AppColors.green500];
+        return [AppSemanticColors.statusSuccessIcon, AppSemanticColors.statusSuccessIcon];
       case 'from-purple-400 to-pink-500':
-        return [AppSemanticColors.interactiveSecondaryDefault, AppSemanticColors.statusErrorBackground];
+        return [AppSemanticColors.interactivePrimaryActive, AppSemanticColors.statusErrorBackground];
       default:
-        return [AppColors.gray400, AppSemanticColors.statusInfoIcon];
+        return [AppSemanticColors.interactivePrimaryActive, AppSemanticColors.statusInfoIcon];
     }
   }
 }
@@ -1997,11 +1998,12 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
           '주소 검색',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.white,
+            color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: AppSemanticColors.statusInfoIcon,
-        foregroundColor: AppColors.white,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        foregroundColor: AppSemanticColors.textInverse,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(

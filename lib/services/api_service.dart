@@ -1497,6 +1497,28 @@ class ApiService {
     });
   }
 
+  // 읽지 않은 공지사항 수 조회
+  Future<Map<String, dynamic>> getUnreadNoticeCount({
+    required String companyId,
+    required String userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = {
+        'companyId': companyId,
+        'userId': userId,
+      };
+
+      final uri = Uri.parse('$_baseUrl/v1/notices/unread-count').replace(queryParameters: queryParams);
+
+      print('[API] 읽지 않은 공지사항 수 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
   // 공지사항 상세 조회
   Future<Map<String, dynamic>> getNoticeDetail({
     required int noticeId,

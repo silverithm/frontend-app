@@ -50,7 +50,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
           return Scaffold(
             appBar: AppBar(
               title: const Text('회사 정보'),
-              backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
               foregroundColor: AppSemanticColors.textInverse,
             ),
             body: const Center(
@@ -69,7 +69,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 color: AppSemanticColors.textInverse,
               ),
             ),
-            backgroundColor: AppSemanticColors.interactiveSecondaryDefault,
+            backgroundColor: AppSemanticColors.interactivePrimaryDefault,
             foregroundColor: AppSemanticColors.textInverse,
             elevation: 0,
             centerTitle: true,
@@ -88,14 +88,14 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppSemanticColors.interactiveSecondaryDefault,
-                        AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.8),
+                        AppSemanticColors.interactivePrimaryDefault,
+                        AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.3),
+                        color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -168,7 +168,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       // 회사명
                       _buildInfoRow(
                         icon: Icons.business,
-                        iconColor: AppSemanticColors.interactiveSecondaryDefault,
+                        iconColor: AppSemanticColors.textSecondary,
                         title: '회사명',
                         value: company.name,
                       ),
@@ -229,7 +229,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       // 역할
                       _buildInfoRow(
                         icon: Icons.admin_panel_settings,
-                        iconColor: AppSemanticColors.interactiveSecondaryDefault,
+                        iconColor: AppSemanticColors.textSecondary,
                         title: '역할',
                         value: '관리자',
                       ),
@@ -350,7 +350,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
             child: CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation<Color>(
-                AppSemanticColors.interactiveSecondaryDefault,
+                AppSemanticColors.interactivePrimaryDefault,
               ),
             ),
           ),
@@ -433,7 +433,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
           const SizedBox(height: 20),
           _buildInfoRow(
             icon: Icons.schedule,
-            iconColor: AppColors.green600,
+            iconColor: AppSemanticColors.statusSuccessIcon,
             title: '만료일',
             value: _formatDate(subscription.endDate!),
           ),

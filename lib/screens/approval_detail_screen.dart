@@ -270,16 +270,17 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
         title: Text(
           '결재 상세',
           style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textPrimary,
+            color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,
-            color: AppSemanticColors.textPrimary,
+            color: AppSemanticColors.textInverse,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -295,13 +296,13 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            AppSemanticColors.textPrimary,
+                            AppSemanticColors.textInverse,
                           ),
                         ),
                       )
                     : Icon(
                         Icons.delete_outline,
-                        color: AppSemanticColors.statusErrorIcon,
+                        color: AppSemanticColors.textInverse,
                       ),
                 onPressed: _isDeleting ? null : _deleteApproval,
               ),

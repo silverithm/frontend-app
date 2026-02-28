@@ -8,10 +8,13 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 
 class NotificationBell extends StatelessWidget {
-  const NotificationBell({super.key});
+  final Color? iconColor;
+
+  const NotificationBell({super.key, this.iconColor});
 
   @override
   Widget build(BuildContext context) {
+    final bool onDark = iconColor != null;
     return Padding(
       padding: const EdgeInsets.only(top: 4, right: 4),
       child: SizedBox(
@@ -24,9 +27,9 @@ class NotificationBell extends StatelessWidget {
               width: AppSpacing.space10,
               height: AppSpacing.space10,
             decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
+              color: onDark ? AppColors.transparent : AppSemanticColors.surfaceDefault,
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              border: Border.all(
+              border: onDark ? null : Border.all(
                 color: AppSemanticColors.borderDefault,
                 width: 1,
               ),
@@ -34,7 +37,7 @@ class NotificationBell extends StatelessWidget {
             child: IconButton(
               icon: Icon(
                 Icons.notifications_outlined,
-                color: AppSemanticColors.textSecondary,
+                color: iconColor ?? AppSemanticColors.textSecondary,
                 size: 20,
               ),
               onPressed: () => _showNotificationsSheet(context),
@@ -60,7 +63,7 @@ class NotificationBell extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.red300.withValues(alpha: 0.5),
+                        color: AppSemanticColors.statusErrorBorder.withValues(alpha: 0.5),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -94,7 +97,9 @@ class NotificationBell extends StatelessWidget {
     final authProvider = context.read<AuthProvider>();
     final notificationProvider = context.read<NotificationProvider>();
     if (authProvider.currentUser != null) {
-      notificationProvider.loadNotifications(authProvider.currentUser!.id.toString());
+      final userId = authProvider.currentUser!.id.toString();
+      notificationProvider.loadNotifications(userId);
+      notificationProvider.markAllAsRead(userId);
     }
 
     showModalBottomSheet(
@@ -112,7 +117,9 @@ class _NotificationBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
         borderRadius: const BorderRadius.only(

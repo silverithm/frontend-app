@@ -340,16 +340,17 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
         title: Text(
           '결재 요청',
           style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textPrimary,
+            color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,
-            color: AppSemanticColors.textPrimary,
+            color: AppSemanticColors.textInverse,
           ),
           onPressed: () => Navigator.pop(context),
         ),

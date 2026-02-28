@@ -125,13 +125,12 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
         title: Text(
           '채팅방 정보',
           style: AppTypography.heading6.copyWith(
-            color: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
+            color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: isAdmin
-            ? AppSemanticColors.interactivePrimaryDefault
-            : AppSemanticColors.surfaceDefault,
-        foregroundColor: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        foregroundColor: AppSemanticColors.textInverse,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
       ),
       body: Column(
@@ -155,9 +154,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
                   ),
                   child: Icon(
                     Icons.chat_bubble_rounded,
-                    color: isAdmin
-                        ? AppSemanticColors.interactiveSecondaryDefault
-                        : AppSemanticColors.interactivePrimaryDefault,
+                    color: AppSemanticColors.interactivePrimaryDefault,
                     size: 40,
                   ),
                 ),
@@ -188,13 +185,9 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
             color: AppSemanticColors.surfaceDefault,
             child: TabBar(
               controller: _tabController,
-              labelColor: isAdmin
-                  ? AppSemanticColors.interactiveSecondaryDefault
-                  : AppSemanticColors.interactivePrimaryDefault,
+              labelColor: AppSemanticColors.interactivePrimaryDefault,
               unselectedLabelColor: AppSemanticColors.textTertiary,
-              indicatorColor: isAdmin
-                  ? AppSemanticColors.interactiveSecondaryDefault
-                  : AppSemanticColors.interactivePrimaryDefault,
+              indicatorColor: AppSemanticColors.interactivePrimaryDefault,
               tabs: [
                 Tab(text: '참가자 (${widget.room.participantCount})'),
                 const Tab(text: '미디어'),
@@ -294,9 +287,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
                                   ? participant.userName[0]
                                   : '?',
                               style: AppTypography.bodyLarge.copyWith(
-                                color: isAdmin
-                                    ? AppSemanticColors.interactiveSecondaryDefault
-                                    : AppSemanticColors.interactivePrimaryDefault,
+                                color: AppSemanticColors.interactivePrimaryDefault,
                               ),
                             ),
                           ),
@@ -324,9 +315,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
                                   child: Text(
                                     '방장',
                                     style: AppTypography.labelSmall.copyWith(
-                                      color: isAdmin
-                                          ? AppSemanticColors.interactiveSecondaryDefault
-                                          : AppSemanticColors.interactivePrimaryDefault,
+                                      color: AppSemanticColors.interactivePrimaryDefault,
                                     ),
                                   ),
                                 ),

@@ -8,6 +8,7 @@ class NoticeProvider with ChangeNotifier {
   Notice? _selectedNotice;
   List<NoticeComment> _comments = [];
   List<NoticeReader> _readers = [];
+  int _unreadNoticeCount = 0;
   bool _isLoading = false;
   String _errorMessage = '';
 
@@ -27,6 +28,7 @@ class NoticeProvider with ChangeNotifier {
   Notice? get selectedNotice => _selectedNotice;
   List<NoticeComment> get comments => _comments;
   List<NoticeReader> get readers => _readers;
+  int get unreadNoticeCount => _unreadNoticeCount;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   int get currentPage => _currentPage;
@@ -362,6 +364,25 @@ class NoticeProvider with ChangeNotifier {
     }
   }
 
+  // 읽지 않은 공지사항 수 조회
+  Future<void> loadUnreadNoticeCount({
+    required String companyId,
+    required String userId,
+  }) async {
+    try {
+      final response = await ApiService().getUnreadNoticeCount(
+        companyId: companyId,
+        userId: userId,
+      );
+
+      _unreadNoticeCount = response['unreadCount'] as int? ?? 0;
+      print('[NoticeProvider] 읽지 않은 공지사항 수: $_unreadNoticeCount');
+      notifyListeners();
+    } catch (e) {
+      print('[NoticeProvider] 읽지 않은 공지사항 수 조회 에러: $e');
+    }
+  }
+
   // 읽음 기록
   Future<void> markAsRead({
     required int noticeId,
@@ -374,10 +395,14 @@ class NoticeProvider with ChangeNotifier {
         userId: userId,
         userName: userName,
       );
+      // 읽음 처리 후 unread count 감소
+      if (_unreadNoticeCount > 0) {
+        _unreadNoticeCount--;
+        notifyListeners();
+      }
       print('[NoticeProvider] 읽음 기록 완료');
     } catch (e) {
       print('[NoticeProvider] 읽음 기록 에러: $e');
-      // 읽음 기록 실패는 사용자에게 표시하지 않음
     }
   }
 
@@ -519,6 +544,7 @@ class NoticeProvider with ChangeNotifier {
     _selectedNotice = null;
     _comments = [];
     _readers = [];
+    _unreadNoticeCount = 0;
     _isLoading = false;
     _errorMessage = '';
     _currentPage = 0;

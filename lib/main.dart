@@ -107,6 +107,7 @@ class MyApp extends StatelessWidget {
             home: const AuthWrapper(),
             navigatorObservers: [AnalyticsService().observer],
             localizationsDelegates: const [
+              shadcn.ShadcnLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,

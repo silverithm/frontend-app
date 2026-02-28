@@ -136,10 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         bool isChanging = false;
 
         return StatefulBuilder(
-          builder: (context, setState) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            ),
+          builder: (context, setState) => shadcn.AlertDialog(
             title: Row(
               children: [
                 Container(
@@ -327,42 +324,64 @@ class _ProfileScreenState extends State<ProfileScreen>
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        builder: (context, setState) => shadcn.AlertDialog(
           title: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.space2),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.backgroundTertiary,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 ),
-                child: Icon(Icons.swap_horiz, color: AppSemanticColors.textSecondary, size: 24),
+                child: const Icon(
+                  Icons.swap_horiz,
+                  color: AppSemanticColors.textSecondary,
+                  size: 24,
+                ),
               ),
-              const SizedBox(width: 12),
-              const Text('역할 변경', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(width: AppSpacing.space3),
+              Text(
+                '역할 변경',
+                style: AppTypography.heading5.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.space4),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 ),
                 child: Column(
                   children: [
                     RadioListTile<String>(
                       title: Row(
                         children: [
-                          Icon(Icons.favorite, color: AppSemanticColors.statusErrorIcon, size: 20),
-                          const SizedBox(width: 8),
-                          const Text('요양보호사'),
+                          const Icon(
+                            Icons.favorite,
+                            color: AppSemanticColors.statusErrorIcon,
+                            size: 20,
+                          ),
+                          const SizedBox(width: AppSpacing.space2),
+                          Text(
+                            '요양보호사',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                            ),
+                          ),
                         ],
                       ),
-                      subtitle: const Text('요양 서비스 제공 직원'),
+                      subtitle: Text(
+                        '요양 서비스 제공 직원',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                      ),
                       value: 'CAREGIVER',
                       groupValue: selectedRole,
                       onChanged: isChanging ? null : (value) {
@@ -375,12 +394,26 @@ class _ProfileScreenState extends State<ProfileScreen>
                     RadioListTile<String>(
                       title: Row(
                         children: [
-                          Icon(Icons.business, color: AppSemanticColors.textSecondary, size: 20),
-                          const SizedBox(width: 8),
-                          const Text('사무직'),
+                          const Icon(
+                            Icons.business,
+                            color: AppSemanticColors.textSecondary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: AppSpacing.space2),
+                          Text(
+                            '사무직',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                            ),
+                          ),
                         ],
                       ),
-                      subtitle: const Text('사무실 근무 직원'),
+                      subtitle: Text(
+                        '사무실 근무 직원',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                      ),
                       value: 'OFFICE',
                       groupValue: selectedRole,
                       onChanged: isChanging ? null : (value) {
@@ -392,25 +425,28 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
               if (selectedRole != user.role)
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.space3),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.statusWarningBackground,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                     border: Border.all(color: AppSemanticColors.statusWarningBorder),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: AppSemanticColors.statusWarningIcon, size: 20),
-                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.info_outline,
+                        color: AppSemanticColors.statusWarningIcon,
+                        size: 20,
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
                       Expanded(
                         child: Text(
                           '역할 변경 시 권한이 변경됩니다.',
-                          style: TextStyle(
+                          style: AppTypography.bodySmall.copyWith(
                             color: AppSemanticColors.statusWarningText,
-                            fontSize: 13,
                           ),
                         ),
                       ),
@@ -441,7 +477,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       backgroundColor: AppSemanticColors.statusSuccessIcon,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       ),
                     ),
                   );
@@ -459,7 +495,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       backgroundColor: AppSemanticColors.statusErrorIcon,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       ),
                     ),
                   );
@@ -489,10 +525,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          ),
+        builder: (context, setState) => shadcn.AlertDialog(
           title: Row(
             children: [
               Container(
@@ -584,11 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         showDialog(
                           context: context,
                           barrierDismissible: false,
-                          builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppBorderRadius.xl),
-                            ),
+                          builder: (context) => shadcn.AlertDialog(
                             content: Container(
                               padding: const EdgeInsets.all(AppSpacing.space6),
                               child: Column(
@@ -698,12 +727,13 @@ class _ProfileScreenState extends State<ProfileScreen>
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: AppSemanticColors.backgroundPrimary,
+            backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+            iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
             centerTitle: true,
             title: Text(
               '프로필',
               style: AppTypography.heading6.copyWith(
-                color: AppSemanticColors.textPrimary,
+                color: AppSemanticColors.textInverse,
               ),
             ),
           ),
@@ -883,7 +913,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         children: [
                                           _buildInfoRow(
                                             icon: Icons.work,
-                                            iconColor: AppSemanticColors.interactiveSecondaryDefault,
+                                            iconColor: AppSemanticColors.textSecondary,
                                             title: '직책',
                                             value: user.position!,
                                           ),
@@ -945,12 +975,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                               trailing: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1),
+                                  color: AppSemanticColors.backgroundSecondary,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
                                   Icons.chevron_right,
-                                  color: AppSemanticColors.interactiveSecondaryDefault,
+                                  color: AppSemanticColors.textTertiary,
                                   size: 20,
                                 ),
                               ),
@@ -1113,7 +1143,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                               child: Icon(
                                 Icons.chevron_right,
-                                color: AppSemanticColors.interactiveSecondaryDefault,
+                                color: AppSemanticColors.textTertiary,
                                 size: 20,
                               ),
                             ),
@@ -1459,7 +1489,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (subscriptionProvider.isLoading) {
       return _buildInfoRow(
         icon: Icons.workspace_premium,
-        iconColor: AppSemanticColors.textDisabled,
+        iconColor: AppSemanticColors.textTertiary,
         title: '구독 정보',
         value: '로딩 중...',
       );
@@ -1614,7 +1644,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             Icon(
               Icons.chevron_right,
-              color: AppSemanticColors.textDisabled,
+              color: AppSemanticColors.textTertiary,
               size: 20,
             ),
           ],
@@ -1626,18 +1656,22 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _showSubscriptionDetails(subscription) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (context) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(
               Icons.workspace_premium,
-              color: subscription.isActive 
-                  ? AppSemanticColors.statusSuccessIcon 
+              color: subscription.isActive
+                  ? AppSemanticColors.statusSuccessIcon
                   : AppSemanticColors.statusWarningIcon,
             ),
-            const SizedBox(width: 8),
-            const Text('구독 정보'),
+            const SizedBox(width: AppSpacing.space2),
+            Text(
+              '구독 정보',
+              style: AppTypography.heading5.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
           ],
         ),
         content: Column(
@@ -1645,25 +1679,25 @@ class _ProfileScreenState extends State<ProfileScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildDetailRow('플랜', subscription.planDisplayName),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space3),
             _buildDetailRow('상태', subscription.statusDisplayName),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space3),
             if (subscription.endDate != null) ...{
               _buildDetailRow(
-                '만료일', 
+                '만료일',
                 _formatDate(subscription.endDate!),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.space3),
               if (subscription.isActive)
                 _buildDetailRow(
-                  '남은 일수', 
+                  '남은 일수',
                   '${subscription.daysRemaining}일',
                 ),
             },
             if (subscription.startDate != null) ...{
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.space3),
               _buildDetailRow(
-                '시작일', 
+                '시작일',
                 _formatDate(subscription.startDate!),
               ),
             },
@@ -1699,18 +1733,16 @@ class _ProfileScreenState extends State<ProfileScreen>
           width: 60,
           child: Text(
             '$label:',
-            style: TextStyle(
+            style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textSecondary,
-              fontSize: 14,
             ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              color: AppColors.black87,
-              fontSize: 14,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textPrimary,
               fontWeight: FontWeight.w500,
             ),
           ),

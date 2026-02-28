@@ -657,8 +657,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             Text('${reaction.count}명', style: AppTypography.heading5),
           ],
         ),
-        content: SizedBox(
-          width: double.maxFinite,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 300),
           child: ListView.builder(
             shrinkWrap: true,
             itemCount: reaction.userNames.length,
@@ -695,11 +695,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => shadcn.AlertDialog(
-        content: Row(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(),
-            const SizedBox(width: AppSpacing.space4),
-            Expanded(child: Text('다운로드 중...\n$fileName')),
+            const SizedBox(height: AppSpacing.space4),
+            Text(
+              '다운로드 중...',
+              style: AppTypography.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.space2),
+            Text(
+              fileName,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -1035,7 +1049,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       '$unreadCount',
                       style: AppTypography.labelSmall.copyWith(
                         color: isAdmin
-                            ? AppSemanticColors.interactiveSecondaryDefault
+                            ? AppSemanticColors.textSecondary
                             : AppSemanticColors.interactivePrimaryDefault,
                         fontWeight: FontWeight.bold,
                       ),

@@ -99,13 +99,12 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
         title: Text(
           '채팅',
           style: AppTypography.heading6.copyWith(
-            color: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
+            color: AppSemanticColors.textInverse,
           ),
         ),
-        backgroundColor: isAdmin
-            ? AppSemanticColors.interactivePrimaryDefault
-            : AppSemanticColors.surfaceDefault,
-        foregroundColor: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        foregroundColor: AppSemanticColors.textInverse,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         actions: [
           IconButton(
@@ -320,9 +319,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
     return Center(
       child: Icon(
         Icons.chat_bubble_rounded,
-        color: isAdmin
-            ? AppSemanticColors.interactiveSecondaryDefault
-            : AppSemanticColors.interactivePrimaryDefault,
+        color: AppSemanticColors.interactivePrimaryDefault,
         size: 24,
       ),
     );

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
@@ -96,8 +97,8 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: AppSemanticColors.interactiveSecondaryDefault,
-              onPrimary: AppColors.white,
+              primary: AppSemanticColors.interactivePrimaryDefault,
+              onPrimary: AppSemanticColors.textInverse,
               surface: AppSemanticColors.surfaceDefault,
               onSurface: AppSemanticColors.textPrimary,
             ),
@@ -188,15 +189,15 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
       },
       child: Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
         ),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.space5, vertical: AppSpacing.space6),
         child: GestureDetector(
           onTap: () {}, // Dialog 내부 클릭 시 이벤트 전파 차단
           child: Container(
             width: MediaQuery.of(context).size.width * 0.9,
-            constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
-            padding: const EdgeInsets.all(24),
+            constraints: BoxConstraints(maxWidth: 500, maxHeight: MediaQuery.of(context).size.height * 0.85),
+            padding: const EdgeInsets.all(AppSpacing.space6),
             child: Form(
               key: _formKey,
               child: SingleChildScrollView(
@@ -208,10 +209,10 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                 children: [
                   Icon(
                     Icons.event_note,
-                    color: AppSemanticColors.interactiveSecondaryDefault,
+                    color: AppSemanticColors.textSecondary,
                     size: 28,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.space3),
                   Text(
                     '휴무 추가',
                     style: AppTypography.heading4.copyWith(
@@ -220,8 +221,8 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              
+              const SizedBox(height: AppSpacing.space6),
+
               // 직원 선택
               Text(
                 '직원 선택',
@@ -229,7 +230,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : DropdownButtonFormField<int>(
@@ -239,12 +240,12 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                         filled: true,
                         fillColor: AppSemanticColors.backgroundSecondary,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                          horizontal: AppSpacing.space4,
+                          vertical: AppSpacing.space3,
                         ),
                       ),
                       items: _members.map((member) {
@@ -270,7 +271,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                         return null;
                       },
                     ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
               
               // 날짜 선택
               Text(
@@ -279,23 +280,23 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               Material(
                 color: AppColors.transparent,
                 child: InkWell(
                   onTap: _selectDate,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+                      horizontal: AppSpacing.space4,
+                      vertical: AppSpacing.space3_5,
                     ),
                     decoration: BoxDecoration(
                       color: AppSemanticColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       border: Border.all(
                         color: _selectedDate != null
-                            ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha:0.3)
+                            ? AppSemanticColors.interactivePrimaryDefault.withValues(alpha:0.2)
                             : AppColors.transparent,
                         width: 1,
                       ),
@@ -308,20 +309,19 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                             Icon(
                               Icons.calendar_today,
                               color: _selectedDate != null
-                                  ? AppSemanticColors.interactiveSecondaryDefault
+                                  ? AppSemanticColors.interactivePrimaryDefault
                                   : AppSemanticColors.textSecondary,
                               size: 20,
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.space3),
                             Text(
                               _selectedDate != null
                                   ? '${_selectedDate!.year}년 ${_selectedDate!.month}월 ${_selectedDate!.day}일'
                                   : '날짜를 선택하세요',
-                              style: TextStyle(
+                              style: AppTypography.bodyLarge.copyWith(
                                 color: _selectedDate != null
                                     ? AppSemanticColors.textPrimary
                                     : AppSemanticColors.textSecondary,
-                                fontSize: 16,
                                 fontWeight: _selectedDate != null
                                     ? FontWeight.w500
                                     : FontWeight.normal,
@@ -338,7 +338,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
 
               // 휴무 타입 선택
               Text(
@@ -347,7 +347,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               Row(
                 children: [
                   // 일반 휴무 버튼
@@ -360,7 +360,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                       selectedTextColor: AppSemanticColors.statusInfoText,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.space3),
                   // 필수 휴무 버튼
                   Expanded(
                     child: _buildTypeOptionButton(
@@ -373,7 +373,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
 
               // 휴무 기간
               Text(
@@ -382,19 +382,19 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               DropdownButtonFormField<String>(
                 value: _selectedDuration,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppSemanticColors.backgroundSecondary,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: AppSpacing.space4,
+                    vertical: AppSpacing.space3,
                   ),
                 ),
                 items: const [
@@ -417,7 +417,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   });
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
               
               // 휴무 사유
               Text(
@@ -426,7 +426,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               TextFormField(
                 controller: _reasonController,
                 maxLines: 3,
@@ -435,14 +435,14 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   filled: true,
                   fillColor: AppSemanticColors.backgroundSecondary,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.all(16),
+                  contentPadding: const EdgeInsets.all(AppSpacing.space4),
                 ),
               ),
-              const SizedBox(height: 24),
-              
+              const SizedBox(height: AppSpacing.space6),
+
               // 버튼
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -451,7 +451,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                     onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
                     child: const Text('취소'),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.space3),
                   shadcn.PrimaryButton(
                     onPressed: _isSubmitting ? null : _submitVacation,
                     child: _isSubmitting
@@ -486,12 +486,12 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3_5),
         decoration: BoxDecoration(
           color: isSelected ? selectedColor : AppSemanticColors.backgroundSecondary,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           border: Border.all(
             color: isSelected ? selectedTextColor : AppSemanticColors.borderDefault,
             width: isSelected ? 1.5 : 1,
@@ -500,10 +500,9 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         child: Center(
           child: Text(
             text,
-            style: TextStyle(
+            style: AppTypography.bodyMedium.copyWith(
               color: isSelected ? selectedTextColor : AppSemanticColors.textSecondary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 14,
             ),
           ),
         ),

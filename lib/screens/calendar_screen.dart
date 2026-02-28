@@ -163,23 +163,21 @@ class _CalendarScreenState extends State<CalendarScreen>
               pinned: true,
               elevation: 0,
               toolbarHeight: 0,
-              backgroundColor: AppSemanticColors.backgroundPrimary,
+              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(48),
                 child: Builder(
                   builder: (context) {
                   final isAdmin = AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser);
-                  final accentColor = isAdmin
-                      ? AppSemanticColors.interactiveSecondaryDefault
-                      : AppSemanticColors.interactivePrimaryDefault;
+                  final accentColor = AppSemanticColors.interactivePrimaryDefault;
                   return Container(
-                    color: AppSemanticColors.backgroundPrimary,
+                    color: AppSemanticColors.interactivePrimaryDefault,
                     child: TabBar(
                       controller: _tabController,
-                      indicatorColor: accentColor,
-                      indicatorWeight: 1,
-                      labelColor: accentColor,
-                      unselectedLabelColor: AppSemanticColors.textTertiary.withValues(alpha: 0.6),
+                      indicatorColor: AppSemanticColors.textInverse,
+                      indicatorWeight: 2,
+                      labelColor: AppSemanticColors.textInverse,
+                      unselectedLabelColor: AppSemanticColors.textInverse.withValues(alpha: 0.5),
                       labelStyle: AppTypography.labelLarge.copyWith(
                         fontWeight: AppTypography.fontWeightSemibold,
                       ),
@@ -1366,33 +1364,33 @@ class _CalendarScreenState extends State<CalendarScreen>
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
       ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.space5),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: const EdgeInsets.only(bottom: AppSpacing.space5),
               decoration: BoxDecoration(
                 color: AppSemanticColors.borderSubtle,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppBorderRadius.base),
               ),
             ),
             Text(
               '관리자 기능',
               style: AppTypography.heading5,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.space5),
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.space2),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.statusInfoBackground,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                 ),
                 child: Icon(Icons.event_available, color: AppSemanticColors.statusInfoIcon),
               ),
@@ -1406,10 +1404,10 @@ class _CalendarScreenState extends State<CalendarScreen>
             const Divider(),
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.space2),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.statusWarningBackground,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                 ),
                 child: Icon(Icons.settings, color: AppSemanticColors.statusWarningIcon),
               ),

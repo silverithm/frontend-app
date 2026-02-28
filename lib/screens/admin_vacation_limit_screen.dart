@@ -303,7 +303,9 @@ class _AdminVacationLimitScreenState extends State<AdminVacationLimitScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('휴무 한도 설정'),
-        backgroundColor: AppSemanticColors.statusErrorIcon,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        foregroundColor: AppSemanticColors.textInverse,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
       ),
       body: Center(
         child: Column(

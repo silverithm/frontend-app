@@ -130,7 +130,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('회원 관리'),
-        backgroundColor: AppSemanticColors.statusErrorIcon,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        foregroundColor: AppSemanticColors.textInverse,
+        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
       ),
       body: Center(
         child: Column(

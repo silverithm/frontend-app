@@ -131,7 +131,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha:0.3),
+            color: AppColors.black.withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -309,7 +309,7 @@ class _PaymentScreenState extends State<PaymentScreen>
               color: AppSemanticColors.statusInfoBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppSemanticColors.interactiveSecondaryDefault,
+                color: AppSemanticColors.interactivePrimaryDefault,
                 width: 2,
               ),
             ),
@@ -673,7 +673,7 @@ class _PaymentScreenState extends State<PaymentScreen>
               height: 80,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.green400, AppColors.green600],
+                  colors: [AppSemanticColors.statusSuccessIcon, AppSemanticColors.statusSuccessIcon],
                 ),
                 shape: BoxShape.circle,
               ),

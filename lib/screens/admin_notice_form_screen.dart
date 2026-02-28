@@ -75,7 +75,7 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: AppColors.white,
+                  color: AppSemanticColors.textInverse,
                 ),
               ),
             )

@@ -379,7 +379,7 @@ class _AdminApprovalTemplateScreenState
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
                       ),
                     )
                   : Text(template == null ? '추가' : '수정'),

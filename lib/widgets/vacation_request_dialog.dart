@@ -10,118 +10,6 @@ import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
-// Design System Colors - Following design_system_guide_v2.json
-class DesignSystemColors {
-  // Blue palette
-  static const Color blue50 = Color(0xFFEFF6FF);
-  static const Color blue100 = Color(0xFFDBEAFE);
-  static const Color blue200 = Color(0xFFBFDBFE);
-  static const Color blue300 = Color(0xFF93C5FD);
-  static const Color blue400 = Color(0xFF60A5FA);
-  static const Color blue500 = Color(0xFF3B82F6);
-  static const Color blue600 = Color(0xFF2563EB);
-  static const Color blue700 = Color(0xFF1D4ED8);
-  static const Color blue800 = Color(0xFF1E40AF);
-  
-  // Gray palette
-  static const Color gray50 = Color(0xFFF9FAFB);
-  static const Color gray100 = Color(0xFFF3F4F6);
-  static const Color gray200 = Color(0xFFE5E7EB);
-  static const Color gray300 = Color(0xFFD1D5DB);
-  static const Color gray400 = Color(0xFF9CA3AF);
-  static const Color gray500 = Color(0xFF6B7280);
-  static const Color gray600 = Color(0xFF4B5563);
-  static const Color gray700 = Color(0xFF374151);
-  static const Color gray800 = Color(0xFF1F2937);
-  static const Color gray900 = Color(0xFF111827);
-  
-  // Green palette
-  static const Color green50 = Color(0xFFF0FDF4);
-  static const Color green100 = Color(0xFFDCFCE7);
-  static const Color green300 = Color(0xFF86EFAC);
-  static const Color green600 = Color(0xFF16A34A);
-  static const Color green800 = Color(0xFF166534);
-  
-  // Orange palette  
-  static const Color orange50 = Color(0xFFFEFCE8);
-  static const Color orange100 = Color(0xFFFEF9C3);
-  static const Color orange300 = Color(0xFFFDE047);
-  static const Color orange400 = Color(0xFFFACC15);
-  static const Color orange800 = Color(0xFF854D0E);
-  
-  // Red palette
-  static const Color red50 = Color(0xFFFEF2F2);
-  static const Color red100 = Color(0xFFFEE2E2);
-  static const Color red300 = Color(0xFFFCA5A5);
-  static const Color red400 = Color(0xFFF87171);
-  static const Color red600 = Color(0xFFDC2626);
-  static const Color red800 = Color(0xFF991B1B);
-  
-  // Semantic colors
-  static const Color backgroundPrimary = AppColors.white;
-  static const Color backgroundSecondary = gray50;
-  static const Color backgroundElevated = AppColors.white;
-  static const Color surfaceDefault = AppColors.white;
-  static const Color surfaceHover = gray50;
-  static const Color borderDefault = gray200;
-  static const Color borderFocus = blue500;
-  static const Color textPrimary = gray900;
-  static const Color textSecondary = gray700;
-  static const Color textTertiary = gray500;
-  static const Color interactivePrimaryDefault = blue600;
-  static const Color interactivePrimaryHover = blue700;
-}
-
-// Design System Spacing - Following design_system_guide_v2.json
-class DesignSystemSpacing {
-  static const double xs = 2.0;    // 0.5
-  static const double sm = 4.0;    // 1
-  static const double md = 8.0;    // 2
-  static const double lg = 12.0;   // 3
-  static const double xl = 16.0;   // 4
-  static const double xl2 = 20.0;  // 5
-  static const double xl3 = 24.0;  // 6
-  static const double xl4 = 32.0;  // 8
-  static const double xl5 = 48.0;  // 12
-}
-
-// Design System Shadows
-class DesignSystemShadows {
-  static List<BoxShadow> sm = [
-    BoxShadow(
-      color: AppColors.black.withValues(alpha:0.1),
-      blurRadius: 3,
-      offset: const Offset(0, 1),
-    ),
-    BoxShadow(
-      color: AppColors.black.withValues(alpha:0.06),
-      blurRadius: 2,
-      offset: const Offset(0, 1),
-    ),
-  ];
-  
-  static List<BoxShadow> md = [
-    BoxShadow(
-      color: AppColors.black.withValues(alpha:0.1),
-      blurRadius: 15,
-      offset: const Offset(0, 10),
-    ),
-    BoxShadow(
-      color: AppColors.black.withValues(alpha:0.05),
-      blurRadius: 6,
-      offset: const Offset(0, 4),
-    ),
-  ];
-  
-  static List<BoxShadow> xl = [
-    BoxShadow(
-      color: AppColors.black.withValues(alpha:0.25),
-      blurRadius: 50,
-      offset: const Offset(0, 25),
-    ),
-  ];
-}
-
 class VacationRequestDialog extends StatefulWidget {
   final DateTime selectedDate;
   final VoidCallback? onRequestSubmitted;
@@ -150,6 +38,27 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
+
+  static const List<BoxShadow> _shadowSm = [
+    BoxShadow(
+      color: Color(0x1A000000), // black 0.1
+      blurRadius: 3,
+      offset: Offset(0, 1),
+    ),
+    BoxShadow(
+      color: Color(0x0F000000), // black 0.06
+      blurRadius: 2,
+      offset: Offset(0, 1),
+    ),
+  ];
+
+  static const List<BoxShadow> _shadowXl = [
+    BoxShadow(
+      color: Color(0x40000000), // black 0.25
+      blurRadius: 50,
+      offset: Offset(0, 25),
+    ),
+  ];
 
   @override
   void initState() {
@@ -204,10 +113,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('로그인이 필요합니다'),
-          backgroundColor: DesignSystemColors.red600,
+          backgroundColor: AppSemanticColors.statusErrorIcon,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
+            borderRadius: BorderRadius.circular(AppSpacing.space3),
           ),
         ),
       );
@@ -252,10 +161,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                   ? '${_getDurationDisplayText(_selectedDuration)} 신청이 완료되었습니다'
                   : '미사용 휴무 신청이 완료되었습니다',
             ),
-            backgroundColor: DesignSystemColors.green600,
+            backgroundColor: AppSemanticColors.statusSuccessIcon,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
+              borderRadius: BorderRadius.circular(AppSpacing.space3),
             ),
           ),
         );
@@ -266,10 +175,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('신청 실패: ${e.toString()}'),
-            backgroundColor: DesignSystemColors.red600,
+            backgroundColor: AppSemanticColors.statusErrorIcon,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
+              borderRadius: BorderRadius.circular(AppSpacing.space3),
             ),
           ),
         );
@@ -318,28 +227,28 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    selectedColor.withValues(alpha:0.20),
-                    selectedColor.withValues(alpha:0.60),
+                    selectedColor.withValues(alpha: 0.20),
+                    selectedColor.withValues(alpha: 0.60),
                   ],
                 )
               : null,
-          color: !isSelected ? DesignSystemColors.surfaceHover : null,
-          borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
+          color: !isSelected ? AppSemanticColors.backgroundSecondary : null,
+          borderRadius: BorderRadius.circular(AppSpacing.space3),
           border: Border.all(
-            color: isSelected ? selectedColor.withValues(alpha:0.6) : DesignSystemColors.borderDefault,
+            color: isSelected ? selectedColor.withValues(alpha: 0.6) : AppSemanticColors.borderDefault,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? DesignSystemShadows.sm : null,
+          boxShadow: isSelected ? _shadowSm : null,
         ),
         child: Material(
           color: AppColors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
+            borderRadius: BorderRadius.circular(AppSpacing.space3),
             onTap: onTap,
             child: Container(
               padding: const EdgeInsets.symmetric(
-                vertical: DesignSystemSpacing.lg,
-                horizontal: DesignSystemSpacing.md,
+                vertical: AppSpacing.space3,
+                horizontal: AppSpacing.space2,
               ),
               child: Center(
                 child: Text(
@@ -347,7 +256,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
-                    color: isSelected ? selectedTextColor.withValues(alpha:0.9) : DesignSystemColors.textSecondary,
+                    color: isSelected ? selectedTextColor.withValues(alpha: 0.9) : AppSemanticColors.textSecondary,
                     letterSpacing: -0.025,
                   ),
                 ),
@@ -373,17 +282,17 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
             child: Container(
               constraints: const BoxConstraints(maxWidth: 400),
               decoration: BoxDecoration(
-                color: DesignSystemColors.backgroundElevated,
-                borderRadius: BorderRadius.circular(DesignSystemSpacing.xl3),
+                color: AppSemanticColors.surfaceDefault,
+                borderRadius: BorderRadius.circular(AppSpacing.space6),
                 border: Border.all(
-                  color: DesignSystemColors.borderDefault,
+                  color: AppSemanticColors.borderDefault,
                   width: 1,
                 ),
-                boxShadow: DesignSystemShadows.xl,
+                boxShadow: _shadowXl,
               ),
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.all(DesignSystemSpacing.xl3),
+                  padding: const EdgeInsets.all(AppSpacing.space6),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -402,14 +311,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      DesignSystemColors.blue500,
-                                      DesignSystemColors.blue600,
+                                      AppSemanticColors.interactivePrimaryDefault,
+                                      AppSemanticColors.interactivePrimaryDefault,
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                  borderRadius: BorderRadius.circular(AppSpacing.space4),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: DesignSystemColors.blue300.withValues(alpha:0.4),
+                                      color: AppSemanticColors.interactivePrimaryActive.withValues(alpha: 0.4),
                                       blurRadius: 8,
                                       offset: const Offset(0, 4),
                                     ),
@@ -421,13 +330,13 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   size: 24,
                                 ),
                               ),
-                              const SizedBox(width: DesignSystemSpacing.lg),
+                              const SizedBox(width: AppSpacing.space3),
                               Text(
                                 '휴무 신청',
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
-                                  color: DesignSystemColors.textPrimary,
+                                  color: AppSemanticColors.textPrimary,
                                   letterSpacing: -0.025,
                                 ),
                               ),
@@ -437,10 +346,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: DesignSystemColors.surfaceHover,
-                              borderRadius: BorderRadius.circular(DesignSystemSpacing.md),
+                              color: AppSemanticColors.backgroundSecondary,
+                              borderRadius: BorderRadius.circular(AppSpacing.space2),
                               border: Border.all(
-                                color: DesignSystemColors.borderDefault,
+                                color: AppSemanticColors.borderDefault,
                                 width: 1,
                               ),
                             ),
@@ -450,7 +359,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   : () => Navigator.pop(context),
                               icon: Icon(
                                 Icons.close_rounded,
-                                color: DesignSystemColors.textSecondary,
+                                color: AppSemanticColors.textSecondary,
                                 size: 20,
                               ),
                               padding: EdgeInsets.zero,
@@ -459,26 +368,26 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                         ],
                       ),
 
-                      const SizedBox(height: DesignSystemSpacing.xl3),
+                      const SizedBox(height: AppSpacing.space6),
 
                       // 선택된 날짜 표시
                       Container(
-                        padding: const EdgeInsets.all(DesignSystemSpacing.xl2),
+                        padding: const EdgeInsets.all(AppSpacing.space5),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              DesignSystemColors.blue50,
-                              DesignSystemColors.blue100.withValues(alpha:0.6),
+                              AppSemanticColors.statusInfoBackground,
+                              AppSemanticColors.statusInfoBackground.withValues(alpha: 0.6),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                          borderRadius: BorderRadius.circular(AppSpacing.space4),
                           border: Border.all(
-                            color: DesignSystemColors.blue200,
+                            color: AppSemanticColors.statusInfoBorder,
                             width: 1,
                           ),
-                          boxShadow: DesignSystemShadows.sm,
+                          boxShadow: _shadowSm,
                         ),
                         child: Row(
                           children: [
@@ -486,11 +395,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: DesignSystemColors.blue600,
-                                borderRadius: BorderRadius.circular(DesignSystemSpacing.lg),
+                                color: AppSemanticColors.interactivePrimaryDefault,
+                                borderRadius: BorderRadius.circular(AppSpacing.space3),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: DesignSystemColors.blue600.withValues(alpha:0.2),
+                                    color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.2),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -502,7 +411,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 size: 20,
                               ),
                             ),
-                            const SizedBox(width: DesignSystemSpacing.xl),
+                            const SizedBox(width: AppSpacing.space4),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,17 +419,17 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   Text(
                                     '선택된 날짜',
                                     style: TextStyle(
-                                      color: DesignSystemColors.blue600,
+                                      color: AppSemanticColors.interactivePrimaryDefault,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       letterSpacing: 0.025,
                                     ),
                                   ),
-                                  const SizedBox(height: DesignSystemSpacing.sm),
+                                  const SizedBox(height: AppSpacing.space1),
                                   Text(
                                     _formatSelectedDate(widget.selectedDate),
                                     style: TextStyle(
-                                      color: DesignSystemColors.blue800,
+                                      color: AppSemanticColors.textPrimary,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 16,
                                       letterSpacing: -0.025,
@@ -533,7 +442,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                         ),
                       ),
 
-                      const SizedBox(height: DesignSystemSpacing.xl3),
+                      const SizedBox(height: AppSpacing.space6),
 
                       // 폼
                       Form(
@@ -543,15 +452,15 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                           children: [
                             // 연차 사용 여부 선택 (미사용/사용)
                             Container(
-                              padding: const EdgeInsets.all(DesignSystemSpacing.xl2),
+                              padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                color: DesignSystemColors.surfaceDefault,
-                                borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                color: AppSemanticColors.surfaceDefault,
+                                borderRadius: BorderRadius.circular(AppSpacing.space4),
                                 border: Border.all(
-                                  color: DesignSystemColors.borderDefault,
+                                  color: AppSemanticColors.borderDefault,
                                   width: 1,
                                 ),
-                                boxShadow: DesignSystemShadows.sm,
+                                boxShadow: _shadowSm,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,11 +470,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: DesignSystemColors.textPrimary,
+                                      color: AppSemanticColors.textPrimary,
                                       letterSpacing: -0.025,
                                     ),
                                   ),
-                                  const SizedBox(height: DesignSystemSpacing.lg),
+                                  const SizedBox(height: AppSpacing.space3),
 
                                   // 연차 사용 여부 선택
                                   Row(
@@ -579,11 +488,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             _isVacationUsed = false;
                                           });
                                         },
-                                        selectedColor: DesignSystemColors.orange300,
-                                        selectedTextColor: DesignSystemColors.orange800,
+                                        selectedColor: AppSemanticColors.statusWarningBorder,
+                                        selectedTextColor: AppSemanticColors.statusWarningText,
                                       ),
 
-                                      const SizedBox(width: DesignSystemSpacing.md),
+                                      const SizedBox(width: AppSpacing.space2),
 
                                       // 사용
                                       _buildOptionButton(
@@ -594,8 +503,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             _isVacationUsed = true;
                                           });
                                         },
-                                        selectedColor: DesignSystemColors.blue400,
-                                        selectedTextColor: DesignSystemColors.blue700,
+                                        selectedColor: AppSemanticColors.interactivePrimaryActive,
+                                        selectedTextColor: AppSemanticColors.interactivePrimaryDefault,
                                       ),
                                     ],
                                   ),
@@ -603,20 +512,20 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               ),
                             ),
 
-                            const SizedBox(height: DesignSystemSpacing.xl),
+                            const SizedBox(height: AppSpacing.space4),
 
                             // 연차 유형 선택 (사용 선택시에만 표시)
                             if (_isVacationUsed)
                               Container(
-                                padding: const EdgeInsets.all(DesignSystemSpacing.xl2),
+                                padding: const EdgeInsets.all(AppSpacing.space5),
                                 decoration: BoxDecoration(
-                                  color: DesignSystemColors.surfaceDefault,
-                                  borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                  color: AppSemanticColors.surfaceDefault,
+                                  borderRadius: BorderRadius.circular(AppSpacing.space4),
                                   border: Border.all(
-                                    color: DesignSystemColors.borderDefault,
+                                    color: AppSemanticColors.borderDefault,
                                     width: 1,
                                   ),
-                                  boxShadow: DesignSystemShadows.sm,
+                                  boxShadow: _shadowSm,
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,11 +535,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: DesignSystemColors.textPrimary,
+                                        color: AppSemanticColors.textPrimary,
                                         letterSpacing: -0.025,
                                       ),
                                     ),
-                                    const SizedBox(height: DesignSystemSpacing.lg),
+                                    const SizedBox(height: AppSpacing.space3),
 
                                     // 연차 유형 선택 버튼들
                                     Row(
@@ -644,11 +553,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                               _selectedDuration = VacationDuration.fullDay;
                                             });
                                           },
-                                          selectedColor: DesignSystemColors.green300,
-                                          selectedTextColor: DesignSystemColors.green600,
+                                          selectedColor: AppSemanticColors.statusSuccessBorder,
+                                          selectedTextColor: AppSemanticColors.statusSuccessIcon,
                                         ),
 
-                                        const SizedBox(width: DesignSystemSpacing.md),
+                                        const SizedBox(width: AppSpacing.space2),
 
                                         // 오전 반차
                                         _buildOptionButton(
@@ -659,11 +568,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                               _selectedDuration = VacationDuration.halfDayAm;
                                             });
                                           },
-                                          selectedColor: DesignSystemColors.orange300,
-                                          selectedTextColor: DesignSystemColors.orange800,
+                                          selectedColor: AppSemanticColors.statusWarningBorder,
+                                          selectedTextColor: AppSemanticColors.statusWarningText,
                                         ),
 
-                                        const SizedBox(width: DesignSystemSpacing.md),
+                                        const SizedBox(width: AppSpacing.space2),
 
                                         // 오후 반차
                                         _buildOptionButton(
@@ -674,8 +583,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                               _selectedDuration = VacationDuration.halfDayPm;
                                             });
                                           },
-                                          selectedColor: DesignSystemColors.blue400,
-                                          selectedTextColor: DesignSystemColors.blue700,
+                                          selectedColor: AppSemanticColors.interactivePrimaryActive,
+                                          selectedTextColor: AppSemanticColors.interactivePrimaryDefault,
                                         ),
                                       ],
                                     ),
@@ -683,19 +592,19 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 ),
                               ),
 
-                            if (_isVacationUsed) const SizedBox(height: DesignSystemSpacing.xl),
+                            if (_isVacationUsed) const SizedBox(height: AppSpacing.space4),
 
                             // 휴무 유형 선택
                             Container(
-                              padding: const EdgeInsets.all(DesignSystemSpacing.xl2),
+                              padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                color: DesignSystemColors.surfaceDefault,
-                                borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                color: AppSemanticColors.surfaceDefault,
+                                borderRadius: BorderRadius.circular(AppSpacing.space4),
                                 border: Border.all(
-                                  color: DesignSystemColors.borderDefault,
+                                  color: AppSemanticColors.borderDefault,
                                   width: 1,
                                 ),
-                                boxShadow: DesignSystemShadows.sm,
+                                boxShadow: _shadowSm,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -705,11 +614,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: DesignSystemColors.textPrimary,
+                                      color: AppSemanticColors.textPrimary,
                                       letterSpacing: -0.025,
                                     ),
                                   ),
-                                  const SizedBox(height: DesignSystemSpacing.lg),
+                                  const SizedBox(height: AppSpacing.space3),
 
                                   // 한 줄로 배치
                                   Row(
@@ -723,11 +632,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             _selectedType = VacationType.personal;
                                           });
                                         },
-                                        selectedColor: DesignSystemColors.blue400,
-                                        selectedTextColor: DesignSystemColors.blue700,
+                                        selectedColor: AppSemanticColors.interactivePrimaryActive,
+                                        selectedTextColor: AppSemanticColors.interactivePrimaryDefault,
                                       ),
 
-                                      const SizedBox(width: DesignSystemSpacing.lg),
+                                      const SizedBox(width: AppSpacing.space3),
 
                                       // 필수 휴무
                                       _buildOptionButton(
@@ -738,8 +647,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             _selectedType = VacationType.mandatory;
                                           });
                                         },
-                                        selectedColor: DesignSystemColors.red300,
-                                        selectedTextColor: DesignSystemColors.red600,
+                                        selectedColor: AppSemanticColors.statusErrorBorder,
+                                        selectedTextColor: AppSemanticColors.statusErrorIcon,
                                       ),
                                     ],
                                   ),
@@ -747,19 +656,19 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               ),
                             ),
 
-                            const SizedBox(height: DesignSystemSpacing.xl),
+                            const SizedBox(height: AppSpacing.space4),
 
                             // 사유 입력
                             Container(
-                              padding: const EdgeInsets.all(DesignSystemSpacing.xl2),
+                              padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                color: DesignSystemColors.surfaceDefault,
-                                borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                color: AppSemanticColors.surfaceDefault,
+                                borderRadius: BorderRadius.circular(AppSpacing.space4),
                                 border: Border.all(
-                                  color: DesignSystemColors.borderDefault,
+                                  color: AppSemanticColors.borderDefault,
                                   width: 1,
                                 ),
-                                boxShadow: DesignSystemShadows.sm,
+                                boxShadow: _shadowSm,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -768,45 +677,45 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                     children: [
                                       Icon(
                                         Icons.edit_note_rounded,
-                                        color: DesignSystemColors.textSecondary,
+                                        color: AppSemanticColors.textSecondary,
                                         size: 20,
                                       ),
-                                      const SizedBox(width: DesignSystemSpacing.md),
+                                      const SizedBox(width: AppSpacing.space2),
                                       Text(
                                         '휴무 사유',
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
-                                          color: DesignSystemColors.textPrimary,
+                                          color: AppSemanticColors.textPrimary,
                                           letterSpacing: -0.025,
                                         ),
                                       ),
                                       Container(
-                                        margin: const EdgeInsets.only(left: DesignSystemSpacing.md),
+                                        margin: const EdgeInsets.only(left: AppSpacing.space2),
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: DesignSystemSpacing.md,
-                                          vertical: DesignSystemSpacing.xs,
+                                          horizontal: AppSpacing.space2,
+                                          vertical: AppSpacing.space1,
                                         ),
                                         decoration: BoxDecoration(
                                           color: _selectedType == VacationType.mandatory
-                                              ? DesignSystemColors.red100
-                                              : DesignSystemColors.gray100,
-                                          borderRadius: BorderRadius.circular(DesignSystemSpacing.md),
+                                              ? AppSemanticColors.statusErrorBackground
+                                              : AppSemanticColors.backgroundTertiary,
+                                          borderRadius: BorderRadius.circular(AppSpacing.space2),
                                         ),
                                         child: Text(
                                           _selectedType == VacationType.mandatory ? '필수' : '선택사항',
                                           style: TextStyle(
                                             fontSize: 10,
                                             color: _selectedType == VacationType.mandatory
-                                                ? DesignSystemColors.red600
-                                                : DesignSystemColors.textTertiary,
+                                                ? AppSemanticColors.statusErrorIcon
+                                                : AppSemanticColors.textTertiary,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: DesignSystemSpacing.xl),
+                                  const SizedBox(height: AppSpacing.space4),
                                   TextFormField(
                                     controller: _reasonController,
                                     maxLines: 5,
@@ -823,48 +732,48 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                           ? '필수 휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 정기 교육 참석\n• 건강검진\n• 회사 행사 등'
                                           : '휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 개인 사정\n• 병원 진료\n• 가족 행사 등',
                                       hintStyle: TextStyle(
-                                        color: DesignSystemColors.textTertiary,
+                                        color: AppSemanticColors.textTertiary,
                                         fontSize: 14,
                                         height: 1.5,
                                       ),
                                       border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
                                         borderSide: BorderSide(
-                                          color: DesignSystemColors.borderDefault,
+                                          color: AppSemanticColors.borderDefault,
                                         ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
                                         borderSide: BorderSide(
-                                          color: DesignSystemColors.borderFocus,
+                                          color: AppSemanticColors.borderFocus,
                                           width: 2,
                                         ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
                                         borderSide: BorderSide(
-                                          color: DesignSystemColors.borderDefault,
+                                          color: AppSemanticColors.borderDefault,
                                         ),
                                       ),
                                       errorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
                                         borderSide: BorderSide(
-                                          color: DesignSystemColors.red400,
+                                          color: AppSemanticColors.statusErrorIcon,
                                           width: 2,
                                         ),
                                       ),
                                       focusedErrorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
                                         borderSide: BorderSide(
-                                          color: DesignSystemColors.red600,
+                                          color: AppSemanticColors.statusErrorIcon,
                                           width: 2,
                                         ),
                                       ),
                                       filled: true,
-                                      fillColor: DesignSystemColors.backgroundSecondary,
-                                      contentPadding: const EdgeInsets.all(DesignSystemSpacing.xl2),
+                                      fillColor: AppSemanticColors.backgroundSecondary,
+                                      contentPadding: const EdgeInsets.all(AppSpacing.space5),
                                       counterStyle: TextStyle(
-                                        color: DesignSystemColors.textTertiary,
+                                        color: AppSemanticColors.textTertiary,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -877,7 +786,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               ),
                             ),
 
-                            const SizedBox(height: DesignSystemSpacing.xl3),
+                            const SizedBox(height: AppSpacing.space6),
 
                             // 제출 버튼
                             Container(
@@ -886,15 +795,15 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    DesignSystemColors.blue500,
-                                    DesignSystemColors.blue600,
-                                    DesignSystemColors.blue700,
+                                    AppSemanticColors.interactivePrimaryDefault,
+                                    AppSemanticColors.interactivePrimaryDefault,
+                                    AppSemanticColors.interactivePrimaryDefault,
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(DesignSystemSpacing.xl),
+                                borderRadius: BorderRadius.circular(AppSpacing.space4),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: DesignSystemColors.blue400.withValues(alpha:0.4),
+                                    color: AppSemanticColors.interactivePrimaryActive.withValues(alpha: 0.4),
                                     blurRadius: 15,
                                     offset: const Offset(0, 6),
                                   ),
@@ -916,7 +825,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                               strokeWidth: 2,
                                             ),
                                           ),
-                                          const SizedBox(width: DesignSystemSpacing.lg),
+                                          const SizedBox(width: AppSpacing.space3),
                                           Text(
                                             '신청 중...',
                                             style: TextStyle(

@@ -306,9 +306,18 @@ class _AdminNoticeManagementScreenState
                           value: 'edit',
                           child: Row(
                             children: [
-                              Icon(Icons.edit, size: 20),
-                              const SizedBox(width: AppSpacing.space2),
-                              Text('수정'),
+                              Icon(
+                                Icons.edit,
+                                size: 20,
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                              const SizedBox(width: AppSpacing.space3),
+                              Text(
+                                '수정',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -321,10 +330,10 @@ class _AdminNoticeManagementScreenState
                                 size: 20,
                                 color: AppSemanticColors.statusErrorIcon,
                               ),
-                              const SizedBox(width: AppSpacing.space2),
+                              const SizedBox(width: AppSpacing.space3),
                               Text(
                                 '삭제',
-                                style: TextStyle(
+                                style: AppTypography.bodyMedium.copyWith(
                                   color: AppSemanticColors.statusErrorIcon,
                                 ),
                               ),

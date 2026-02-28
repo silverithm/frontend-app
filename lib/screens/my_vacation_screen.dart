@@ -271,10 +271,11 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               title: Text(
                 '내 휴무',
                 style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textPrimary,
+                  color: AppSemanticColors.textInverse,
                 ),
               ),
-              backgroundColor: AppSemanticColors.backgroundPrimary,
+              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+              iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
               elevation: 0,
               centerTitle: true,
               actions: [

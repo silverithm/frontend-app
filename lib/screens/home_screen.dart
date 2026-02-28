@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/auth_provider.dart';
 import '../providers/vacation_provider.dart';
+import '../models/vacation_request.dart';
 import '../providers/approval_provider.dart';
 import '../providers/notice_provider.dart';
 import '../providers/admin_provider.dart';
@@ -80,6 +81,11 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       // 알림 로드
       context.read<NotificationProvider>().loadNotifications(user.id.toString());
+      // 읽지 않은 공지사항 수 로드
+      context.read<NoticeProvider>().loadUnreadNoticeCount(
+            companyId: companyId,
+            userId: user.id.toString(),
+          );
     } catch (e) {
       print('[HomeScreen] 대시보드 데이터 로드 에러: $e');
     } finally {
@@ -103,35 +109,38 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers: [
             // 헤더: "홈" 가운데 정렬 + 알림 벨
             SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.space5,
-                    AppSpacing.space4,
-                    AppSpacing.space5,
-                    AppSpacing.space2,
-                  ),
-                  child: SizedBox(
-                    height: 48,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      clipBehavior: Clip.none,
-                      children: [
-                        // 중앙 타이틀
-                        Text(
-                          '홈',
-                          style: AppTypography.heading5.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                            fontWeight: AppTypography.fontWeightBold,
+              child: Container(
+                color: AppSemanticColors.interactivePrimaryDefault,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space5,
+                      AppSpacing.space4,
+                      AppSpacing.space5,
+                      AppSpacing.space2,
+                    ),
+                    child: SizedBox(
+                      height: 48,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: [
+                          // 중앙 타이틀
+                          Text(
+                            '홈',
+                            style: AppTypography.heading5.copyWith(
+                              color: AppSemanticColors.textInverse,
+                              fontWeight: AppTypography.fontWeightBold,
+                            ),
                           ),
-                        ),
-                        // 오른쪽 알림 벨
-                        Positioned(
-                          right: 0,
-                          child: const NotificationBell(),
-                        ),
-                      ],
+                          // 오른쪽 알림 벨
+                          Positioned(
+                            right: 0,
+                            child: const NotificationBell(iconColor: AppSemanticColors.textInverse),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -143,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.space5,
-                  AppSpacing.space2,
+                  AppSpacing.space4,
                   AppSpacing.space5,
                   AppSpacing.space4,
                 ),
@@ -190,12 +199,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return [
       Consumer<VacationProvider>(
         builder: (context, provider, _) {
-          final total = provider.vacationRequests.length;
+          final pendingCount = provider.vacationRequests
+              .where((r) => r.status == VacationStatus.pending)
+              .length;
           return _HomeTile(
             icon: Icons.calendar_today_rounded,
             title: '내 휴무',
             subtitle: '휴무 신청 및 현황 확인',
-            badgeCount: total,
+            badgeCount: pendingCount,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const MyVacationScreen()),
             ),
@@ -205,12 +216,12 @@ class _HomeScreenState extends State<HomeScreen> {
       const SizedBox(height: AppSpacing.space3),
       Consumer<ApprovalProvider>(
         builder: (context, provider, _) {
-          final total = provider.myApprovalRequests.length;
+          final pendingCount = provider.myPendingCount;
           return _HomeTile(
             icon: Icons.description_outlined,
             title: '결재',
             subtitle: '결재 요청 및 승인 현황',
-            badgeCount: total,
+            badgeCount: pendingCount,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ApprovalListScreen()),
             ),
@@ -220,12 +231,11 @@ class _HomeScreenState extends State<HomeScreen> {
       const SizedBox(height: AppSpacing.space3),
       Consumer<NoticeProvider>(
         builder: (context, provider, _) {
-          final total = provider.publishedNotices.length;
           return _HomeTile(
             icon: Icons.campaign_outlined,
             title: '공지사항',
             subtitle: '회사 공지 확인',
-            badgeCount: total,
+            badgeCount: provider.unreadNoticeCount,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const NoticeListScreen()),
             ),
@@ -241,12 +251,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return [
       Consumer<ApprovalProvider>(
         builder: (context, provider, _) {
-          final total = provider.approvalRequests.length;
           return _HomeTile(
             icon: Icons.fact_check_outlined,
             title: '결재관리',
             subtitle: '결재 요청 승인 및 관리',
-            badgeCount: total,
+            badgeCount: provider.pendingCount,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
                   builder: (_) => const AdminUnifiedApprovalScreen()),

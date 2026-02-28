@@ -404,7 +404,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                             _isSelectMode = _selectedRequests.isNotEmpty;
                           });
                         },
-                        activeColor: AppSemanticColors.interactiveSecondaryDefault,
+                        activeColor: AppSemanticColors.interactivePrimaryDefault,
                       ),
                       Text(
                         '전체 선택',
@@ -426,7 +426,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                           style: AppTypography.labelSmall.copyWith(
                             fontWeight: FontWeight.bold,
                             color: _selectedRequests.isNotEmpty
-                                ? AppSemanticColors.interactiveSecondaryDefault
+                                ? AppSemanticColors.textPrimary
                                 : AppSemanticColors.textSecondary,
                           ),
                         ),
@@ -490,7 +490,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.event_available, size: 64, color: AppSemanticColors.textDisabled),
+                  Icon(Icons.event_available, size: 64, color: AppSemanticColors.textTertiary),
                   const SizedBox(height: 16),
                   Text(
                     '휴무 요청이 없습니다',
@@ -531,7 +531,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_available, size: 64, color: AppSemanticColors.textDisabled),
+            Icon(Icons.event_available, size: 64, color: AppSemanticColors.textTertiary),
             const SizedBox(height: 16),
             Text(
               '휴무 요청이 없습니다',
@@ -704,7 +704,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                             _isSelectMode = _selectedRequests.isNotEmpty;
                           });
                         },
-                        activeColor: AppSemanticColors.interactiveSecondaryDefault,
+                        activeColor: AppSemanticColors.interactivePrimaryDefault,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
@@ -1076,7 +1076,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline, size: 64, color: AppSemanticColors.textDisabled),
+            Icon(Icons.check_circle_outline, size: 64, color: AppSemanticColors.textTertiary),
             const SizedBox(height: 16),
             Text(
               '승인 대기 중인 휴무 요청이 없습니다',
@@ -1103,11 +1103,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: AppColors.green100,
+                      backgroundColor: AppSemanticColors.statusSuccessBackground,
                       child: Text(
                         (request['user']?['name'] ?? '?')[0].toUpperCase(),
                         style: TextStyle(
-                          color: AppColors.green800,
+                          color: AppSemanticColors.statusSuccessText,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1137,13 +1137,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.orange100,
+                        color: AppSemanticColors.statusWarningBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '대기중',
                         style: TextStyle(
-                          color: AppColors.orange800,
+                          color: AppSemanticColors.statusWarningText,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1309,7 +1309,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 64, color: AppSemanticColors.textDisabled),
+            Icon(Icons.history, size: 64, color: AppSemanticColors.textTertiary),
             const SizedBox(height: 16),
             Text(
               '휴무 내역이 없습니다',
@@ -1338,10 +1338,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: isApproved ? AppColors.green100 : AppColors.red100,
+                      backgroundColor: isApproved ? AppSemanticColors.statusSuccessBackground : AppSemanticColors.statusErrorBackground,
                       child: Icon(
                         isApproved ? Icons.check : Icons.close,
-                        color: isApproved ? AppColors.green800 : AppColors.red800,
+                        color: isApproved ? AppSemanticColors.statusSuccessText : AppSemanticColors.statusErrorText,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1369,13 +1369,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isApproved ? AppColors.green100 : AppColors.red100,
+                        color: isApproved ? AppSemanticColors.statusSuccessBackground : AppSemanticColors.statusErrorBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         isApproved ? '승인됨' : '거절됨',
                         style: TextStyle(
-                          color: isApproved ? AppColors.green800 : AppColors.red800,
+                          color: isApproved ? AppSemanticColors.statusSuccessText : AppSemanticColors.statusErrorText,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),

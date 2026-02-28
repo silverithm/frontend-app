@@ -374,7 +374,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                       style: AppTypography.labelSmall.copyWith(fontSize: 11),
                     ),
                     backgroundColor: plan.isPopular
-                        ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
+                        ? AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1)
                         : AppSemanticColors.backgroundSecondary,
                     side: BorderSide.none,
                   )).toList(),
@@ -559,19 +559,18 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
         title: const Text('성공!'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.green400, AppColors.green600],
-                ),
+                color: AppSemanticColors.statusSuccessIcon,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.check, color: AppSemanticColors.textInverse, size: 30),
+              child: const Icon(Icons.check, color: AppSemanticColors.textInverse, size: 30),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.space4),
             Text(
               '성공!',
               style: AppTypography.heading6.copyWith(
@@ -579,7 +578,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space2),
             Text(
               message,
               textAlign: TextAlign.center,
