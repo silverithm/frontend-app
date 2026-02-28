@@ -793,6 +793,7 @@ class ChatProvider with ChangeNotifier {
       type: MessageType.text,
       content: content,
       createdAt: DateTime.now(),
+      readCount: 1, // 발신자 본인은 이미 읽음
       sendingStatus: MessageSendingStatus.sending,
       localId: localId,
     );
