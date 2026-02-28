@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/admin_provider.dart' hide VacationRequest;
 import '../models/vacation_request.dart';
 import '../models/schedule.dart';
+import '../models/user.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/vacation_calendar_widget.dart';
 import '../widgets/vacation_request_dialog.dart';
@@ -212,7 +214,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       ),
       floatingActionButton: _tabController.index == 0
           ? _buildFab()
-          : null,
+          : _buildScheduleFab(),
     );
   }
 
@@ -1356,6 +1358,496 @@ class _CalendarScreenState extends State<CalendarScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildScheduleFab() {
+    return ScaleTransition(
+      scale: _fabAnimationController,
+      child: FloatingActionButton(
+        heroTag: 'schedule_calendar_fab',
+        onPressed: _showAddScheduleDialog,
+        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        child: Icon(Icons.add, color: AppSemanticColors.textInverse),
+      ),
+    );
+  }
+
+  void _showAddScheduleDialog() {
+    final titleController = TextEditingController();
+    final contentController = TextEditingController();
+    final locationController = TextEditingController();
+    String selectedCategory = 'MEETING';
+    DateTime startDate = _scheduleSelectedDate ?? DateTime.now();
+    DateTime endDate = _scheduleSelectedDate ?? DateTime.now();
+    bool isAllDay = true;
+    TimeOfDay startTime = const TimeOfDay(hour: 9, minute: 0);
+    TimeOfDay endTime = const TimeOfDay(hour: 18, minute: 0);
+    bool sendNotification = false;
+    Set<String> selectedParticipantIds = {};
+
+    // 회원 목록 로드
+    final authProvider = context.read<AuthProvider>();
+    final adminProvider = context.read<AdminProvider>();
+    final companyId = authProvider.currentUser?.company?.id ?? '';
+    if (companyId.isNotEmpty && adminProvider.companyMembers.isEmpty) {
+      adminProvider.loadCompanyMembers(companyId.toString());
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
+      ),
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: AppSpacing.space4,
+                right: AppSpacing.space4,
+                top: AppSpacing.space4,
+                bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 핸들
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.borderDefault,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    // 헤더
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '일정 등록',
+                          style: AppTypography.heading5.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(Icons.close, color: AppSemanticColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+
+                    // 제목
+                    TextField(
+                      controller: titleController,
+                      decoration: InputDecoration(
+                        labelText: '제목 *',
+                        hintText: '일정 제목을 입력하세요',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 내용
+                    TextField(
+                      controller: contentController,
+                      decoration: InputDecoration(
+                        labelText: '내용',
+                        hintText: '일정 내용을 입력하세요',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        ),
+                      ),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 카테고리
+                    DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      decoration: InputDecoration(
+                        labelText: '카테고리',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'MEETING', child: Text('회의')),
+                        DropdownMenuItem(value: 'EVENT', child: Text('행사')),
+                        DropdownMenuItem(value: 'TRAINING', child: Text('교육')),
+                        DropdownMenuItem(value: 'OTHER', child: Text('기타')),
+                      ],
+                      onChanged: (value) {
+                        setModalState(() {
+                          selectedCategory = value ?? 'MEETING';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 장소
+                    TextField(
+                      controller: locationController,
+                      decoration: InputDecoration(
+                        labelText: '장소',
+                        hintText: '장소를 입력하세요',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 종일 여부
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '종일',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                        Switch(
+                          value: isAllDay,
+                          onChanged: (value) {
+                            setModalState(() {
+                              isAllDay = value;
+                            });
+                          },
+                          activeTrackColor: AppSemanticColors.interactivePrimaryDefault,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+
+                    // 시작일 / 종료일
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: startDate,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setModalState(() {
+                                  startDate = picked;
+                                  if (endDate.isBefore(startDate)) {
+                                    endDate = startDate;
+                                  }
+                                });
+                              }
+                            },
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: '시작일',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                ),
+                                suffixIcon: const Icon(Icons.calendar_today, size: 18),
+                              ),
+                              child: Text(
+                                '${startDate.month}/${startDate.day}',
+                                style: AppTypography.bodyMedium,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: endDate,
+                                firstDate: startDate,
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setModalState(() {
+                                  endDate = picked;
+                                });
+                              }
+                            },
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: '종료일',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                ),
+                                suffixIcon: const Icon(Icons.calendar_today, size: 18),
+                              ),
+                              child: Text(
+                                '${endDate.month}/${endDate.day}',
+                                style: AppTypography.bodyMedium,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 시간 선택 (종일이 아닌 경우)
+                    if (!isAllDay) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: startTime,
+                                );
+                                if (picked != null) {
+                                  setModalState(() {
+                                    startTime = picked;
+                                  });
+                                }
+                              },
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: '시작 시간',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                  ),
+                                  suffixIcon: const Icon(Icons.access_time, size: 18),
+                                ),
+                                child: Text(
+                                  '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
+                                  style: AppTypography.bodyMedium,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.space3),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: endTime,
+                                );
+                                if (picked != null) {
+                                  setModalState(() {
+                                    endTime = picked;
+                                  });
+                                }
+                              },
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: '종료 시간',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                  ),
+                                  suffixIcon: const Icon(Icons.access_time, size: 18),
+                                ),
+                                child: Text(
+                                  '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
+                                  style: AppTypography.bodyMedium,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                    ],
+
+                    // 참석자 선택
+                    Consumer<AdminProvider>(
+                      builder: (context, adminProv, _) {
+                        final members = adminProv.companyMembers
+                            .where((u) => u.status == 'active')
+                            .toList();
+                        if (members.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '참석자 (${selectedParticipantIds.length}명 선택)',
+                              style: AppTypography.labelLarge.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.space2),
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 150),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppSemanticColors.borderDefault),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                              ),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: members.length,
+                                itemBuilder: (context, index) {
+                                  final member = members[index];
+                                  final isSelected = selectedParticipantIds.contains(member.id.toString());
+                                  return CheckboxListTile(
+                                    dense: true,
+                                    visualDensity: VisualDensity.compact,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+                                    title: Text(
+                                      member.name,
+                                      style: AppTypography.bodySmall,
+                                    ),
+                                    subtitle: Text(
+                                      member.role == 'caregiver' ? '요양보호사' : '사무직',
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppSemanticColors.textTertiary,
+                                      ),
+                                    ),
+                                    value: isSelected,
+                                    onChanged: (checked) {
+                                      setModalState(() {
+                                        if (checked == true) {
+                                          selectedParticipantIds.add(member.id.toString());
+                                        } else {
+                                          selectedParticipantIds.remove(member.id.toString());
+                                        }
+                                      });
+                                    },
+                                    activeColor: AppSemanticColors.interactivePrimaryDefault,
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.space3),
+                          ],
+                        );
+                      },
+                    ),
+
+                    // 알림 발송
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '알림 발송',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                        Switch(
+                          value: sendNotification,
+                          onChanged: (value) {
+                            setModalState(() {
+                              sendNotification = value;
+                            });
+                          },
+                          activeTrackColor: AppSemanticColors.interactivePrimaryDefault,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+
+                    // 등록 버튼
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (titleController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('제목을 입력해주세요')),
+                            );
+                            return;
+                          }
+
+                          final authProvider = context.read<AuthProvider>();
+                          final scheduleProvider = context.read<ScheduleProvider>();
+                          final companyId = authProvider.currentUser?.company?.id ?? '1';
+
+                          final startDateStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+                          final endDateStr = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+
+                          final scheduleData = <String, dynamic>{
+                            'title': titleController.text.trim(),
+                            'content': contentController.text.trim().isEmpty
+                                ? null
+                                : contentController.text.trim(),
+                            'category': selectedCategory,
+                            'location': locationController.text.trim().isEmpty
+                                ? null
+                                : locationController.text.trim(),
+                            'startDate': startDateStr,
+                            'endDate': endDateStr,
+                            'isAllDay': isAllDay,
+                            'sendNotification': sendNotification,
+                            if (selectedParticipantIds.isNotEmpty)
+                              'participantIds': selectedParticipantIds
+                                  .map((id) => int.tryParse(id) ?? 0)
+                                  .toList(),
+                          };
+
+                          if (!isAllDay) {
+                            scheduleData['startTime'] =
+                                '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}:00';
+                            scheduleData['endTime'] =
+                                '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}:00';
+                          }
+
+                          Navigator.pop(context);
+
+                          final success = await scheduleProvider.createSchedule(
+                            companyId: companyId.toString(),
+                            scheduleData: scheduleData,
+                          );
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(success ? '일정이 등록되었습니다' : '일정 등록에 실패했습니다'),
+                                backgroundColor: success
+                                    ? AppSemanticColors.statusSuccessIcon
+                                    : AppSemanticColors.statusErrorIcon,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+                          foregroundColor: AppSemanticColors.textInverse,
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                          ),
+                        ),
+                        child: Text(
+                          '등록',
+                          style: AppTypography.labelLarge.copyWith(
+                            color: AppSemanticColors.textInverse,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

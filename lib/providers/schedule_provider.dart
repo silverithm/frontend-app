@@ -9,6 +9,7 @@ class ScheduleProvider with ChangeNotifier {
   Map<String, List<Schedule>> _schedulesByDate = {};
   bool _isLoading = false;
   String? _error;
+  DateTime? _currentMonth;
 
   // Getters
   List<Schedule> get schedules => _schedules;
@@ -18,6 +19,7 @@ class ScheduleProvider with ChangeNotifier {
 
   /// 월별 일정 데이터 로드
   Future<void> loadCalendarData(DateTime month, {required String companyId}) async {
+    _currentMonth = month;
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -125,6 +127,47 @@ class ScheduleProvider with ChangeNotifier {
   /// 특정 날짜의 일정 수
   int getScheduleCountForDate(DateTime date) {
     return getSchedulesForDate(date).length;
+  }
+
+  /// 일정 등록
+  Future<bool> createSchedule({
+    required String companyId,
+    required Map<String, dynamic> scheduleData,
+  }) async {
+    try {
+      _error = null;
+      await _apiService.createSchedule(
+        companyId: companyId,
+        scheduleData: scheduleData,
+      );
+      // 등록 후 현재 월 데이터 새로고침
+      await loadCalendarData(_currentMonth ?? DateTime.now(), companyId: companyId);
+      return true;
+    } catch (e) {
+      print('[ScheduleProvider] 일정 등록 에러: $e');
+      _error = '일정 등록에 실패했습니다';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// 일정 삭제
+  Future<bool> deleteSchedule({
+    required int scheduleId,
+    required String companyId,
+  }) async {
+    try {
+      _error = null;
+      await _apiService.deleteSchedule(scheduleId: scheduleId);
+      // 삭제 후 현재 월 데이터 새로고침
+      await loadCalendarData(_currentMonth ?? DateTime.now(), companyId: companyId);
+      return true;
+    } catch (e) {
+      print('[ScheduleProvider] 일정 삭제 에러: $e');
+      _error = '일정 삭제에 실패했습니다';
+      notifyListeners();
+      return false;
+    }
   }
 
   /// 에러 초기화

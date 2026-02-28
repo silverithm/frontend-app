@@ -12,7 +12,8 @@ import '../theme/app_theme.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 
 class AdminVacationManagementScreen extends StatefulWidget {
-  const AdminVacationManagementScreen({super.key});
+  final bool showAppBar;
+  const AdminVacationManagementScreen({super.key, this.showAppBar = true});
 
   @override
   State<AdminVacationManagementScreen> createState() => _AdminVacationManagementScreenState();
@@ -107,6 +108,12 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.showAppBar) {
+      return _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildVacationListWithFilters();
+    }
+
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(

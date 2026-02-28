@@ -247,11 +247,6 @@ class _VacationManagementContent extends StatelessWidget {
     // 직접 삽입하면 AppBar가 중복되므로
     // body 내용만 추출하여 사용해야 함
     //
-    // 여기서는 간단하게 AdminVacationManagementScreen 전체를 사용
-    // (AppBar는 이미 상위에서 제공되므로 중첩됨)
-    //
-    // 최선의 방법은 AdminVacationManagementScreen을 리팩토링하여
-    // body 부분을 별도 위젯으로 분리하는 것
-    return const AdminVacationManagementScreen();
+    return const AdminVacationManagementScreen(showAppBar: false);
   }
 }

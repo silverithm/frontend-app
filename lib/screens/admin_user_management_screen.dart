@@ -52,75 +52,116 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           return _buildNoPermissionView();
         }
 
-        return Scaffold(
-          backgroundColor: AppSemanticColors.backgroundPrimary,
-          appBar: AppBar(
-            title: Text('회원 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
-            backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-            foregroundColor: AppSemanticColors.textInverse,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.refresh, color: AppSemanticColors.textInverse),
-                onPressed: _loadData,
+        return DefaultTabController(
+          length: 2,
+          child: Scaffold(
+            backgroundColor: AppSemanticColors.backgroundPrimary,
+            appBar: AppBar(
+              title: Text('회원 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
+              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+              foregroundColor: AppSemanticColors.textInverse,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
               ),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(80),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.refresh, color: AppSemanticColors.textInverse),
+                  onPressed: _loadData,
+                ),
+              ],
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(128),
+                child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.pending_actions,
-                        color: AppSemanticColors.textInverse,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
                         children: [
-                          Text(
-                            '승인 대기 회원 관리',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.people,
+                              color: AppSemanticColors.textInverse,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '회원 관리',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'ADMIN',
+                              style: AppTypography.labelSmall.copyWith(
+                                color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppSemanticColors.textInverse.withValues(alpha: 0.1),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
                       ),
-                      child: Text(
-                        'ADMIN',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
+                      child: TabBar(
+                        labelColor: AppSemanticColors.textInverse,
+                        unselectedLabelColor: AppSemanticColors.textInverse.withValues(alpha: 0.6),
+                        indicatorColor: AppSemanticColors.textInverse,
+                        indicatorWeight: 3,
+                        labelStyle: AppTypography.labelMedium.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
+                        unselectedLabelStyle: AppTypography.labelMedium,
+                        tabs: const [
+                          Tab(
+                            icon: Icon(Icons.pending_actions, size: 20),
+                            text: '승인 대기',
+                          ),
+                          Tab(
+                            icon: Icon(Icons.people, size: 20),
+                            text: '전체 회원',
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
             ),
+            body: TabBarView(
+              children: [
+                _buildPendingUsersTab(),
+                _buildAllMembersTab(),
+              ],
+            ),
           ),
-          body: _buildPendingUsersTab(),
         );
       },
     );
@@ -441,45 +482,47 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
   Widget _buildMemberCard(User user) {
     final isActive = user.status == 'active';
-    
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 4,
+      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.space3),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 CircleAvatar(
+                  radius: 18,
                   backgroundColor: isActive
                       ? AppSemanticColors.statusSuccessBackground
                       : AppSemanticColors.backgroundSecondary,
                   child: Icon(
                     Icons.person,
+                    size: 18,
                     color: isActive
                         ? AppSemanticColors.statusSuccessIcon
                         : AppSemanticColors.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.space2),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         user.name,
-                        style: AppTypography.bodyLarge.copyWith(
+                        style: AppTypography.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         user.email,
-                        style: AppTypography.bodySmall.copyWith(
+                        style: AppTypography.caption.copyWith(
                           color: AppSemanticColors.textSecondary,
                         ),
                       ),
@@ -488,18 +531,18 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 6,
+                    vertical: 2,
                   ),
                   decoration: BoxDecoration(
                     color: isActive
                         ? AppSemanticColors.statusSuccessBackground
                         : AppSemanticColors.backgroundSecondary,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                   ),
                   child: Text(
                     AdminUtils.getStatusDisplayName(user.status),
-                    style: AppTypography.labelSmall.copyWith(
+                    style: AppTypography.caption.copyWith(
                       color: isActive
                           ? AppSemanticColors.statusSuccessText
                           : AppSemanticColors.textSecondary,
@@ -509,65 +552,70 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space1),
             Row(
               children: [
+                const SizedBox(width: 44), // avatar + gap 정렬
                 Icon(
                   Icons.work_outline,
-                  size: 16,
-                  color: AppSemanticColors.textSecondary,
+                  size: 14,
+                  color: AppSemanticColors.textTertiary,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   AdminUtils.getRoleDisplayName(user.role),
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textSecondary,
+                  style: AppTypography.caption.copyWith(
+                    color: AppSemanticColors.textTertiary,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.space3),
             Row(
               children: [
                 Expanded(
                   child: shadcn.PrimaryButton(
+                    size: shadcn.ButtonSize.small,
                     onPressed: _processingStatusUsers.contains(user.id.toString())
                         ? null
                         : () => _toggleMemberStatus(user),
                     leading: _processingStatusUsers.contains(user.id.toString())
                         ? const SizedBox(
-                            width: 18,
-                            height: 18,
+                            width: 14,
+                            height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Icon(
                             isActive ? Icons.pause : Icons.play_arrow,
-                            size: 18,
+                            size: 14,
                           ),
                     child: Text(
                       _processingStatusUsers.contains(user.id.toString())
                           ? '처리중...'
                           : (isActive ? '비활성화' : '활성화'),
+                      style: AppTypography.labelSmall,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.space2),
                 Expanded(
                   child: shadcn.DestructiveButton(
+                    size: shadcn.ButtonSize.small,
                     onPressed: _processingDeleteUsers.contains(user.id.toString())
                         ? null
                         : () => _showDeleteDialog(user),
                     leading: _processingDeleteUsers.contains(user.id.toString())
                         ? const SizedBox(
-                            width: 18,
-                            height: 18,
+                            width: 14,
+                            height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.delete, size: 18),
+                        : const Icon(Icons.delete, size: 14),
                     child: Text(
                       _processingDeleteUsers.contains(user.id.toString())
                           ? '처리중...'
                           : '삭제',
+                      style: AppTypography.labelSmall,
                     ),
                   ),
                 ),

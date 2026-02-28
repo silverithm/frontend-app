@@ -2826,6 +2826,50 @@ class ApiService {
       return await http.get(uri, headers: headers);
     });
   }
+
+  // 일정 등록
+  Future<Map<String, dynamic>> createSchedule({
+    required String companyId,
+    required Map<String, dynamic> scheduleData,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules?companyId=$companyId');
+
+      print('[API] 일정 등록: $uri');
+      print('[API] 일정 데이터: $scheduleData');
+
+      final headers = await _getHeaders();
+      return await http.post(uri, headers: headers, body: json.encode(scheduleData));
+    });
+  }
+
+  // 일정 수정
+  Future<Map<String, dynamic>> updateSchedule({
+    required int scheduleId,
+    required Map<String, dynamic> scheduleData,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId');
+
+      print('[API] 일정 수정: $uri');
+      print('[API] 일정 데이터: $scheduleData');
+
+      final headers = await _getHeaders();
+      return await http.put(uri, headers: headers, body: json.encode(scheduleData));
+    });
+  }
+
+  // 일정 삭제
+  Future<Map<String, dynamic>> deleteSchedule({required int scheduleId}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId');
+
+      print('[API] 일정 삭제: $uri');
+
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
+    });
+  }
 }
 
 // API 예외 클래스
