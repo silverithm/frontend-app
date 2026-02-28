@@ -93,13 +93,15 @@ class NotificationBell extends StatelessWidget {
   }
 
   void _showNotificationsSheet(BuildContext context) {
-    // 알림 데이터 로드
     final authProvider = context.read<AuthProvider>();
     final notificationProvider = context.read<NotificationProvider>();
     if (authProvider.currentUser != null) {
       final userId = authProvider.currentUser!.id.toString();
-      notificationProvider.loadNotifications(userId);
-      notificationProvider.markAllAsRead(userId);
+      // 즉시 모두 읽음 처리 (UI 배지 즉시 사라짐)
+      notificationProvider.markAllAsRead(userId).then((_) {
+        // API 완료 후 알림 목록 새로고침
+        notificationProvider.loadNotifications(userId);
+      });
     }
 
     showModalBottomSheet(
