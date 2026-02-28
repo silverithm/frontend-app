@@ -18,29 +18,52 @@ class AppDialog {
   }) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Text(
-          title,
-          style: AppTypography.heading5.copyWith(
-            color: AppSemanticColors.textPrimary,
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        ),
+        backgroundColor: AppSemanticColors.surfaceDefault,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: AppTypography.heading5.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space3),
+              Text(
+                message,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.space6),
+              Row(
+                children: [
+                  Expanded(
+                    child: shadcn.OutlineButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text(cancelText),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: shadcn.PrimaryButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: Text(confirmText),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        content: Text(
-          message,
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppSemanticColors.textSecondary,
-          ),
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(cancelText),
-          ),
-          shadcn.PrimaryButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(confirmText),
-          ),
-        ],
       ),
     );
   }
@@ -54,25 +77,42 @@ class AppDialog {
   }) {
     return showDialog<void>(
       context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Text(
-          title,
-          style: AppTypography.heading5.copyWith(
-            color: AppSemanticColors.textPrimary,
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        ),
+        backgroundColor: AppSemanticColors.surfaceDefault,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: AppTypography.heading5.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space3),
+              Text(
+                message,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.space6),
+              SizedBox(
+                width: double.infinity,
+                child: shadcn.PrimaryButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(buttonText),
+                ),
+              ),
+            ],
           ),
         ),
-        content: Text(
-          message,
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppSemanticColors.textSecondary,
-          ),
-        ),
-        actions: [
-          shadcn.PrimaryButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(buttonText),
-          ),
-        ],
       ),
     );
   }
@@ -95,54 +135,76 @@ class AppDialog {
 
     return showDialog<String>(
       context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Text(
-          title,
-          style: AppTypography.heading5.copyWith(
-            color: AppSemanticColors.textPrimary,
-          ),
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (message != null) ...[
-              Text(
-                message,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
+        backgroundColor: AppSemanticColors.surfaceDefault,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  title,
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
                 ),
               ),
+              if (message != null) ...[
+                const SizedBox(height: AppSpacing.space3),
+                Center(
+                  child: Text(
+                    message,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.space4),
-            ],
-            Form(
-              key: formKey,
-              child: AppInput(
-                controller: controller,
-                hintText: hintText,
-                keyboardType: keyboardType,
-                maxLines: maxLines,
-                maxLength: maxLength,
-                validator: validator,
-                autofocus: true,
+              Form(
+                key: formKey,
+                child: AppInput(
+                  controller: controller,
+                  hintText: hintText,
+                  keyboardType: keyboardType,
+                  maxLines: maxLines,
+                  maxLength: maxLength,
+                  validator: validator,
+                  autofocus: true,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.space6),
+              Row(
+                children: [
+                  Expanded(
+                    child: shadcn.OutlineButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(cancelText),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: shadcn.PrimaryButton(
+                      onPressed: () {
+                        if (formKey.currentState?.validate() ?? true) {
+                          Navigator.of(context).pop(controller.text);
+                        }
+                      },
+                      child: Text(confirmText),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(cancelText),
-          ),
-          shadcn.PrimaryButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? true) {
-                Navigator.of(context).pop(controller.text);
-              }
-            },
-            child: Text(confirmText),
-          ),
-        ],
       ),
     );
   }
