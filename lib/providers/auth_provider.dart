@@ -3,12 +3,10 @@ import '../theme/app_colors.dart';
 import '../models/user.dart';
 import '../models/admin_signin_response.dart';
 import '../models/member_signin_response.dart';
-import '../models/subscription.dart';
 import '../services/storage_service.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart';
 import '../services/fcm_service.dart';
-import '../utils/jwt_utils.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _currentUser;
@@ -23,7 +21,7 @@ class AuthProvider with ChangeNotifier {
   String get errorMessage => _errorMessage;
 
   bool get isLoggedIn => _currentUser != null;
-  
+
   bool get isInitialized => _isInitialized;
 
   void setLoading(bool loading) {
@@ -165,7 +163,7 @@ class AuthProvider with ChangeNotifier {
         print('[AuthProvider] 관리자 로그인 성공 - 회사: ${_currentUser!.company?.name}');
         print('[AuthProvider] 관리자 로그인 성공 - 활성 상태: ${_currentUser!.isActive}');
         print('[AuthProvider] 관리자 로그인 성공 - 상태: ${_currentUser!.status}');
-        
+
         // 구독 정보를 AdminSigninResponse 대신 실시간 API로 로드하도록 비워둠
         // SubscriptionProvider.loadSubscription()이 호출될 때 실시간으로 가져옴
         notifyListeners();
@@ -201,6 +199,8 @@ class AuthProvider with ChangeNotifier {
     String role, {
     String? companyId, // optional로 변경
     String? companyCode, // 직원 코드 가입용
+    String? position,
+    String? positionId,
     String? companyName, // 관리자용
     String? companyAddress, // 관리자용
   }) async {
@@ -213,8 +213,13 @@ class AuthProvider with ChangeNotifier {
 
       if (role == 'ADMIN') {
         // 관리자 회원가입은 별도 처리
-        return await _registerAdmin(email, password, name,
-            companyName: companyName, companyAddress: companyAddress);
+        return await _registerAdmin(
+          email,
+          password,
+          name,
+          companyName: companyName,
+          companyAddress: companyAddress,
+        );
       } else {
         // 직원 회원가입
         if ((companyId == null || companyId.isEmpty) &&
@@ -233,15 +238,20 @@ class AuthProvider with ChangeNotifier {
           password: password,
           companyId: companyId,
           companyCode: companyCode,
+          position: position,
+          positionId: positionId,
         );
 
         // Spring Boot API 응답에서 id 필드가 있으면 성공
         if (response['id'] != null) {
-          print('회원가입 요청 성공 - ID: ${response['id']}, 상태: ${response['status']}');
+          print(
+            '회원가입 요청 성공 - ID: ${response['id']}, 상태: ${response['status']}',
+          );
           return true;
         } else {
           // 서버에서 온 에러 메시지를 그대로 사용
-          String errorMsg = response['error'] ?? response['message'] ?? '회원가입 요청에 실패했습니다.';
+          String errorMsg =
+              response['error'] ?? response['message'] ?? '회원가입 요청에 실패했습니다.';
           setError(errorMsg);
           return false;
         }
@@ -249,7 +259,8 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       if (e.toString().contains('ApiException')) {
         // API 에러 메시지에서 불필요한 접두사만 제거하고 서버 메시지 보존
-        final errorMsg = e.toString()
+        final errorMsg = e
+            .toString()
             .replaceAll('ApiException: ', '')
             .split(' (Status:')[0]; // 상태 코드 부분만 제거
         setError(errorMsg);
@@ -269,8 +280,13 @@ class AuthProvider with ChangeNotifier {
   }
 
   // 관리자 회원가입 처리
-  Future<bool> _registerAdmin(String email, String password, String name, 
-      {String? companyName, String? companyAddress}) async {
+  Future<bool> _registerAdmin(
+    String email,
+    String password,
+    String name, {
+    String? companyName,
+    String? companyAddress,
+  }) async {
     try {
       print("관리자 회원가입 요청을 처리 중...");
       print("이메일: $email, 이름: $name, 회사명: $companyName");
@@ -280,7 +296,7 @@ class AuthProvider with ChangeNotifier {
         setError('회사명을 입력해주세요.');
         return false;
       }
-      
+
       if (companyAddress == null || companyAddress.isEmpty) {
         setError('회사 주소를 입력해주세요.');
         return false;
@@ -296,23 +312,23 @@ class AuthProvider with ChangeNotifier {
       );
 
       print('[AuthProvider] 관리자 회원가입 응답: $response');
-      
+
       // TokenInfo 반환 시 회원가입 성공으로 처리 (자동 로그인 안함)
       if (response['accessToken'] != null) {
         print('[AuthProvider] 관리자 회원가입 성공 - 토큰 정보 받음');
         print('[AuthProvider] 관리자 회원가입 완료 - 로그인 화면으로 이동');
         return true;
       }
-      
+
       return true;
-      
     } catch (e) {
       print('관리자 회원가입 중 오류: $e');
       if (e.toString().contains('ApiException')) {
         final errorMsg = e.toString().replaceAll('ApiException: ', '');
         setError(errorMsg.split(' (Status:')[0]);
       } else {
-        final cleanMsg = e.toString()
+        final cleanMsg = e
+            .toString()
             .replaceAll('Exception: 관리자 회원가입 실패: ', '')
             .replaceAll('Exception: ', '');
         setError('관리자 회원가입에 실패했습니다: $cleanMsg');
@@ -337,7 +353,9 @@ class AuthProvider with ChangeNotifier {
       // 이메일 기억하기 데이터 임시 저장
       final rememberedEmail = StorageService().getRememberedEmail();
       final rememberEmailEnabled = StorageService().getRememberEmailEnabled();
-      print('[AuthProvider] 이메일 기억하기 데이터 백업 - 이메일: $rememberedEmail, 활성화: $rememberEmailEnabled');
+      print(
+        '[AuthProvider] 이메일 기억하기 데이터 백업 - 이메일: $rememberedEmail, 활성화: $rememberEmailEnabled',
+      );
 
       // 모든 토큰과 사용자 정보 제거
       await StorageService().removeAll();
@@ -358,7 +376,7 @@ class AuthProvider with ChangeNotifier {
       _currentUser = null;
       _isInitialized = true; // 로그아웃 후에는 true로 설정하여 로그인 화면으로 이동 가능하게 함
       clearError();
-      
+
       print('[AuthProvider] 로그아웃 완료 - 사용자 상태 초기화됨');
       notifyListeners();
     } catch (e) {
@@ -459,10 +477,10 @@ class AuthProvider with ChangeNotifier {
 
       final token = StorageService().getToken();
       final savedUserData = StorageService().getSavedUserData();
-      
+
       print('[AuthProvider] 토큰 존재: ${token != null}');
       print('[AuthProvider] 저장된 사용자 데이터 존재: ${savedUserData != null}');
-      
+
       if (token == null || savedUserData == null) {
         print('[AuthProvider] 토큰 또는 사용자 데이터 없음 - 로그인 필요');
         _currentUser = null;
@@ -532,7 +550,7 @@ class AuthProvider with ChangeNotifier {
       // 4단계: 모든 검증 통과 - 사용자 정보 복원
       try {
         print('[AuthProvider] 저장된 데이터 키들: ${savedUserData.keys.toList()}');
-        
+
         // 저장된 데이터의 구조를 판단해서 올바른 방식으로 복원
         if (savedUserData['userId'] != null) {
           // 관리자 응답 구조
@@ -549,7 +567,7 @@ class AuthProvider with ChangeNotifier {
           print('[AuthProvider] 기존 User 구조 감지');
           _currentUser = User.fromJson(savedUserData);
         }
-        
+
         print('[AuthProvider] 사용자 정보 복원 성공: ${_currentUser!.name}');
         print('[AuthProvider] 복원된 사용자 역할: ${_currentUser!.role}');
         print('[AuthProvider] 복원된 사용자 활성 상태: ${_currentUser!.isActive}');
@@ -582,27 +600,29 @@ class AuthProvider with ChangeNotifier {
   Future<void> _performLogout() async {
     try {
       print('[AuthProvider] === 내부 로그아웃 처리 시작 ===');
-      
+
       // 이메일 기억하기 데이터 임시 저장
       final rememberedEmail = StorageService().getRememberedEmail();
       final rememberEmailEnabled = StorageService().getRememberEmailEnabled();
-      print('[AuthProvider] 내부 로그아웃 - 이메일 기억하기 데이터 백업 - 이메일: $rememberedEmail, 활성화: $rememberEmailEnabled');
-      
+      print(
+        '[AuthProvider] 내부 로그아웃 - 이메일 기억하기 데이터 백업 - 이메일: $rememberedEmail, 활성화: $rememberEmailEnabled',
+      );
+
       // 모든 저장된 데이터 제거
       await StorageService().removeAll();
       await StorageService().clear(); // 추가 보안
-      
+
       // 이메일 기억하기 데이터 복원
       if (rememberEmailEnabled && rememberedEmail != null) {
         await StorageService().saveRememberedEmail(rememberedEmail);
         await StorageService().saveRememberEmailEnabled(true);
         print('[AuthProvider] 내부 로그아웃 - 이메일 기억하기 데이터 복원 완료');
       }
-      
+
       _currentUser = null;
       _isInitialized = true;
       clearError();
-      
+
       print('[AuthProvider] 내부 로그아웃 처리 완료');
       notifyListeners();
     } catch (e) {
@@ -622,16 +642,16 @@ class AuthProvider with ChangeNotifier {
   Future<void> forceLogout() async {
     try {
       print('[AuthProvider] === 강제 로그아웃 시작 ===');
-      
+
       // SharedPreferences 완전 초기화
       await StorageService().clear();
-      
+
       // 모든 상태 초기화
       _currentUser = null;
       _isInitialized = true;
       _isLoading = false;
       _errorMessage = '';
-      
+
       print('[AuthProvider] 강제 로그아웃 완료');
       notifyListeners();
     } catch (e) {
@@ -646,7 +666,7 @@ class AuthProvider with ChangeNotifier {
       clearError();
 
       final response = await ApiService().findPassword(email: email);
-      
+
       if (!context.mounted) return;
 
       if (response['message'] != null) {
@@ -668,14 +688,17 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       String errorMessage = '비밀번호 찾기 중 오류가 발생했습니다';
-      
+
       if (e.toString().contains('403')) {
         errorMessage = '임시로 비밀번호 찾기 기능이 제한되었습니다. 잠시 후 다시 시도해주세요.';
       } else if (e.toString().contains('ApiException')) {
-        final msg = e.toString().replaceAll('ApiException: ', '').split(' (Status:')[0];
+        final msg = e
+            .toString()
+            .replaceAll('ApiException: ', '')
+            .split(' (Status:')[0];
         errorMessage = msg;
       }
-      
+
       setError(errorMessage);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -698,7 +721,7 @@ class AuthProvider with ChangeNotifier {
       clearError();
 
       final response = await ApiService().findAdminPassword(email: email);
-      
+
       if (!context.mounted) return;
 
       if (response['message'] != null) {
@@ -720,14 +743,17 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       String errorMessage = '관리자 비밀번호 찾기 중 오류가 발생했습니다';
-      
+
       if (e.toString().contains('403')) {
         errorMessage = '임시로 비밀번호 찾기 기능이 제한되었습니다. 잠시 후 다시 시도해주세요.';
       } else if (e.toString().contains('ApiException')) {
-        final msg = e.toString().replaceAll('ApiException: ', '').split(' (Status:')[0];
+        final msg = e
+            .toString()
+            .replaceAll('ApiException: ', '')
+            .split(' (Status:')[0];
         errorMessage = msg;
       }
-      
+
       setError(errorMessage);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

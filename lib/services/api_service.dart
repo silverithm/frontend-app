@@ -116,7 +116,7 @@ class ApiService {
     try {
       print('[API] === 글로벌 로그아웃 시작 ===');
       print('[API] 호출 스택: ${StackTrace.current}');
-      
+
       // 모든 토큰 제거
       await StorageService().removeAll();
       await StorageService().clear(); // 추가 보안
@@ -181,6 +181,8 @@ class ApiService {
     required String password,
     String? companyId,
     String? companyCode,
+    String? position,
+    String? positionId,
   }) async {
     try {
       final normalizedCompanyCode = companyCode
@@ -194,6 +196,10 @@ class ApiService {
         'name': name,
         'role': role,
         'password': password,
+        if (position != null && position.trim().isNotEmpty)
+          'position': position.trim(),
+        if (positionId != null && positionId.isNotEmpty)
+          'positionId': int.parse(positionId),
         if (companyId != null && companyId.isNotEmpty)
           'companyId': int.parse(companyId),
         if (normalizedCompanyCode != null && normalizedCompanyCode.isNotEmpty)
@@ -226,6 +232,47 @@ class ApiService {
       }
       // 네트워크 오류 등만 generic 메시지로 wrapping
       throw Exception('네트워크 오류가 발생했습니다: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getPositions({
+    String? companyId,
+    String? companyCode,
+  }) async {
+    try {
+      final queryParameters = <String, String>{};
+
+      if (companyId != null && companyId.isNotEmpty) {
+        queryParameters['companyId'] = companyId;
+      }
+
+      final normalizedCompanyCode = companyCode
+          ?.trim()
+          .toUpperCase()
+          .replaceAll(RegExp(r'[^A-Z0-9]'), '');
+      if (normalizedCompanyCode != null && normalizedCompanyCode.isNotEmpty) {
+        queryParameters['companyCode'] = normalizedCompanyCode;
+      }
+
+      if (queryParameters.isEmpty) {
+        throw Exception('companyId 또는 companyCode가 필요합니다.');
+      }
+
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.positionsEndpoint}',
+      ).replace(queryParameters: queryParameters);
+
+      final response = await http.get(
+        uri,
+        headers: await _getHeaders(includeAuth: false),
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) {
+        rethrow;
+      }
+      throw Exception('역할 목록을 불러오지 못했습니다: $e');
     }
   }
 
@@ -430,7 +477,10 @@ class ApiService {
   }
 
   // 기존 일반적인 메서드들
-  Future<Map<String, dynamic>> get(String endpoint, {bool includeAuth = true}) async {
+  Future<Map<String, dynamic>> get(
+    String endpoint, {
+    bool includeAuth = true,
+  }) async {
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl$endpoint'),
@@ -514,7 +564,9 @@ class ApiService {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token'),
+        Uri.parse(
+          '$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token',
+        ),
         headers: await _getHeaders(),
         body: json.encode({'fcmToken': fcmToken}),
       );
@@ -594,20 +646,20 @@ class ApiService {
     required String vacationId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('https://silverithm.site/api/vacation/delete/$vacationId');
-      
+      final uri = Uri.parse(
+        'https://silverithm.site/api/vacation/delete/$vacationId',
+      );
+
       print('[API] 관리자 휴무 삭제 요청: $uri');
-      
-      final requestBody = {
-        'isAdmin': true,
-      };
-      
+
+      final requestBody = {'isAdmin': true};
+
       print('[API] 관리자 휴무 삭제 요청 body: $requestBody');
-      
+
       final headers = await _getHeaders();
-      
+
       return await http.delete(
-        uri, 
+        uri,
         headers: headers,
         body: json.encode(requestBody),
       );
@@ -662,9 +714,9 @@ class ApiService {
   // 비밀번호 찾기 (임시 비밀번호 발송) - 직원용 - 인증 불필요
   Future<Map<String, dynamic>> findPassword({required String email}) async {
     try {
-      final uri = Uri.parse('$_baseUrl${Constants.findPasswordEndpoint}').replace(
-        queryParameters: {'email': email},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.findPasswordEndpoint}',
+      ).replace(queryParameters: {'email': email});
 
       final response = await http.post(
         uri,
@@ -678,11 +730,13 @@ class ApiService {
   }
 
   // 관리자 비밀번호 찾기 (임시 비밀번호 발송) - 인증 불필요
-  Future<Map<String, dynamic>> findAdminPassword({required String email}) async {
+  Future<Map<String, dynamic>> findAdminPassword({
+    required String email,
+  }) async {
     try {
-      final uri = Uri.parse('$_baseUrl/v1/find/password').replace(
-        queryParameters: {'email': email},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl/v1/find/password',
+      ).replace(queryParameters: {'email': email});
 
       print('[API] 관리자 비밀번호 찾기: $uri');
 
@@ -719,15 +773,12 @@ class ApiService {
   // 회원 역할 변경
   Future<Map<String, dynamic>> updateMemberRole({required String role}) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl${Constants.updateRoleEndpoint}').replace(
-        queryParameters: {'role': role},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl${Constants.updateRoleEndpoint}',
+      ).replace(queryParameters: {'role': role});
 
       print('[API] 역할 변경 요청 URI: $uri');
-      final response = await http.put(
-        uri,
-        headers: await _getHeaders(),
-      );
+      final response = await http.put(uri, headers: await _getHeaders());
       print('[API] 역할 변경 응답 상태: ${response.statusCode}');
       print('[API] 역할 변경 응답 본문: ${response.body}');
 
@@ -772,7 +823,6 @@ class ApiService {
       return await http.get(uri, headers: headers);
     });
   }
-
 
   // 가입 요청 승인
   Future<Map<String, dynamic>> approveJoinRequest({
@@ -839,9 +889,7 @@ class ApiService {
   }
 
   // 회원 삭제
-  Future<Map<String, dynamic>> deleteMember({
-    required String userId,
-  }) async {
+  Future<Map<String, dynamic>> deleteMember({required String userId}) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/members/$userId');
 
@@ -960,18 +1008,16 @@ class ApiService {
     String? type,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/vacation/admin/submit-for-member?companyId=$companyId');
+      final uri = Uri.parse(
+        '$_baseUrl/vacation/admin/submit-for-member?companyId=$companyId',
+      );
 
       print('[API] 관리자가 직원 대신 휴무 신청: $uri');
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      final body = {
-        'memberId': memberId,
-        'date': date,
-        'duration': duration,
-      };
+      final body = {'memberId': memberId, 'date': date, 'duration': duration};
 
       if (reason != null && reason.isNotEmpty) {
         body['reason'] = reason;
@@ -980,11 +1026,7 @@ class ApiService {
         body['type'] = type;
       }
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -1048,11 +1090,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.put(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.put(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -1068,34 +1106,34 @@ class ApiService {
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
-      
+
       print('[API] 요청 헤더: $headers');
 
       var response = await http.get(uri, headers: headers);
-      
+
       print('[API] 사용자 정보 조회 응답 상태코드: ${response.statusCode}');
       print('[API] 사용자 정보 조회 응답 본문: ${response.body}');
-      
+
       // 404 에러인 경우 관리자용 엔드포인트 시도
       if (response.statusCode == 404) {
         print('[API] 일반 사용자 정보 조회 실패 (404) - 관리자용 엔드포인트 시도');
-        
+
         // 관리자용 엔드포인트들 시도
         final adminEndpoints = [
           '$_baseUrl/v1/admin/users/info',
           '$_baseUrl/v1/users/admin/info',
           '$_baseUrl/v1/admin/info',
         ];
-        
+
         for (final endpoint in adminEndpoints) {
           try {
             final adminUri = Uri.parse(endpoint);
             print('[API] 관리자 정보 조회 시도: $adminUri');
-            
+
             final adminResponse = await http.get(adminUri, headers: headers);
             print('[API] 관리자 정보 조회 응답 상태코드: ${adminResponse.statusCode}');
             print('[API] 관리자 정보 조회 응답 본문: ${adminResponse.body}');
-            
+
             if (adminResponse.statusCode == 200) {
               print('[API] 관리자 정보 조회 성공: $endpoint');
               response = adminResponse;
@@ -1106,22 +1144,24 @@ class ApiService {
             continue;
           }
         }
-        
+
         // 모든 엔드포인트 실패 시 저장된 정보로 fallback
         if (response.statusCode == 404) {
           print('[API] 모든 사용자 정보 조회 실패 - 저장된 정보로 fallback');
           final userData = StorageService().getSavedUserData();
-          
+
           if (userData != null) {
             // 저장된 데이터를 API 응답 형태로 변환
             final mockResponse = {
               'userEmail': userData['userEmail'] ?? userData['email'] ?? '',
               'userName': userData['userName'] ?? userData['name'] ?? '',
-              'customerKey': userData['customerKey'] ?? 'customer_${DateTime.now().millisecondsSinceEpoch}',
+              'customerKey':
+                  userData['customerKey'] ??
+                  'customer_${DateTime.now().millisecondsSinceEpoch}',
             };
-            
+
             print('[API] 저장된 정보로 응답 생성: $mockResponse');
-            
+
             // 성공 응답으로 가장하기 위해 Response 객체 생성
             return http.Response(
               json.encode(mockResponse),
@@ -1134,7 +1174,7 @@ class ApiService {
           }
         }
       }
-      
+
       return response;
     });
   }
@@ -1150,14 +1190,14 @@ class ApiService {
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
-      
+
       print('[API] 요청 헤더: $headers');
 
       final response = await http.get(uri, headers: headers);
-      
+
       print('[API] 구독 정보 조회 응답 상태코드: ${response.statusCode}');
       print('[API] 구독 정보 조회 응답 본문: ${response.body}');
-      
+
       return response;
     });
   }
@@ -1172,10 +1212,11 @@ class ApiService {
       print('[API] getUserInfo 전체 응답: $userInfoResponse');
       final userEmail = userInfoResponse['userEmail']?.toString() ?? '';
       final customerName = userInfoResponse['userName']?.toString() ?? '';
-      final customerKey = userInfoResponse['customerKey']?.toString() ?? 
-                         (userEmail.isNotEmpty ? 'customer_${userEmail.hashCode.abs()}' : '');
+      final customerKey =
+          userInfoResponse['customerKey']?.toString() ??
+          (userEmail.isNotEmpty ? 'customer_${userEmail.hashCode.abs()}' : '');
       print('[API] getUserInfo API로 이메일 조회 성공: $userEmail');
-      
+
       print('[API] 무료 구독 생성: $uri');
       print('[API] 최종 사용자 이메일: $userEmail');
       print('[API] 최종 사용자 이름: $customerName');
@@ -1183,7 +1224,7 @@ class ApiService {
 
       final body = {
         'planName': 'FREE', // SubscriptionType
-        'billingType': 'FREE', // SubscriptionBillingType  
+        'billingType': 'FREE', // SubscriptionBillingType
         'amount': 0, // 무료 구독은 금액 0
         'customerKey': customerKey, // 생성된 customerKey
         'authKey': '', // 무료 구독은 authKey 불필요
@@ -1192,20 +1233,16 @@ class ApiService {
         'customerName': customerName, // 사용자 이름
         'taxFreeAmount': 0, // 비과세 금액
       };
-      
+
       final jsonBody = json.encode(body);
       print('[API] JSON 인코딩된 본문: $jsonBody');
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
-      
+
       print('[API] 요청 헤더: $headers');
 
-      return await http.post(
-        uri, 
-        headers: headers,
-        body: jsonBody,
-      );
+      return await http.post(uri, headers: headers, body: jsonBody);
     });
   }
 
@@ -1225,37 +1262,36 @@ class ApiService {
       print('[API] getUserInfo 전체 응답: $userInfoResponse');
       final userEmail = userInfoResponse['userEmail']?.toString() ?? '';
       print('[API] getUserInfo API로 이메일 조회 성공: $userEmail');
-      
+
       print('[API] 최종 사용자 이메일: $userEmail');
 
       final body = {
         'planName': planType, // SubscriptionType
-        'billingType': paymentType, // SubscriptionBillingType  
+        'billingType': paymentType, // SubscriptionBillingType
         'amount': amount, // 실제 결제 금액
-        'customerKey': userInfoResponse['customerKey']?.toString() ?? '', // userInfo에서 받아온 customerKey
+        'customerKey':
+            userInfoResponse['customerKey']?.toString() ??
+            '', // userInfo에서 받아온 customerKey
         'authKey': authKey,
         'orderName': '$planName 구독', // 주문명
         'customerEmail': userEmail, // 올바른 필드명
-        'customerName': userInfoResponse['userName']?.toString() ?? '', // 사용자 이름
+        'customerName':
+            userInfoResponse['userName']?.toString() ?? '', // 사용자 이름
         'taxFreeAmount': 0, // 비과세 금액
       };
 
       print('[API] 유료 구독 생성: $uri');
       print('[API] 구독 데이터: $body');
-      
+
       final jsonBody = json.encode(body);
       print('[API] JSON 인코딩된 본문: $jsonBody');
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
-      
+
       print('[API] 요청 헤더: $headers');
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: jsonBody,
-      );
+      return await http.post(uri, headers: headers, body: jsonBody);
     });
   }
 
@@ -1293,13 +1329,11 @@ class ApiService {
     int size = 10,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final queryParams = {
-        'page': page.toString(),
-        'size': size.toString(),
-      };
+      final queryParams = {'page': page.toString(), 'size': size.toString()};
 
-      final uri = Uri.parse('$_baseUrl/v1/subscriptions/payment-failures')
-          .replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/subscriptions/payment-failures',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 결제 실패 정보 조회: $uri');
 
@@ -1320,7 +1354,7 @@ class ApiService {
   }) async {
     try {
       final headers = await _getHeaders(includeAuth: false);
-      
+
       final body = {
         'name': name,
         'email': email,
@@ -1385,9 +1419,10 @@ class ApiService {
       } else {
         print('API 요청 실패 - 에러 처리');
         // frontend-admin과 동일한 에러 처리 방식
-        final errorMessage = responseData['error'] ?? 
-                           responseData['message'] ?? 
-                           _getDefaultErrorMessage(response.statusCode);
+        final errorMessage =
+            responseData['error'] ??
+            responseData['message'] ??
+            _getDefaultErrorMessage(response.statusCode);
         throw ApiException(errorMessage, response.statusCode);
       }
     } catch (e) {
@@ -1400,7 +1435,10 @@ class ApiService {
         if (response.body.contains('error')) {
           try {
             // 단순한 에러 텍스트인 경우
-            final simpleError = response.body.replaceAll('"', '').replaceAll('{', '').replaceAll('}', '');
+            final simpleError = response.body
+                .replaceAll('"', '')
+                .replaceAll('{', '')
+                .replaceAll('}', '');
             if (simpleError.contains('error:')) {
               final errorMsg = simpleError.split('error:')[1].trim();
               throw ApiException(errorMsg, response.statusCode);
@@ -1414,18 +1452,16 @@ class ApiService {
         _throwMeaningfulError(response.statusCode, 'API 요청 처리 중 오류가 발생했습니다');
       }
     }
-    
+
     // 도달하지 않아야 하는 코드, 안전을 위해 예외 throw
     throw ApiException('예상치 못한 오류가 발생했습니다', 500);
   }
-  
+
   void _throwMeaningfulError(int statusCode, String fallbackMessage) {
-
-
     final errorMessage = _getDefaultErrorMessage(statusCode, fallbackMessage);
     throw ApiException(errorMessage, statusCode);
   }
-  
+
   String _getDefaultErrorMessage(int statusCode, [String? fallbackMessage]) {
     switch (statusCode) {
       case 400:
@@ -1446,7 +1482,6 @@ class ApiService {
         return fallbackMessage ?? 'API 요청 실패 (${statusCode})';
     }
   }
-
 
   // ===================== 공지사항 API =====================
 
@@ -1476,7 +1511,9 @@ class ApiService {
         queryParams['search'] = search;
       }
 
-      final uri = Uri.parse('$_baseUrl/v1/notices').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/notices',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 공지사항 목록 조회 (관리자): $uri');
 
@@ -1500,7 +1537,9 @@ class ApiService {
         'size': size.toString(),
       };
 
-      final uri = Uri.parse('$_baseUrl/v1/notices/published').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/notices/published',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 공지사항 목록 조회 (직원용): $uri');
 
@@ -1517,12 +1556,11 @@ class ApiService {
     required String userId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final queryParams = {
-        'companyId': companyId,
-        'userId': userId,
-      };
+      final queryParams = {'companyId': companyId, 'userId': userId};
 
-      final uri = Uri.parse('$_baseUrl/v1/notices/unread-count').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/notices/unread-count',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 읽지 않은 공지사항 수 조회: $uri');
 
@@ -1534,9 +1572,7 @@ class ApiService {
   }
 
   // 공지사항 상세 조회
-  Future<Map<String, dynamic>> getNoticeDetail({
-    required int noticeId,
-  }) async {
+  Future<Map<String, dynamic>> getNoticeDetail({required int noticeId}) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId');
 
@@ -1559,9 +1595,9 @@ class ApiService {
     bool isPinned = false,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/notices').replace(
-        queryParameters: {'companyId': companyId},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl/v1/notices',
+      ).replace(queryParameters: {'companyId': companyId});
 
       final body = {
         'title': title,
@@ -1577,11 +1613,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -1611,18 +1643,12 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.put(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.put(uri, headers: headers, body: json.encode(body));
     });
   }
 
   // 공지사항 삭제
-  Future<Map<String, dynamic>> deleteNotice({
-    required int noticeId,
-  }) async {
+  Future<Map<String, dynamic>> deleteNotice({required int noticeId}) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId');
 
@@ -1689,11 +1715,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -1703,7 +1725,9 @@ class ApiService {
     required int commentId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId/comments/$commentId');
+      final uri = Uri.parse(
+        '$_baseUrl/v1/notices/$noticeId/comments/$commentId',
+      );
 
       print('[API] 공지사항 댓글 삭제: $uri');
 
@@ -1715,9 +1739,7 @@ class ApiService {
   }
 
   // 공지사항 읽은 사용자 목록 조회
-  Future<Map<String, dynamic>> getNoticeReaders({
-    required int noticeId,
-  }) async {
+  Future<Map<String, dynamic>> getNoticeReaders({required int noticeId}) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/notices/$noticeId/readers');
 
@@ -1747,10 +1769,7 @@ class ApiService {
       return await http.post(
         uri,
         headers: headers,
-        body: json.encode({
-          'userId': userId,
-          'userName': userName,
-        }),
+        body: json.encode({'userId': userId, 'userName': userName}),
       );
     });
   }
@@ -1775,7 +1794,9 @@ class ApiService {
         queryParams['status'] = status;
       }
 
-      final uri = Uri.parse('$_baseUrl/v1/approvals').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/approvals',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 결재 요청 목록 조회 (관리자): $uri');
 
@@ -1804,7 +1825,9 @@ class ApiService {
         queryParams['status'] = status;
       }
 
-      final uri = Uri.parse('$_baseUrl/v1/approvals/my').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/approvals/my',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 내 결재 요청 목록 조회: $uri');
 
@@ -1856,14 +1879,13 @@ class ApiService {
       final fileSize = await fileObj.length();
       final fileName = filePath.split('/').last;
 
-      print('[API] 업로드 파일명: $fileName, 크기: $fileSize bytes (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB)');
+      print(
+        '[API] 업로드 파일명: $fileName, 크기: $fileSize bytes (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB)',
+      );
 
       // dio FormData 생성
       final formData = dio.FormData.fromMap({
-        'file': await dio.MultipartFile.fromFile(
-          filePath,
-          filename: fileName,
-        ),
+        'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
       });
 
       // dio 인스턴스 생성
@@ -1948,14 +1970,13 @@ class ApiService {
         },
       );
 
-      final body = <String, dynamic>{
-        'templateId': templateId,
-        'title': title,
-      };
+      final body = <String, dynamic>{'templateId': templateId, 'title': title};
 
       if (attachmentUrl != null) body['attachmentUrl'] = attachmentUrl;
-      if (attachmentFileName != null) body['attachmentFileName'] = attachmentFileName;
-      if (attachmentFileSize != null) body['attachmentFileSize'] = attachmentFileSize;
+      if (attachmentFileName != null)
+        body['attachmentFileName'] = attachmentFileName;
+      if (attachmentFileSize != null)
+        body['attachmentFileSize'] = attachmentFileSize;
 
       print('[API] 결재 요청 생성: $uri');
       print('[API] 요청 데이터: $body');
@@ -1963,11 +1984,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -1978,12 +1995,13 @@ class ApiService {
     required String processedByName,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/approve').replace(
-        queryParameters: {
-          'processedBy': processedBy,
-          'processedByName': processedByName,
-        },
-      );
+      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/approve')
+          .replace(
+            queryParameters: {
+              'processedBy': processedBy,
+              'processedByName': processedByName,
+            },
+          );
 
       print('[API] 결재 요청 승인: $uri');
 
@@ -2002,12 +2020,13 @@ class ApiService {
     required String reason,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/reject').replace(
-        queryParameters: {
-          'processedBy': processedBy,
-          'processedByName': processedByName,
-        },
-      );
+      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/reject')
+          .replace(
+            queryParameters: {
+              'processedBy': processedBy,
+              'processedByName': processedByName,
+            },
+          );
 
       print('[API] 결재 요청 거절: $uri');
 
@@ -2074,10 +2093,7 @@ class ApiService {
       return await http.put(
         uri,
         headers: headers,
-        body: json.encode({
-          'ids': approvalIds,
-          'reason': reason,
-        }),
+        body: json.encode({'ids': approvalIds, 'reason': reason}),
       );
     });
   }
@@ -2113,7 +2129,9 @@ class ApiService {
         'size': size.toString(),
       };
 
-      final uri = Uri.parse('$_baseUrl/v1/approval-templates').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/approval-templates',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 결재 양식 목록 조회 (관리자): $uri');
 
@@ -2131,7 +2149,9 @@ class ApiService {
     return await _makeAuthenticatedRequest(() async {
       final queryParams = {'companyId': companyId};
 
-      final uri = Uri.parse('$_baseUrl/v1/approval-templates/active').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/approval-templates/active',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 활성 결재 양식 목록 조회: $uri');
 
@@ -2168,13 +2188,11 @@ class ApiService {
     int? fileSize,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/approval-templates').replace(
-        queryParameters: {'companyId': companyId},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl/v1/approval-templates',
+      ).replace(queryParameters: {'companyId': companyId});
 
-      final body = <String, dynamic>{
-        'name': name,
-      };
+      final body = <String, dynamic>{'name': name};
 
       if (description != null) body['description'] = description;
       if (fileUrl != null) body['fileUrl'] = fileUrl;
@@ -2187,11 +2205,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -2207,9 +2221,7 @@ class ApiService {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approval-templates/$templateId');
 
-      final body = <String, dynamic>{
-        'name': name,
-      };
+      final body = <String, dynamic>{'name': name};
 
       if (description != null) body['description'] = description;
       if (fileUrl != null) body['fileUrl'] = fileUrl;
@@ -2222,11 +2234,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.put(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.put(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -2235,7 +2243,9 @@ class ApiService {
     required int templateId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/approval-templates/$templateId/toggle-active');
+      final uri = Uri.parse(
+        '$_baseUrl/v1/approval-templates/$templateId/toggle-active',
+      );
 
       print('[API] 결재 양식 활성화 토글: $uri');
 
@@ -2270,12 +2280,11 @@ class ApiService {
     required String userId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final queryParams = {
-        'companyId': companyId,
-        'userId': userId,
-      };
+      final queryParams = {'companyId': companyId, 'userId': userId};
 
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 채팅방 목록 조회: $uri');
 
@@ -2296,9 +2305,9 @@ class ApiService {
     required List<String> participantIds,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms').replace(
-        queryParameters: {'companyId': companyId},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms',
+      ).replace(queryParameters: {'companyId': companyId});
 
       final body = {
         'name': name,
@@ -2314,18 +2323,12 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
   // 채팅방 상세 조회
-  Future<Map<String, dynamic>> getChatRoomDetail({
-    required int roomId,
-  }) async {
+  Future<Map<String, dynamic>> getChatRoomDetail({required int roomId}) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId');
 
@@ -2347,9 +2350,7 @@ class ApiService {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId');
 
-      final body = <String, dynamic>{
-        'name': name,
-      };
+      final body = <String, dynamic>{'name': name};
       if (description != null) body['description'] = description;
 
       print('[API] 채팅방 수정: $uri');
@@ -2358,11 +2359,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.put(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.put(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -2372,9 +2369,9 @@ class ApiService {
     required String userId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/leave').replace(
-        queryParameters: {'userId': userId},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/leave',
+      ).replace(queryParameters: {'userId': userId});
 
       print('[API] 채팅방 나가기: $uri');
 
@@ -2386,9 +2383,7 @@ class ApiService {
   }
 
   // 채팅방 삭제
-  Future<Map<String, dynamic>> deleteChatRoom({
-    required int roomId,
-  }) async {
+  Future<Map<String, dynamic>> deleteChatRoom({required int roomId}) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId');
 
@@ -2425,9 +2420,7 @@ class ApiService {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/participants');
 
-      final body = {
-        'userIds': userIds,
-      };
+      final body = {'userIds': userIds};
 
       print('[API] 채팅방 참가자 추가: $uri');
       print('[API] 요청 데이터: $body');
@@ -2435,11 +2428,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -2450,9 +2439,9 @@ class ApiService {
     bool isKicked = false,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/participants/$userId').replace(
-        queryParameters: {'isKicked': isKicked.toString()},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/participants/$userId',
+      ).replace(queryParameters: {'isKicked': isKicked.toString()});
 
       print('[API] 채팅방 참가자 제거: $uri');
 
@@ -2470,12 +2459,11 @@ class ApiService {
     int size = 50,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final queryParams = {
-        'page': page.toString(),
-        'size': size.toString(),
-      };
+      final queryParams = {'page': page.toString(), 'size': size.toString()};
 
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/messages',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 채팅 메시지 목록 조회: $uri');
 
@@ -2510,11 +2498,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -2524,7 +2508,9 @@ class ApiService {
     required int messageId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId');
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId',
+      );
 
       print('[API] 메시지 삭제: $uri');
 
@@ -2556,11 +2542,7 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      return await http.post(
-        uri,
-        headers: headers,
-        body: json.encode(body),
-      );
+      return await http.post(uri, headers: headers, body: json.encode(body));
     });
   }
 
@@ -2570,7 +2552,9 @@ class ApiService {
     required int messageId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/readers');
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/readers',
+      );
 
       print('[API] 메시지 읽은 사람 목록 조회: $uri');
 
@@ -2590,7 +2574,9 @@ class ApiService {
       final queryParams = <String, String>{};
       if (type != null) queryParams['type'] = type;
 
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/files').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/files',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 공유 파일 목록 조회: $uri');
 
@@ -2629,14 +2615,13 @@ class ApiService {
       final fileSize = await fileObj.length();
       final fileName = filePath.split('/').last;
 
-      print('[API] 업로드 파일명: $fileName, 크기: $fileSize bytes (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB)');
+      print(
+        '[API] 업로드 파일명: $fileName, 크기: $fileSize bytes (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB)',
+      );
 
       // dio FormData 생성
       final formData = dio.FormData.fromMap({
-        'file': await dio.MultipartFile.fromFile(
-          filePath,
-          filename: fileName,
-        ),
+        'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
         'senderId': senderId,
         'senderName': senderName,
       });
@@ -2712,7 +2697,9 @@ class ApiService {
     required String emoji,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/reactions');
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/reactions',
+      );
 
       print('[API] 리액션 토글: roomId=$roomId, messageId=$messageId, emoji=$emoji');
 
@@ -2735,7 +2722,9 @@ class ApiService {
     String? userId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      var uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/reactions');
+      var uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId/reactions',
+      );
       if (userId != null) {
         uri = uri.replace(queryParameters: {'userId': userId});
       }
@@ -2752,10 +2741,10 @@ class ApiService {
         Uri.parse('https://silverithm.site/api/v1/users'),
         headers: headers,
       );
-      
+
       print('[API] 관리자 회원탈퇴 응답 상태: ${response.statusCode}');
       print('[API] 관리자 회원탈퇴 응답 본문: ${response.body}');
-      
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         // 성공적인 응답 처리
         if (response.body == 'success' || response.body.trim() == 'success') {
@@ -2775,14 +2764,11 @@ class ApiService {
         try {
           final errorData = json.decode(response.body);
           throw ApiException(
-            errorData['message'] ?? '회원탈퇴에 실패했습니다', 
-            response.statusCode
+            errorData['message'] ?? '회원탈퇴에 실패했습니다',
+            response.statusCode,
           );
         } catch (e) {
-          throw ApiException(
-            '회원탈퇴에 실패했습니다', 
-            response.statusCode
-          );
+          throw ApiException('회원탈퇴에 실패했습니다', response.statusCode);
         }
       }
     } catch (e) {
@@ -2806,9 +2792,7 @@ class ApiService {
     String? searchQuery,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final queryParams = <String, String>{
-        'companyId': companyId,
-      };
+      final queryParams = <String, String>{'companyId': companyId};
 
       if (startDate != null) queryParams['startDate'] = startDate;
       if (endDate != null) queryParams['endDate'] = endDate;
@@ -2816,7 +2800,9 @@ class ApiService {
       if (labelId != null) queryParams['labelId'] = labelId.toString();
       if (searchQuery != null) queryParams['searchQuery'] = searchQuery;
 
-      final uri = Uri.parse('$_baseUrl/v1/schedules').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedules',
+      ).replace(queryParameters: queryParams);
 
       print('[API] 일정 목록 조회: $uri');
 
@@ -2828,7 +2814,9 @@ class ApiService {
   }
 
   // 일정 상세 조회
-  Future<Map<String, dynamic>> getScheduleDetail({required int scheduleId}) async {
+  Future<Map<String, dynamic>> getScheduleDetail({
+    required int scheduleId,
+  }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId');
 
@@ -2853,7 +2841,11 @@ class ApiService {
       print('[API] 일정 데이터: $scheduleData');
 
       final headers = await _getHeaders();
-      return await http.post(uri, headers: headers, body: json.encode(scheduleData));
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(scheduleData),
+      );
     });
   }
 
@@ -2869,7 +2861,11 @@ class ApiService {
       print('[API] 일정 데이터: $scheduleData');
 
       final headers = await _getHeaders();
-      return await http.put(uri, headers: headers, body: json.encode(scheduleData));
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode(scheduleData),
+      );
     });
   }
 

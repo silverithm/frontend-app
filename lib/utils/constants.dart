@@ -9,6 +9,7 @@ class Constants {
   static const String refreshTokenEndpoint = '/v1/refresh-token';
   static const String validateTokenEndpoint = '/v1/validate-token';
   static const String joinRequestEndpoint = '/v1/members/join-request';
+  static const String positionsEndpoint = '/v1/positions';
   static const String withdrawalEndpoint = '/v1/members/withdrawal';
   static const String companiesEndpoint = '/v1/members/companies';
   static const String fcmTokenEndpoint = '/v1/members';

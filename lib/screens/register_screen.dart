@@ -3,15 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../models/position_option.dart';
 import '../providers/auth_provider.dart';
 import '../providers/company_provider.dart';
 import '../models/company.dart';
+import '../services/api_service.dart';
 import '../utils/constants.dart';
 import '../widgets/common/index.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import 'main_screen.dart';
 import 'login_screen.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
@@ -30,13 +31,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String _selectedRole = 'CAREGIVER';
+  String _fallbackRole = 'CAREGIVER';
   String _userType = 'employee'; // 'admin' 또는 'employee'
   String _employeeJoinMethod = 'code'; // 'code' 또는 'company'
   Company? _selectedCompany; // 선택된 회사
   String? _companyErrorMessage;
   final _companyCodeController = TextEditingController();
-  
+  Timer? _companyCodeDebounce;
+  List<PositionOption> _positions = [];
+  PositionOption? _selectedPosition;
+  bool _isLoadingPositions = false;
+  String? _positionErrorMessage;
+
   // 관리자 회원가입용 필드
   final _companyNameController = TextEditingController();
   final _companyAddressController = TextEditingController();
@@ -65,6 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _companyCodeController.dispose();
     _companyNameController.dispose();
     _companyAddressController.dispose();
+    _companyCodeDebounce?.cancel();
     super.dispose();
   }
 
@@ -99,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // 주소 찾기 메서드
   Future<void> _searchAddress() async {
     print('[RegisterScreen] ============ 주소 검색 시작 ============');
-    
+
     // 우선 WebView 주소 검색 시도
     final result = await Navigator.push<String>(
       context,
@@ -108,11 +115,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         fullscreenDialog: true,
       ),
     );
-    
+
     print('[RegisterScreen] 주소 검색 결과: "$result"');
     print('[RegisterScreen] 결과가 null인가: ${result == null}');
     print('[RegisterScreen] 결과가 비어있는가: ${result?.isEmpty}');
-    
+
     if (result != null && result.isNotEmpty) {
       print('[RegisterScreen] 주소 설정: $result');
       setState(() {
@@ -197,7 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       hintText: '예: 서울특별시 강남구 테헤란로 123',
       maxLines: 2,
     );
-    
+
     if (result != null && result.isNotEmpty) {
       setState(() {
         _companyAddressController.text = result;
@@ -328,15 +335,120 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  String _normalizeCompanyCode(String value) {
+    return value.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+  }
+
+  void _clearPositionState() {
+    setState(() {
+      _positions = [];
+      _selectedPosition = null;
+      _positionErrorMessage = null;
+      _isLoadingPositions = false;
+    });
+  }
+
+  Future<void> _loadPositions({String? companyId, String? companyCode}) async {
+    if ((companyId == null || companyId.isEmpty) &&
+        (companyCode == null || companyCode.isEmpty)) {
+      _clearPositionState();
+      return;
+    }
+
+    setState(() {
+      _isLoadingPositions = true;
+      _positionErrorMessage = null;
+    });
+
+    try {
+      final response = await ApiService().getPositions(
+        companyId: companyId,
+        companyCode: companyCode,
+      );
+      final positionList = ((response['positions'] as List?) ?? [])
+          .map((item) => PositionOption.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      final previousSelectionId = _selectedPosition?.id;
+      PositionOption? selectedPosition;
+      if (previousSelectionId != null) {
+        for (final position in positionList) {
+          if (position.id == previousSelectionId) {
+            selectedPosition = position;
+            break;
+          }
+        }
+      }
+
+      setState(() {
+        _positions = positionList;
+        _selectedPosition =
+            selectedPosition ??
+            (positionList.isNotEmpty ? positionList.first : null);
+        _isLoadingPositions = false;
+      });
+    } catch (error) {
+      setState(() {
+        _positions = [];
+        _selectedPosition = null;
+        _isLoadingPositions = false;
+        _positionErrorMessage = '역할 목록을 불러오지 못했습니다.';
+      });
+    }
+  }
+
+  void _queueCompanyCodePositionLoad(String rawCompanyCode) {
+    _companyCodeDebounce?.cancel();
+    final normalizedCompanyCode = _normalizeCompanyCode(rawCompanyCode);
+
+    if (_employeeJoinMethod != 'code' || _userType != 'employee') {
+      return;
+    }
+
+    if (normalizedCompanyCode.length < 4) {
+      _clearPositionState();
+      return;
+    }
+
+    _companyCodeDebounce = Timer(const Duration(milliseconds: 350), () {
+      _loadPositions(companyCode: normalizedCompanyCode);
+    });
+  }
+
+  String _getMemberRoleLabel(String? role) {
+    switch (role?.toLowerCase()) {
+      case 'caregiver':
+        return '요양보호사';
+      case 'office':
+        return '사무직';
+      default:
+        return '미분류';
+    }
+  }
+
+  bool get _hasEmployeeCompanyContext {
+    if (_employeeJoinMethod == 'company') {
+      return _selectedCompany != null;
+    }
+    return _normalizeCompanyCode(_companyCodeController.text).length >= 4;
+  }
+
+  bool get _shouldShowFallbackRoleSelector {
+    return _userType == 'employee' &&
+        _hasEmployeeCompanyContext &&
+        (_positions.isEmpty ||
+            _selectedPosition?.memberRole == null ||
+            _selectedPosition!.memberRole!.isEmpty);
+  }
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
     // 직원인 경우 회사 코드 또는 회사 선택 필수 검사
     if (_userType == 'employee') {
-      final normalizedCompanyCode = _companyCodeController.text
-          .trim()
-          .toUpperCase()
-          .replaceAll(RegExp(r'[^A-Z0-9]'), '');
+      final normalizedCompanyCode = _normalizeCompanyCode(
+        _companyCodeController.text,
+      );
 
       if (_employeeJoinMethod == 'code' && normalizedCompanyCode.isEmpty) {
         setState(() {
@@ -348,6 +460,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (_employeeJoinMethod == 'company' && _selectedCompany == null) {
         setState(() {
           _companyErrorMessage = '회사를 선택해주세요.';
+        });
+        return;
+      }
+
+      if (_positions.isNotEmpty && _selectedPosition == null) {
+        setState(() {
+          _positionErrorMessage = '역할을 선택해주세요.';
         });
         return;
       }
@@ -367,7 +486,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final authProvider = context.read<AuthProvider>();
     bool success;
-    
+
     if (_userType == 'admin') {
       // 관리자 회원가입
       success = await authProvider.register(
@@ -380,19 +499,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         companyAddress: _companyAddressController.text.trim(),
       );
     } else {
-      final normalizedCompanyCode = _companyCodeController.text
-          .trim()
-          .toUpperCase()
-          .replaceAll(RegExp(r'[^A-Z0-9]'), '');
+      final normalizedCompanyCode = _normalizeCompanyCode(
+        _companyCodeController.text,
+      );
+      final resolvedRole =
+          (_selectedPosition?.memberRole?.toUpperCase() ?? _fallbackRole);
 
       // 직원 회원가입
       success = await authProvider.register(
         _emailController.text.trim(),
         _passwordController.text,
         _nameController.text.trim(),
-        _selectedRole,
-        companyId: _employeeJoinMethod == 'company' ? _selectedCompany!.id : null,
-        companyCode: _employeeJoinMethod == 'code' ? normalizedCompanyCode : null,
+        resolvedRole,
+        companyId: _employeeJoinMethod == 'company'
+            ? _selectedCompany!.id
+            : null,
+        companyCode: _employeeJoinMethod == 'code'
+            ? normalizedCompanyCode
+            : null,
+        position: _selectedPosition?.name,
+        positionId: _selectedPosition?.id,
       );
     }
 
@@ -427,7 +553,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 제목
-              Icon(Icons.person_add, size: 60, color: AppSemanticColors.statusInfoIcon),
+              Icon(
+                Icons.person_add,
+                size: 60,
+                color: AppSemanticColors.statusInfoIcon,
+              ),
               const SizedBox(height: Constants.defaultPadding),
 
               Text(
@@ -443,9 +573,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Text(
                 '새 계정을 만들어 시작하세요',
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: AppSemanticColors.textSecondary),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
               ),
 
               const SizedBox(height: 16),
@@ -462,12 +592,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [AppColors.white, AppSemanticColors.backgroundSecondary],
+                          colors: [
+                            AppColors.white,
+                            AppSemanticColors.backgroundSecondary,
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppSemanticColors.backgroundTertiary.withValues(alpha:0.5),
+                            color: AppSemanticColors.backgroundTertiary
+                                .withValues(alpha: 0.5),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -536,19 +670,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [AppSemanticColors.textTertiary, AppSemanticColors.statusWarningIcon],
+                          colors: [
+                            AppSemanticColors.textTertiary,
+                            AppSemanticColors.statusWarningIcon,
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: AppSemanticColors.textDisabled.withValues(alpha:0.4),
+                            color: AppSemanticColors.textDisabled.withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: shadcn.GhostButton(
-                        onPressed: () => _launchURL('https://youtu.be/x2cJedS6vaU'),
+                        onPressed: () =>
+                            _launchURL('https://youtu.be/x2cJedS6vaU'),
                         leading: const Icon(
                           Icons.play_circle_filled,
                           color: AppColors.white,
@@ -609,7 +749,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     '가입 유형 선택',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: AppSemanticColors.interactivePrimaryDefault,
+                                      color: AppSemanticColors
+                                          .interactivePrimaryDefault,
                                       fontSize: 16,
                                     ),
                                   ),
@@ -621,9 +762,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   Expanded(
                                     child: InkWell(
                                       onTap: () {
+                                        _companyCodeDebounce?.cancel();
                                         setState(() {
                                           _userType = 'admin';
+                                          _companyErrorMessage = null;
+                                          _positionErrorMessage = null;
                                         });
+                                        _clearPositionState();
                                       },
                                       borderRadius: BorderRadius.circular(12),
                                       child: Container(
@@ -632,10 +777,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           color: _userType == 'admin'
                                               ? AppSemanticColors.statusInfoIcon
                                               : AppColors.white,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border.all(
                                             color: _userType == 'admin'
-                                                ? AppSemanticColors.statusInfoIcon
+                                                ? AppSemanticColors
+                                                      .statusInfoIcon
                                                 : AppSemanticColors.borderHover,
                                             width: 2,
                                           ),
@@ -646,7 +794,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               Icons.admin_panel_settings,
                                               color: _userType == 'admin'
                                                   ? AppColors.white
-                                                  : AppSemanticColors.statusInfoIcon,
+                                                  : AppSemanticColors
+                                                        .statusInfoIcon,
                                               size: 32,
                                             ),
                                             const SizedBox(height: 8),
@@ -655,7 +804,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               style: TextStyle(
                                                 color: _userType == 'admin'
                                                     ? AppColors.white
-                                                    : AppSemanticColors.statusInfoIcon,
+                                                    : AppSemanticColors
+                                                          .statusInfoIcon,
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 14,
                                               ),
@@ -665,8 +815,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               '근무표 관리',
                                               style: TextStyle(
                                                 color: _userType == 'admin'
-                                                    ? AppSemanticColors.textInverse.withValues(alpha: 0.7)
-                                                    : AppSemanticColors.textSecondary,
+                                                    ? AppSemanticColors
+                                                          .textInverse
+                                                          .withValues(
+                                                            alpha: 0.7,
+                                                          )
+                                                    : AppSemanticColors
+                                                          .textSecondary,
                                                 fontSize: 12,
                                               ),
                                             ),
@@ -681,19 +836,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       onTap: () {
                                         setState(() {
                                           _userType = 'employee';
+                                          _companyErrorMessage = null;
+                                          _positionErrorMessage = null;
                                         });
+                                        if (_employeeJoinMethod == 'company' &&
+                                            _selectedCompany != null) {
+                                          _loadPositions(
+                                            companyId: _selectedCompany!.id,
+                                          );
+                                        } else {
+                                          _queueCompanyCodePositionLoad(
+                                            _companyCodeController.text,
+                                          );
+                                        }
                                       },
                                       borderRadius: BorderRadius.circular(12),
                                       child: Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
                                           color: _userType == 'employee'
-                                              ? AppSemanticColors.statusSuccessIcon
+                                              ? AppSemanticColors
+                                                    .statusSuccessIcon
                                               : AppColors.white,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border.all(
                                             color: _userType == 'employee'
-                                                ? AppSemanticColors.statusSuccessIcon
+                                                ? AppSemanticColors
+                                                      .statusSuccessIcon
                                                 : AppSemanticColors.borderHover,
                                             width: 2,
                                           ),
@@ -704,7 +875,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               Icons.person,
                                               color: _userType == 'employee'
                                                   ? AppColors.white
-                                                  : AppSemanticColors.statusSuccessIcon,
+                                                  : AppSemanticColors
+                                                        .statusSuccessIcon,
                                               size: 32,
                                             ),
                                             const SizedBox(height: 8),
@@ -713,7 +885,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               style: TextStyle(
                                                 color: _userType == 'employee'
                                                     ? AppColors.white
-                                                    : AppSemanticColors.statusSuccessIcon,
+                                                    : AppSemanticColors
+                                                          .statusSuccessIcon,
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 14,
                                               ),
@@ -723,8 +896,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               '근무표 작성',
                                               style: TextStyle(
                                                 color: _userType == 'employee'
-                                                    ? AppSemanticColors.textInverse.withValues(alpha: 0.7)
-                                                    : AppSemanticColors.textSecondary,
+                                                    ? AppSemanticColors
+                                                          .textInverse
+                                                          .withValues(
+                                                            alpha: 0.7,
+                                                          )
+                                                    : AppSemanticColors
+                                                          .textSecondary,
                                                 fontSize: 12,
                                               ),
                                             ),
@@ -813,49 +991,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: Constants.defaultPadding),
 
-                        // 역할 선택 (직원인 경우에만 표시)
-                        if (_userType == 'employee') ...[
-                          DropdownButtonFormField<String>(
-                            value: _selectedRole,
-                            decoration: InputDecoration(
-                              labelText: '직원 유형',
-                              prefixIcon: const Icon(Icons.work_outline),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.borderHover,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.borderFocus,
-                                ),
-                              ),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'CAREGIVER',
-                                child: Text('요양보호사'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'OFFICE',
-                                child: Text('사무실'),
-                              ),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedRole = value!;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: Constants.defaultPadding),
-                        ],
-
-                        if (_userType == 'employee') ...[
+                        if (_userType == 'employee' &&
+                            _hasEmployeeCompanyContext) ...[
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -873,7 +1010,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   children: [
                                     Icon(
                                       Icons.key,
-                                      color: AppSemanticColors.statusWarningIcon,
+                                      color:
+                                          AppSemanticColors.statusWarningIcon,
                                       size: 20,
                                     ),
                                     const SizedBox(width: 8),
@@ -881,7 +1019,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       '회사 연결 방식',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color: AppSemanticColors.interactivePrimaryDefault,
+                                        color: AppSemanticColors
+                                            .interactivePrimaryDefault,
                                         fontSize: 16,
                                       ),
                                     ),
@@ -901,23 +1040,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     Expanded(
                                       child: InkWell(
                                         onTap: () {
+                                          _companyCodeDebounce?.cancel();
                                           setState(() {
                                             _employeeJoinMethod = 'code';
                                             _companyErrorMessage = null;
+                                            _selectedCompany = null;
                                           });
+                                          _queueCompanyCodePositionLoad(
+                                            _companyCodeController.text,
+                                          );
                                         },
                                         borderRadius: BorderRadius.circular(12),
                                         child: Container(
                                           padding: const EdgeInsets.all(14),
                                           decoration: BoxDecoration(
                                             color: _employeeJoinMethod == 'code'
-                                                ? AppSemanticColors.statusWarningIcon
+                                                ? AppSemanticColors
+                                                      .statusWarningIcon
                                                 : AppColors.white,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             border: Border.all(
-                                              color: _employeeJoinMethod == 'code'
-                                                  ? AppSemanticColors.statusWarningIcon
-                                                  : AppSemanticColors.borderHover,
+                                              color:
+                                                  _employeeJoinMethod == 'code'
+                                                  ? AppSemanticColors
+                                                        .statusWarningIcon
+                                                  : AppSemanticColors
+                                                        .borderHover,
                                               width: 2,
                                             ),
                                           ),
@@ -925,18 +1075,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             children: [
                                               Icon(
                                                 Icons.key,
-                                                color: _employeeJoinMethod == 'code'
+                                                color:
+                                                    _employeeJoinMethod ==
+                                                        'code'
                                                     ? AppColors.white
-                                                    : AppSemanticColors.statusWarningIcon,
+                                                    : AppSemanticColors
+                                                          .statusWarningIcon,
                                                 size: 28,
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
                                                 '회사 코드',
                                                 style: TextStyle(
-                                                  color: _employeeJoinMethod == 'code'
+                                                  color:
+                                                      _employeeJoinMethod ==
+                                                          'code'
                                                       ? AppColors.white
-                                                      : AppSemanticColors.statusWarningIcon,
+                                                      : AppSemanticColors
+                                                            .statusWarningIcon,
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 14,
                                                 ),
@@ -950,23 +1106,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     Expanded(
                                       child: InkWell(
                                         onTap: () {
+                                          _companyCodeDebounce?.cancel();
                                           setState(() {
                                             _employeeJoinMethod = 'company';
                                             _companyErrorMessage = null;
                                           });
+                                          if (_selectedCompany != null) {
+                                            _loadPositions(
+                                              companyId: _selectedCompany!.id,
+                                            );
+                                          } else {
+                                            _clearPositionState();
+                                          }
                                         },
                                         borderRadius: BorderRadius.circular(12),
                                         child: Container(
                                           padding: const EdgeInsets.all(14),
                                           decoration: BoxDecoration(
-                                            color: _employeeJoinMethod == 'company'
-                                                ? AppSemanticColors.statusInfoIcon
+                                            color:
+                                                _employeeJoinMethod == 'company'
+                                                ? AppSemanticColors
+                                                      .statusInfoIcon
                                                 : AppColors.white,
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             border: Border.all(
-                                              color: _employeeJoinMethod == 'company'
-                                                  ? AppSemanticColors.statusInfoIcon
-                                                  : AppSemanticColors.borderHover,
+                                              color:
+                                                  _employeeJoinMethod ==
+                                                      'company'
+                                                  ? AppSemanticColors
+                                                        .statusInfoIcon
+                                                  : AppSemanticColors
+                                                        .borderHover,
                                               width: 2,
                                             ),
                                           ),
@@ -974,18 +1146,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             children: [
                                               Icon(
                                                 Icons.apartment,
-                                                color: _employeeJoinMethod == 'company'
+                                                color:
+                                                    _employeeJoinMethod ==
+                                                        'company'
                                                     ? AppColors.white
-                                                    : AppSemanticColors.statusInfoIcon,
+                                                    : AppSemanticColors
+                                                          .statusInfoIcon,
                                                 size: 28,
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
                                                 '회사 선택',
                                                 style: TextStyle(
-                                                  color: _employeeJoinMethod == 'company'
+                                                  color:
+                                                      _employeeJoinMethod ==
+                                                          'company'
                                                       ? AppColors.white
-                                                      : AppSemanticColors.statusInfoIcon,
+                                                      : AppSemanticColors
+                                                            .statusInfoIcon,
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 14,
                                                 ),
@@ -1039,6 +1217,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   _companyErrorMessage = null;
                                 });
                               }
+                              _queueCompanyCodePositionLoad(
+                                _companyCodeController.text,
+                              );
                             },
                           ),
                           if (_companyErrorMessage != null)
@@ -1064,7 +1245,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 value: _selectedCompany,
                                 decoration: InputDecoration(
                                   labelText: '회사 *',
-                                  prefixIcon: const Icon(Icons.business_outlined),
+                                  prefixIcon: const Icon(
+                                    Icons.business_outlined,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -1127,7 +1310,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                 company.userEmails.first,
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: AppSemanticColors.textSecondary,
+                                                  color: AppSemanticColors
+                                                      .textSecondary,
                                                 ),
                                               ),
                                           ],
@@ -1139,7 +1323,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   setState(() {
                                     _selectedCompany = value;
                                     _companyErrorMessage = null;
+                                    _positionErrorMessage = null;
                                   });
+                                  if (value != null) {
+                                    _loadPositions(companyId: value.id);
+                                  } else {
+                                    _clearPositionState();
+                                  }
                                 },
                               ),
                               if (_companyErrorMessage != null)
@@ -1157,6 +1347,164 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                             ],
+                          ),
+                          const SizedBox(height: Constants.defaultPadding),
+                        ],
+
+                        if (_userType == 'employee') ...[
+                          if (_isLoadingPositions)
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppSemanticColors.backgroundSecondary,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppSemanticColors.borderDefault,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    '등록된 역할을 불러오는 중입니다...',
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: AppSemanticColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else ...[
+                            DropdownButtonFormField<PositionOption?>(
+                              value: _selectedPosition,
+                              decoration: InputDecoration(
+                                labelText: '역할',
+                                hintText: _positions.isEmpty
+                                    ? '관리자가 등록한 역할이 없습니다'
+                                    : '가입할 역할을 선택해주세요',
+                                prefixIcon: const Icon(Icons.badge_outlined),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: _positionErrorMessage != null
+                                        ? AppSemanticColors.statusErrorBorder
+                                        : AppSemanticColors.borderHover,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: _positionErrorMessage != null
+                                        ? AppSemanticColors.statusErrorIcon
+                                        : AppSemanticColors.borderFocus,
+                                  ),
+                                ),
+                                helperText:
+                                    _selectedPosition?.memberRole != null
+                                    ? '기본 분류: ${_getMemberRoleLabel(_selectedPosition?.memberRole)}'
+                                    : (_positions.isEmpty
+                                          ? '관리자가 역할을 등록하지 않았다면 아래 기본 분류로 가입할 수 있습니다.'
+                                          : '이 역할은 기본 분류가 아직 지정되지 않았습니다. 아래에서 선택해주세요.'),
+                              ),
+                              items: _positions
+                                  .map(
+                                    (position) =>
+                                        DropdownMenuItem<PositionOption?>(
+                                          value: position,
+                                          child: Text(position.name),
+                                        ),
+                                  )
+                                  .toList(),
+                              onChanged: _positions.isEmpty
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _selectedPosition = value;
+                                        _positionErrorMessage = null;
+                                      });
+                                    },
+                            ),
+                            if (_positionErrorMessage != null)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  left: 12,
+                                ),
+                                child: Text(
+                                  _positionErrorMessage!,
+                                  style: TextStyle(
+                                    color: AppSemanticColors.statusErrorIcon,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            if (_selectedPosition?.description?.isNotEmpty ??
+                                false)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                  left: 12,
+                                ),
+                                child: Text(
+                                  _selectedPosition!.description!,
+                                  style: TextStyle(
+                                    color: AppSemanticColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
+                          const SizedBox(height: Constants.defaultPadding),
+                        ],
+
+                        if (_shouldShowFallbackRoleSelector) ...[
+                          DropdownButtonFormField<String>(
+                            value: _fallbackRole,
+                            decoration: InputDecoration(
+                              labelText: '기본 분류',
+                              helperText: '휴무/근태 계산에 사용하는 내부 기준입니다.',
+                              prefixIcon: const Icon(Icons.work_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppSemanticColors.borderHover,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppSemanticColors.borderFocus,
+                                ),
+                              ),
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'CAREGIVER',
+                                child: Text('요양보호사'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'OFFICE',
+                                child: Text('사무직'),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                _fallbackRole = value ?? 'CAREGIVER';
+                              });
+                            },
                           ),
                           const SizedBox(height: Constants.defaultPadding),
                         ],
@@ -1186,7 +1534,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             validator: (value) {
-                              if (_userType == 'admin' && (value == null || value.isEmpty)) {
+                              if (_userType == 'admin' &&
+                                  (value == null || value.isEmpty)) {
                                 return '회사명을 입력해주세요';
                               }
                               if (_userType == 'admin' && value!.length < 2) {
@@ -1196,7 +1545,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                           ),
                           const SizedBox(height: Constants.defaultPadding),
-                          
+
                           // 회사 주소 입력
                           TextFormField(
                             controller: _companyAddressController,
@@ -1227,7 +1576,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             onTap: _searchAddress,
                             validator: (value) {
-                              if (_userType == 'admin' && (value == null || value.isEmpty)) {
+                              if (_userType == 'admin' &&
+                                  (value == null || value.isEmpty)) {
                                 return '회사 주소를 입력해주세요';
                               }
                               return null;
@@ -1402,8 +1752,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             color: _agreeToPrivacyPolicy
-                                                ? AppSemanticColors.statusInfoIcon
-                                                : AppSemanticColors.textDisabled,
+                                                ? AppSemanticColors
+                                                      .statusInfoIcon
+                                                : AppSemanticColors
+                                                      .textDisabled,
                                             width: 2,
                                           ),
                                           color: _agreeToPrivacyPolicy
@@ -1426,14 +1778,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               TextSpan(
                                                 text: '개인정보 처리방침',
                                                 style: TextStyle(
-                                                  color: AppSemanticColors.textPrimary,
+                                                  color: AppSemanticColors
+                                                      .textPrimary,
                                                   fontSize: 14,
                                                 ),
                                               ),
                                               TextSpan(
                                                 text: '에 동의합니다',
                                                 style: TextStyle(
-                                                  color: AppSemanticColors.textSecondary,
+                                                  color: AppSemanticColors
+                                                      .textSecondary,
                                                   fontSize: 14,
                                                 ),
                                               ),
@@ -1453,19 +1807,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: AppSemanticColors.backgroundSecondary,
+                                            color: AppSemanticColors
+                                                .backgroundSecondary,
                                             borderRadius: BorderRadius.circular(
                                               6,
                                             ),
                                             border: Border.all(
-                                              color: AppSemanticColors.borderDefault,
+                                              color: AppSemanticColors
+                                                  .borderDefault,
                                               width: 1,
                                             ),
                                           ),
                                           child: Text(
                                             '보기',
                                             style: TextStyle(
-                                              color: AppSemanticColors.textSecondary,
+                                              color: AppSemanticColors
+                                                  .textSecondary,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -1503,8 +1860,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           shape: BoxShape.circle,
                                           border: Border.all(
                                             color: _agreeToTermsOfService
-                                                ? AppSemanticColors.statusInfoIcon
-                                                : AppSemanticColors.textDisabled,
+                                                ? AppSemanticColors
+                                                      .statusInfoIcon
+                                                : AppSemanticColors
+                                                      .textDisabled,
                                             width: 2,
                                           ),
                                           color: _agreeToTermsOfService
@@ -1527,14 +1886,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               TextSpan(
                                                 text: '서비스 이용약관',
                                                 style: TextStyle(
-                                                  color: AppSemanticColors.textPrimary,
+                                                  color: AppSemanticColors
+                                                      .textPrimary,
                                                   fontSize: 14,
                                                 ),
                                               ),
                                               TextSpan(
                                                 text: '에 동의합니다',
                                                 style: TextStyle(
-                                                  color: AppSemanticColors.textSecondary,
+                                                  color: AppSemanticColors
+                                                      .textSecondary,
                                                   fontSize: 14,
                                                 ),
                                               ),
@@ -1554,19 +1915,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: AppSemanticColors.backgroundSecondary,
+                                            color: AppSemanticColors
+                                                .backgroundSecondary,
                                             borderRadius: BorderRadius.circular(
                                               6,
                                             ),
                                             border: Border.all(
-                                              color: AppSemanticColors.borderDefault,
+                                              color: AppSemanticColors
+                                                  .borderDefault,
                                               width: 1,
                                             ),
                                           ),
                                           child: Text(
                                             '보기',
                                             style: TextStyle(
-                                              color: AppSemanticColors.textSecondary,
+                                              color: AppSemanticColors
+                                                  .textSecondary,
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -1580,7 +1944,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                               // 전체 동의 체크박스
                               const SizedBox(height: 12),
-                              Container(height: 1, color: AppSemanticColors.borderHover),
+                              Container(
+                                height: 1,
+                                color: AppSemanticColors.borderHover,
+                              ),
                               const SizedBox(height: 12),
                               InkWell(
                                 onTap: () {
@@ -1611,14 +1978,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             color:
                                                 (_agreeToPrivacyPolicy &&
                                                     _agreeToTermsOfService)
-                                                ? AppSemanticColors.statusSuccessIcon
-                                                : AppSemanticColors.textDisabled,
+                                                ? AppSemanticColors
+                                                      .statusSuccessIcon
+                                                : AppSemanticColors
+                                                      .textDisabled,
                                             width: 2,
                                           ),
                                           color:
                                               (_agreeToPrivacyPolicy &&
                                                   _agreeToTermsOfService)
-                                              ? AppSemanticColors.statusSuccessIcon
+                                              ? AppSemanticColors
+                                                    .statusSuccessIcon
                                               : AppColors.transparent,
                                         ),
                                         child:
@@ -1660,7 +2030,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       child: Text(
                                         _agreementErrorMessage!,
                                         style: TextStyle(
-                                          color: AppSemanticColors.statusErrorIcon,
+                                          color:
+                                              AppSemanticColors.statusErrorIcon,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -1718,9 +2089,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: AppSemanticColors.statusErrorBackground,
+                                    color:
+                                        AppSemanticColors.statusErrorBackground,
                                     border: Border.all(
-                                      color: AppSemanticColors.statusErrorBorder,
+                                      color:
+                                          AppSemanticColors.statusErrorBorder,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -1728,7 +2101,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     children: [
                                       Icon(
                                         Icons.error_outline,
-                                        color: AppSemanticColors.statusErrorIcon,
+                                        color:
+                                            AppSemanticColors.statusErrorIcon,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
@@ -1736,7 +2110,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         child: Text(
                                           authProvider.errorMessage,
                                           style: TextStyle(
-                                            color: AppSemanticColors.statusErrorText,
+                                            color: AppSemanticColors
+                                                .statusErrorText,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -1783,7 +2158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               boxShadow: isActive
                   ? [
                       BoxShadow(
-                        color: color.withValues(alpha:0.3),
+                        color: color.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -1795,7 +2170,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 step,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isActive ? AppColors.white : AppSemanticColors.textSecondary,
+                  color: isActive
+                      ? AppColors.white
+                      : AppSemanticColors.textSecondary,
                   fontSize: 14,
                 ),
               ),
@@ -1870,7 +2247,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: colors[0].withValues(alpha:0.1),
+                  color: colors[0].withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -1887,10 +2264,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -1913,15 +2287,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<Color> _getGradientColors(String gradientString) {
     switch (gradientString) {
       case 'from-blue-400 to-indigo-500':
-        return [AppSemanticColors.interactivePrimaryActive, AppSemanticColors.borderFocus];
+        return [
+          AppSemanticColors.interactivePrimaryActive,
+          AppSemanticColors.borderFocus,
+        ];
       case 'from-indigo-400 to-purple-500':
-        return [AppSemanticColors.interactivePrimaryDefault, AppSemanticColors.interactivePrimaryActive];
+        return [
+          AppSemanticColors.interactivePrimaryDefault,
+          AppSemanticColors.interactivePrimaryActive,
+        ];
       case 'from-green-400 to-teal-500':
-        return [AppSemanticColors.statusSuccessIcon, AppSemanticColors.statusSuccessIcon];
+        return [
+          AppSemanticColors.statusSuccessIcon,
+          AppSemanticColors.statusSuccessIcon,
+        ];
       case 'from-purple-400 to-pink-500':
-        return [AppSemanticColors.interactivePrimaryActive, AppSemanticColors.statusErrorBackground];
+        return [
+          AppSemanticColors.interactivePrimaryActive,
+          AppSemanticColors.statusErrorBackground,
+        ];
       default:
-        return [AppSemanticColors.interactivePrimaryActive, AppSemanticColors.statusInfoIcon];
+        return [
+          AppSemanticColors.interactivePrimaryActive,
+          AppSemanticColors.statusInfoIcon,
+        ];
     }
   }
 }
@@ -1943,13 +2332,13 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
 
   void _initializeWebView() {
     _controller = WebViewController();
-    
+
     // 1단계: 기본 설정
     _controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(AppColors.white)
       ..enableZoom(false);
-    
+
     // 2단계: JavaScript Channel 추가
     _controller.addJavaScriptChannel(
       'AddressChannel',
@@ -1958,7 +2347,7 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
         print('[AddressSearch] 수신된 메시지: "${message.message}"');
         print('[AddressSearch] 메시지 길이: ${message.message.length}');
         print('[AddressSearch] mounted 상태: $mounted');
-        
+
         if (message.message == 'MANUAL_INPUT') {
           print('[AddressSearch] 수동 입력 요청 - WebView 닫기');
           Navigator.of(context).pop(); // WebView 닫기
@@ -1971,7 +2360,7 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
         }
       },
     );
-    
+
     // 3단계: Navigation Delegate 설정
     _controller.setNavigationDelegate(
       NavigationDelegate(
@@ -1980,7 +2369,7 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
         },
         onPageFinished: (String url) {
           print('[AddressSearch] 페이지 로드 완료: $url');
-          
+
           // HTML 페이지가 로드된 후 JavaScript 채널 확인
           if (url.startsWith('data:text/html')) {
             print('[AddressSearch] HTML 페이지 로드 완료 - JavaScript 채널 테스트');
@@ -1998,7 +2387,7 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
         },
       ),
     );
-    
+
     // 4단계: HTML 로드
     print('[AddressSearch] HTML 로드 시작');
     _controller.loadHtmlString(
