@@ -53,7 +53,8 @@ class ChatProvider with ChangeNotifier {
   Set<String> get typingUsers => _typingUsers;
   bool get hasMoreMessages => _hasMoreMessages;
 
-  int get totalUnreadCount => _chatRooms.fold(0, (sum, room) => sum + room.unreadCount);
+  int get totalUnreadCount =>
+      _chatRooms.fold(0, (sum, room) => sum + room.unreadCount);
 
   void setLoading(bool loading) {
     _isLoading = loading;
@@ -94,12 +95,8 @@ class ChatProvider with ChangeNotifier {
           onDisconnect: _onDisconnect,
           onStompError: _onStompError,
           onWebSocketError: _onWebSocketError,
-          stompConnectHeaders: {
-            'Authorization': 'Bearer $token',
-          },
-          webSocketConnectHeaders: {
-            'Authorization': 'Bearer $token',
-          },
+          stompConnectHeaders: {'Authorization': 'Bearer $token'},
+          webSocketConnectHeaders: {'Authorization': 'Bearer $token'},
           heartbeatOutgoing: const Duration(seconds: 10),
           heartbeatIncoming: const Duration(seconds: 10),
           reconnectDelay: const Duration(seconds: 5),
@@ -174,34 +171,40 @@ class ChatProvider with ChangeNotifier {
     final subscriptions = <StompUnsubscribe>[];
 
     // 메시지 수신 구독
-    subscriptions.add(_stompClient!.subscribe(
-      destination: '/topic/chat/$roomId',
-      callback: (frame) {
-        if (frame.body != null) {
-          _handleIncomingMessage(frame.body!, currentUserId: _currentUserId);
-        }
-      },
-    ));
+    subscriptions.add(
+      _stompClient!.subscribe(
+        destination: '/topic/chat/$roomId',
+        callback: (frame) {
+          if (frame.body != null) {
+            _handleIncomingMessage(frame.body!, currentUserId: _currentUserId);
+          }
+        },
+      ),
+    );
 
     // 타이핑 상태 구독
-    subscriptions.add(_stompClient!.subscribe(
-      destination: '/topic/chat/$roomId/typing',
-      callback: (frame) {
-        if (frame.body != null) {
-          _handleTypingStatus(frame.body!);
-        }
-      },
-    ));
+    subscriptions.add(
+      _stompClient!.subscribe(
+        destination: '/topic/chat/$roomId/typing',
+        callback: (frame) {
+          if (frame.body != null) {
+            _handleTypingStatus(frame.body!);
+          }
+        },
+      ),
+    );
 
     // 읽음 상태 구독
-    subscriptions.add(_stompClient!.subscribe(
-      destination: '/topic/chat/$roomId/read',
-      callback: (frame) {
-        if (frame.body != null) {
-          _handleReadStatus(frame.body!);
-        }
-      },
-    ));
+    subscriptions.add(
+      _stompClient!.subscribe(
+        destination: '/topic/chat/$roomId/read',
+        callback: (frame) {
+          if (frame.body != null) {
+            _handleReadStatus(frame.body!);
+          }
+        },
+      ),
+    );
 
     _roomSubscriptions[roomId] = subscriptions;
     print('[ChatProvider] 채팅방 $roomId 구독 완료 (${subscriptions.length}개 토픽)');
@@ -246,33 +249,42 @@ class ChatProvider with ChangeNotifier {
       }
 
       // 내가 보낸 메시지인지 확인
-      final isMyMessage = currentUserId != null && message.senderId == currentUserId;
+      final isMyMessage =
+          currentUserId != null && message.senderId == currentUserId;
 
       // 현재 선택된 채팅방의 메시지인 경우 목록에 추가
       if (_selectedRoom != null && roomId == _selectedRoom!.id) {
         // 이미 있는 메시지인지 체크 (서버 ID로)
-        final existingIndex = _messages.indexWhere((m) => m.id > 0 && m.id == message!.id);
+        final existingIndex = _messages.indexWhere(
+          (m) => m.id > 0 && m.id == message!.id,
+        );
         if (existingIndex != -1) {
           // 이미 있는 메시지면 무시
           return;
         }
 
         // 내가 보낸 pending 메시지가 있는지 확인 (같은 content, sender)
-        final pendingIndex = _messages.indexWhere((m) =>
-            m.sendingStatus == MessageSendingStatus.sending &&
-            m.senderId == message!.senderId &&
-            m.content == message.content);
+        final pendingIndex = _messages.indexWhere(
+          (m) =>
+              m.sendingStatus == MessageSendingStatus.sending &&
+              m.senderId == message!.senderId &&
+              m.content == message.content,
+        );
 
         if (pendingIndex != -1) {
           // pending 메시지를 서버 메시지로 교체
-          _messages[pendingIndex] = message.copyWith(sendingStatus: MessageSendingStatus.sent);
+          _messages[pendingIndex] = message.copyWith(
+            sendingStatus: MessageSendingStatus.sent,
+          );
           notifyListeners();
         } else {
           // 최근에 같은 내용의 메시지를 보냈는지 확인 (중복 방지)
-          final recentDuplicate = _messages.any((m) =>
-              m.senderId == message!.senderId &&
-              m.content == message.content &&
-              m.createdAt.difference(message.createdAt).abs().inSeconds < 5);
+          final recentDuplicate = _messages.any(
+            (m) =>
+                m.senderId == message!.senderId &&
+                m.content == message.content &&
+                m.createdAt.difference(message.createdAt).abs().inSeconds < 5,
+          );
 
           if (!recentDuplicate) {
             // 새 메시지 추가
@@ -288,7 +300,8 @@ class ChatProvider with ChangeNotifier {
         final currentRoom = _chatRooms[roomIndex];
 
         // 현재 보고 있는 채팅방이 아니고 내가 보낸 메시지가 아니면 unreadCount 증가
-        final bool isViewingThisRoom = _selectedRoom != null && _selectedRoom!.id == roomId;
+        final bool isViewingThisRoom =
+            _selectedRoom != null && _selectedRoom!.id == roomId;
         final int newUnreadCount = (!isViewingThisRoom && !isMyMessage)
             ? currentRoom.unreadCount + 1
             : currentRoom.unreadCount;
@@ -315,13 +328,17 @@ class ChatProvider with ChangeNotifier {
   void _handleTypingStatus(String body) {
     try {
       final data = json.decode(body) as Map<String, dynamic>;
-      final userName = data['senderName']?.toString() ?? data['userName']?.toString() ?? '';
+      final userName =
+          data['senderName']?.toString() ?? data['userName']?.toString() ?? '';
       final isTyping = data['isTyping'] as bool? ?? false;
 
       if (userName.isEmpty) return;
 
       // 현재 사용자 자신의 타이핑 상태는 무시
-      if (_currentUserId != null && (data['senderId']?.toString() == _currentUserId || data['userId']?.toString() == _currentUserId)) return;
+      if (_currentUserId != null &&
+          (data['senderId']?.toString() == _currentUserId ||
+              data['userId']?.toString() == _currentUserId))
+        return;
 
       if (isTyping) {
         _typingUsers.add(userName);
@@ -358,18 +375,24 @@ class ChatProvider with ChangeNotifier {
       final data = json.decode(body) as Map<String, dynamic>;
       // ChatWebSocketMessage 형식 지원
       final lastReadMessageId = (data['lastReadMessageId'] as num?)?.toInt();
-      final messageId = (data['messageId'] as num?)?.toInt() ?? lastReadMessageId;
+      final messageId =
+          (data['messageId'] as num?)?.toInt() ?? lastReadMessageId;
       final readCount = data['readCount'] as int?;
       final userId = data['senderId']?.toString() ?? data['userId']?.toString();
-      final userName = data['senderName']?.toString() ?? data['userName']?.toString();
+      final userName =
+          data['senderName']?.toString() ?? data['userName']?.toString();
 
-      print('[ChatProvider] 읽음 상태 수신: messageId=$messageId, userId=$userId, userName=$userName');
+      print(
+        '[ChatProvider] 읽음 상태 수신: messageId=$messageId, userId=$userId, userName=$userName',
+      );
 
       // 읽음 카운트가 있으면 업데이트
       if (messageId != null && readCount != null) {
         final messageIndex = _messages.indexWhere((m) => m.id == messageId);
         if (messageIndex != -1) {
-          _messages[messageIndex] = _messages[messageIndex].copyWith(readCount: readCount);
+          _messages[messageIndex] = _messages[messageIndex].copyWith(
+            readCount: readCount,
+          );
           notifyListeners();
         }
       } else if (lastReadMessageId != null) {
@@ -377,7 +400,9 @@ class ChatProvider with ChangeNotifier {
         bool updated = false;
         for (int i = 0; i < _messages.length; i++) {
           if (_messages[i].id <= lastReadMessageId) {
-            _messages[i] = _messages[i].copyWith(readCount: (_messages[i].readCount ?? 0) + 1);
+            _messages[i] = _messages[i].copyWith(
+              readCount: (_messages[i].readCount ?? 0) + 1,
+            );
             updated = true;
           }
         }
@@ -389,7 +414,13 @@ class ChatProvider with ChangeNotifier {
   }
 
   // WebSocket으로 메시지 전송
-  void sendMessageViaWebSocket(int roomId, String content, {MessageType type = MessageType.text, required String senderId, required String senderName}) {
+  void sendMessageViaWebSocket(
+    int roomId,
+    String content, {
+    MessageType type = MessageType.text,
+    required String senderId,
+    required String senderName,
+  }) {
     if (_stompClient == null || !_stompClient!.connected) {
       print('[ChatProvider] WebSocket 미연결 - 메시지 전송 불가');
       return;
@@ -410,7 +441,12 @@ class ChatProvider with ChangeNotifier {
   }
 
   // 타이핑 상태 전송
-  void sendTypingStatus(int roomId, bool isTyping, {required String userId, required String userName}) {
+  void sendTypingStatus(
+    int roomId,
+    bool isTyping, {
+    required String userId,
+    required String userName,
+  }) {
     if (_stompClient == null || !_stompClient!.connected) return;
 
     final typingData = {
@@ -426,7 +462,12 @@ class ChatProvider with ChangeNotifier {
   }
 
   // 읽음 상태 전송
-  void sendReadStatus(int roomId, int lastMessageId, {required String userId, required String userName}) {
+  void sendReadStatus(
+    int roomId,
+    int lastMessageId, {
+    required String userId,
+    required String userName,
+  }) {
     if (_stompClient == null || !_stompClient!.connected) return;
 
     final readData = {
@@ -443,7 +484,10 @@ class ChatProvider with ChangeNotifier {
 
   // ===================== 채팅방 관리 =====================
 
-  Future<void> loadChatRooms({required String companyId, required String userId}) async {
+  Future<void> loadChatRooms({
+    required String companyId,
+    required String userId,
+  }) async {
     try {
       setLoading(true);
       clearError();
@@ -659,7 +703,9 @@ class ChatProvider with ChangeNotifier {
       if (response['participants'] != null) {
         final List<dynamic> content = response['participants'] as List<dynamic>;
         _participants = content
-            .map((json) => ChatParticipant.fromJson(json as Map<String, dynamic>))
+            .map(
+              (json) => ChatParticipant.fromJson(json as Map<String, dynamic>),
+            )
             .toList();
       } else {
         _participants = [];
@@ -691,7 +737,11 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> removeParticipant(int roomId, String userId, {bool isKicked = false}) async {
+  Future<bool> removeParticipant(
+    int roomId,
+    String userId, {
+    bool isKicked = false,
+  }) async {
     try {
       final response = await ApiService().removeChatParticipant(
         roomId: roomId,
@@ -747,7 +797,11 @@ class ChatProvider with ChangeNotifier {
           _messages.addAll(newMessages);
         }
 
-        _hasMoreMessages = response['hasMore'] as bool? ?? (response['totalPages'] != null ? _currentPage < (response['totalPages'] as int) - 1 : false);
+        _hasMoreMessages =
+            response['hasMore'] as bool? ??
+            (response['totalPages'] != null
+                ? _currentPage < (response['totalPages'] as int) - 1
+                : false);
         _currentPage++;
       } else if (response['content'] != null) {
         final List<dynamic> content = response['content'] as List<dynamic>;
@@ -761,7 +815,11 @@ class ChatProvider with ChangeNotifier {
           _messages.addAll(newMessages);
         }
 
-        _hasMoreMessages = response['hasMore'] as bool? ?? (response['totalPages'] != null ? _currentPage < (response['totalPages'] as int) - 1 : false);
+        _hasMoreMessages =
+            response['hasMore'] as bool? ??
+            (response['totalPages'] != null
+                ? _currentPage < (response['totalPages'] as int) - 1
+                : false);
         _currentPage++;
       } else {
         if (refresh) {
@@ -780,7 +838,12 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> sendTextMessage(int roomId, String content, {required String senderId, required String senderName}) async {
+  Future<bool> sendTextMessage(
+    int roomId,
+    String content, {
+    required String senderId,
+    required String senderName,
+  }) async {
     // 로컬 임시 ID 생성
     final localId = 'local_${DateTime.now().millisecondsSinceEpoch}';
 
@@ -805,7 +868,12 @@ class ChatProvider with ChangeNotifier {
     try {
       // WebSocket이 연결되어 있으면 WebSocket으로 전송
       if (_isConnected) {
-        sendMessageViaWebSocket(roomId, content, senderId: senderId, senderName: senderName);
+        sendMessageViaWebSocket(
+          roomId,
+          content,
+          senderId: senderId,
+          senderName: senderName,
+        );
         // WebSocket 응답이 올 때까지 sending 상태 유지 (중복 방지를 위해)
         // _handleIncomingMessage에서 pending 메시지를 찾아서 교체함
         return true;
@@ -823,7 +891,9 @@ class ChatProvider with ChangeNotifier {
       print('[ChatProvider] 메시지 전송 응답: $response');
 
       final messageData = response['message'] ?? response;
-      final newMessage = ChatMessage.fromJson(messageData as Map<String, dynamic>);
+      final newMessage = ChatMessage.fromJson(
+        messageData as Map<String, dynamic>,
+      );
 
       // 임시 메시지를 실제 메시지로 교체
       _replacePendingMessage(localId, newMessage);
@@ -838,7 +908,10 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
-  void _updatePendingMessageStatus(String localId, MessageSendingStatus status) {
+  void _updatePendingMessageStatus(
+    String localId,
+    MessageSendingStatus status,
+  ) {
     final index = _messages.indexWhere((m) => m.localId == localId);
     if (index != -1) {
       _messages[index] = _messages[index].copyWith(sendingStatus: status);
@@ -849,18 +922,29 @@ class ChatProvider with ChangeNotifier {
   void _replacePendingMessage(String localId, ChatMessage newMessage) {
     final index = _messages.indexWhere((m) => m.localId == localId);
     if (index != -1) {
-      _messages[index] = newMessage.copyWith(sendingStatus: MessageSendingStatus.sent);
+      _messages[index] = newMessage.copyWith(
+        sendingStatus: MessageSendingStatus.sent,
+      );
       notifyListeners();
     }
   }
 
-  Future<bool> sendFileMessage(int roomId, File file, {required String senderId, required String senderName}) async {
+  Future<bool> sendFileMessage(
+    int roomId,
+    File file, {
+    required String senderId,
+    required String senderName,
+  }) async {
     // 로컬 임시 ID 생성
     final localId = 'local_file_${DateTime.now().millisecondsSinceEpoch}';
     final fileName = file.path.split('/').last;
-    final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].any(
-      (ext) => fileName.toLowerCase().endsWith('.$ext'),
-    );
+    final isImage = [
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'webp',
+    ].any((ext) => fileName.toLowerCase().endsWith('.$ext'));
 
     // 임시 메시지 생성 (전송 중 상태)
     final pendingMessage = ChatMessage(
@@ -891,7 +975,9 @@ class ChatProvider with ChangeNotifier {
       print('[ChatProvider] 파일 업로드 응답: $response');
 
       final messageData = response['message'] ?? response;
-      final newMessage = ChatMessage.fromJson(messageData as Map<String, dynamic>);
+      final newMessage = ChatMessage.fromJson(
+        messageData as Map<String, dynamic>,
+      );
 
       // 임시 메시지를 실제 메시지로 교체
       _replacePendingMessage(localId, newMessage);
@@ -918,7 +1004,9 @@ class ChatProvider with ChangeNotifier {
       // 메시지를 삭제됨 상태로 변경
       final messageIndex = _messages.indexWhere((m) => m.id == messageId);
       if (messageIndex != -1) {
-        _messages[messageIndex] = _messages[messageIndex].copyWith(isDeleted: true);
+        _messages[messageIndex] = _messages[messageIndex].copyWith(
+          isDeleted: true,
+        );
         notifyListeners();
       }
 
@@ -932,11 +1020,21 @@ class ChatProvider with ChangeNotifier {
 
   // ===================== 읽음 처리 =====================
 
-  Future<void> markAsRead(int roomId, int lastMessageId, {required String userId, required String userName}) async {
+  Future<void> markAsRead(
+    int roomId,
+    int lastMessageId, {
+    required String userId,
+    required String userName,
+  }) async {
     try {
       // WebSocket 연결 시 WebSocket으로, 아니면 HTTP로 전송 (이중 전송 방지)
       if (_isConnected) {
-        sendReadStatus(roomId, lastMessageId, userId: userId, userName: userName);
+        sendReadStatus(
+          roomId,
+          lastMessageId,
+          userId: userId,
+          userName: userName,
+        );
       } else {
         await ApiService().markChatAsRead(
           roomId: roomId,
@@ -969,7 +1067,10 @@ class ChatProvider with ChangeNotifier {
       if (response['readers'] != null) {
         final List<dynamic> content = response['readers'] as List<dynamic>;
         _messageReaders = content
-            .map((json) => ChatMessageReader.fromJson(json as Map<String, dynamic>))
+            .map(
+              (json) =>
+                  ChatMessageReader.fromJson(json as Map<String, dynamic>),
+            )
             .toList();
       } else {
         _messageReaders = [];

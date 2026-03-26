@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /Users/gimjunhyeong/Develop/silverithm && git status\",\"description\":\"Check backend git status\"}",
+  "error": "Exit code 128\nfatal: not a git repository (or any of the parent directories): .git\n\nfatal: not a git repository (or any of the parent directories): .git",
+  "timestamp": "2026-02-28T13:45:38.418Z",
+  "retry_count": 1
+}

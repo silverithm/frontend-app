@@ -1,0 +1,491 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1772202216390,
+  "projectRoot": "/Users/gimjunhyeong/Develop/silverithm/frontend-app",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "assets",
+      "lib",
+      "test"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "android": {
+      "path": "android",
+      "purpose": null,
+      "fileCount": 11,
+      "lastAccessed": 1772202216377,
+      "keyFiles": [
+        "build.gradle.kts",
+        "carev-key.keystore",
+        "carev-release-key.keystore",
+        "frontend_app_android.iml",
+        "gradle.properties"
+      ]
+    },
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 1,
+      "lastAccessed": 1772202216377,
+      "keyFiles": []
+    },
+    "build": {
+      "path": "build",
+      "purpose": "Build output",
+      "fileCount": 2,
+      "lastAccessed": 1772202216379,
+      "keyFiles": [
+        "ca33f282d90356a564f3e3da52c97351.cache.dill.track.dill",
+        "last_build_run.json"
+      ]
+    },
+    "ios": {
+      "path": "ios",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1772202216380,
+      "keyFiles": [
+        "Podfile",
+        "Podfile.lock"
+      ]
+    },
+    "lib": {
+      "path": "lib",
+      "purpose": "Library code",
+      "fileCount": 2,
+      "lastAccessed": 1772202216380,
+      "keyFiles": [
+        "firebase_options.dart",
+        "main.dart"
+      ]
+    },
+    "linux": {
+      "path": "linux",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1772202216380,
+      "keyFiles": [
+        "CMakeLists.txt"
+      ]
+    },
+    "macos": {
+      "path": "macos",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1772202216381,
+      "keyFiles": [
+        "Podfile",
+        "Podfile.lock"
+      ]
+    },
+    "test": {
+      "path": "test",
+      "purpose": "Test files",
+      "fileCount": 1,
+      "lastAccessed": 1772202216381,
+      "keyFiles": [
+        "widget_test.dart"
+      ]
+    },
+    "web": {
+      "path": "web",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1772202216381,
+      "keyFiles": [
+        "favicon.png",
+        "index.html",
+        "manifest.json"
+      ]
+    },
+    "windows": {
+      "path": "windows",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1772202216382,
+      "keyFiles": [
+        "CMakeLists.txt"
+      ]
+    },
+    "android/app": {
+      "path": "android/app",
+      "purpose": "Application code",
+      "fileCount": 3,
+      "lastAccessed": 1772202216382,
+      "keyFiles": [
+        "build.gradle.kts",
+        "google-services.json",
+        "proguard-rules.pro"
+      ]
+    },
+    "build/app": {
+      "path": "build/app",
+      "purpose": "Application code",
+      "fileCount": 1,
+      "lastAccessed": 1772202216382,
+      "keyFiles": [
+        "deeplink.json"
+      ]
+    },
+    "lib/models": {
+      "path": "lib/models",
+      "purpose": "Data models",
+      "fileCount": 16,
+      "lastAccessed": 1772202216383,
+      "keyFiles": [
+        "admin_signin_response.dart",
+        "approval.dart",
+        "chat_message.dart"
+      ]
+    },
+    "lib/services": {
+      "path": "lib/services",
+      "purpose": "Business logic services",
+      "fileCount": 6,
+      "lastAccessed": 1772202216384,
+      "keyFiles": [
+        "analytics_service.dart",
+        "api_service.dart",
+        "fcm_service.dart"
+      ]
+    },
+    "lib/utils": {
+      "path": "lib/utils",
+      "purpose": "Utility functions",
+      "fileCount": 3,
+      "lastAccessed": 1772202216384,
+      "keyFiles": [
+        "admin_utils.dart",
+        "constants.dart",
+        "jwt_utils.dart"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "lib/screens/calendar_screen.dart",
+      "accessCount": 129,
+      "lastAccessed": 1772286190540,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/profile_screen.dart",
+      "accessCount": 100,
+      "lastAccessed": 1772285027080,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/home_screen.dart",
+      "accessCount": 61,
+      "lastAccessed": 1772284217975,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/my_vacation_screen.dart",
+      "accessCount": 56,
+      "lastAccessed": 1772213985649,
+      "type": "file"
+    },
+    {
+      "path": "lib",
+      "accessCount": 54,
+      "lastAccessed": 1772286086775,
+      "type": "directory"
+    },
+    {
+      "path": "lib/screens/admin_notice_management_screen.dart",
+      "accessCount": 42,
+      "lastAccessed": 1772214235777,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 39,
+      "lastAccessed": 1772285761718,
+      "type": "directory"
+    },
+    {
+      "path": "lib/screens/main_screen.dart",
+      "accessCount": 34,
+      "lastAccessed": 1772285791260,
+      "type": "file"
+    },
+    {
+      "path": "lib/services/api_service.dart",
+      "accessCount": 33,
+      "lastAccessed": 1772285452634,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/admin_company_settings_screen.dart",
+      "accessCount": 31,
+      "lastAccessed": 1772213709977,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/admin_schedule_calendar_screen.dart",
+      "accessCount": 26,
+      "lastAccessed": 1772285769903,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/admin_approval_management_screen.dart",
+      "accessCount": 25,
+      "lastAccessed": 1772213487413,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/payment_screen.dart",
+      "accessCount": 25,
+      "lastAccessed": 1772213572107,
+      "type": "directory"
+    },
+    {
+      "path": "lib/theme/app_colors.dart",
+      "accessCount": 24,
+      "lastAccessed": 1772214214856,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/chat_provider.dart",
+      "accessCount": 23,
+      "lastAccessed": 1772284762687,
+      "type": "file"
+    },
+    {
+      "path": "lib/main.dart",
+      "accessCount": 23,
+      "lastAccessed": 1772286198373,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/admin_unified_approval_screen.dart",
+      "accessCount": 22,
+      "lastAccessed": 1772285411461,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/notice_provider.dart",
+      "accessCount": 17,
+      "lastAccessed": 1772284183008,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/approval_list_screen.dart",
+      "accessCount": 16,
+      "lastAccessed": 1772213993829,
+      "type": "file"
+    },
+    {
+      "path": "lib/widgets/common/app_dialog.dart",
+      "accessCount": 16,
+      "lastAccessed": 1772285074206,
+      "type": "file"
+    },
+    {
+      "path": "lib/widgets/common/app_button.dart",
+      "accessCount": 16,
+      "lastAccessed": 1772285935433,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/notice_list_screen.dart",
+      "accessCount": 15,
+      "lastAccessed": 1772213936122,
+      "type": "file"
+    },
+    {
+      "path": "lib/theme/app_theme.dart",
+      "accessCount": 11,
+      "lastAccessed": 1772213729001,
+      "type": "file"
+    },
+    {
+      "path": "lib/theme/app_spacing.dart",
+      "accessCount": 11,
+      "lastAccessed": 1772214214337,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/schedule_provider.dart",
+      "accessCount": 10,
+      "lastAccessed": 1772285475042,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/admin_provider.dart",
+      "accessCount": 9,
+      "lastAccessed": 1772285194410,
+      "type": "file"
+    },
+    {
+      "path": "lib/widgets/common/app_card.dart",
+      "accessCount": 8,
+      "lastAccessed": 1772213491781,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/vacation_provider.dart",
+      "accessCount": 8,
+      "lastAccessed": 1772284078629,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers",
+      "accessCount": 7,
+      "lastAccessed": 1772283937841,
+      "type": "directory"
+    },
+    {
+      "path": "lib/providers/approval_provider.dart",
+      "accessCount": 7,
+      "lastAccessed": 1772284079187,
+      "type": "file"
+    },
+    {
+      "path": "lib/widgets/common/index.dart",
+      "accessCount": 6,
+      "lastAccessed": 1772213493781,
+      "type": "file"
+    },
+    {
+      "path": "lib/models/notice.dart",
+      "accessCount": 6,
+      "lastAccessed": 1772284087798,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/menu_screen.dart",
+      "accessCount": 5,
+      "lastAccessed": 1772203137889,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/admin_dashboard_screen.dart",
+      "accessCount": 5,
+      "lastAccessed": 1772203139411,
+      "type": "file"
+    },
+    {
+      "path": "lib/widgets/common/app_input.dart",
+      "accessCount": 5,
+      "lastAccessed": 1772213491176,
+      "type": "file"
+    },
+    {
+      "path": "lib/widgets/common/app_loading.dart",
+      "accessCount": 5,
+      "lastAccessed": 1772214145806,
+      "type": "file"
+    },
+    {
+      "path": "lib/models/approval.dart",
+      "accessCount": 5,
+      "lastAccessed": 1772283958700,
+      "type": "file"
+    },
+    {
+      "path": "lib/models/vacation_request.dart",
+      "accessCount": 5,
+      "lastAccessed": 1772284090768,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/admin_calendar_screen.dart",
+      "accessCount": 4,
+      "lastAccessed": 1772203140064,
+      "type": "file"
+    },
+    {
+      "path": "lib/utils/admin_utils.dart",
+      "accessCount": 4,
+      "lastAccessed": 1772204410690,
+      "type": "file"
+    },
+    {
+      "path": "pubspec.yaml",
+      "accessCount": 4,
+      "lastAccessed": 1772205535155,
+      "type": "file"
+    },
+    {
+      "path": "lib/widgets/common/app_snackbar.dart",
+      "accessCount": 4,
+      "lastAccessed": 1772213490852,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/auth_provider.dart",
+      "accessCount": 4,
+      "lastAccessed": 1772213502661,
+      "type": "file"
+    },
+    {
+      "path": "lib/screens/admin_calendar_tab_screen.dart",
+      "accessCount": 3,
+      "lastAccessed": 1772203147853,
+      "type": "file"
+    },
+    {
+      "path": "lib/models",
+      "accessCount": 3,
+      "lastAccessed": 1772213528498,
+      "type": "directory"
+    },
+    {
+      "path": "lib/theme/app_typography.dart",
+      "accessCount": 2,
+      "lastAccessed": 1772213498653,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/company_provider.dart",
+      "accessCount": 2,
+      "lastAccessed": 1772213499593,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/app_provider.dart",
+      "accessCount": 2,
+      "lastAccessed": 1772213500056,
+      "type": "file"
+    },
+    {
+      "path": "lib/providers/subscription_provider.dart",
+      "accessCount": 2,
+      "lastAccessed": 1772213500581,
+      "type": "file"
+    },
+    {
+      "path": "lib/models/user.dart",
+      "accessCount": 2,
+      "lastAccessed": 1772286092683,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

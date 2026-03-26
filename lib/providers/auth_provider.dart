@@ -198,6 +198,7 @@ class AuthProvider with ChangeNotifier {
     String name,
     String role, {
     String? companyId, // optional로 변경
+    String? companyCode, // 직원 코드 가입용
     String? companyName, // 관리자용
     String? companyAddress, // 관리자용
   }) async {
@@ -214,8 +215,9 @@ class AuthProvider with ChangeNotifier {
             companyName: companyName, companyAddress: companyAddress);
       } else {
         // 직원 회원가입
-        if (companyId == null || companyId.isEmpty) {
-          setError('회사를 선택해주세요.');
+        if ((companyId == null || companyId.isEmpty) &&
+            (companyCode == null || companyCode.trim().isEmpty)) {
+          setError('회사 코드를 입력하거나 회사를 선택해주세요.');
           return false;
         }
 
@@ -228,6 +230,7 @@ class AuthProvider with ChangeNotifier {
           role: role,
           password: password,
           companyId: companyId,
+          companyCode: companyCode,
         );
 
         // Spring Boot API 응답에서 id 필드가 있으면 성공

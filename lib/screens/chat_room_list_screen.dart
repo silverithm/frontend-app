@@ -36,10 +36,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
       final companyId = authProvider.currentUser!.company?.id ?? '1';
       final userId = authProvider.currentUser!.id;
 
-      await chatProvider.loadChatRooms(
-        companyId: companyId,
-        userId: userId,
-      );
+      await chatProvider.loadChatRooms(companyId: companyId, userId: userId);
     }
   }
 
@@ -52,23 +49,19 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
     final chatProvider = context.read<ChatProvider>();
     chatProvider.selectRoom(room);
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatRoomScreen(room: room),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => ChatRoomScreen(room: room)));
   }
 
   void _navigateToCreateChatRoom() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const CreateChatRoomScreen(),
-      ),
-    ).then((created) {
-      if (created == true) {
-        _loadChatRooms();
-      }
-    });
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const CreateChatRoomScreen()))
+        .then((created) {
+          if (created == true) {
+            _loadChatRooms();
+          }
+        });
   }
 
   String _formatLastMessageTime(DateTime? time) {
@@ -117,9 +110,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
       body: Consumer<ChatProvider>(
         builder: (context, chatProvider, child) {
           if (chatProvider.isLoading && chatProvider.chatRooms.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (chatProvider.chatRooms.isEmpty) {
@@ -200,8 +191,12 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
               height: 52,
               decoration: BoxDecoration(
                 color: isAdmin
-                    ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
-                    : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+                    ? AppSemanticColors.interactiveSecondaryDefault.withValues(
+                        alpha: 0.1,
+                      )
+                    : AppSemanticColors.interactivePrimaryDefault.withValues(
+                        alpha: 0.1,
+                      ),
                 borderRadius: BorderRadius.circular(AppBorderRadius.xl),
               ),
               child: room.thumbnailUrl != null
@@ -210,7 +205,8 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
                       child: Image.network(
                         room.thumbnailUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildDefaultIcon(isAdmin),
+                        errorBuilder: (_, __, ___) =>
+                            _buildDefaultIcon(isAdmin),
                       ),
                     )
                   : _buildDefaultIcon(isAdmin),
@@ -232,7 +228,9 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
                               child: Text(
                                 room.name,
                                 style: AppTypography.bodyLarge.copyWith(
-                                  fontWeight: room.unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                                  fontWeight: room.unreadCount > 0
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                   color: AppSemanticColors.textPrimary,
                                 ),
                                 maxLines: 1,

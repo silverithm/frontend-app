@@ -179,17 +179,31 @@ class ApiService {
     required String name,
     required String role,
     required String password,
-    required String companyId,
+    String? companyId,
+    String? companyCode,
   }) async {
     try {
+      final normalizedCompanyCode = companyCode
+          ?.trim()
+          .toUpperCase()
+          .replaceAll(RegExp(r'[^A-Z0-9]'), '');
+
       final requestBody = {
         'username': username,
         'email': email,
         'name': name,
         'role': role,
         'password': password,
-        'companyId': int.parse(companyId),
+        if (companyId != null && companyId.isNotEmpty)
+          'companyId': int.parse(companyId),
+        if (normalizedCompanyCode != null && normalizedCompanyCode.isNotEmpty)
+          'companyCode': normalizedCompanyCode,
       };
+
+      if (!requestBody.containsKey('companyId') &&
+          !requestBody.containsKey('companyCode')) {
+        throw Exception('회사 코드 또는 회사 선택이 필요합니다.');
+      }
 
       print('회원가입 요청 URL: $_baseUrl${Constants.joinRequestEndpoint}');
       print('회원가입 요청 데이터: $requestBody');

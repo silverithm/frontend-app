@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'theme/app_colors.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'localization/shadcn_fallback_localizations_delegate.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -107,15 +108,15 @@ class MyApp extends StatelessWidget {
             home: const AuthWrapper(),
             navigatorObservers: [AnalyticsService().observer],
             localizationsDelegates: const [
-              shadcn.ShadcnLocalizations.delegate,
+              ShadcnFallbackLocalizationsDelegate(),
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            supportedLocales: {
-              const Locale('ko', 'KR'),
-              const Locale('en', 'US'),
-            },
+            supportedLocales: const [
+              Locale('ko', 'KR'),
+              Locale('en', 'US'),
+            ],
             locale: const Locale('ko', 'KR'),
           );
         },

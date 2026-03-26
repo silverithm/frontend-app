@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:url_launcher/url_launcher.dart';
@@ -124,6 +125,28 @@ class _ProfileScreenState extends State<ProfileScreen>
         );
       }
     });
+  }
+
+  Future<void> _copyCompanyCode(String companyCode) async {
+    await Clipboard.setData(ClipboardData(text: companyCode));
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '회사 코드가 복사되었습니다',
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppSemanticColors.textInverse,
+          ),
+        ),
+        backgroundColor: AppSemanticColors.statusSuccessIcon,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 
   void _showPasswordChangeDialog(BuildContext dialogContext) {
@@ -957,6 +980,104 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                   const SizedBox(height: 8),
 
+                  if (AdminUtils.canAccessAdminPages(user) &&
+                      (user.company?.companyCode?.isNotEmpty ?? false))
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: shadcn.Card(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: AppSemanticColors.statusWarningBackground,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Icon(
+                                      Icons.key,
+                                      color: AppSemanticColors.statusWarningIcon,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '회사 코드',
+                                          style: AppTypography.heading6.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppSemanticColors.textPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          '직원 가입 신청용 코드입니다',
+                                          style: AppTypography.bodySmall.copyWith(
+                                            color: AppSemanticColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppSemanticColors.backgroundSecondary,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: AppSemanticColors.borderDefault,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: SelectableText(
+                                        user.company!.companyCode!,
+                                        style: AppTypography.heading5.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 2,
+                                          color: AppSemanticColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: () => _copyCompanyCode(
+                                        user.company!.companyCode!,
+                                      ),
+                                      icon: const Icon(Icons.copy, size: 18),
+                                      label: const Text('복사'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                '직원은 회원가입 화면에서 이 코드를 입력해 기존 회사 선택과 같은 방식으로 가입 요청을 보낼 수 있습니다.',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  if (AdminUtils.canAccessAdminPages(user) &&
+                      (user.company?.companyCode?.isNotEmpty ?? false))
+                    const SizedBox(height: 8),
+
                   // 설정 섹션
                   FadeTransition(
                     opacity: _fadeAnimation,
@@ -1276,8 +1397,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: SizedBox(
                         width: double.infinity,
-                        child: shadcn.DestructiveButton(
+                        child: FilledButton(
                           onPressed: () => _showLogoutDialog(context),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppSemanticColors.statusErrorIcon,
+                            foregroundColor: AppSemanticColors.textInverse,
+                            disabledBackgroundColor:
+                                AppSemanticColors.statusErrorIcon,
+                            disabledForegroundColor:
+                                AppSemanticColors.textInverse,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [

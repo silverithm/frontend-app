@@ -2,6 +2,7 @@ class Company {
   final String id; // Long을 String으로 처리
   final String name;
   final String addressName;
+  final String? companyCode;
   final Location? companyAddress;
   final List<String> userEmails;
 
@@ -9,6 +10,7 @@ class Company {
     required this.id,
     required this.name,
     required this.addressName,
+    this.companyCode,
     this.companyAddress,
     this.userEmails = const [],
   });
@@ -18,6 +20,7 @@ class Company {
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       addressName: json['addressName'] ?? '',
+      companyCode: json['companyCode'],
       companyAddress: json['companyAddress'] != null
           ? Location.fromJson(json['companyAddress'])
           : null,
@@ -32,6 +35,7 @@ class Company {
       'id': id,
       'name': name,
       'addressName': addressName,
+      'companyCode': companyCode,
       'companyAddress': companyAddress?.toJson(),
       'userEmails': userEmails,
     };

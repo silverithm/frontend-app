@@ -10,6 +10,7 @@ class AdminSigninResponse {
   final String companyName;
   final Location? companyAddress;
   final String companyAddressName;
+  final String companyCode;
   final TokenInfo tokenInfo;
   final SubscriptionResponse? subscription;
   final String? customerKey;
@@ -22,6 +23,7 @@ class AdminSigninResponse {
     required this.companyName,
     this.companyAddress,
     required this.companyAddressName,
+    required this.companyCode,
     required this.tokenInfo,
     this.subscription,
     this.customerKey,
@@ -38,6 +40,7 @@ class AdminSigninResponse {
           ? Location.fromJson(json['companyAddress'])
           : null,
       companyAddressName: json['companyAddressName'] ?? '',
+      companyCode: json['companyCode'] ?? '',
       tokenInfo: TokenInfo.fromJson(json['tokenInfo']),
       subscription: json['subscription'] != null
           ? SubscriptionResponse.fromJson(json['subscription'])
@@ -61,6 +64,7 @@ class AdminSigninResponse {
         id: companyId,
         name: companyName,
         addressName: companyAddressName,
+        companyCode: companyCode,
         companyAddress: companyAddress,
         userEmails: [],
       ),

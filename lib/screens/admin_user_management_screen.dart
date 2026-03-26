@@ -9,24 +9,26 @@ import '../utils/constants.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/app_theme.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
-  const AdminUserManagementScreen({super.key});
+  final bool showBackButton;
+
+  const AdminUserManagementScreen({super.key, this.showBackButton = true});
 
   @override
-  State<AdminUserManagementScreen> createState() => _AdminUserManagementScreenState();
+  State<AdminUserManagementScreen> createState() =>
+      _AdminUserManagementScreenState();
 }
 
 class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   // 개별 사용자 작업 상태 추적
-  Set<String> _processingStatusUsers = {};
-  Set<String> _processingDeleteUsers = {};
+  final Set<String> _processingStatusUsers = {};
+  final Set<String> _processingDeleteUsers = {};
 
   @override
   void initState() {
     super.initState();
-    
+
     // 데이터 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
@@ -37,7 +39,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     final authProvider = context.read<AuthProvider>();
     final adminProvider = context.read<AdminProvider>();
     final companyId = authProvider.currentUser?.company?.id ?? '';
-    
+
     if (companyId.isNotEmpty) {
       adminProvider.loadPendingUsers(companyId);
       adminProvider.loadCompanyMembers(companyId);
@@ -57,17 +59,28 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           child: Scaffold(
             backgroundColor: AppSemanticColors.backgroundPrimary,
             appBar: AppBar(
-              title: Text('회원 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
+              title: Text(
+                '회원 관리',
+                style: AppTypography.heading6.copyWith(
+                  color: AppSemanticColors.textInverse,
+                ),
+              ),
               backgroundColor: AppSemanticColors.interactivePrimaryDefault,
               foregroundColor: AppSemanticColors.textInverse,
               elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
+              automaticallyImplyLeading: widget.showBackButton,
+              leading: widget.showBackButton
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.of(context).pop(),
+                    )
+                  : null,
               actions: [
                 IconButton(
-                  icon: Icon(Icons.refresh, color: AppSemanticColors.textInverse),
+                  icon: Icon(
+                    Icons.refresh,
+                    color: AppSemanticColors.textInverse,
+                  ),
                   onPressed: _loadData,
                 ),
               ],
@@ -76,13 +89,18 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
+                              color: AppSemanticColors.textInverse.withValues(
+                                alpha: 0.2,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -99,22 +117,30 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                                 Text(
                                   '회원 관리',
                                   style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
+                                    color: AppSemanticColors.textInverse
+                                        .withValues(alpha: 0.9),
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
+                              color: AppSemanticColors.textInverse.withValues(
+                                alpha: 0.2,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               'ADMIN',
                               style: AppTypography.labelSmall.copyWith(
-                                color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
+                                color: AppSemanticColors.textInverse.withValues(
+                                  alpha: 0.9,
+                                ),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -124,7 +150,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: AppSemanticColors.textInverse.withValues(alpha: 0.1),
+                        color: AppSemanticColors.textInverse.withValues(
+                          alpha: 0.1,
+                        ),
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(12),
                           topRight: Radius.circular(12),
@@ -132,7 +160,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                       ),
                       child: TabBar(
                         labelColor: AppSemanticColors.textInverse,
-                        unselectedLabelColor: AppSemanticColors.textInverse.withValues(alpha: 0.6),
+                        unselectedLabelColor: AppSemanticColors.textInverse
+                            .withValues(alpha: 0.6),
                         indicatorColor: AppSemanticColors.textInverse,
                         indicatorWeight: 3,
                         labelStyle: AppTypography.labelMedium.copyWith(
@@ -156,10 +185,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               ),
             ),
             body: TabBarView(
-              children: [
-                _buildPendingUsersTab(),
-                _buildAllMembersTab(),
-              ],
+              children: [_buildPendingUsersTab(), _buildAllMembersTab()],
             ),
           ),
         );
@@ -210,9 +236,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     return Consumer<AdminProvider>(
       builder: (context, adminProvider, child) {
         if (adminProvider.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (adminProvider.errorMessage.isNotEmpty) {
@@ -295,9 +319,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     return Consumer<AdminProvider>(
       builder: (context, adminProvider, child) {
         if (adminProvider.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (adminProvider.errorMessage.isNotEmpty) {
@@ -380,7 +402,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     return Consumer<AdminProvider>(
       builder: (context, adminProvider, child) {
         final isProcessing = adminProvider.isLoading;
-        
+
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           elevation: 4,
@@ -395,7 +417,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: AppSemanticColors.statusWarningBackground,
+                      backgroundColor:
+                          AppSemanticColors.statusWarningBackground,
                       child: Icon(
                         Icons.person,
                         color: AppSemanticColors.statusWarningIcon,
@@ -445,12 +468,16 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   children: [
                     Expanded(
                       child: shadcn.PrimaryButton(
-                        onPressed: isProcessing ? null : () => _showApprovalDialog(user),
+                        onPressed: isProcessing
+                            ? null
+                            : () => _showApprovalDialog(user),
                         leading: isProcessing
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.check, size: 18),
                         child: Text(isProcessing ? '처리중...' : '승인'),
@@ -459,12 +486,16 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: shadcn.OutlineButton(
-                        onPressed: isProcessing ? null : () => _showRejectDialog(user),
+                        onPressed: isProcessing
+                            ? null
+                            : () => _showRejectDialog(user),
                         leading: isProcessing
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.close, size: 18),
                         child: Text(isProcessing ? '처리중...' : '거부'),
@@ -576,7 +607,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Expanded(
                   child: shadcn.PrimaryButton(
                     size: shadcn.ButtonSize.small,
-                    onPressed: _processingStatusUsers.contains(user.id.toString())
+                    onPressed:
+                        _processingStatusUsers.contains(user.id.toString())
                         ? null
                         : () => _toggleMemberStatus(user),
                     leading: _processingStatusUsers.contains(user.id.toString())
@@ -601,7 +633,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Expanded(
                   child: shadcn.DestructiveButton(
                     size: shadcn.ButtonSize.small,
-                    onPressed: _processingDeleteUsers.contains(user.id.toString())
+                    onPressed:
+                        _processingDeleteUsers.contains(user.id.toString())
                         ? null
                         : () => _showDeleteDialog(user),
                     leading: _processingDeleteUsers.contains(user.id.toString())
@@ -633,16 +666,17 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       builder: (dialogContext) => shadcn.AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.check_circle, color: AppSemanticColors.statusSuccessIcon),
+            Icon(
+              Icons.check_circle,
+              color: AppSemanticColors.statusSuccessIcon,
+            ),
             const SizedBox(width: 8),
             const Text('가입 승인'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('${user.name}님의 가입을 승인하시겠습니까?'),
-          ],
+          children: [Text('${user.name}님의 가입을 승인하시겠습니까?')],
         ),
         actions: [
           shadcn.OutlineButton(
@@ -677,7 +711,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
   void _showRejectDialog(User user) {
     final reasonController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => shadcn.AlertDialog(
@@ -748,15 +782,17 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   void _toggleMemberStatus(User user) {
     final newStatus = user.status == 'active' ? 'inactive' : 'active';
     final actionText = newStatus == 'active' ? '활성화' : '비활성화';
-    
+
     showDialog(
       context: context,
-      builder: (context) => shadcn.AlertDialog(
+      builder: (dialogContext) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(
               newStatus == 'active' ? Icons.play_arrow : Icons.pause,
-              color: newStatus == 'active' ? AppSemanticColors.statusSuccessIcon : AppSemanticColors.statusWarningIcon,
+              color: newStatus == 'active'
+                  ? AppSemanticColors.statusSuccessIcon
+                  : AppSemanticColors.statusWarningIcon,
             ),
             const SizedBox(width: 8),
             Text('회원 $actionText'),
@@ -764,18 +800,16 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('${user.name}님을 ${actionText}하시겠습니까?'),
-          ],
+          children: [Text('${user.name}님을 $actionText하시겠습니까?')],
         ),
         actions: [
           shadcn.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('취소'),
           ),
           shadcn.PrimaryButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               setState(() {
                 _processingStatusUsers.add(user.id.toString());
               });
@@ -788,8 +822,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 if (success && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${user.name}님을 ${actionText}했습니다.'),
-                      backgroundColor: newStatus == 'active' ? AppSemanticColors.statusSuccessIcon : AppSemanticColors.statusWarningIcon,
+                      content: Text('${user.name}님을 $actionText했습니다.'),
+                      backgroundColor: newStatus == 'active'
+                          ? AppSemanticColors.statusSuccessIcon
+                          : AppSemanticColors.statusWarningIcon,
                     ),
                   );
                 }
@@ -811,7 +847,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   void _showDeleteDialog(User user) {
     showDialog(
       context: context,
-      builder: (context) => shadcn.AlertDialog(
+      builder: (dialogContext) => shadcn.AlertDialog(
         title: Row(
           children: [
             Icon(Icons.warning, color: AppSemanticColors.statusErrorIcon),
@@ -835,12 +871,12 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         ),
         actions: [
           shadcn.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('취소'),
           ),
           shadcn.DestructiveButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               setState(() {
                 _processingDeleteUsers.add(user.id.toString());
               });

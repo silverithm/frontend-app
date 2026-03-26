@@ -32,8 +32,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   String _selectedRole = 'CAREGIVER';
   String _userType = 'employee'; // 'admin' 또는 'employee'
+  String _employeeJoinMethod = 'code'; // 'code' 또는 'company'
   Company? _selectedCompany; // 선택된 회사
   String? _companyErrorMessage;
+  final _companyCodeController = TextEditingController();
   
   // 관리자 회원가입용 필드
   final _companyNameController = TextEditingController();
@@ -60,6 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _nameController.dispose();
+    _companyCodeController.dispose();
     _companyNameController.dispose();
     _companyAddressController.dispose();
     super.dispose();
@@ -328,12 +331,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // 직원인 경우 회사 선택 필수 검사
-    if (_userType == 'employee' && _selectedCompany == null) {
-      setState(() {
-        _companyErrorMessage = '회사를 선택해주세요.';
-      });
-      return;
+    // 직원인 경우 회사 코드 또는 회사 선택 필수 검사
+    if (_userType == 'employee') {
+      final normalizedCompanyCode = _companyCodeController.text
+          .trim()
+          .toUpperCase()
+          .replaceAll(RegExp(r'[^A-Z0-9]'), '');
+
+      if (_employeeJoinMethod == 'code' && normalizedCompanyCode.isEmpty) {
+        setState(() {
+          _companyErrorMessage = '회사 코드를 입력해주세요.';
+        });
+        return;
+      }
+
+      if (_employeeJoinMethod == 'company' && _selectedCompany == null) {
+        setState(() {
+          _companyErrorMessage = '회사를 선택해주세요.';
+        });
+        return;
+      }
     }
 
     // 약관 동의 필수 검사
@@ -363,13 +380,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         companyAddress: _companyAddressController.text.trim(),
       );
     } else {
-      // 직원 회원가입 - 기존 로직
+      final normalizedCompanyCode = _companyCodeController.text
+          .trim()
+          .toUpperCase()
+          .replaceAll(RegExp(r'[^A-Z0-9]'), '');
+
+      // 직원 회원가입
       success = await authProvider.register(
         _emailController.text.trim(),
         _passwordController.text,
         _nameController.text.trim(),
         _selectedRole,
-        companyId: _selectedCompany!.id, // 필수로 전달
+        companyId: _employeeJoinMethod == 'company' ? _selectedCompany!.id : null,
+        companyCode: _employeeJoinMethod == 'code' ? normalizedCompanyCode : null,
       );
     }
 
@@ -474,7 +497,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 '1',
                                 '[관리자]',
                                 '웹사이트 가입',
-                                '근무표 관리자가 먼저 앱 또는 carev.kr에서 가입을 완료합니다.',
+                                '근무표 관리자가 먼저 앱 또는 carev.kr에서 가입을 완료하고 회사 코드를 확인합니다.',
                                 Icons.computer,
                                 'from-blue-400 to-indigo-500',
                               ),
@@ -482,7 +505,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 '2',
                                 '[직원]',
                                 '앱 가입 요청',
-                                '직원은 앱에서 회원가입을 요청합니다.',
+                                '직원은 관리자에게 받은 회사 코드를 입력해 회원가입을 요청합니다.',
                                 Icons.phone_android,
                                 'from-indigo-400 to-purple-500',
                               ),
@@ -832,15 +855,215 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(height: Constants.defaultPadding),
                         ],
 
-                        // 회사 선택 (직원인 경우에만 표시)
                         if (_userType == 'employee') ...[
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppSemanticColors.backgroundSecondary,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppSemanticColors.borderDefault,
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.key,
+                                      color: AppSemanticColors.statusWarningIcon,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '회사 연결 방식',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppSemanticColors.interactivePrimaryDefault,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '관리자가 프로필에서 복사한 회사 코드로 가입하면 더 빠르게 연결할 수 있습니다.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppSemanticColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _employeeJoinMethod = 'code';
+                                            _companyErrorMessage = null;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(14),
+                                          decoration: BoxDecoration(
+                                            color: _employeeJoinMethod == 'code'
+                                                ? AppSemanticColors.statusWarningIcon
+                                                : AppColors.white,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: _employeeJoinMethod == 'code'
+                                                  ? AppSemanticColors.statusWarningIcon
+                                                  : AppSemanticColors.borderHover,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              Icon(
+                                                Icons.key,
+                                                color: _employeeJoinMethod == 'code'
+                                                    ? AppColors.white
+                                                    : AppSemanticColors.statusWarningIcon,
+                                                size: 28,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                '회사 코드',
+                                                style: TextStyle(
+                                                  color: _employeeJoinMethod == 'code'
+                                                      ? AppColors.white
+                                                      : AppSemanticColors.statusWarningIcon,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _employeeJoinMethod = 'company';
+                                            _companyErrorMessage = null;
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(14),
+                                          decoration: BoxDecoration(
+                                            color: _employeeJoinMethod == 'company'
+                                                ? AppSemanticColors.statusInfoIcon
+                                                : AppColors.white,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: _employeeJoinMethod == 'company'
+                                                  ? AppSemanticColors.statusInfoIcon
+                                                  : AppSemanticColors.borderHover,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              Icon(
+                                                Icons.apartment,
+                                                color: _employeeJoinMethod == 'company'
+                                                    ? AppColors.white
+                                                    : AppSemanticColors.statusInfoIcon,
+                                                size: 28,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                '회사 선택',
+                                                style: TextStyle(
+                                                  color: _employeeJoinMethod == 'company'
+                                                      ? AppColors.white
+                                                      : AppSemanticColors.statusInfoIcon,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: Constants.defaultPadding),
+                        ],
+
+                        if (_userType == 'employee' &&
+                            _employeeJoinMethod == 'code') ...[
+                          TextFormField(
+                            controller: _companyCodeController,
+                            textCapitalization: TextCapitalization.characters,
+                            decoration: InputDecoration(
+                              labelText: '회사 코드 *',
+                              hintText: '예: CV123456 또는 ABCD2345',
+                              helperText: '관리자가 프로필에서 복사한 코드를 입력해주세요.',
+                              prefixIcon: const Icon(Icons.key_outlined),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: _companyErrorMessage != null
+                                      ? AppSemanticColors.statusErrorBorder
+                                      : AppSemanticColors.borderHover,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: _companyErrorMessage != null
+                                      ? AppSemanticColors.statusErrorIcon
+                                      : AppSemanticColors.borderFocus,
+                                ),
+                              ),
+                            ),
+                            onChanged: (_) {
+                              if (_companyErrorMessage != null) {
+                                setState(() {
+                                  _companyErrorMessage = null;
+                                });
+                              }
+                            },
+                          ),
+                          if (_companyErrorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, left: 12),
+                              child: Text(
+                                _companyErrorMessage!,
+                                style: TextStyle(
+                                  color: AppSemanticColors.statusErrorIcon,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: Constants.defaultPadding),
+                        ],
+
+                        if (_userType == 'employee' &&
+                            _employeeJoinMethod == 'company') ...[
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               DropdownButtonFormField<Company?>(
                                 value: _selectedCompany,
                                 decoration: InputDecoration(
-                                  labelText: '회사 *', // 필수 표시
+                                  labelText: '회사 *',
                                   prefixIcon: const Icon(Icons.business_outlined),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -863,21 +1086,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                                 hint: const Text('회사를 선택해주세요'),
-                                // 선택된 항목을 표시할 때는 회사명만 보이도록
                                 selectedItemBuilder: (BuildContext context) {
                                   return context
                                       .watch<CompanyProvider>()
                                       .companies
-                                      .map((company) => DropdownMenuItem<Company?>(
-                                            value: company,
-                                            child: Text(
-                                              company.name,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                      .map(
+                                        (company) => DropdownMenuItem<Company?>(
+                                          value: company,
+                                          child: Text(
+                                            company.name,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
                                             ),
-                                          ))
+                                          ),
+                                        ),
+                                      )
                                       .toList();
                                 },
                                 items: context
@@ -887,7 +1111,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       (company) => DropdownMenuItem<Company?>(
                                         value: company,
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
@@ -913,11 +1138,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 onChanged: (value) {
                                   setState(() {
                                     _selectedCompany = value;
-                                    _companyErrorMessage = null; // 에러 메시지 초기화
+                                    _companyErrorMessage = null;
                                   });
                                 },
                               ),
-                              // 에러 메시지 표시
                               if (_companyErrorMessage != null)
                                 Padding(
                                   padding: const EdgeInsets.only(
