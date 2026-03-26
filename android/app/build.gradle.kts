@@ -66,3 +66,11 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
+
+tasks.configureEach {
+    if (name.startsWith("copyFlutterAssets")) {
+        doNotTrackState(
+            "Flutter asset copy outputs can contain stale files that Gradle 8.12 fails to snapshot.",
+        )
+    }
+}
