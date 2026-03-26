@@ -101,7 +101,8 @@ class AuthProvider with ChangeNotifier {
             .toString()
             .replaceAll('ApiException: ', '')
             .replaceAll('Exception: 로그인 실패:', '')
-            .replaceAll('(Status: 400)', '');
+            .split(' (Status:')[0]
+            .trim();
 
         setError(errorMsg);
       } else {
@@ -180,7 +181,8 @@ class AuthProvider with ChangeNotifier {
             .toString()
             .replaceAll('ApiException: ', '')
             .replaceAll('Exception: 관리자 로그인 실패:', '')
-            .replaceAll('(Status: 400)', '');
+            .split(' (Status:')[0]
+            .trim();
 
         setError(errorMsg);
       } else {
