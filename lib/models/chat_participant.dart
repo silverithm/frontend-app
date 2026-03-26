@@ -9,6 +9,7 @@ class ChatParticipant {
   final String userName;
   final String? position;
   final ParticipantRole role;
+  final String? memberRole;
   final DateTime joinedAt;
   final DateTime? lastReadAt;
   final int? lastReadMessageId;
@@ -23,6 +24,7 @@ class ChatParticipant {
     required this.userName,
     this.position,
     this.role = ParticipantRole.member,
+    this.memberRole,
     required this.joinedAt,
     this.lastReadAt,
     this.lastReadMessageId,
@@ -39,6 +41,7 @@ class ChatParticipant {
       userName: json['userName']?.toString() ?? '',
       position: json['position']?.toString(),
       role: _parseRole(json['role']?.toString()),
+      memberRole: json['memberRole']?.toString(),
       joinedAt:
           DateTime.tryParse(json['joinedAt']?.toString() ?? '') ??
           DateTime.now(),
@@ -64,6 +67,7 @@ class ChatParticipant {
       'userName': userName,
       'position': position,
       'role': role.name.toUpperCase(),
+      'memberRole': memberRole,
       'joinedAt': joinedAt.toIso8601String(),
       'lastReadAt': lastReadAt?.toIso8601String(),
       'lastReadMessageId': lastReadMessageId,
@@ -107,6 +111,21 @@ class ChatParticipant {
 
   bool get isAdmin => role == ParticipantRole.admin;
 
+  String? get memberRoleText {
+    switch (memberRole?.toUpperCase()) {
+      case 'ADMIN':
+        return '관리자';
+      case 'CAREGIVER':
+        return '요양보호사';
+      case 'OFFICE':
+        return '사무직';
+      case 'USER':
+        return '일반 사용자';
+      default:
+        return null;
+    }
+  }
+
   ChatParticipant copyWith({
     int? id,
     int? chatRoomId,
@@ -114,6 +133,7 @@ class ChatParticipant {
     String? userName,
     String? position,
     ParticipantRole? role,
+    String? memberRole,
     DateTime? joinedAt,
     DateTime? lastReadAt,
     int? lastReadMessageId,
@@ -128,6 +148,7 @@ class ChatParticipant {
       userName: userName ?? this.userName,
       position: position ?? this.position,
       role: role ?? this.role,
+      memberRole: memberRole ?? this.memberRole,
       joinedAt: joinedAt ?? this.joinedAt,
       lastReadAt: lastReadAt ?? this.lastReadAt,
       lastReadMessageId: lastReadMessageId ?? this.lastReadMessageId,

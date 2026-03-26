@@ -287,6 +287,12 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                         final participant = participants[index];
                         final isCurrentUser =
                             participant.userId == currentUserId;
+                        final participantMeta = [
+                          if (participant.position?.trim().isNotEmpty ?? false)
+                            participant.position!.trim(),
+                          if (participant.memberRoleText?.isNotEmpty ?? false)
+                            participant.memberRoleText!,
+                        ];
 
                         return ListTile(
                           leading: CircleAvatar(
@@ -345,14 +351,13 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                                 ),
                             ],
                           ),
-                          subtitle:
-                              (participant.position?.trim().isNotEmpty ?? false)
+                          subtitle: participantMeta.isNotEmpty
                               ? Padding(
                                   padding: const EdgeInsets.only(
                                     top: AppSpacing.space0_5,
                                   ),
                                   child: Text(
-                                    participant.position!.trim(),
+                                    participantMeta.join(' • '),
                                     style: AppTypography.bodySmall.copyWith(
                                       color: AppSemanticColors.textTertiary,
                                     ),
