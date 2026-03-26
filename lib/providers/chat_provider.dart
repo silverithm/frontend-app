@@ -654,6 +654,34 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> deleteChatRoom(int roomId) async {
+    try {
+      setLoading(true);
+      clearError();
+
+      final response = await ApiService().deleteChatRoom(roomId: roomId);
+
+      print('[ChatProvider] 채팅방 삭제 응답: $response');
+
+      _unsubscribeFromRoom(roomId);
+      _chatRooms.removeWhere((r) => r.id == roomId);
+      if (_selectedRoom?.id == roomId) {
+        _selectedRoom = null;
+        _messages.clear();
+        _participants.clear();
+      }
+      notifyListeners();
+
+      return true;
+    } catch (e) {
+      print('[ChatProvider] 채팅방 삭제 에러: $e');
+      setError('채팅방 삭제에 실패했습니다: ${e.toString()}');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   void selectRoom(ChatRoom room) {
     // 이전 채팅방 구독 해제
     if (_selectedRoom != null && _selectedRoom!.id != room.id) {

@@ -20,7 +20,8 @@ class ChatRoomInfoScreen extends StatefulWidget {
   State<ChatRoomInfoScreen> createState() => _ChatRoomInfoScreenState();
 }
 
-class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTickerProviderStateMixin {
+class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -102,15 +103,19 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
 
     if (confirmed == true && mounted) {
       final chatProvider = context.read<ChatProvider>();
-      await chatProvider.removeParticipant(widget.room.id, participant.userId, isKicked: true);
+      await chatProvider.removeParticipant(
+        widget.room.id,
+        participant.userId,
+        isKicked: true,
+      );
     }
   }
 
   Future<void> _inviteParticipants() async {
     // TODO: 참가자 초대 화면으로 이동
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('참가자 초대 기능은 추후 구현됩니다')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('참가자 초대 기능은 추후 구현됩니다')));
   }
 
   @override
@@ -148,8 +153,10 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
                   height: 80,
                   decoration: BoxDecoration(
                     color: isAdmin
-                        ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
-                        : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+                        ? AppSemanticColors.interactiveSecondaryDefault
+                              .withValues(alpha: 0.1)
+                        : AppSemanticColors.interactivePrimaryDefault
+                              .withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -165,7 +172,8 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
                     color: AppSemanticColors.textPrimary,
                   ),
                 ),
-                if (widget.room.description != null && widget.room.description!.isNotEmpty)
+                if (widget.room.description != null &&
+                    widget.room.description!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.space1),
                     child: Text(
@@ -271,63 +279,94 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.space2,
+                      ),
                       itemCount: participants.length,
                       itemBuilder: (context, index) {
                         final participant = participants[index];
-                        final isCurrentUser = participant.userId == currentUserId;
+                        final isCurrentUser =
+                            participant.userId == currentUserId;
 
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundColor: isAdmin
-                                ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
-                                : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+                                ? AppSemanticColors.interactiveSecondaryDefault
+                                      .withValues(alpha: 0.1)
+                                : AppSemanticColors.interactivePrimaryDefault
+                                      .withValues(alpha: 0.1),
                             child: Text(
                               participant.userName.isNotEmpty
                                   ? participant.userName[0]
                                   : '?',
                               style: AppTypography.bodyLarge.copyWith(
-                                color: AppSemanticColors.interactivePrimaryDefault,
+                                color:
+                                    AppSemanticColors.interactivePrimaryDefault,
                               ),
                             ),
                           ),
                           title: Row(
                             children: [
                               Text(
-                                participant.userName + (isCurrentUser ? ' (나)' : ''),
+                                participant.userName +
+                                    (isCurrentUser ? ' (나)' : ''),
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppSemanticColors.textPrimary,
                                 ),
                               ),
                               if (participant.role == ParticipantRole.admin)
                                 Container(
-                                  margin: const EdgeInsets.only(left: AppSpacing.space2),
+                                  margin: const EdgeInsets.only(
+                                    left: AppSpacing.space2,
+                                  ),
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: AppSpacing.space2,
                                     vertical: AppSpacing.space1,
                                   ),
                                   decoration: BoxDecoration(
                                     color: isAdmin
-                                        ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
-                                        : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.base),
+                                        ? AppSemanticColors
+                                              .interactiveSecondaryDefault
+                                              .withValues(alpha: 0.1)
+                                        : AppSemanticColors
+                                              .interactivePrimaryDefault
+                                              .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.base,
+                                    ),
                                   ),
                                   child: Text(
                                     '방장',
                                     style: AppTypography.labelSmall.copyWith(
-                                      color: AppSemanticColors.interactivePrimaryDefault,
+                                      color: AppSemanticColors
+                                          .interactivePrimaryDefault,
                                     ),
                                   ),
                                 ),
                             ],
                           ),
+                          subtitle:
+                              (participant.position?.trim().isNotEmpty ?? false)
+                              ? Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: AppSpacing.space0_5,
+                                  ),
+                                  child: Text(
+                                    participant.position!.trim(),
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppSemanticColors.textTertiary,
+                                    ),
+                                  ),
+                                )
+                              : null,
                           trailing: isRoomAdmin && !isCurrentUser
                               ? IconButton(
                                   icon: Icon(
                                     Icons.remove_circle_outline,
                                     color: AppSemanticColors.statusErrorIcon,
                                   ),
-                                  onPressed: () => _kickParticipant(participant),
+                                  onPressed: () =>
+                                      _kickParticipant(participant),
                                 )
                               : null,
                         );
@@ -436,7 +475,9 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen> with SingleTick
                         height: 40,
                         decoration: BoxDecoration(
                           color: AppSemanticColors.backgroundTertiary,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.lg,
+                          ),
                         ),
                         child: Icon(
                           Icons.insert_drive_file,

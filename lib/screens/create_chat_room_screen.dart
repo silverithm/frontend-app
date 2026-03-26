@@ -45,7 +45,9 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await ApiService().getCompanyMembers(companyId: companyId);
+      final response = await ApiService().getCompanyMembers(
+        companyId: companyId,
+      );
       print('[CreateChatRoomScreen] 회원 목록 응답: $response');
 
       if (response['members'] != null) {
@@ -62,9 +64,9 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
     } catch (e) {
       print('[CreateChatRoomScreen] 회원 목록 로드 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('회원 목록을 불러오는데 실패했습니다: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('회원 목록을 불러오는데 실패했습니다: $e')));
       }
     } finally {
       setState(() => _isLoading = false);
@@ -74,16 +76,16 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
   Future<void> _createChatRoom() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('채팅방 이름을 입력해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('채팅방 이름을 입력해주세요')));
       return;
     }
 
     if (_selectedParticipantIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('참가자를 1명 이상 선택해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('참가자를 1명 이상 선택해주세요')));
       return;
     }
 
@@ -97,7 +99,10 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
       final userName = authProvider.currentUser?.name ?? '';
 
       // 자신도 참가자에 포함
-      final participantIds = [..._selectedParticipantIds, userId].toSet().toList();
+      final participantIds = [
+        ..._selectedParticipantIds,
+        userId,
+      ].toSet().toList();
 
       final room = await chatProvider.createChatRoom(
         companyId: companyId,
@@ -113,16 +118,16 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
       if (room != null && mounted) {
         Navigator.of(context).pop(true);
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('채팅방 생성에 실패했습니다')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('채팅방 생성에 실패했습니다')));
       }
     } catch (e) {
       print('[CreateChatRoomScreen] 채팅방 생성 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('채팅방 생성에 실패했습니다: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('채팅방 생성에 실패했습니다: $e')));
       }
     } finally {
       setState(() => _isLoading = false);
@@ -243,7 +248,9 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                   // 전체 선택 버튼
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.space2,
+                    ),
                     child: Row(
                       children: [
                         shadcn.GhostButton(
@@ -252,7 +259,8 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                               _selectedParticipantIds.clear();
                               for (final member in _members) {
                                 final memberId = member['id']?.toString() ?? '';
-                                if (memberId.isNotEmpty && memberId != currentUserId) {
+                                if (memberId.isNotEmpty &&
+                                    memberId != currentUserId) {
                                   _selectedParticipantIds.add(memberId);
                                 }
                               }
@@ -261,7 +269,8 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                           child: Text(
                             '전체 선택',
                             style: AppTypography.labelMedium.copyWith(
-                              color: AppSemanticColors.interactivePrimaryDefault,
+                              color:
+                                  AppSemanticColors.interactivePrimaryDefault,
                             ),
                           ),
                         ),
@@ -305,20 +314,30 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                             itemBuilder: (context, index) {
                               final member = _members[index];
                               final memberId = member['id']?.toString() ?? '';
-                              final memberName = member['name']?.toString() ?? '알 수 없음';
-                              final memberRole = member['role']?.toString() ?? '';
+                              final memberName =
+                                  member['name']?.toString() ?? '알 수 없음';
+                              final memberRole =
+                                  member['role']?.toString() ?? '';
+                              final memberPosition =
+                                  member['position']?.toString().trim() ?? '';
                               final isCurrentUser = memberId == currentUserId;
-                              final isSelected = _selectedParticipantIds.contains(memberId);
+                              final isSelected = _selectedParticipantIds
+                                  .contains(memberId);
 
                               return ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: isAdmin
-                                      ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
-                                      : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+                                      ? AppSemanticColors
+                                            .interactiveSecondaryDefault
+                                            .withValues(alpha: 0.1)
+                                      : AppSemanticColors
+                                            .interactivePrimaryDefault
+                                            .withValues(alpha: 0.1),
                                   child: Text(
                                     memberName.isNotEmpty ? memberName[0] : '?',
                                     style: AppTypography.bodyLarge.copyWith(
-                                      color: AppSemanticColors.interactivePrimaryDefault,
+                                      color: AppSemanticColors
+                                          .interactivePrimaryDefault,
                                     ),
                                   ),
                                 ),
@@ -328,9 +347,16 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                                     color: AppSemanticColors.textPrimary,
                                   ),
                                 ),
-                                subtitle: memberRole.isNotEmpty
+                                subtitle:
+                                    (memberPosition.isNotEmpty ||
+                                        memberRole.isNotEmpty)
                                     ? Text(
-                                        _getRoleText(memberRole),
+                                        [
+                                          if (memberPosition.isNotEmpty)
+                                            memberPosition,
+                                          if (memberRole.isNotEmpty)
+                                            _getRoleText(memberRole),
+                                        ].join(' • '),
                                         style: AppTypography.bodySmall.copyWith(
                                           color: AppSemanticColors.textTertiary,
                                         ),
@@ -346,22 +372,31 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                                         onChanged: (value) {
                                           setState(() {
                                             if (value == true) {
-                                              _selectedParticipantIds.add(memberId);
+                                              _selectedParticipantIds.add(
+                                                memberId,
+                                              );
                                             } else {
-                                              _selectedParticipantIds.remove(memberId);
+                                              _selectedParticipantIds.remove(
+                                                memberId,
+                                              );
                                             }
                                           });
                                         },
-                                        activeColor: AppSemanticColors.interactivePrimaryDefault,
+                                        activeColor: AppSemanticColors
+                                            .interactivePrimaryDefault,
                                       ),
                                 onTap: isCurrentUser
                                     ? null
                                     : () {
                                         setState(() {
                                           if (isSelected) {
-                                            _selectedParticipantIds.remove(memberId);
+                                            _selectedParticipantIds.remove(
+                                              memberId,
+                                            );
                                           } else {
-                                            _selectedParticipantIds.add(memberId);
+                                            _selectedParticipantIds.add(
+                                              memberId,
+                                            );
                                           }
                                         });
                                       },

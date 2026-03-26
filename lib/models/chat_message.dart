@@ -20,7 +20,8 @@ class ReactionSummary {
     return ReactionSummary(
       emoji: json['emoji']?.toString() ?? '',
       count: json['count'] as int? ?? 0,
-      userNames: (json['userNames'] as List<dynamic>?)
+      userNames:
+          (json['userNames'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
@@ -57,6 +58,7 @@ class ChatMessage {
   final int chatRoomId;
   final String senderId;
   final String senderName;
+  final String? senderPosition;
   final MessageType type;
   final String? content;
   final String? fileUrl;
@@ -75,6 +77,7 @@ class ChatMessage {
     required this.chatRoomId,
     required this.senderId,
     required this.senderName,
+    this.senderPosition,
     this.type = MessageType.text,
     this.content,
     this.fileUrl,
@@ -95,6 +98,7 @@ class ChatMessage {
       chatRoomId: json['chatRoomId'] as int? ?? 0,
       senderId: json['senderId']?.toString() ?? '',
       senderName: json['senderName']?.toString() ?? '',
+      senderPosition: json['senderPosition']?.toString(),
       type: _parseMessageType(json['type']?.toString()),
       content: json['content']?.toString(),
       fileUrl: json['fileUrl']?.toString(),
@@ -102,11 +106,14 @@ class ChatMessage {
       fileSize: json['fileSize'] as int?,
       mimeType: json['mimeType']?.toString(),
       readCount: json['readCount'] as int? ?? 0,
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
       isDeleted: json['isDeleted'] as bool? ?? false,
       sendingStatus: MessageSendingStatus.sent, // 서버에서 온 메시지는 이미 전송됨
       localId: json['localId']?.toString(),
-      reactions: (json['reactions'] as List<dynamic>?)
+      reactions:
+          (json['reactions'] as List<dynamic>?)
               ?.map((e) => ReactionSummary.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
@@ -119,6 +126,7 @@ class ChatMessage {
       'chatRoomId': chatRoomId,
       'senderId': senderId,
       'senderName': senderName,
+      'senderPosition': senderPosition,
       'type': type.name.toUpperCase(),
       'content': content,
       'fileUrl': fileUrl,
@@ -159,7 +167,8 @@ class ChatMessage {
     }
   }
 
-  bool get isFileMessage => type == MessageType.image || type == MessageType.file;
+  bool get isFileMessage =>
+      type == MessageType.image || type == MessageType.file;
 
   String get displayContent {
     if (isDeleted) return '삭제된 메시지입니다.';
@@ -180,6 +189,7 @@ class ChatMessage {
     int? chatRoomId,
     String? senderId,
     String? senderName,
+    String? senderPosition,
     MessageType? type,
     String? content,
     String? fileUrl,
@@ -198,6 +208,7 @@ class ChatMessage {
       chatRoomId: chatRoomId ?? this.chatRoomId,
       senderId: senderId ?? this.senderId,
       senderName: senderName ?? this.senderName,
+      senderPosition: senderPosition ?? this.senderPosition,
       type: type ?? this.type,
       content: content ?? this.content,
       fileUrl: fileUrl ?? this.fileUrl,
@@ -236,7 +247,8 @@ class ChatMessageReader {
       messageId: json['messageId'] as int? ?? 0,
       userId: json['userId']?.toString() ?? '',
       userName: json['userName']?.toString() ?? '',
-      readAt: DateTime.tryParse(json['readAt']?.toString() ?? '') ?? DateTime.now(),
+      readAt:
+          DateTime.tryParse(json['readAt']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 

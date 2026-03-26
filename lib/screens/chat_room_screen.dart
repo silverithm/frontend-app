@@ -20,6 +20,8 @@ import '../utils/admin_utils.dart';
 import 'chat_room_info_screen.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
+enum _ChatRoomMenuAction { info, delete }
+
 class ChatRoomScreen extends StatefulWidget {
   final ChatRoom room;
 
@@ -93,7 +95,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       final chatProvider = context.read<ChatProvider>();
       if (!chatProvider.isLoading && chatProvider.hasMoreMessages) {
         chatProvider.loadMessages(roomId: widget.room.id);
@@ -110,14 +113,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     if (hasText && !_isTyping) {
       _isTyping = true;
-      chatProvider.sendTypingStatus(widget.room.id, true, userId: userId, userName: userName);
+      chatProvider.sendTypingStatus(
+        widget.room.id,
+        true,
+        userId: userId,
+        userName: userName,
+      );
     }
 
     _typingTimer?.cancel();
     _typingTimer = Timer(const Duration(seconds: 2), () {
       if (_isTyping) {
         _isTyping = false;
-        chatProvider.sendTypingStatus(widget.room.id, false, userId: userId, userName: userName);
+        chatProvider.sendTypingStatus(
+          widget.room.id,
+          false,
+          userId: userId,
+          userName: userName,
+        );
       }
     });
   }
@@ -135,7 +148,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     // 타이핑 상태 해제
     if (_isTyping) {
       _isTyping = false;
-      chatProvider.sendTypingStatus(widget.room.id, false, userId: userId, userName: userName);
+      chatProvider.sendTypingStatus(
+        widget.room.id,
+        false,
+        userId: userId,
+        userName: userName,
+      );
     }
 
     await chatProvider.sendTextMessage(
@@ -160,7 +178,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       context: context,
       backgroundColor: AppSemanticColors.surfaceDefault,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
       ),
       builder: (context) {
         return SafeArea(
@@ -173,7 +193,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(AppSpacing.space2),
                     decoration: BoxDecoration(
-                      color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+                      color: AppSemanticColors.interactivePrimaryDefault
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                     ),
                     child: Icon(
@@ -202,7 +223,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(AppSpacing.space2),
                     decoration: BoxDecoration(
-                      color: AppSemanticColors.statusWarningIcon.withValues(alpha: 0.1),
+                      color: AppSemanticColors.statusWarningIcon.withValues(
+                        alpha: 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                     ),
                     child: Icon(
@@ -247,14 +270,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         File file = File(image.path);
         final fileSize = await file.length();
 
-        print('[ChatRoomScreen] 선택된 파일: ${image.name}, 크기: ${_formatFileSize(fileSize)} ($fileSize bytes)');
+        print(
+          '[ChatRoomScreen] 선택된 파일: ${image.name}, 크기: ${_formatFileSize(fileSize)} ($fileSize bytes)',
+        );
 
         // 10MB 초과시 압축
         if (fileSize > _maxFileSize) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('파일 크기가 ${_formatFileSize(fileSize)}입니다. 자동으로 압축 중...'),
+                content: Text(
+                  '파일 크기가 ${_formatFileSize(fileSize)}입니다. 자동으로 압축 중...',
+                ),
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -267,7 +294,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('압축 완료: ${_formatFileSize(fileSize)} → ${_formatFileSize(compressedSize)}'),
+                  content: Text(
+                    '압축 완료: ${_formatFileSize(fileSize)} → ${_formatFileSize(compressedSize)}',
+                  ),
                   backgroundColor: AppSemanticColors.statusSuccessIcon,
                 ),
               );
@@ -287,7 +316,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
         // 전송 전 최종 파일 크기 확인
         final finalSize = await file.length();
-        print('[ChatRoomScreen] 전송할 파일 크기: ${_formatFileSize(finalSize)} ($finalSize bytes)');
+        print(
+          '[ChatRoomScreen] 전송할 파일 크기: ${_formatFileSize(finalSize)} ($finalSize bytes)',
+        );
 
         final chatProvider = context.read<ChatProvider>();
         final authProvider = context.read<AuthProvider>();
@@ -301,9 +332,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       print('[ChatRoomScreen] 사진 선택 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('사진 선택에 실패했습니다: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('사진 선택에 실패했습니다: $e')));
       }
     }
   }
@@ -312,7 +343,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Future<File?> _compressImage(File file, int originalSize) async {
     try {
       final tempDir = await getTemporaryDirectory();
-      final fileName = 'compressed_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fileName =
+          'compressed_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final targetPath = '${tempDir.path}/$fileName';
 
       // 목표 크기: 9MB (여유분 확보)
@@ -330,7 +362,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         quality = 70; // 10MB 초과: 품질 70%
       }
 
-      print('[ChatRoomScreen] 이미지 압축 시작: ${_formatFileSize(originalSize)}, 품질: $quality%');
+      print(
+        '[ChatRoomScreen] 이미지 압축 시작: ${_formatFileSize(originalSize)}, 품질: $quality%',
+      );
 
       XFile? compressedXFile = await FlutterImageCompress.compressAndGetFile(
         file.absolute.path,
@@ -356,7 +390,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         quality -= 15;
         attempts++;
 
-        final recompressPath = '${tempDir.path}/recompressed_${attempts}_$fileName';
+        final recompressPath =
+            '${tempDir.path}/recompressed_${attempts}_$fileName';
 
         compressedXFile = await FlutterImageCompress.compressAndGetFile(
           compressedFile.path,
@@ -371,12 +406,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         compressedFile = File(compressedXFile.path);
         compressedSize = await compressedFile.length();
 
-        print('[ChatRoomScreen] ${attempts + 1}차 압축 결과: ${_formatFileSize(compressedSize)}, 품질: $quality%');
+        print(
+          '[ChatRoomScreen] ${attempts + 1}차 압축 결과: ${_formatFileSize(compressedSize)}, 품질: $quality%',
+        );
       }
 
       // 최종 확인
       if (compressedSize > _maxFileSize) {
-        print('[ChatRoomScreen] 압축 후에도 10MB 초과: ${_formatFileSize(compressedSize)}');
+        print(
+          '[ChatRoomScreen] 압축 후에도 10MB 초과: ${_formatFileSize(compressedSize)}',
+        );
         return null;
       }
 
@@ -416,7 +455,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('파일 크기가 너무 큽니다 (${_formatFileSize(fileSize)}). 최대 10MB까지 업로드 가능합니다.'),
+                content: Text(
+                  '파일 크기가 너무 큽니다 (${_formatFileSize(fileSize)}). 최대 10MB까지 업로드 가능합니다.',
+                ),
                 backgroundColor: AppSemanticColors.statusErrorIcon,
               ),
             );
@@ -436,19 +477,67 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       print('[ChatRoomScreen] 파일 선택 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('파일 선택에 실패했습니다: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('파일 선택에 실패했습니다: $e')));
       }
     }
   }
 
   void _showRoomInfo() {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatRoomInfoScreen(room: widget.room),
+      MaterialPageRoute(builder: (_) => ChatRoomInfoScreen(room: widget.room)),
+    );
+  }
+
+  Future<void> _confirmDeleteChatRoom() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => shadcn.AlertDialog(
+        title: const Text('채팅방 삭제'),
+        content: const Text('이 채팅방을 삭제하시겠습니까?\n삭제 후에는 채팅방을 다시 열 수 없습니다.'),
+        actions: [
+          shadcn.OutlineButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          shadcn.DestructiveButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제'),
+          ),
+        ],
       ),
     );
+
+    if (confirmed != true || !mounted) return;
+
+    final chatProvider = context.read<ChatProvider>();
+    final success = await chatProvider.deleteChatRoom(widget.room.id);
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final errorMessage = chatProvider.errorMessage.isNotEmpty
+        ? chatProvider.errorMessage
+        : '채팅방 삭제에 실패했습니다.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(errorMessage)));
+  }
+
+  Future<void> _handleRoomMenuAction(_ChatRoomMenuAction action) async {
+    switch (action) {
+      case _ChatRoomMenuAction.info:
+        _showRoomInfo();
+        return;
+      case _ChatRoomMenuAction.delete:
+        await _confirmDeleteChatRoom();
+        return;
+    }
   }
 
   // 자주 사용하는 이모지 목록
@@ -468,13 +557,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               // 이모지 빠른 선택
               if (message.type != MessageType.system)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3, horizontal: AppSpacing.space4),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.space3,
+                    horizontal: AppSpacing.space4,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: _quickEmojis.map((emoji) {
                       // 이미 선택한 이모지인지 확인
-                      final isSelected = message.reactions.any((r) =>
-                          r.emoji == emoji && r.myReaction);
+                      final isSelected = message.reactions.any(
+                        (r) => r.emoji == emoji && r.myReaction,
+                      );
                       return GestureDetector(
                         onTap: () {
                           Navigator.pop(context);
@@ -484,11 +577,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           padding: const EdgeInsets.all(AppSpacing.space2),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.2)
+                                ? AppSemanticColors.interactivePrimaryDefault
+                                      .withValues(alpha: 0.2)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.lg,
+                            ),
                           ),
-                          child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                          child: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 28),
+                          ),
                         ),
                       );
                     }).toList(),
@@ -513,8 +612,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
               if (isMyMessage && !message.isDeleted)
                 ListTile(
-                  leading: Icon(Icons.delete, color: AppSemanticColors.statusErrorIcon),
-                  title: Text('삭제', style: TextStyle(color: AppSemanticColors.statusErrorIcon)),
+                  leading: Icon(
+                    Icons.delete,
+                    color: AppSemanticColors.statusErrorIcon,
+                  ),
+                  title: Text(
+                    '삭제',
+                    style: TextStyle(color: AppSemanticColors.statusErrorIcon),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _deleteMessage(message);
@@ -547,48 +652,59 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (result['action'] == 'added') {
         // 리액션 추가됨
         final updatedReactions = List<ReactionSummary>.from(message.reactions);
-        final existingIndex = updatedReactions.indexWhere((r) => r.emoji == emoji);
+        final existingIndex = updatedReactions.indexWhere(
+          (r) => r.emoji == emoji,
+        );
         if (existingIndex >= 0) {
           // 기존 이모지에 추가
-          updatedReactions[existingIndex] = updatedReactions[existingIndex].copyWith(
-            count: updatedReactions[existingIndex].count + 1,
-            userNames: [...updatedReactions[existingIndex].userNames, userName],
-            myReaction: true,
-          );
+          updatedReactions[existingIndex] = updatedReactions[existingIndex]
+              .copyWith(
+                count: updatedReactions[existingIndex].count + 1,
+                userNames: [
+                  ...updatedReactions[existingIndex].userNames,
+                  userName,
+                ],
+                myReaction: true,
+              );
         } else {
           // 새 이모지 추가
-          updatedReactions.add(ReactionSummary(
-            emoji: emoji,
-            count: 1,
-            userNames: [userName],
-            myReaction: true,
-          ));
+          updatedReactions.add(
+            ReactionSummary(
+              emoji: emoji,
+              count: 1,
+              userNames: [userName],
+              myReaction: true,
+            ),
+          );
         }
         chatProvider.updateMessageReactions(message.id, updatedReactions);
       } else {
         // 리액션 삭제됨
         final updatedReactions = List<ReactionSummary>.from(message.reactions);
-        final existingIndex = updatedReactions.indexWhere((r) => r.emoji == emoji);
+        final existingIndex = updatedReactions.indexWhere(
+          (r) => r.emoji == emoji,
+        );
         if (existingIndex >= 0) {
           if (updatedReactions[existingIndex].count <= 1) {
             updatedReactions.removeAt(existingIndex);
           } else {
-            updatedReactions[existingIndex] = updatedReactions[existingIndex].copyWith(
-              count: updatedReactions[existingIndex].count - 1,
-              userNames: updatedReactions[existingIndex].userNames
-                  .where((n) => n != userName)
-                  .toList(),
-              myReaction: false,
-            );
+            updatedReactions[existingIndex] = updatedReactions[existingIndex]
+                .copyWith(
+                  count: updatedReactions[existingIndex].count - 1,
+                  userNames: updatedReactions[existingIndex].userNames
+                      .where((n) => n != userName)
+                      .toList(),
+                  myReaction: false,
+                );
           }
         }
         chatProvider.updateMessageReactions(message.id, updatedReactions);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('리액션 처리 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('리액션 처리 실패: $e')));
       }
     }
   }
@@ -612,7 +728,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
               decoration: BoxDecoration(
                 color: reaction.myReaction
-                    ? AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.2)
+                    ? AppSemanticColors.interactivePrimaryDefault.withValues(
+                        alpha: 0.2,
+                      )
                     : AppSemanticColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(AppBorderRadius.full),
                 border: Border.all(
@@ -633,7 +751,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       color: reaction.myReaction
                           ? AppSemanticColors.interactivePrimaryDefault
                           : AppSemanticColors.textSecondary,
-                      fontWeight: reaction.myReaction ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: reaction.myReaction
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
                 ],
@@ -684,9 +804,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // 파일 다운로드 및 열기
   Future<void> _downloadAndOpenFile(String? url, String fileName) async {
     if (url == null || url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('파일 URL이 없습니다')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('파일 URL이 없습니다')));
       return;
     }
 
@@ -700,10 +820,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: AppSpacing.space4),
-            Text(
-              '다운로드 중...',
-              style: AppTypography.bodyMedium,
-            ),
+            Text('다운로드 중...', style: AppTypography.bodyMedium),
             const SizedBox(height: AppSpacing.space2),
             Text(
               fileName,
@@ -755,9 +872,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       print('[Download] 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('다운로드 실패: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('다운로드 실패: $e')));
       }
     }
   }
@@ -805,7 +922,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         final reader = readers[index];
                         return ListTile(
                           leading: CircleAvatar(
-                            child: Text(reader.userName.isNotEmpty ? reader.userName[0] : '?'),
+                            child: Text(
+                              reader.userName.isNotEmpty
+                                  ? reader.userName[0]
+                                  : '?',
+                            ),
                           ),
                           title: Text(reader.userName),
                           trailing: Text(
@@ -877,114 +998,139 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         }
       },
       child: Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.room.name,
-              style: AppTypography.bodyLarge.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
+        backgroundColor: AppSemanticColors.backgroundSecondary,
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.room.name,
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isAdmin
+                      ? AppSemanticColors.textInverse
+                      : AppSemanticColors.textPrimary,
+                ),
               ),
-            ),
-            Consumer<ChatProvider>(
-              builder: (context, chatProvider, child) {
-                if (chatProvider.typingUsers.isNotEmpty) {
-                  final typingText = chatProvider.typingUsers.length == 1
-                      ? '${chatProvider.typingUsers.first}님이 입력 중...'
-                      : '${chatProvider.typingUsers.length}명이 입력 중...';
+              Consumer<ChatProvider>(
+                builder: (context, chatProvider, child) {
+                  if (chatProvider.typingUsers.isNotEmpty) {
+                    final typingText = chatProvider.typingUsers.length == 1
+                        ? '${chatProvider.typingUsers.first}님이 입력 중...'
+                        : '${chatProvider.typingUsers.length}명이 입력 중...';
+                    return Text(
+                      typingText,
+                      style: AppTypography.labelSmall.copyWith(
+                        color: isAdmin
+                            ? AppSemanticColors.textInverse.withValues(
+                                alpha: 0.7,
+                              )
+                            : AppSemanticColors.textTertiary,
+                      ),
+                    );
+                  }
                   return Text(
-                    typingText,
+                    '${widget.room.participantCount}명',
                     style: AppTypography.labelSmall.copyWith(
                       color: isAdmin
                           ? AppSemanticColors.textInverse.withValues(alpha: 0.7)
                           : AppSemanticColors.textTertiary,
                     ),
                   );
-                }
-                return Text(
-                  '${widget.room.participantCount}명',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: isAdmin
-                        ? AppSemanticColors.textInverse.withValues(alpha: 0.7)
-                        : AppSemanticColors.textTertiary,
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        backgroundColor: isAdmin
-            ? AppSemanticColors.interactivePrimaryDefault
-            : AppSemanticColors.surfaceDefault,
-        foregroundColor: isAdmin ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: _showRoomInfo,
-          ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () {
-          // 빈 화면 탭 시 키보드 내리기
-          FocusScope.of(context).unfocus();
-        },
-        child: Column(
-          children: [
-            // 메시지 목록
-            Expanded(
-              child: Consumer<ChatProvider>(
-                builder: (context, chatProvider, child) {
-                  if (chatProvider.isLoading && chatProvider.messages.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (chatProvider.messages.isEmpty) {
-                    return Center(
-                      child: Text(
-                        '메시지가 없습니다.\n첫 메시지를 보내보세요!',
-                        textAlign: TextAlign.center,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    controller: _scrollController,
-                    reverse: true,
-                    padding: const EdgeInsets.all(AppSpacing.space4),
-                    itemCount: chatProvider.messages.length,
-                    itemBuilder: (context, index) {
-                      final message = chatProvider.messages[index];
-
-                      // 시스템 메시지는 가운데 정렬로 별도 처리
-                      if (message.type == MessageType.system) {
-                        return _buildSystemMessage(message);
-                      }
-
-                      final isMyMessage = message.senderId == currentUserId;
-                      final showSenderName = !isMyMessage &&
-                          (index == chatProvider.messages.length - 1 ||
-                           chatProvider.messages[index + 1].senderId != message.senderId);
-
-                      return _buildMessageBubble(message, isMyMessage, showSenderName, isAdmin);
-                    },
-                  );
                 },
               ),
+            ],
+          ),
+          backgroundColor: isAdmin
+              ? AppSemanticColors.interactivePrimaryDefault
+              : AppSemanticColors.surfaceDefault,
+          foregroundColor: isAdmin
+              ? AppSemanticColors.textInverse
+              : AppSemanticColors.textPrimary,
+          elevation: 0,
+          actions: [
+            PopupMenuButton<_ChatRoomMenuAction>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: _handleRoomMenuAction,
+              itemBuilder: (context) => [
+                const PopupMenuItem<_ChatRoomMenuAction>(
+                  value: _ChatRoomMenuAction.info,
+                  child: Text('채팅방 정보'),
+                ),
+                if (isAdmin)
+                  const PopupMenuItem<_ChatRoomMenuAction>(
+                    value: _ChatRoomMenuAction.delete,
+                    child: Text('채팅 삭제'),
+                  ),
+              ],
             ),
-
-            // 메시지 입력창
-            _buildMessageInput(isAdmin),
           ],
         ),
-      ),
+        body: GestureDetector(
+          onTap: () {
+            // 빈 화면 탭 시 키보드 내리기
+            FocusScope.of(context).unfocus();
+          },
+          child: Column(
+            children: [
+              // 메시지 목록
+              Expanded(
+                child: Consumer<ChatProvider>(
+                  builder: (context, chatProvider, child) {
+                    if (chatProvider.isLoading &&
+                        chatProvider.messages.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (chatProvider.messages.isEmpty) {
+                      return Center(
+                        child: Text(
+                          '메시지가 없습니다.\n첫 메시지를 보내보세요!',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      padding: const EdgeInsets.all(AppSpacing.space4),
+                      itemCount: chatProvider.messages.length,
+                      itemBuilder: (context, index) {
+                        final message = chatProvider.messages[index];
+
+                        // 시스템 메시지는 가운데 정렬로 별도 처리
+                        if (message.type == MessageType.system) {
+                          return _buildSystemMessage(message);
+                        }
+
+                        final isMyMessage = message.senderId == currentUserId;
+                        final showSenderName =
+                            !isMyMessage &&
+                            (index == chatProvider.messages.length - 1 ||
+                                chatProvider.messages[index + 1].senderId !=
+                                    message.senderId);
+
+                        return _buildMessageBubble(
+                          message,
+                          isMyMessage,
+                          showSenderName,
+                          isAdmin,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+
+              // 메시지 입력창
+              _buildMessageInput(isAdmin),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1014,7 +1160,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message, bool isMyMessage, bool showSenderName, bool isAdmin) {
+  Widget _buildMessageBubble(
+    ChatMessage message,
+    bool isMyMessage,
+    bool showSenderName,
+    bool isAdmin,
+  ) {
     final bubbleColor = isMyMessage
         ? AppSemanticColors.interactivePrimaryDefault
         : AppSemanticColors.surfaceDefault;
@@ -1033,7 +1184,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.space2),
         child: Row(
-          mainAxisAlignment: isMyMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: isMyMessage
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (!isMyMessage) const SizedBox(width: AppSpacing.space1),
@@ -1044,7 +1197,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   // 안 읽은 사람 수 (0보다 클 때만, 실패 상태 제외)
-                  if (unreadCount > 0 && message.sendingStatus != MessageSendingStatus.failed)
+                  if (unreadCount > 0 &&
+                      message.sendingStatus != MessageSendingStatus.failed)
                     Text(
                       '$unreadCount',
                       style: AppTypography.labelSmall.copyWith(
@@ -1076,16 +1230,39 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             // 메시지 버블
             Flexible(
               child: Column(
-                crossAxisAlignment: isMyMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                crossAxisAlignment: isMyMessage
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
                 children: [
                   if (showSenderName && !isMyMessage)
                     Padding(
-                      padding: const EdgeInsets.only(left: AppSpacing.space2, bottom: AppSpacing.space1),
-                      child: Text(
-                        message.senderName,
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                        ),
+                      padding: const EdgeInsets.only(
+                        left: AppSpacing.space2,
+                        bottom: AppSpacing.space1,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            message.senderName,
+                            style: AppTypography.labelSmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
+                            ),
+                          ),
+                          if (message.senderPosition?.trim().isNotEmpty ??
+                              false)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.space0_5,
+                              ),
+                              child: Text(
+                                message.senderPosition!.trim(),
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   Container(
@@ -1094,14 +1271,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       vertical: AppSpacing.space2,
                     ),
                     decoration: BoxDecoration(
-                      color: message.sendingStatus == MessageSendingStatus.sending
+                      color:
+                          message.sendingStatus == MessageSendingStatus.sending
                           ? bubbleColor.withValues(alpha: 0.7)
                           : bubbleColor,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(AppBorderRadius.xl),
                         topRight: const Radius.circular(AppBorderRadius.xl),
-                        bottomLeft: Radius.circular(isMyMessage ? AppBorderRadius.xl : AppBorderRadius.base),
-                        bottomRight: Radius.circular(isMyMessage ? AppBorderRadius.base : AppBorderRadius.xl),
+                        bottomLeft: Radius.circular(
+                          isMyMessage
+                              ? AppBorderRadius.xl
+                              : AppBorderRadius.base,
+                        ),
+                        bottomRight: Radius.circular(
+                          isMyMessage
+                              ? AppBorderRadius.base
+                              : AppBorderRadius.xl,
+                        ),
                       ),
                     ),
                     constraints: BoxConstraints(
@@ -1182,7 +1368,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     switch (message.type) {
       case MessageType.image:
         return GestureDetector(
-          onTap: () => _downloadAndOpenFile(message.fileUrl, message.fileName ?? 'image.png'),
+          onTap: () => _downloadAndOpenFile(
+            message.fileUrl,
+            message.fileName ?? 'image.png',
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1205,7 +1394,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         width: 100,
                         height: 100,
                         color: AppSemanticColors.backgroundTertiary,
-                        child: Icon(Icons.broken_image, color: AppSemanticColors.textTertiary),
+                        child: Icon(
+                          Icons.broken_image,
+                          color: AppSemanticColors.textTertiary,
+                        ),
                       );
                     },
                   ),
@@ -1216,7 +1408,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       case MessageType.file:
         return GestureDetector(
-          onTap: () => _downloadAndOpenFile(message.fileUrl, message.fileName ?? 'file'),
+          onTap: () =>
+              _downloadAndOpenFile(message.fileUrl, message.fileName ?? 'file'),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1284,7 +1477,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           // 메시지 입력 필드
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space3,
+              ),
               decoration: BoxDecoration(
                 color: AppSemanticColors.backgroundSecondary,
                 borderRadius: BorderRadius.circular(AppBorderRadius.xl),
@@ -1298,7 +1493,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     color: AppSemanticColors.textTertiary,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.space3,
+                  ),
                 ),
                 maxLines: 4,
                 minLines: 1,

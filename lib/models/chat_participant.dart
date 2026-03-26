@@ -7,6 +7,7 @@ class ChatParticipant {
   final int chatRoomId;
   final String userId;
   final String userName;
+  final String? position;
   final ParticipantRole role;
   final DateTime joinedAt;
   final DateTime? lastReadAt;
@@ -20,6 +21,7 @@ class ChatParticipant {
     required this.chatRoomId,
     required this.userId,
     required this.userName,
+    this.position,
     this.role = ParticipantRole.member,
     required this.joinedAt,
     this.lastReadAt,
@@ -35,8 +37,11 @@ class ChatParticipant {
       chatRoomId: json['chatRoomId'] as int? ?? 0,
       userId: json['userId']?.toString() ?? '',
       userName: json['userName']?.toString() ?? '',
+      position: json['position']?.toString(),
       role: _parseRole(json['role']?.toString()),
-      joinedAt: DateTime.tryParse(json['joinedAt']?.toString() ?? '') ?? DateTime.now(),
+      joinedAt:
+          DateTime.tryParse(json['joinedAt']?.toString() ?? '') ??
+          DateTime.now(),
       lastReadAt: json['lastReadAt'] != null
           ? DateTime.tryParse(json['lastReadAt'].toString())
           : null,
@@ -57,6 +62,7 @@ class ChatParticipant {
       'chatRoomId': chatRoomId,
       'userId': userId,
       'userName': userName,
+      'position': position,
       'role': role.name.toUpperCase(),
       'joinedAt': joinedAt.toIso8601String(),
       'lastReadAt': lastReadAt?.toIso8601String(),
@@ -106,6 +112,7 @@ class ChatParticipant {
     int? chatRoomId,
     String? userId,
     String? userName,
+    String? position,
     ParticipantRole? role,
     DateTime? joinedAt,
     DateTime? lastReadAt,
@@ -119,6 +126,7 @@ class ChatParticipant {
       chatRoomId: chatRoomId ?? this.chatRoomId,
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
+      position: position ?? this.position,
       role: role ?? this.role,
       joinedAt: joinedAt ?? this.joinedAt,
       lastReadAt: lastReadAt ?? this.lastReadAt,
