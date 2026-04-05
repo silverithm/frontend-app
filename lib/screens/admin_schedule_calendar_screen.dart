@@ -682,70 +682,158 @@ class _AdminScheduleCalendarScreenState
         ? Color(int.parse(schedule.label!.color.replaceFirst('#', '0xFF')))
         : AppSemanticColors.statusInfoIcon;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      padding: const EdgeInsets.all(AppSpacing.space3),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border(
-          left: BorderSide(
-            color: labelColor,
-            width: 3,
+    return GestureDetector(
+      onLongPress: () => _showDeleteScheduleDialog(schedule),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+        padding: const EdgeInsets.all(AppSpacing.space3),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.backgroundSecondary,
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          border: Border(
+            left: BorderSide(
+              color: labelColor,
+              width: 3,
+            ),
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.title,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    schedule.title,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.space1),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space2,
-                        vertical: AppSpacing.space0_5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: labelColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppBorderRadius.base),
-                      ),
-                      child: Text(
-                        schedule.categoryText,
-                        style: AppTypography.caption.copyWith(
-                          color: labelColor,
-                          fontWeight: FontWeight.w500,
+                  const SizedBox(height: AppSpacing.space1),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.space2,
+                          vertical: AppSpacing.space0_5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: labelColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppBorderRadius.base),
+                        ),
+                        child: Text(
+                          schedule.categoryText,
+                          style: AppTypography.caption.copyWith(
+                            color: labelColor,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                    if (schedule.timeText.isNotEmpty) ...[
-                      const SizedBox(width: AppSpacing.space2),
-                      Icon(
-                        Icons.access_time,
-                        size: 12,
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
-                      Text(
-                        schedule.timeText,
+                      if (schedule.timeText.isNotEmpty) ...[
+                        const SizedBox(width: AppSpacing.space2),
+                        Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                        const SizedBox(width: AppSpacing.space1),
+                        Text(
+                          schedule.timeText,
+                          style: AppTypography.caption.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (schedule.authorName != null && schedule.authorName!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.space1),
+                      child: Text(
+                        '등록: ${schedule.authorName}',
                         style: AppTypography.caption.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),
                       ),
-                    ],
-                  ],
+                    ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => _showDeleteScheduleDialog(schedule),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.space2),
+                child: Icon(
+                  Icons.delete_outline,
+                  size: 18,
+                  color: AppSemanticColors.textTertiary,
                 ),
-              ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteScheduleDialog(Schedule schedule) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        ),
+        title: Text(
+          '일정 삭제',
+          style: AppTypography.heading6.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          '\'${schedule.title}\' 일정을 삭제하시겠습니까?',
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppSemanticColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              '취소',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              final authProvider = context.read<AuthProvider>();
+              final scheduleProvider = context.read<ScheduleProvider>();
+              final companyId = authProvider.currentUser?.company?.id ?? '1';
+
+              final success = await scheduleProvider.deleteSchedule(
+                scheduleId: schedule.id,
+                companyId: companyId.toString(),
+              );
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? '일정이 삭제되었습니다' : '일정 삭제에 실패했습니다'),
+                    backgroundColor: success
+                        ? AppSemanticColors.statusSuccessIcon
+                        : AppSemanticColors.statusErrorIcon,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              '삭제',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppSemanticColors.statusErrorIcon,
+              ),
             ),
           ),
         ],

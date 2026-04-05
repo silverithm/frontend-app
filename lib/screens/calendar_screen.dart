@@ -596,91 +596,191 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   Widget _buildScheduleItem(Schedule schedule) {
     final categoryColor = _getCategoryColor(schedule.category);
+    final authProvider = context.read<AuthProvider>();
+    final currentUserEmail = authProvider.currentUser?.email;
+    final isMySchedule = schedule.authorId != null &&
+        currentUserEmail != null &&
+        schedule.authorId == currentUserEmail;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(
-          color: categoryColor.withValues(alpha: 0.2),
-          width: 1,
+    return GestureDetector(
+      onLongPress: isMySchedule ? () => _showDeleteScheduleDialog(schedule) : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+        padding: const EdgeInsets.all(AppSpacing.space4),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.surfaceDefault,
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+          border: Border.all(
+            color: categoryColor.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 40,
+              decoration: BoxDecoration(
+                color: categoryColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.space3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          schedule.title,
+                          style: AppTypography.bodyLarge.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            fontWeight: AppTypography.fontWeightSemibold,
+                          ),
+                        ),
+                      ),
+                      if (isMySchedule)
+                        GestureDetector(
+                          onTap: () => _showDeleteScheduleDialog(schedule),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: AppSpacing.space2),
+                            child: Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.space1),
+                  Row(
+                    children: [
+                      if (schedule.timeText.isNotEmpty) ...[
+                        Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                        const SizedBox(width: AppSpacing.space1),
+                        Text(
+                          schedule.timeText,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                      ],
+                      if (schedule.location != null && schedule.location!.isNotEmpty) ...[
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 12,
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                        const SizedBox(width: AppSpacing.space1),
+                        Text(
+                          schedule.location!,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (schedule.authorName != null && schedule.authorName!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.space1),
+                      child: Text(
+                        '등록: ${schedule.authorName}',
+                        style: AppTypography.caption.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space2,
+                vertical: AppSpacing.space1,
+              ),
+              decoration: BoxDecoration(
+                color: categoryColor,
+                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+              ),
+              child: Text(
+                schedule.categoryText,
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppSemanticColors.textInverse,
+                  fontWeight: AppTypography.fontWeightBold,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: categoryColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
+    );
+  }
+
+  void _showDeleteScheduleDialog(Schedule schedule) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        ),
+        title: Text(
+          '일정 삭제',
+          style: AppTypography.heading6.copyWith(
+            fontWeight: AppTypography.fontWeightBold,
           ),
-          const SizedBox(width: AppSpacing.space3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.title,
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space1),
-                Row(
-                  children: [
-                    if (schedule.timeText.isNotEmpty) ...[
-                      Icon(
-                        Icons.access_time,
-                        size: 12,
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
-                      Text(
-                        schedule.timeText,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space3),
-                    ],
-                    if (schedule.location != null && schedule.location!.isNotEmpty) ...[
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 12,
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
-                      Text(
-                        schedule.location!,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
+        ),
+        content: Text(
+          '\'${schedule.title}\' 일정을 삭제하시겠습니까?',
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppSemanticColors.textSecondary,
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space2,
-              vertical: AppSpacing.space1,
-            ),
-            decoration: BoxDecoration(
-              color: categoryColor,
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-            ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(
-              schedule.categoryText,
-              style: AppTypography.labelSmall.copyWith(
-                color: AppSemanticColors.textInverse,
-                fontWeight: AppTypography.fontWeightBold,
+              '취소',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              final authProvider = context.read<AuthProvider>();
+              final scheduleProvider = context.read<ScheduleProvider>();
+              final companyId = authProvider.currentUser?.company?.id ?? '1';
+
+              final success = await scheduleProvider.deleteSchedule(
+                scheduleId: schedule.id,
+                companyId: companyId.toString(),
+              );
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? '일정이 삭제되었습니다' : '일정 삭제에 실패했습니다'),
+                    backgroundColor: success
+                        ? AppSemanticColors.statusSuccessIcon
+                        : AppSemanticColors.statusErrorIcon,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              '삭제',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppSemanticColors.statusErrorIcon,
               ),
             ),
           ),
