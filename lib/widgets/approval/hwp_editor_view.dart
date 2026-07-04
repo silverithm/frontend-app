@@ -28,8 +28,10 @@ class HwpEditorController {
       ..loadRequest(Uri.parse(this.studioUrl));
   }
 
-  /// frontend-admin(carev.kr)의 public/rhwp/ 에서 서빙되는 셀프호스팅 에디터
-  static const String defaultStudioUrl = 'https://carev.kr/rhwp/index.html';
+  /// frontend-admin(carev.kr)의 public/rhwp-studio/ 에서 서빙되는 셀프호스팅 에디터
+  /// (패치된 rhwp-studio 0.7.17 빌드 — 웹 관리자와 동일 경로)
+  static const String defaultStudioUrl =
+      'https://carev.kr/rhwp-studio/index.html';
 
   final String studioUrl;
   late final WebViewController _webViewController;
