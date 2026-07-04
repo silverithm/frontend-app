@@ -342,9 +342,9 @@ class AuthProvider with ChangeNotifier {
       setLoading(true);
       print('[AuthProvider] === 로그아웃 시작 ===');
 
-      // FCM 사용자 정보 초기화 (토큰 재갱신 시 서버 전송 방지)
-      FCMService().clearUserInfo();
-      print('[AuthProvider] FCM 사용자 정보 초기화 완료');
+      // FCM 토큰 폐기 (서버 삭제 + 기기 토큰 무효화 — 로그아웃 기기로 알림 방지)
+      await FCMService().revokeToken();
+      print('[AuthProvider] FCM 토큰 폐기 완료');
 
       // Analytics 로그아웃 이벤트 기록
       await AnalyticsService().logLogout();

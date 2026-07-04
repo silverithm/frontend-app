@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Android 13+ 알림 런타임 권한 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
     <!-- 광고 ID 권한 거부 -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
@@ -20,6 +22,13 @@
         android:name="${applicationName}"
         android:icon="@mipmap/carev_icon"
         android:roundIcon="@mipmap/carev_icon">
+        <!-- 백그라운드/종료 상태 FCM notification 메시지가 앱의 고중요도 채널로 표시되도록 지정 -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="high_importance_channel" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/carev_icon" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

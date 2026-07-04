@@ -594,6 +594,24 @@ class ApiService {
     }
   }
 
+  // FCM 토큰 삭제 (로그아웃 시 — 관리자)
+  Future<void> deleteAdminFcmToken({required String userId}) async {
+    final response = await http.delete(
+      Uri.parse('$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token'),
+      headers: await _getHeaders(),
+    );
+    _handleResponse(response);
+  }
+
+  // FCM 토큰 삭제 (로그아웃 시 — 직원)
+  Future<void> deleteFcmToken({required String memberId}) async {
+    final response = await http.delete(
+      Uri.parse('$_baseUrl${Constants.fcmTokenEndpoint}/$memberId/fcm-token'),
+      headers: await _getHeaders(),
+    );
+    _handleResponse(response);
+  }
+
   // 내 휴무 신청 전체 조회
   Future<Map<String, dynamic>> getMyVacationRequests({
     required String companyId,

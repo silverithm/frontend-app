@@ -28,10 +28,20 @@ class FCMService {
   bool _isAdmin = false;
 
   BuildContext? _globalContext;
+
+  /// 콜드 스타트 시 컨텍스트 준비 전에 도착한 알림 탭 데이터 (컨텍스트 설정 후 처리)
+  Map<String, dynamic>? _pendingNavigationData;
   void Function(RemoteMessage)? onForegroundMessage;
 
   void setGlobalContext(BuildContext context) {
     _globalContext = context;
+
+    // 앱 종료 상태에서 알림 탭으로 시작한 경우 — 컨텍스트가 없어 보류했던 이동을 지금 실행
+    final pending = _pendingNavigationData;
+    if (pending != null) {
+      _pendingNavigationData = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _navigateByType(pending));
+    }
   }
 
   /// FCM 서비스 초기화
@@ -421,7 +431,11 @@ class FCMService {
   /// 타입별 화면 이동 (공통)
   void _navigateByType(Map<String, dynamic> data) {
     final context = _globalContext;
-    if (context == null || !context.mounted) return;
+    if (context == null || !context.mounted) {
+      // 콜드 스타트 직후 등 컨텍스트 준비 전 — setGlobalContext에서 재시도
+      _pendingNavigationData = data;
+      return;
+    }
 
     final type = data['type']?.toString() ?? '';
 
@@ -546,6 +560,37 @@ class FCMService {
     log('[FCM] 사용자 정보 초기화');
     _currentUserId = null;
     _isAdmin = false;
+  }
+
+  /// 로그아웃 시 토큰 폐기: 서버에서 삭제 + 기기 토큰 재발급 무효화.
+  /// 이후 다른 계정으로 로그인해도 이전 계정으로 알림이 가지 않는다.
+  Future<void> revokeToken() async {
+    final userId = _currentUserId;
+    final isAdmin = _isAdmin;
+    clearUserInfo();
+
+    // 서버에서 토큰 제거 (실패해도 로그아웃 흐름은 계속)
+    if (userId != null) {
+      try {
+        if (isAdmin) {
+          await ApiService().deleteAdminFcmToken(userId: userId);
+        } else {
+          await ApiService().deleteFcmToken(memberId: userId);
+        }
+        log('[FCM] 서버 토큰 삭제 완료 (userId: $userId, admin: $isAdmin)');
+      } catch (e) {
+        log('[FCM] 서버 토큰 삭제 실패: $e');
+      }
+    }
+
+    // 기기 토큰 무효화 — 다음 로그인 시 새 토큰 발급
+    try {
+      await _firebaseMessaging.deleteToken();
+      _currentToken = null;
+      log('[FCM] 기기 FCM 토큰 삭제 완료');
+    } catch (e) {
+      log('[FCM] 기기 FCM 토큰 삭제 실패: $e');
+    }
   }
 }
 
