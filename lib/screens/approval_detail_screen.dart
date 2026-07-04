@@ -13,6 +13,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/approval_status_badge.dart';
+import 'hwp_editor_screen.dart';
 
 class ApprovalDetailScreen extends StatefulWidget {
   final ApprovalRequest approval;
@@ -151,6 +152,24 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
 
   bool _isDownloading = false;
   double _downloadProgress = 0;
+
+  /// 첨부파일이 웹 에디터로 열 수 있는 HWP/HWPX 문서인지
+  bool get _isHwpAttachment {
+    final name = _approval.attachmentFileName?.toLowerCase();
+    if (name == null || _approval.attachmentUrl == null) return false;
+    return name.endsWith('.hwp') || name.endsWith('.hwpx');
+  }
+
+  void _openHwpPreview() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => HwpEditorScreen(
+          filePath: _approval.attachmentUrl!,
+          fileName: _approval.attachmentFileName!,
+        ),
+      ),
+    );
+  }
 
   Future<void> _openAttachment() async {
     if (_approval.attachmentUrl == null || _isDownloading) return;
@@ -469,6 +488,26 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         ),
                       ),
                     ),
+                    if (_isHwpAttachment) ...[
+                      const SizedBox(height: AppSpacing.space3),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _openHwpPreview,
+                          icon: const Icon(Icons.visibility_outlined, size: 18),
+                          label: const Text('문서 미리보기'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor:
+                                AppSemanticColors.interactivePrimaryDefault,
+                            side: BorderSide(
+                              color:
+                                  AppSemanticColors.interactivePrimaryDefault,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

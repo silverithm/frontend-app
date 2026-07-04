@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import 'hwp_editor_screen.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class ApprovalFormScreen extends StatefulWidget {
@@ -178,7 +179,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     try {
       const XTypeGroup typeGroup = XTypeGroup(
         label: 'documents',
-        extensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx'],
+        extensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'hwp', 'hwpx'],
       );
       final XFile? result = await openFile(acceptedTypeGroups: [typeGroup]);
 
@@ -203,6 +204,43 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
           ),
         );
       }
+    }
+  }
+
+  /// 선택된 템플릿이 웹 에디터로 작성 가능한 HWP/HWPX 양식인지
+  bool get _canWriteTemplateOnWeb {
+    final t = _selectedTemplate;
+    if (t == null || t.fileUrl == null) return false;
+    final name = (t.fileName ?? t.fileUrl!).toLowerCase();
+    return name.endsWith('.hwp') || name.endsWith('.hwpx');
+  }
+
+  /// 템플릿 HWP 양식을 웹 에디터로 열어 작성하고, 완료 시 첨부파일로 설정한다.
+  Future<void> _writeTemplateOnWeb() async {
+    final template = _selectedTemplate;
+    if (template?.fileUrl == null) return;
+
+    final result = await Navigator.of(context).push<HwpEditResult>(
+      MaterialPageRoute(
+        builder: (_) => HwpEditorScreen(
+          filePath: template!.fileUrl!,
+          fileName: template.fileName ?? '${template.name}.hwp',
+          allowSave: true,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _selectedFile = _SelectedFileInfo(
+          path: result.path,
+          name: result.name,
+          size: result.size,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('작성한 문서가 첨부되었습니다')),
+      );
     }
   }
 
@@ -498,6 +536,26 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                   );
                 },
               ),
+
+              if (_canWriteTemplateOnWeb) ...[
+                const SizedBox(height: AppSpacing.space3),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _writeTemplateOnWeb,
+                    icon: const Icon(Icons.edit_document, size: 18),
+                    label: const Text('양식 문서 바로 작성하기'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor:
+                          AppSemanticColors.interactivePrimaryDefault,
+                      side: BorderSide(
+                        color: AppSemanticColors.interactivePrimaryDefault,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
 
               const SizedBox(height: AppSpacing.space6),
 
