@@ -18,6 +18,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common/index.dart';
 import 'login_screen.dart';
 import 'subscription_check_screen.dart';
+import 'signature_manage_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -1119,6 +1120,34 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                           if (AdminUtils.canAccessAdminPages(user))
                             const Divider(height: 1, color: AppColors.transparent),
+
+                          _buildSettingTile(
+                            icon: Icons.draw,
+                            title: '결재 서명 관리',
+                            subtitle: '서명을 등록하면 결재 승인 시 자동으로 날인됩니다',
+                            trailing: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppSemanticColors.backgroundTertiary,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.chevron_right,
+                                color: AppSemanticColors.textSecondary,
+                                size: 20,
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const SignatureManageScreen(),
+                                ),
+                              );
+                            },
+                          ),
+
+                          const Divider(height: 1, color: AppColors.transparent),
 
                           _buildSettingTile(
                             icon: Icons.lock,

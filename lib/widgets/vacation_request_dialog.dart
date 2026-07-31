@@ -31,6 +31,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   final _reasonController = TextEditingController();
   VacationType _selectedType = VacationType.personal;
   VacationDuration _selectedDuration = VacationDuration.fullDay;
+  VacationDetailType _detailType = VacationDetailType.personal; // 연차 미사용 세부 유형
   bool _isVacationUsed = false; // 연차 사용 여부
   bool _isSubmitting = false;
 
@@ -144,6 +145,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         type: _selectedType,
         duration: _selectedDuration,
         isVacationUsed: _isVacationUsed,
+        vacationDetailType: _detailType.serverValue,
         reason: _reasonController.text.trim().isNotEmpty
             ? _reasonController.text.trim()
             : null,
@@ -656,8 +658,74 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                         selectedColor: AppSemanticColors.statusErrorBorder,
                                         selectedTextColor: AppSemanticColors.statusErrorIcon,
                                       ),
+
+                                      const SizedBox(width: AppSpacing.space3),
+
+                                      // 대체휴무 (연차 차감 없이 근무일과 맞바꾸는 휴무)
+                                      _buildOptionButton(
+                                        text: '대체',
+                                        isSelected: _selectedType == VacationType.substitute,
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedType = VacationType.substitute;
+                                          });
+                                        },
+                                        selectedColor: AppSemanticColors.statusInfoBorder,
+                                        selectedTextColor: AppSemanticColors.statusInfoIcon,
+                                      ),
                                     ],
                                   ),
+
+                                  // 연차 미사용 세부 유형 (대체휴무는 자동으로 substitute)
+                                  if (!_isVacationUsed &&
+                                      _selectedType != VacationType.substitute) ...[
+                                    const SizedBox(height: AppSpacing.space4),
+                                    Text(
+                                      '세부 유형',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppSemanticColors.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.space2),
+                                    Wrap(
+                                      spacing: AppSpacing.space2,
+                                      runSpacing: AppSpacing.space2,
+                                      children: VacationDetailType.values.map((detail) {
+                                        final isSelected = _detailType == detail;
+                                        return GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _detailType = detail;
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: AppSpacing.space3,
+                                              vertical: AppSpacing.space2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isSelected
+                                                  ? AppSemanticColors.interactivePrimaryDefault
+                                                  : AppSemanticColors.backgroundTertiary,
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Text(
+                                              detail.label,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: isSelected
+                                                    ? AppSemanticColors.textInverse
+                                                    : AppSemanticColors.textSecondary,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

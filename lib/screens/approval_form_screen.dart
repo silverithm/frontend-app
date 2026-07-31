@@ -10,6 +10,8 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/approval/approval_line_picker.dart';
+import '../widgets/approval/dynamic_form_fields.dart';
 import 'hwp_editor_screen.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
@@ -37,6 +39,10 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
   bool _isSubmitting = false;
   bool _isLoadingTemplates = true;
   ApprovalTemplate? _selectedTemplate;
+  // 결재선 (순서=결재 순서, 마지막=최종 결재자)
+  final List<ApproverCandidate> _approvalLine = [];
+  // 온라인 양식 입력값
+  final Map<String, dynamic> _formValues = {};
 
   @override
   void initState() {
@@ -268,11 +274,47 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       return;
     }
 
-    // 파일 첨부 확인
-    if (_selectedFile == null) {
+    final templateType = _selectedTemplate!.templateType;
+
+    // 파일 첨부 확인 (온라인 폼 전용 양식은 첨부 선택사항)
+    if (templateType != 'form' && _selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('첨부파일을 선택해주세요'),
+          backgroundColor: AppSemanticColors.statusErrorIcon,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 온라인 양식 필수 필드 확인
+    if (templateType != 'file' && _selectedTemplate!.formFields.isNotEmpty) {
+      final missingLabel = DynamicFormFields.validateRequired(
+          _selectedTemplate!.formFields, _formValues);
+      if (missingLabel != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('\'$missingLabel\' 항목을 입력해주세요'),
+            backgroundColor: AppSemanticColors.statusErrorIcon,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    // 결재선 확인
+    if (_approvalLine.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('결재선을 1명 이상 지정해주세요'),
           backgroundColor: AppSemanticColors.statusErrorIcon,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -336,6 +378,15 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       attachmentUrl: attachmentUrl,
       attachmentFileName: _selectedFile?.name,
       attachmentFileSize: _selectedFile?.size,
+      formData: templateType != 'file' && _formValues.isNotEmpty
+          ? Map<String, dynamic>.from(_formValues)
+          : null,
+      approvalLine: _approvalLine
+          .map((c) => {
+                'approverType': c.approverType,
+                'approverId': c.approverId,
+              })
+          .toList(),
     );
 
     setState(() => _isSubmitting = false);
@@ -530,6 +581,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                       onChanged: (value) {
                         setState(() {
                           _selectedTemplate = value;
+                          _formValues.clear(); // 양식 변경 시 입력값 초기화
                         });
                       },
                     ),
@@ -598,11 +650,53 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
               const SizedBox(height: AppSpacing.space6),
 
-              // 첨부파일 섹션
+              // 결재선 지정 섹션
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.space4),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.surfaceDefault,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  border: Border.all(color: AppSemanticColors.borderDefault),
+                ),
+                child: ApprovalLinePicker(
+                  companyId: context.read<AuthProvider>().currentUser?.company?.id?.toString() ?? '1',
+                  selected: _approvalLine,
+                  onChanged: () => setState(() {}),
+                ),
+              ),
+
+              // 온라인 양식 (form/hybrid 타입)
+              if (_selectedTemplate != null &&
+                  _selectedTemplate!.templateType != 'file' &&
+                  _selectedTemplate!.formFields.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.space6),
+                _buildSectionHeader(
+                  '온라인 양식 작성',
+                  Icons.edit_note,
+                  isRequired: true,
+                ),
+                const SizedBox(height: AppSpacing.space3),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.space4),
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.surfaceDefault,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    border: Border.all(color: AppSemanticColors.borderDefault),
+                  ),
+                  child: DynamicFormFields(
+                    fields: _selectedTemplate!.formFields,
+                    values: _formValues,
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: AppSpacing.space6),
+
+              // 첨부파일 섹션 (온라인 폼 전용 양식은 선택사항)
               _buildSectionHeader(
                 '첨부파일',
                 Icons.attach_file,
-                isRequired: true,
+                isRequired: _selectedTemplate?.templateType != 'form',
               ),
               const SizedBox(height: AppSpacing.space3),
               if (_selectedFile != null)

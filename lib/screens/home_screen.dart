@@ -24,6 +24,7 @@ import 'calendar_screen.dart';
 import 'my_vacation_screen.dart';
 import 'notice_detail_screen.dart';
 import 'notice_list_screen.dart';
+import 'plaza_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -314,6 +315,54 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: AppSpacing.space4),
+
+                    // 케어브이 광장 진입
+                    _SectionCard(
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const PlazaScreen()),
+                        ),
+                        borderRadius: BorderRadius.circular(AppSpacing.space3),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(AppSpacing.space3),
+                              decoration: BoxDecoration(
+                                color: AppSemanticColors.interactivePrimaryDefault
+                                    .withValues(alpha: 0.1),
+                                borderRadius:
+                                    BorderRadius.circular(AppSpacing.space3),
+                              ),
+                              child: Icon(
+                                Icons.forum_outlined,
+                                color: AppSemanticColors.interactivePrimaryDefault,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.space3),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('케어브이 광장',
+                                      style: AppTypography.bodyLarge.copyWith(
+                                        color: AppSemanticColors.textPrimary,
+                                        fontWeight: FontWeight.w700,
+                                      )),
+                                  Text('요양 소식 · 게시판 · 자료실',
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppSemanticColors.textTertiary,
+                                      )),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.chevron_right,
+                                color: AppSemanticColors.textSecondary),
+                          ],
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(height: AppSpacing.space4),
                     _SectionCard(
                       child: Column(

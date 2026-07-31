@@ -14,6 +14,17 @@ class Schedule {
   final bool isAllDay;
   final bool sendNotification;
   final List<ScheduleParticipant>? participants;
+  // 수행완료 (V1.26)
+  final bool isCompleted;
+  final DateTime? completedAt;
+  final String? completedByName;
+  // 담당자 (참석자와 별개, V1.35)
+  final int? managerId;
+  final String? managerName;
+  // 할 일 (V1.32)
+  final List<ScheduleTask> tasks;
+  final int taskTotal;
+  final int taskCompleted;
   final String? authorId;
   final String? authorName;
   final int companyId;
@@ -35,6 +46,14 @@ class Schedule {
     this.isAllDay = false,
     this.sendNotification = false,
     this.participants,
+    this.isCompleted = false,
+    this.completedAt,
+    this.completedByName,
+    this.managerId,
+    this.managerName,
+    this.tasks = const [],
+    this.taskTotal = 0,
+    this.taskCompleted = 0,
     this.authorId,
     this.authorName,
     required this.companyId,
@@ -74,6 +93,22 @@ class Schedule {
               .map((p) => ScheduleParticipant.fromJson(p as Map<String, dynamic>))
               .toList()
           : null,
+      isCompleted: json['isCompleted'] ?? false,
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'].toString())
+          : null,
+      completedByName: json['completedByName']?.toString(),
+      managerId: json['managerId'] is int
+          ? json['managerId']
+          : int.tryParse(json['managerId']?.toString() ?? ''),
+      managerName: json['managerName']?.toString(),
+      tasks: json['tasks'] != null
+          ? (json['tasks'] as List)
+              .map((t) => ScheduleTask.fromJson(t as Map<String, dynamic>))
+              .toList()
+          : const [],
+      taskTotal: json['taskTotal'] is int ? json['taskTotal'] : 0,
+      taskCompleted: json['taskCompleted'] is int ? json['taskCompleted'] : 0,
       authorId: json['authorId']?.toString(),
       authorName: json['authorName']?.toString(),
       companyId: json['companyId'] is int ? json['companyId'] : int.tryParse(json['companyId']?.toString() ?? '0') ?? 0,
@@ -130,6 +165,57 @@ class ScheduleLabel {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       color: json['color'] ?? '#2196F3',
+    );
+  }
+}
+
+/// 일정 할 일 (담당자별 업무)
+class ScheduleTask {
+  final int id;
+  final int scheduleId;
+  final String content;
+  final int? assigneeMemberId;
+  final String? assigneeName;
+  final bool isCompleted;
+  final DateTime? completedAt;
+  final String? completedByName;
+  // 내 할 일 목록(/my-tasks)에서만 내려오는 일정 요약
+  final String? scheduleTitle;
+  final DateTime? scheduleStartDate;
+
+  ScheduleTask({
+    required this.id,
+    required this.scheduleId,
+    required this.content,
+    this.assigneeMemberId,
+    this.assigneeName,
+    this.isCompleted = false,
+    this.completedAt,
+    this.completedByName,
+    this.scheduleTitle,
+    this.scheduleStartDate,
+  });
+
+  factory ScheduleTask.fromJson(Map<String, dynamic> json) {
+    return ScheduleTask(
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      scheduleId: json['scheduleId'] is int
+          ? json['scheduleId']
+          : int.tryParse(json['scheduleId']?.toString() ?? '0') ?? 0,
+      content: json['content']?.toString() ?? '',
+      assigneeMemberId: json['assigneeMemberId'] is int
+          ? json['assigneeMemberId']
+          : int.tryParse(json['assigneeMemberId']?.toString() ?? ''),
+      assigneeName: json['assigneeName']?.toString(),
+      isCompleted: json['isCompleted'] ?? false,
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'].toString())
+          : null,
+      completedByName: json['completedByName']?.toString(),
+      scheduleTitle: json['scheduleTitle']?.toString(),
+      scheduleStartDate: json['scheduleStartDate'] != null
+          ? DateTime.tryParse(json['scheduleStartDate'].toString())
+          : null,
     );
   }
 }

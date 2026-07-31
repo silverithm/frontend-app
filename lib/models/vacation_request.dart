@@ -1,6 +1,28 @@
 enum VacationStatus { pending, approved, rejected }
 
-enum VacationType { mandatory, personal }
+enum VacationType { mandatory, personal, substitute }
+
+/// 연차 미사용 휴무의 세부 유형 (서버 vacation_type 컬럼)
+enum VacationDetailType { personal, sick, emergency, family, other }
+
+extension VacationDetailTypeX on VacationDetailType {
+  String get serverValue => toString().split('.').last;
+
+  String get label {
+    switch (this) {
+      case VacationDetailType.personal:
+        return '개인 사정';
+      case VacationDetailType.sick:
+        return '병가';
+      case VacationDetailType.emergency:
+        return '긴급';
+      case VacationDetailType.family:
+        return '가족 행사';
+      case VacationDetailType.other:
+        return '기타';
+    }
+  }
+}
 
 enum VacationDuration {
   unused, // 미사용 (0.0일)
@@ -18,6 +40,7 @@ class VacationRequest {
   final VacationStatus status;
   final VacationType type;
   final VacationDuration duration;
+  final String? vacationType; // 연차 미사용 세부 유형 (personal/sick/emergency/family/other/substitute)
   final String? reason;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -34,6 +57,7 @@ class VacationRequest {
     this.status = VacationStatus.pending,
     this.type = VacationType.personal,
     this.duration = VacationDuration.fullDay,
+    this.vacationType,
     this.reason,
     required this.createdAt,
     this.updatedAt,
@@ -54,6 +78,7 @@ class VacationRequest {
       status: _parseStatus(json['status']),
       type: _parseType(json['type']),
       duration: _parseDuration(json['duration']),
+      vacationType: json['vacationType']?.toString(),
       reason: json['reason'],
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       updatedAt: json['updatedAt'] != null
@@ -101,10 +126,15 @@ class VacationRequest {
     switch (type) {
       case 'mandatory':
         return VacationType.mandatory;
+      case 'substitute':
+        return VacationType.substitute;
       default:
         return VacationType.personal;
     }
   }
+
+  /// 대체휴무 여부 (type 또는 세부유형 기준 — 백엔드 isSubstitute와 동일 규칙)
+  bool get isSubstitute => type == VacationType.substitute || vacationType == 'substitute';
 
   static VacationDuration _parseDuration(String? duration) {
     switch (duration) {
@@ -135,8 +165,30 @@ class VacationRequest {
     switch (type) {
       case VacationType.mandatory:
         return '필수';
+      case VacationType.substitute:
+        return '대체휴무';
       case VacationType.personal:
         return '일반';
+    }
+  }
+
+  /// 연차 미사용 세부 유형 라벨 (없으면 null)
+  String? get vacationTypeText {
+    switch (vacationType) {
+      case 'personal':
+        return '개인 사정';
+      case 'sick':
+        return '병가';
+      case 'emergency':
+        return '긴급';
+      case 'family':
+        return '가족 행사';
+      case 'other':
+        return '기타';
+      case 'substitute':
+        return '대체휴무';
+      default:
+        return null;
     }
   }
 
@@ -167,6 +219,7 @@ class VacationRequest {
     VacationStatus? status,
     VacationType? type,
     VacationDuration? duration,
+    String? vacationType,
     String? reason,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -183,6 +236,7 @@ class VacationRequest {
       status: status ?? this.status,
       type: type ?? this.type,
       duration: duration ?? this.duration,
+      vacationType: vacationType ?? this.vacationType,
       reason: reason ?? this.reason,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

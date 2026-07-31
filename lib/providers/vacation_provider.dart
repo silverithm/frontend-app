@@ -225,6 +225,7 @@ class VacationProvider with ChangeNotifier {
     required VacationType type,
     required VacationDuration duration,
     required bool isVacationUsed, // 연차 사용 여부 추가
+    String? vacationDetailType, // 연차 미사용 세부 유형 (personal/sick/emergency/family/other)
     String? reason,
     String? password,
     String? companyId,
@@ -256,11 +257,17 @@ class VacationProvider with ChangeNotifier {
         }
       }
 
+      // 대체휴무는 세부유형도 substitute로 통일 (백엔드 isSubstitute 판정 규칙)
+      final String? effectiveDetailType = type == VacationType.substitute
+          ? 'substitute'
+          : (!isVacationUsed ? vacationDetailType : null);
+
       // Spring Boot API 호출 - companyId 필요
       final response = await ApiService().createVacationRequest(
         userName: userName,
         date: _formatDate(date),
-        type: type.toString().split('.').last, // 'personal' 또는 'mandatory'
+        type: type.toString().split('.').last, // 'personal' / 'mandatory' / 'substitute'
+        vacationType: effectiveDetailType,
         reason: reason ?? '',
         role: userRole,
         password: password ?? '',

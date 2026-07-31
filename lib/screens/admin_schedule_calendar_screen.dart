@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/schedule.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -305,6 +306,30 @@ class _AdminScheduleCalendarScreenState
     );
   }
 
+  // 담당자 후보 (회사 직원)
+  List<Map<String, dynamic>> _memberOptions = [];
+
+  Future<void> _loadMemberOptions() async {
+    if (_memberOptions.isNotEmpty) return;
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final companyId = authProvider.currentUser?.company?.id ?? '1';
+      final response = await ApiService().getCompanyMembers(companyId: companyId.toString());
+      final members = (response['members'] as List?) ?? [];
+      _memberOptions = members
+          .whereType<Map>()
+          .map((m) => {
+                'id': m['id'] is int ? m['id'] : int.tryParse(m['id']?.toString() ?? ''),
+                'name': m['name']?.toString() ?? '',
+              })
+          .where((m) => m['id'] != null && (m['name'] as String).isNotEmpty)
+          .cast<Map<String, dynamic>>()
+          .toList();
+    } catch (e) {
+      debugPrint('담당자 후보 로드 실패: $e');
+    }
+  }
+
   void _showAddScheduleDialog() {
     final titleController = TextEditingController();
     final contentController = TextEditingController();
@@ -316,6 +341,9 @@ class _AdminScheduleCalendarScreenState
     TimeOfDay startTime = const TimeOfDay(hour: 9, minute: 0);
     TimeOfDay endTime = const TimeOfDay(hour: 18, minute: 0);
     bool sendNotification = false;
+    int? selectedManagerId;
+
+    _loadMemberOptions();
 
     showModalBottomSheet(
       context: context,
@@ -418,6 +446,32 @@ class _AdminScheduleCalendarScreenState
                           borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 담당자 (참석자와 별개 — 일정 책임자)
+                    DropdownButtonFormField<int?>(
+                      initialValue: selectedManagerId,
+                      decoration: InputDecoration(
+                        labelText: '담당자',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        ),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int?>(value: null, child: Text('미지정')),
+                        ..._memberOptions.map(
+                          (m) => DropdownMenuItem<int?>(
+                            value: m['id'] as int,
+                            child: Text(m['name'] as String),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setModalState(() {
+                          selectedManagerId = value;
+                        });
+                      },
                     ),
                     const SizedBox(height: AppSpacing.space3),
 
@@ -622,6 +676,7 @@ class _AdminScheduleCalendarScreenState
                             'endDate': endDateStr,
                             'isAllDay': isAllDay,
                             'sendNotification': sendNotification,
+                            if (selectedManagerId != null) 'managerId': selectedManagerId,
                           };
 
                           if (!isAllDay) {
@@ -683,6 +738,7 @@ class _AdminScheduleCalendarScreenState
         : AppSemanticColors.statusInfoIcon;
 
     return GestureDetector(
+      onTap: () => _showScheduleDetailSheet(schedule),
       onLongPress: () => _showDeleteScheduleDialog(schedule),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.space2),
@@ -703,12 +759,29 @@ class _AdminScheduleCalendarScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    schedule.title,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      if (schedule.isCompleted) ...[
+                        Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: AppSemanticColors.statusSuccessIcon,
+                        ),
+                        const SizedBox(width: AppSpacing.space1),
+                      ],
+                      Expanded(
+                        child: Text(
+                          schedule.title,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                            decoration: schedule.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.space1),
                   Row(
@@ -747,14 +820,40 @@ class _AdminScheduleCalendarScreenState
                       ],
                     ],
                   ),
-                  if (schedule.authorName != null && schedule.authorName!.isNotEmpty)
+                  if ((schedule.authorName != null && schedule.authorName!.isNotEmpty) ||
+                      schedule.managerName != null ||
+                      schedule.taskTotal > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.space1),
-                      child: Text(
-                        '등록: ${schedule.authorName}',
-                        style: AppTypography.caption.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
+                      child: Wrap(
+                        spacing: AppSpacing.space2,
+                        children: [
+                          if (schedule.managerName != null)
+                            Text(
+                              '담당: ${schedule.managerName}',
+                              style: AppTypography.caption.copyWith(
+                                color: AppSemanticColors.statusInfoIcon,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          if (schedule.taskTotal > 0)
+                            Text(
+                              '할 일 ${schedule.taskCompleted}/${schedule.taskTotal}',
+                              style: AppTypography.caption.copyWith(
+                                color: schedule.taskCompleted >= schedule.taskTotal
+                                    ? AppSemanticColors.statusSuccessIcon
+                                    : AppSemanticColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          if (schedule.authorName != null && schedule.authorName!.isNotEmpty)
+                            Text(
+                              '등록: ${schedule.authorName}',
+                              style: AppTypography.caption.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                 ],
@@ -774,6 +873,310 @@ class _AdminScheduleCalendarScreenState
           ],
         ),
       ),
+    );
+  }
+
+  /// 일정 상세: 수행완료 토글 + 할 일 관리 + 담당자/참석자
+  void _showScheduleDetailSheet(Schedule schedule) {
+    final taskController = TextEditingController();
+    bool isCompleted = schedule.isCompleted;
+    List<ScheduleTask> tasks = List.of(schedule.tasks);
+    int? taskAssigneeId;
+    bool isWorking = false;
+
+    _loadMemberOptions();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> refreshTasks() async {
+              try {
+                final response =
+                    await ApiService().getScheduleTasks(scheduleId: schedule.id);
+                final list = (response['tasks'] as List?) ?? [];
+                setSheetState(() {
+                  tasks = list
+                      .whereType<Map>()
+                      .map((t) => ScheduleTask.fromJson(Map<String, dynamic>.from(t)))
+                      .toList();
+                });
+              } catch (e) {
+                debugPrint('할 일 목록 갱신 실패: $e');
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: AppSpacing.space4,
+                right: AppSpacing.space4,
+                top: AppSpacing.space4,
+                bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            schedule.title,
+                            style: AppTypography.heading5.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(Icons.close, color: AppSemanticColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+
+                    // 기본 정보
+                    Wrap(
+                      spacing: AppSpacing.space3,
+                      runSpacing: AppSpacing.space1,
+                      children: [
+                        Text('분류: ${schedule.categoryText}',
+                            style: AppTypography.bodySmall
+                                .copyWith(color: AppSemanticColors.textSecondary)),
+                        if (schedule.timeText.isNotEmpty)
+                          Text('시간: ${schedule.timeText}',
+                              style: AppTypography.bodySmall
+                                  .copyWith(color: AppSemanticColors.textSecondary)),
+                        if (schedule.managerName != null)
+                          Text('담당자: ${schedule.managerName}',
+                              style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.statusInfoIcon,
+                                  fontWeight: FontWeight.w600)),
+                        if (schedule.location != null && schedule.location!.isNotEmpty)
+                          Text('장소: ${schedule.location}',
+                              style: AppTypography.bodySmall
+                                  .copyWith(color: AppSemanticColors.textSecondary)),
+                      ],
+                    ),
+                    if (schedule.content != null && schedule.content!.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.space2),
+                      Text(schedule.content!,
+                          style: AppTypography.bodySmall
+                              .copyWith(color: AppSemanticColors.textPrimary)),
+                    ],
+                    const SizedBox(height: AppSpacing.space4),
+
+                    // 수행완료 토글
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space3,
+                        vertical: AppSpacing.space1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? AppSemanticColors.statusSuccessBackground
+                            : AppSemanticColors.backgroundTertiary,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              isCompleted
+                                  ? '수행완료${schedule.completedByName != null ? ' · ${schedule.completedByName}' : ''}'
+                                  : '진행 전/진행 중',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: isCompleted
+                                    ? AppSemanticColors.statusSuccessIcon
+                                    : AppSemanticColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            value: isCompleted,
+                            activeThumbColor: AppSemanticColors.statusSuccessIcon,
+                            onChanged: isWorking
+                                ? null
+                                : (value) async {
+                                    setSheetState(() => isWorking = true);
+                                    try {
+                                      await ApiService().updateScheduleCompletion(
+                                        scheduleId: schedule.id,
+                                        completed: value,
+                                      );
+                                      setSheetState(() => isCompleted = value);
+                                      _loadSchedules();
+                                    } catch (e) {
+                                      debugPrint('수행완료 변경 실패: $e');
+                                    } finally {
+                                      setSheetState(() => isWorking = false);
+                                    }
+                                  },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+
+                    // 할 일 목록
+                    Text(
+                      '할 일 (${tasks.where((t) => t.isCompleted).length}/${tasks.length})',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                    if (tasks.isEmpty)
+                      Text('등록된 할 일이 없습니다.',
+                          style: AppTypography.bodySmall
+                              .copyWith(color: AppSemanticColors.textTertiary)),
+                    ...tasks.map(
+                      (task) => Row(
+                        children: [
+                          Checkbox(
+                            value: task.isCompleted,
+                            activeColor: AppSemanticColors.statusSuccessIcon,
+                            onChanged: (value) async {
+                              try {
+                                await ApiService().updateScheduleTaskCompletion(
+                                  scheduleId: schedule.id,
+                                  taskId: task.id,
+                                  completed: value ?? false,
+                                );
+                                await refreshTasks();
+                                _loadSchedules();
+                              } catch (e) {
+                                debugPrint('할 일 완료 변경 실패: $e');
+                              }
+                            },
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  task.content,
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textPrimary,
+                                    decoration: task.isCompleted
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
+                                ),
+                                if (task.assigneeName != null)
+                                  Text(
+                                    '담당: ${task.assigneeName}',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppSemanticColors.textTertiary,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete_outline,
+                                size: 18, color: AppSemanticColors.textTertiary),
+                            onPressed: () async {
+                              try {
+                                await ApiService().deleteScheduleTask(
+                                  scheduleId: schedule.id,
+                                  taskId: task.id,
+                                );
+                                await refreshTasks();
+                                _loadSchedules();
+                              } catch (e) {
+                                debugPrint('할 일 삭제 실패: $e');
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+
+                    // 할 일 추가
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: taskController,
+                            decoration: InputDecoration(
+                              hintText: '할 일 추가...',
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        SizedBox(
+                          width: 110,
+                          child: DropdownButtonFormField<int?>(
+                            initialValue: taskAssigneeId,
+                            isDense: true,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                              ),
+                            ),
+                            hint: const Text('담당', style: TextStyle(fontSize: 12)),
+                            items: [
+                              const DropdownMenuItem<int?>(
+                                  value: null, child: Text('미지정', style: TextStyle(fontSize: 12))),
+                              ..._memberOptions.map(
+                                (m) => DropdownMenuItem<int?>(
+                                  value: m['id'] as int,
+                                  child: Text(m['name'] as String,
+                                      style: const TextStyle(fontSize: 12)),
+                                ),
+                              ),
+                            ],
+                            onChanged: (value) =>
+                                setSheetState(() => taskAssigneeId = value),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.add_circle,
+                              color: AppSemanticColors.interactivePrimaryDefault),
+                          onPressed: () async {
+                            final content = taskController.text.trim();
+                            if (content.isEmpty) return;
+                            try {
+                              await ApiService().createScheduleTask(
+                                scheduleId: schedule.id,
+                                content: content,
+                                assigneeMemberId: taskAssigneeId,
+                              );
+                              taskController.clear();
+                              await refreshTasks();
+                              _loadSchedules();
+                            } catch (e) {
+                              debugPrint('할 일 추가 실패: $e');
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

@@ -12,7 +12,9 @@ import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../services/api_service.dart';
 import '../widgets/approval/approval_status_badge.dart';
+import '../widgets/approval/official_document_view.dart';
 import 'hwp_editor_screen.dart';
 
 class ApprovalDetailScreen extends StatefulWidget {
@@ -29,6 +31,7 @@ class ApprovalDetailScreen extends StatefulWidget {
 
 class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
   late ApprovalRequest _approval;
+  ApprovalTemplate? _template; // 공문 본문 라벨 해석용
   bool _isDeleting = false;
 
   @override
@@ -48,6 +51,23 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       setState(() {
         _approval = detail;
       });
+    }
+    _loadTemplate();
+  }
+
+  Future<void> _loadTemplate() async {
+    if (_approval.templateId <= 0) return;
+    try {
+      final response = await ApiService()
+          .getApprovalTemplateDetail(templateId: _approval.templateId);
+      final raw = response['template'] ?? response;
+      if (raw is Map && mounted) {
+        setState(() {
+          _template = ApprovalTemplate.fromJson(Map<String, dynamic>.from(raw));
+        });
+      }
+    } catch (e) {
+      debugPrint('양식 정보 로드 실패(공문 라벨 없이 표시): $e');
     }
   }
 
@@ -374,8 +394,27 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                     '요청일시',
                     dateFormat.format(_approval.createdAt),
                   ),
+                  if (_approval.approvalLine.isNotEmpty &&
+                      _approval.status == ApprovalStatus.pending &&
+                      _approval.currentStep != null) ...[
+                    const SizedBox(height: AppSpacing.space2),
+                    _buildInfoRow(
+                      Icons.pending_actions,
+                      '결재 차례',
+                      '${_approval.currentStep!.approverName} (${_approval.approvalLine.where((s) => s.isApproved).length}/${_approval.approvalLine.length} 승인)',
+                    ),
+                  ],
                 ],
               ),
+            ),
+
+            const SizedBox(height: AppSpacing.space4),
+
+            // 공문(표준 기안문) 뷰
+            OfficialDocumentView(
+              approval: _approval,
+              template: _template,
+              companyName: context.read<AuthProvider>().currentUser?.company?.name ?? '',
             ),
 
             const SizedBox(height: AppSpacing.space4),

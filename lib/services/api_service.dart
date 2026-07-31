@@ -446,6 +446,7 @@ class ApiService {
     required String companyId,
     String? userId,
     String? duration,
+    String? vacationType, // 연차 미사용 세부 유형 (personal/sick/emergency/family/other/substitute)
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final queryParams = {'companyId': companyId};
@@ -466,6 +467,9 @@ class ApiService {
 
       if (duration != null) {
         requestBody['duration'] = duration;
+      }
+      if (vacationType != null && vacationType.isNotEmpty) {
+        requestBody['vacationType'] = vacationType;
       }
 
       return await http.post(
@@ -1978,6 +1982,8 @@ class ApiService {
     String? attachmentUrl,
     String? attachmentFileName,
     int? attachmentFileSize,
+    Map<String, dynamic>? formData,
+    List<Map<String, dynamic>>? approvalLine, // [{approverType, approverId}] 순서=결재 순서
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approvals').replace(
@@ -1995,6 +2001,13 @@ class ApiService {
         body['attachmentFileName'] = attachmentFileName;
       if (attachmentFileSize != null)
         body['attachmentFileSize'] = attachmentFileSize;
+      // 백엔드 DTO의 formData는 String(JSON) 타입
+      if (formData != null && formData.isNotEmpty) {
+        body['formData'] = json.encode(formData);
+      }
+      if (approvalLine != null && approvalLine.isNotEmpty) {
+        body['approvalLine'] = approvalLine;
+      }
 
       print('[API] 결재 요청 생성: $uri');
       print('[API] 요청 데이터: $body');
@@ -2006,11 +2019,12 @@ class ApiService {
     });
   }
 
-  // 결재 요청 승인
+  // 결재 요청 승인 — signatureBase64가 있으면 즉석 서명 날인, 없으면 등록 서명 자동 사용
   Future<Map<String, dynamic>> approveApprovalRequest({
     required int approvalId,
     required String processedBy,
     required String processedByName,
+    String? signatureBase64,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/approve')
@@ -2026,7 +2040,59 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
+      if (signatureBase64 != null && signatureBase64.isNotEmpty) {
+        return await http.put(
+          uri,
+          headers: headers,
+          body: json.encode({'signatureBase64': signatureBase64}),
+        );
+      }
       return await http.put(uri, headers: headers);
+    });
+  }
+
+  // 결재선 지정 가능 결재자 후보 목록
+  Future<Map<String, dynamic>> getApproverCandidates({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/approver-candidates')
+          .replace(queryParameters: {'companyId': companyId});
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 내 결재 서명 조회 ({signatureUrl})
+  Future<Map<String, dynamic>> getMySignature() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/signatures/me');
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 내 결재 서명 등록 (base64 PNG data URL 허용)
+  Future<Map<String, dynamic>> registerMySignature({
+    required String imageBase64,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/signatures');
+      final headers = await _getHeaders();
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({'imageBase64': imageBase64}),
+      );
+    });
+  }
+
+  // 내 결재 서명 삭제
+  Future<Map<String, dynamic>> deleteMySignature() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/signatures');
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
     });
   }
 
@@ -2898,6 +2964,289 @@ class ApiService {
       return await http.delete(uri, headers: headers);
     });
   }
+
+  // 일정 수행완료 처리/해제
+  Future<Map<String, dynamic>> updateScheduleCompletion({
+    required int scheduleId,
+    required bool completed,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId/completion');
+      final headers = await _getHeaders();
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'completed': completed}),
+      );
+    });
+  }
+
+  // 일정 할 일 목록
+  Future<Map<String, dynamic>> getScheduleTasks({required int scheduleId}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId/tasks');
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 일정 할 일 추가
+  Future<Map<String, dynamic>> createScheduleTask({
+    required int scheduleId,
+    required String content,
+    int? assigneeMemberId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId/tasks');
+      final headers = await _getHeaders();
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'content': content,
+          if (assigneeMemberId != null) 'assigneeMemberId': assigneeMemberId,
+        }),
+      );
+    });
+  }
+
+  // 일정 할 일 완료 처리/해제
+  Future<Map<String, dynamic>> updateScheduleTaskCompletion({
+    required int scheduleId,
+    required int taskId,
+    required bool completed,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId/tasks/$taskId/completion');
+      final headers = await _getHeaders();
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'completed': completed}),
+      );
+    });
+  }
+
+  // 일정 할 일 삭제
+  Future<Map<String, dynamic>> deleteScheduleTask({
+    required int scheduleId,
+    required int taskId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId/tasks/$taskId');
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 내 할 일 목록 (기간 내)
+  Future<Map<String, dynamic>> getMyScheduleTasks({
+    required String companyId,
+    String? startDate,
+    String? endDate,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/schedules/my-tasks').replace(queryParameters: {
+        'companyId': companyId,
+        if (startDate != null) 'startDate': startDate,
+        if (endDate != null) 'endDate': endDate,
+      });
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // ================== 케어브이 광장 (뉴스/게시판/자료실) ==================
+
+  // 요양 소식 (네이버 뉴스) — 비로그인 공개 API
+  Future<Map<String, dynamic>> getCareNews({
+    String? category,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/news').replace(queryParameters: {
+        if (category != null && category.isNotEmpty) 'category': category,
+        'page': page.toString(),
+        'size': size.toString(),
+      });
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 광장 게시글 목록
+  Future<Map<String, dynamic>> getPlazaPosts({
+    String? board,
+    String sort = 'latest',
+    String? search,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/posts').replace(queryParameters: {
+        if (board != null && board.isNotEmpty) 'board': board,
+        'sort': sort,
+        if (search != null && search.isNotEmpty) 'search': search,
+        'page': page.toString(),
+        'size': size.toString(),
+      });
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 광장 게시글 상세 (댓글 포함)
+  Future<Map<String, dynamic>> getPlazaPostDetail({required int postId}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/posts/$postId');
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 광장 게시글 작성
+  Future<Map<String, dynamic>> createPlazaPost({
+    required String board,
+    required String title,
+    required String content,
+    required bool isAnonymous,
+    String? authorName,
+    String? companyName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/posts');
+      final headers = await _getHeaders();
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'board': board,
+          'title': title,
+          'content': content,
+          'isAnonymous': isAnonymous,
+          if (authorName != null) 'authorName': authorName,
+          if (companyName != null) 'companyName': companyName,
+        }),
+      );
+    });
+  }
+
+  // 광장 게시글 삭제 (본인 글)
+  Future<Map<String, dynamic>> deletePlazaPost({required int postId}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/posts/$postId');
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 광장 게시글 좋아요 토글
+  Future<Map<String, dynamic>> togglePlazaPostLike({required int postId}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/posts/$postId/like');
+      final headers = await _getHeaders();
+      return await http.post(uri, headers: headers);
+    });
+  }
+
+  // 광장 댓글 작성
+  Future<Map<String, dynamic>> addPlazaComment({
+    required int postId,
+    required String content,
+    required bool isAnonymous,
+    int? parentId,
+    String? authorName,
+    String? companyName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/posts/$postId/comments');
+      final headers = await _getHeaders();
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'content': content,
+          'isAnonymous': isAnonymous,
+          if (parentId != null) 'parentId': parentId,
+          if (authorName != null) 'authorName': authorName,
+          if (companyName != null) 'companyName': companyName,
+        }),
+      );
+    });
+  }
+
+  // 광장 댓글 삭제 (본인 댓글)
+  Future<Map<String, dynamic>> deletePlazaComment({required int commentId}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/comments/$commentId');
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 광장 자료실 목록
+  Future<Map<String, dynamic>> getPlazaLibrary({
+    String? category,
+    String? search,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/library').replace(queryParameters: {
+        if (category != null && category.isNotEmpty) 'category': category,
+        if (search != null && search.isNotEmpty) 'search': search,
+        'page': page.toString(),
+        'size': size.toString(),
+      });
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 광장 자료 업로드 (multipart)
+  Future<Map<String, dynamic>> uploadPlazaLibraryItem({
+    required String filePath,
+    required String category,
+    required String title,
+    String? description,
+    String? uploaderName,
+    String? companyName,
+  }) async {
+    final token = StorageService().getToken();
+    final fileName = filePath.split('/').last;
+
+    final formData = dio.FormData.fromMap({
+      'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
+      'category': category,
+      'title': title,
+      if (description != null && description.isNotEmpty) 'description': description,
+      if (uploaderName != null) 'uploaderName': uploaderName,
+      if (companyName != null) 'companyName': companyName,
+    });
+
+    final dioClient = dio.Dio();
+    dioClient.options.connectTimeout = const Duration(seconds: 30);
+    dioClient.options.sendTimeout = const Duration(seconds: 120);
+    dioClient.options.receiveTimeout = const Duration(seconds: 60);
+
+    final response = await dioClient.post(
+      '$_baseUrl/v1/plaza/library',
+      data: formData,
+      options: dio.Options(headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+      }),
+    );
+
+    if (response.statusCode == 200 && response.data is Map) {
+      return Map<String, dynamic>.from(response.data);
+    }
+    throw ApiException('자료 업로드 실패', response.statusCode ?? 500);
+  }
+
+  // 광장 자료 다운로드 URL (dio로 직접 저장할 때 사용)
+  String plazaLibraryDownloadUrl(int itemId) =>
+      '$_baseUrl/v1/plaza/library/$itemId/download';
 }
 
 // API 예외 클래스

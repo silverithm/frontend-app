@@ -10,6 +10,7 @@ import '../models/approval.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
 
@@ -181,6 +182,10 @@ class _AdminApprovalManagementScreenState
   }
 
   Future<void> _approveRequest(int requestId) async {
+    // 서명 확인 (등록 서명 또는 즉석 그리기)
+    final signature = await showSignatureConfirmSheet(context);
+    if (signature == null || !mounted) return;
+
     final approvalProvider = context.read<ApprovalProvider>();
     final authProvider = context.read<AuthProvider>();
     final currentUser = authProvider.currentUser;
@@ -192,6 +197,7 @@ class _AdminApprovalManagementScreenState
       companyId: companyId,
       processedBy: processedBy,
       processedByName: processedByName,
+      signatureBase64: signature.signatureBase64,
     );
 
     if (success && mounted) {
@@ -202,7 +208,27 @@ class _AdminApprovalManagementScreenState
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else if (mounted) {
+      // 결재선 차례가 아니면 서버가 403으로 거부한다
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(approvalProvider.errorMessage.isNotEmpty
+              ? approvalProvider.errorMessage
+              : '결재 승인에 실패했습니다'),
+          backgroundColor: AppSemanticColors.statusErrorIcon,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
+  }
+
+  /// 결재선이 있으면 내 차례일 때만 처리 가능
+  bool _isMyTurn(ApprovalRequest request) {
+    if (request.approvalLine.isEmpty) return true; // legacy 단일 승인
+    final currentStep = request.currentStep;
+    if (currentStep == null) return false;
+    final myId = context.read<AuthProvider>().currentUser?.id ?? '';
+    return currentStep.approverId == myId;
   }
 
   Future<void> _rejectRequest(int requestId) async {
@@ -904,27 +930,67 @@ class _AdminApprovalManagementScreenState
                   ),
                 ),
               ],
-              if (isPending && !_isSelectMode) ...[
-                const SizedBox(height: 12),
+              // 결재선 진행 상태
+              if (request.approvalLine.isNotEmpty) ...[
+                const SizedBox(height: 8),
                 Row(
                   children: [
+                    Icon(Icons.route,
+                        size: 14, color: AppSemanticColors.statusInfoIcon),
+                    const SizedBox(width: 4),
                     Expanded(
-                      child: shadcn.OutlineButton(
-                        onPressed: () => _rejectRequest(request.id),
-                        leading: const Icon(Icons.close, size: 16),
-                        child: const Text('거절'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: shadcn.PrimaryButton(
-                        onPressed: () => _approveRequest(request.id),
-                        leading: const Icon(Icons.check, size: 16),
-                        child: const Text('승인'),
+                      child: Text(
+                        '결재선 ${request.approvalLine.where((s) => s.isApproved).length}/${request.approvalLine.length}'
+                        '${request.status == ApprovalStatus.pending && request.currentStep != null ? ' · 현재 차례: ${request.currentStep!.approverName}' : ''}',
+                        style: AppTypography.caption.copyWith(
+                          color: AppSemanticColors.statusInfoIcon,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
                 ),
+              ],
+              if (isPending && !_isSelectMode) ...[
+                const SizedBox(height: 12),
+                if (_isMyTurn(request))
+                  Row(
+                    children: [
+                      Expanded(
+                        child: shadcn.OutlineButton(
+                          onPressed: () => _rejectRequest(request.id),
+                          leading: const Icon(Icons.close, size: 16),
+                          child: const Text('거절'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: shadcn.PrimaryButton(
+                          onPressed: () => _approveRequest(request.id),
+                          leading: const Icon(Icons.check, size: 16),
+                          child: const Text('승인'),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.backgroundTertiary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${request.currentStep?.approverName ?? '다른 결재자'}님의 차례입니다',
+                        style: AppTypography.caption.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ],
           ),

@@ -243,6 +243,8 @@ class ApprovalProvider with ChangeNotifier {
     String? attachmentUrl,
     String? attachmentFileName,
     int? attachmentFileSize,
+    Map<String, dynamic>? formData,
+    List<Map<String, dynamic>>? approvalLine,
   }) async {
     try {
       setLoading(true);
@@ -254,6 +256,8 @@ class ApprovalProvider with ChangeNotifier {
         requesterName: requesterName,
         templateId: templateId,
         title: title,
+        formData: formData,
+        approvalLine: approvalLine,
         attachmentUrl: attachmentUrl,
         attachmentFileName: attachmentFileName,
         attachmentFileSize: attachmentFileSize,
@@ -280,6 +284,7 @@ class ApprovalProvider with ChangeNotifier {
     required String companyId,
     required String processedBy,
     required String processedByName,
+    String? signatureBase64,
   }) async {
     try {
       setLoading(true);
@@ -289,6 +294,7 @@ class ApprovalProvider with ChangeNotifier {
         approvalId: approvalId,
         processedBy: processedBy,
         processedByName: processedByName,
+        signatureBase64: signatureBase64,
       );
 
       print('[ApprovalProvider] 결재 요청 승인 응답: $response');
