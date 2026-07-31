@@ -1,0 +1,5 @@
+# ENV 우선(kw run play-shared), 없으면 ~/keys 평문 폴백
+if ENV["SUPPLY_JSON_KEY_DATA"].nil? || ENV["SUPPLY_JSON_KEY_DATA"].empty?
+  json_key_file(File.expand_path("~/keys/liftupai-fastlane-play.json"))
+end
+package_name("com.silverithm.carev.app")

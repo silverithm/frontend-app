@@ -1,0 +1,25 @@
+default_platform(:ios)
+
+FLUTTER_ROOT = File.expand_path("../..", __dir__)
+IPA_PATH = File.join(FLUTTER_ROOT, "build/ios/ipa/케어브이.ipa")
+
+def asc_api_key
+  app_store_connect_api_key(
+    key_id: "4HRHDTP47U",
+    issuer_id: "3a7331ed-e39f-4631-9738-a664230a6b0c",
+    key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"] || File.expand_path("~/keys/liftupai-asc-key.p8")
+  )
+end
+
+platform :ios do
+  # CocoaPods가 fastlane 셸에서 깨질 수 있어 flutter build ipa는 일반 셸에서 실행 권장 —
+  # 여기서는 이미 빌드된 IPA를 업로드만 한다.
+  desc "TestFlight 업로드 (빌드된 IPA)"
+  lane :beta do
+    upload_to_testflight(
+      api_key: asc_api_key,
+      ipa: IPA_PATH,
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

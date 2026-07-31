@@ -1,0 +1,47 @@
+default_platform(:android)
+
+FLUTTER_ROOT = File.expand_path("../..", __dir__)
+AAB_PATH = File.join(FLUTTER_ROOT, "build/app/outputs/bundle/release/app-release.aab")
+
+platform :android do
+  private_lane :build do
+    sh("cd #{FLUTTER_ROOT} && flutter build appbundle --release")
+  end
+
+  desc "내부 테스트 트랙 업로드"
+  lane :internal do
+    build
+    upload_to_play_store(
+      track: "internal",
+      aab: AAB_PATH,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "프로덕션 20% 단계적 출시"
+  lane :release do
+    build
+    upload_to_play_store(
+      track: "production",
+      rollout: "0.2",
+      aab: AAB_PATH,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "단계적 출시 100% 완료"
+  lane :complete_rollout do
+    upload_to_play_store(
+      track: "production",
+      rollout: "1.0",
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end
