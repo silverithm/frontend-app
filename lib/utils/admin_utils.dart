@@ -1,4 +1,5 @@
 import '../models/user.dart';
+import 'role_utils.dart';
 
 class AdminUtils {
   /// 사용자가 관리자인지 확인
@@ -17,17 +18,9 @@ class AdminUtils {
   }
 
   /// 사용자 역할에 따른 한국어 표시명 반환
+  /// (관리자가 직접 만든 역할은 이름을 그대로 보여준다)
   static String getRoleDisplayName(String role) {
-    switch (role) {
-      case 'admin':
-        return '관리자';
-      case 'CAREGIVER':
-        return '요양보호사';
-      case 'OFFICE':
-        return '사무실';
-      default:
-        return '직원';
-    }
+    return RoleUtils.displayName(role);
   }
 
   /// 사용자 상태에 따른 한국어 표시명 반환

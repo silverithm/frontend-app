@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../utils/role_utils.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class VacationRequestDialog extends StatefulWidget {
@@ -133,7 +134,12 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       final success = await vacationProvider.createVacationRequest(
         userId: authProvider.currentUser!.id,
         userName: authProvider.currentUser!.name,
-        userRole: authProvider.currentUser!.role,
+        // 배정된 역할이 있으면 그것으로 신청한다 (없을 때만 기존 분류)
+        userRole: RoleUtils.normalize(
+          authProvider.currentUser!.position?.isNotEmpty == true
+              ? authProvider.currentUser!.position
+              : authProvider.currentUser!.role,
+        ),
         date: widget.selectedDate,
         type: _selectedType,
         duration: _selectedDuration,

@@ -413,7 +413,7 @@ class ApiService {
   Future<Map<String, dynamic>> getVacationForDate({
     required String date,
     required String companyId,
-    String role = 'CAREGIVER',
+    String role = 'all',
     String? nameFilter,
   }) async {
     try {

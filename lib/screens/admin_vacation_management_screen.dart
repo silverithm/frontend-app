@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/in_app_review_service.dart';
 import '../utils/constants.dart';
+import '../utils/role_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -21,6 +22,7 @@ class AdminVacationManagementScreen extends StatefulWidget {
 
 class _AdminVacationManagementScreenState extends State<AdminVacationManagementScreen> {
   List<Map<String, dynamic>> _vacationRequests = [];
+  List<String> _positions = [];
   Map<String, dynamic> _vacationLimits = {};
   bool _isLoading = false;
   String _statusFilter = 'pending'; // all, pending, approved, rejected - 초기값을 승인 대기로 설정
@@ -77,6 +79,23 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         print('[AdminVacationManagement] setState 완료, _vacationRequests.length: ${_vacationRequests.length}');
       } else {
         print('[AdminVacationManagement] API 응답에 requests 키가 없음: ${vacationResult.keys}');
+      }
+
+      // 등록된 역할 목록 로드 (필터에 그대로 노출)
+      try {
+        final positionsResult = await ApiService().getPositions(
+          companyId: companyId,
+        );
+        final positionsList = (positionsResult['positions'] as List?) ?? [];
+        setState(() {
+          _positions = positionsList
+              .whereType<Map>()
+              .map((position) => position['name']?.toString() ?? '')
+              .where((name) => name.isNotEmpty)
+              .toList();
+        });
+      } catch (e) {
+        print('[AdminVacationManagement] 역할 목록 로드 실패: $e');
       }
 
       // 휴무 한도 로드
@@ -303,11 +322,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildRoleFilterChip('전체', 'all'),
-                      const SizedBox(width: 8),
-                      _buildRoleFilterChip('요양보호사', 'caregiver'),
-                      const SizedBox(width: 8),
-                      _buildRoleFilterChip('사무실', 'office'),
+                      _buildRoleFilterChip('전체', RoleUtils.allRole),
+                      for (final role in _roleFilterOptions) ...[
+                        const SizedBox(width: 8),
+                        _buildRoleFilterChip(RoleUtils.displayName(role), role),
+                      ],
                     ],
                   ),
                 ),
@@ -560,14 +579,40 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
   }
 
   String _getRoleDisplayName(String role) {
-    switch (role.toLowerCase()) {
-      case 'caregiver':
-        return '요양보호사';
-      case 'office':
-        return '사무실';
-      default:
-        return role;
+    return RoleUtils.displayName(role);
+  }
+
+  /// 등록된 역할 + 실제 신청에 나타난 역할로 필터 목록을 만든다
+  List<String> get _roleFilterOptions {
+    final roles = <String>[];
+    final seen = <String>{};
+
+    void addRole(String? value) {
+      final normalizedRole = RoleUtils.normalize(value);
+      if (normalizedRole.isEmpty ||
+          normalizedRole == RoleUtils.allRole ||
+          normalizedRole == 'admin' ||
+          normalizedRole == 'employee' ||
+          !seen.add(normalizedRole)) {
+        return;
+      }
+
+      roles.add(normalizedRole);
     }
+
+    for (final position in _positions) {
+      addRole(position);
+    }
+    for (final request in _vacationRequests) {
+      addRole(request['role']?.toString());
+    }
+
+    if (roles.isEmpty) {
+      addRole('caregiver');
+      addRole('office');
+    }
+
+    return roles;
   }
 
   String _formatDate(String? dateString) {
@@ -592,9 +637,12 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     }
 
     // 직무 필터링
-    if (_roleFilter != 'all') {
+    if (_roleFilter != RoleUtils.allRole) {
       filteredRequests = filteredRequests
-          .where((request) => request['role']?.toLowerCase() == _roleFilter)
+          .where(
+            (request) =>
+                RoleUtils.matches(request['role']?.toString(), _roleFilter),
+          )
           .toList();
     }
 

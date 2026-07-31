@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/vacation_provider.dart';
 import '../models/vacation_request.dart';
 import '../theme/app_colors.dart';
+import '../utils/role_utils.dart';
 import 'dart:math' as math;
 
 class VacationCalendarWidget extends StatefulWidget {
@@ -283,20 +284,30 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         ),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildRoleFilterButton('all', '전체', Icons.people),
-                        const SizedBox(width: 8),
-                        _buildRoleFilterButton(
-                          'CAREGIVER',
-                          '요양보호사',
-                          Icons.favorite,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildRoleFilterButton('OFFICE', '사무실', Icons.business),
-
-                      ],
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildRoleFilterButton(
+                            RoleUtils.allRole,
+                            '전체',
+                            Icons.people,
+                          ),
+                          // 관리자 화면에서 만든 역할까지 그대로 노출
+                          for (final role
+                              in context
+                                  .watch<VacationProvider>()
+                                  .availableRoles) ...[
+                            const SizedBox(width: 8),
+                            _buildRoleFilterButton(
+                              role,
+                              RoleUtils.displayName(role),
+                              _roleFilterIcon(role),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
 
@@ -1312,8 +1323,19 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     );
   }
 
+  IconData _roleFilterIcon(String role) {
+    switch (RoleUtils.normalize(role)) {
+      case 'caregiver':
+        return Icons.favorite;
+      case 'office':
+        return Icons.business;
+      default:
+        return Icons.badge_outlined;
+    }
+  }
+
   Widget _buildRoleFilterButton(String role, String label, IconData icon) {
-    final isSelected = widget.roleFilter == role;
+    final isSelected = RoleUtils.normalize(widget.roleFilter) == role;
 
     return GestureDetector(
       onTap: () => widget.onRoleFilterChanged?.call(role),

@@ -9,6 +9,7 @@ import '../models/user.dart';
 import '../services/analytics_service.dart';
 import '../services/in_app_review_service.dart';
 import '../utils/admin_utils.dart';
+import '../utils/role_utils.dart';
 import 'admin_company_settings_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -886,14 +887,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                                           children: [
                                             Expanded(
                                               child: _buildInfoRow(
-                                                icon: user.role == 'CAREGIVER'
-                                                    ? Icons.favorite
-                                                    : Icons.business,
-                                                iconColor: user.role == 'CAREGIVER'
-                                                    ? AppSemanticColors.statusErrorIcon
-                                                    : AppSemanticColors.textSecondary,
+                                                icon: _getRoleIcon(
+                                                  _effectiveRole(user),
+                                                ),
+                                                iconColor: _getRoleColor(
+                                                  _effectiveRole(user),
+                                                ),
                                                 title: '직원 유형',
-                                                value: _getRoleDisplayName(user.role),
+                                                value: _getRoleDisplayName(
+                                                  _effectiveRole(user),
+                                                ),
                                               ),
                                             ),
                                             Container(
@@ -1539,11 +1542,16 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  /// 배정된 역할이 있으면 그것을, 없으면 기존 분류를 쓴다
+  String _effectiveRole(User user) {
+    return user.position?.isNotEmpty == true ? user.position! : user.role;
+  }
+
   Color _getRoleColor(String role) {
-    switch (role) {
-      case 'CAREGIVER':
+    switch (RoleUtils.normalize(role)) {
+      case 'caregiver':
         return AppSemanticColors.statusErrorIcon;
-      case 'OFFICE':
+      case 'office':
         return AppSemanticColors.textSecondary;
       case 'admin':
         return AppSemanticColors.textSecondary;
@@ -1553,32 +1561,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   IconData _getRoleIcon(String role) {
-    switch (role) {
-      case 'CAREGIVER':
+    switch (RoleUtils.normalize(role)) {
+      case 'caregiver':
         return Icons.favorite;
-      case 'OFFICE':
+      case 'office':
         return Icons.business;
       case 'admin':
         return Icons.admin_panel_settings;
       default:
-        return Icons.person;
+        return Icons.badge_outlined;
     }
   }
 
   String _getRoleDisplayName(String role) {
-    print('User role: "$role"'); // 디버그 출력
-    switch (role.toUpperCase()) {
-      // 대소문자 구분 없이 처리
-      case 'CAREGIVER':
-        return '요양보호사';
-      case 'OFFICE':
-        return '사무실';
-      case 'ADMIN':
-        return '관리자';
-      default:
-        print('Unknown role: "$role", using default'); // 디버그 출력
-        return '직원';
-    }
+    return RoleUtils.displayName(role);
   }
 
   Widget _buildPolicyTile({

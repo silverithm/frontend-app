@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/vacation_request.dart';
 import '../services/api_service.dart';
+import '../utils/role_utils.dart';
 
 class VacationProvider with ChangeNotifier {
   List<VacationRequest> _vacationRequests = [];
@@ -9,7 +10,8 @@ class VacationProvider with ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
   DateTime _selectedDate = DateTime.now();
-  String _roleFilter = 'all';
+  String _roleFilter = RoleUtils.allRole;
+  List<String> _availableRoles = [];
 
   List<VacationRequest> get vacationRequests => _vacationRequests;
   Map<DateTime, List<VacationRequest>> get calendarData => _calendarData;
@@ -18,6 +20,9 @@ class VacationProvider with ChangeNotifier {
   String get errorMessage => _errorMessage;
   DateTime get selectedDate => _selectedDate;
   String get roleFilter => _roleFilter;
+
+  /// 관리자 화면에서 만든 역할까지 포함한 필터 목록
+  List<String> get availableRoles => _availableRoles;
 
   void setLoading(bool loading) {
     _isLoading = loading;
@@ -42,11 +47,13 @@ class VacationProvider with ChangeNotifier {
   void setRoleFilter(String role) {
     print('[VacationProvider] 역할 필터 변경: $_roleFilter -> $role');
     final oldRole = _roleFilter;
-    _roleFilter = role;
+    final normalizedRole = RoleUtils.normalize(role);
+    _roleFilter = normalizedRole.isEmpty ? RoleUtils.allRole : normalizedRole;
+    final newRole = _roleFilter;
 
     // 캘린더 데이터는 이미 모든 역할을 포함하므로 재로드 불필요
     // vacation limits만 필요시 재로드
-    if (role != 'all' && oldRole == 'all') {
+    if (newRole != RoleUtils.allRole && oldRole == RoleUtils.allRole) {
       // 전체 -> 특정 역할: vacation limits 로드 필요
       final startDate = DateTime(_selectedDate.year, _selectedDate.month, 1);
       final endDate = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
@@ -57,7 +64,7 @@ class VacationProvider with ChangeNotifier {
         );
         notifyListeners();
       });
-    } else if (role == 'all' && oldRole != 'all') {
+    } else if (newRole == RoleUtils.allRole && oldRole != RoleUtils.allRole) {
       // 특정 역할 -> 전체: vacation limits 기본값 설정
       final startDate = DateTime(_selectedDate.year, _selectedDate.month, 1);
       final endDate = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
@@ -72,7 +79,9 @@ class VacationProvider with ChangeNotifier {
       }
       print('[VacationProvider] 전체 모드로 변경 - 기본값 설정 완료');
       notifyListeners();
-    } else if (role != 'all' && oldRole != 'all' && role != oldRole) {
+    } else if (newRole != RoleUtils.allRole &&
+        oldRole != RoleUtils.allRole &&
+        newRole != oldRole) {
       // 특정 역할 간 변경: vacation limits 재로드 필요
       final startDate = DateTime(_selectedDate.year, _selectedDate.month, 1);
       final endDate = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
@@ -141,6 +150,9 @@ class VacationProvider with ChangeNotifier {
 
       // vacation limits도 함께 로드
       await loadVacationLimits(startDate, endDate, companyId: companyId);
+
+      // 역할 필터 목록도 갱신 (관리자가 만든 역할 반영)
+      await loadAvailableRoles(companyId: companyId);
 
       notifyListeners();
     } catch (e) {
@@ -407,7 +419,7 @@ class VacationProvider with ChangeNotifier {
       final response = await ApiService().getVacationForDate(
         date: _formatDate(date),
         companyId: companyId ?? '1', // 기본값 1 사용
-        role: _roleFilter == 'all' ? 'CAREGIVER' : _roleFilter,
+        role: _roleFilter,
       );
 
       if (response['vacations'] != null) {
@@ -433,14 +445,14 @@ class VacationProvider with ChangeNotifier {
       '[VacationProvider] getVacationsForDate - 날짜: ${_formatDate(date)}, 전체 휴무: ${vacations.length}개, 현재 필터: $_roleFilter',
     );
 
-    if (_roleFilter == 'all') {
+    if (_roleFilter == RoleUtils.allRole) {
       print('[VacationProvider] 전체 모드 - 모든 휴무 반환: ${vacations.length}개');
       return vacations;
     }
 
     // 역할 필터링 시 디버깅 로그 추가
     final filteredVacations = vacations.where((vacation) {
-      final match = vacation.role.toUpperCase() == _roleFilter.toUpperCase();
+      final match = RoleUtils.matches(vacation.role, _roleFilter);
       print(
         '[VacationProvider] 휴무 필터링 - 사용자: ${vacation.userName}, 역할: ${vacation.role}, 필터: $_roleFilter, 일치: $match',
       );
@@ -461,6 +473,56 @@ class VacationProvider with ChangeNotifier {
     return getVacationCountForDate(date) >= maxPeople;
   }
 
+  /// 역할 필터 목록 갱신.
+  /// 관리자 화면에서 만든 역할(Position)을 우선 쓰고, 캘린더에 실제로 나타난 역할을 덧붙인다.
+  Future<void> loadAvailableRoles({String? companyId}) async {
+    final roles = <String>[];
+    final seen = <String>{};
+
+    void addRole(String? value) {
+      final normalizedRole = RoleUtils.normalize(value);
+      if (normalizedRole.isEmpty ||
+          normalizedRole == RoleUtils.allRole ||
+          normalizedRole == 'admin' ||
+          normalizedRole == 'employee' ||
+          !seen.add(normalizedRole)) {
+        return;
+      }
+
+      roles.add(normalizedRole);
+    }
+
+    try {
+      final response = await ApiService().getPositions(
+        companyId: companyId ?? '1',
+      );
+      final positions = (response['positions'] as List?) ?? [];
+      for (final position in positions) {
+        if (position is Map) {
+          addRole(position['name']?.toString());
+        }
+      }
+    } catch (e) {
+      // 역할 목록 조회 실패는 캘린더 사용을 막지 않는다
+      print('[VacationProvider] 역할 목록 로드 실패: $e');
+    }
+
+    for (final vacations in _calendarData.values) {
+      for (final vacation in vacations) {
+        addRole(vacation.role);
+      }
+    }
+
+    if (roles.isEmpty) {
+      addRole('caregiver');
+      addRole('office');
+    }
+
+    _availableRoles = roles;
+    print('[VacationProvider] 역할 필터 목록: $_availableRoles');
+    notifyListeners();
+  }
+
   // vacation limits 로드
   Future<void> loadVacationLimits(
     DateTime start,
@@ -468,19 +530,14 @@ class VacationProvider with ChangeNotifier {
     String? companyId,
   }) async {
     try {
-      // Spring Boot API 호출 - role 필터 포함
-      // 전체 모드일 때는 CAREGIVER 기준으로 휴무 제한을 가져옴
-      final apiRole = _roleFilter == 'all' ? 'CAREGIVER' : 
-                      _roleFilter == 'OFFICE' ? 'OFFICE' : 'CAREGIVER';
-      print(
-        '[VacationProvider] API 호출 - 현재 필터: $_roleFilter, API 역할: $apiRole',
-      );
+      // 서버는 기간 내 모든 역할의 상한을 내려주므로 현재 필터에 맞는 값만 골라 쓴다
+      print('[VacationProvider] API 호출 - 현재 필터: $_roleFilter');
 
       final response = await ApiService().getVacationLimits(
         start: _formatDate(start),
         end: _formatDate(end),
         companyId: companyId ?? '1',
-        role: apiRole, // 정확한 role 매핑 사용
+        role: _roleFilter,
       );
 
       print('[VacationProvider] vacation limits 응답: $response');
@@ -497,31 +554,27 @@ class VacationProvider with ChangeNotifier {
           try {
             final dateStr = limitItem['date'] as String;
             final maxPeople = limitItem['maxPeople'] as int? ?? 3;
-            final itemRole = limitItem['role'] as String?;
+            final itemRole = limitItem['role']?.toString();
 
-            // 현재 선택된 역할과 일치하는 데이터만 사용
-            String expectedRole;
-            if (_roleFilter == 'CAREGIVER') {
-              expectedRole = 'caregiver';
-            } else if (_roleFilter == 'OFFICE') {
-              expectedRole = 'office';
-            } else {
-              continue; // 예상치 못한 역할은 건너뛰기
+            // 특정 역할을 보고 있으면 그 역할의 상한만, 전체 모드면 역할별 상한 중 최댓값
+            if (!RoleUtils.matches(itemRole, _roleFilter)) {
+              print(
+                '[VacationProvider] 역할 불일치 - 필터: $_roleFilter, 실제: $itemRole',
+              );
+              continue;
             }
 
-            if (itemRole != null && itemRole.toLowerCase() == expectedRole) {
-              final date = DateTime.parse(dateStr);
-              _vacationLimits[DateTime(date.year, date.month, date.day)] =
-                  maxPeople;
+            final date = DateTime.parse(dateStr);
+            final dateKey = DateTime(date.year, date.month, date.day);
+            final currentLimit = _vacationLimits[dateKey];
+            _vacationLimits[dateKey] =
+                currentLimit == null || maxPeople > currentLimit
+                ? maxPeople
+                : currentLimit;
 
-              print(
-                '[VacationProvider] 역할 일치 - 날짜: $dateStr, 역할: $itemRole->$expectedRole, 제한: $maxPeople',
-              );
-            } else {
-              print(
-                '[VacationProvider] 역할 불일치 - 기대: $expectedRole, 실제: $itemRole',
-              );
-            }
+            print(
+              '[VacationProvider] 역할 일치 - 날짜: $dateStr, 역할: $itemRole, 제한: $maxPeople',
+            );
           } catch (e) {
             print('[VacationProvider] limit 파싱 오류: $limitItem - $e');
           }
