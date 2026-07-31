@@ -884,6 +884,18 @@ class _AdminScheduleCalendarScreenState
     int? taskAssigneeId;
     bool isWorking = false;
 
+    // 수행완료 권한: 담당자가 지정된 일정은 담당자 본인만,
+    // 미지정 일정은 관리자/작성자만 (서버에서도 동일하게 강제)
+    final currentUser = context.read<AuthProvider>().currentUser;
+    final bool isAdminUser = currentUser?.role.toLowerCase() == 'admin';
+    final int? myMemberId =
+        isAdminUser ? null : int.tryParse(currentUser?.id ?? '');
+    final bool canToggleCompletion = schedule.managerId != null
+        ? (myMemberId != null && schedule.managerId == myMemberId)
+        : (isAdminUser || (schedule.authorId != null && schedule.authorId == currentUser?.email));
+    bool canCheckTask(ScheduleTask task) =>
+        task.assigneeMemberId == null || task.assigneeMemberId == myMemberId;
+
     _loadMemberOptions();
 
     showModalBottomSheet(
@@ -993,7 +1005,9 @@ class _AdminScheduleCalendarScreenState
                             child: Text(
                               isCompleted
                                   ? '수행완료${schedule.completedByName != null ? ' · ${schedule.completedByName}' : ''}'
-                                  : '진행 전/진행 중',
+                                  : (!canToggleCompletion && schedule.managerName != null
+                                      ? '진행 전/진행 중 · 담당자(${schedule.managerName})만 완료 처리'
+                                      : '진행 전/진행 중'),
                               style: AppTypography.bodySmall.copyWith(
                                 color: isCompleted
                                     ? AppSemanticColors.statusSuccessIcon
@@ -1005,7 +1019,7 @@ class _AdminScheduleCalendarScreenState
                           Switch(
                             value: isCompleted,
                             activeThumbColor: AppSemanticColors.statusSuccessIcon,
-                            onChanged: isWorking
+                            onChanged: (isWorking || !canToggleCompletion)
                                 ? null
                                 : (value) async {
                                     setSheetState(() => isWorking = true);
@@ -1047,7 +1061,9 @@ class _AdminScheduleCalendarScreenState
                           Checkbox(
                             value: task.isCompleted,
                             activeColor: AppSemanticColors.statusSuccessIcon,
-                            onChanged: (value) async {
+                            onChanged: !canCheckTask(task)
+                                ? null
+                                : (value) async {
                               try {
                                 await ApiService().updateScheduleTaskCompletion(
                                   scheduleId: schedule.id,
