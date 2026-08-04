@@ -10,7 +10,6 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../widgets/approval/approval_line_picker.dart';
 import '../widgets/approval/dynamic_form_fields.dart';
 import 'hwp_editor_screen.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
@@ -310,21 +309,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       }
     }
 
-    // 결재선 확인
-    if (_approvalLine.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('결재선을 1명 이상 지정해주세요'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
-      return;
-    }
-
+    // 결재선은 양식의 기본 결재선을 그대로 따른다. 비어 있으면 관리자 단일 승인(legacy).
     setState(() => _isSubmitting = true);
 
     final authProvider = context.read<AuthProvider>();
@@ -582,13 +567,11 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                         setState(() {
                           _selectedTemplate = value;
                           _formValues.clear(); // 양식 변경 시 입력값 초기화
-                          // 양식에 기본 결재선이 정의돼 있으면 자동으로 채운다 (기안자가 수정 가능)
-                          final line = value?.defaultApprovalLineCandidates ?? [];
-                          if (line.isNotEmpty) {
-                            _approvalLine
-                              ..clear()
-                              ..addAll(line);
-                          }
+                          // 결재선은 양식에 정의된 기본 결재선을 그대로 따른다 (기안자가 고르지 않음).
+                          // 양식에 없으면 빈 결재선(관리자 단일 승인) — 이전 양식 선택이 남지 않게 리셋.
+                          _approvalLine
+                            ..clear()
+                            ..addAll(value?.defaultApprovalLineCandidates ?? []);
                         });
                       },
                     ),
@@ -655,22 +638,43 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                 ),
               ),
 
-              const SizedBox(height: AppSpacing.space6),
-
-              // 결재선 지정 섹션
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(color: AppSemanticColors.borderDefault),
+              // 결재선 — 양식에 정의된 기본 결재선을 따른다 (기안자가 임의 지정하지 않음)
+              if (_approvalLine.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.space6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.space4),
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.surfaceDefault,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    border: Border.all(color: AppSemanticColors.borderDefault),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '결재선 (양식에 지정됨)',
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppSemanticColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space2),
+                      Text(
+                        _approvalLine
+                            .asMap()
+                            .entries
+                            .map((e) =>
+                                '${e.key + 1}. ${e.value.name}${e.value.position != null ? ' (${e.value.position})' : ''}')
+                            .join(' → '),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: ApprovalLinePicker(
-                  companyId: context.read<AuthProvider>().currentUser?.company?.id?.toString() ?? '1',
-                  selected: _approvalLine,
-                  onChanged: () => setState(() {}),
-                ),
-              ),
+              ],
 
               // 온라인 양식 (form/hybrid 타입)
               if (_selectedTemplate != null &&
