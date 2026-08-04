@@ -307,6 +307,8 @@ class ApprovalTemplate {
   final bool isActive;
   final String templateType; // file | form | hybrid
   final Map<String, dynamic>? formSchema; // 온라인 폼 스키마
+  /// 기본 결재선(JSON 문자열) — 이 양식으로 기안하면 자동으로 채워진다
+  final String? defaultApprovalLine;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -321,9 +323,26 @@ class ApprovalTemplate {
     this.isActive = true,
     this.templateType = 'file',
     this.formSchema,
+    this.defaultApprovalLine,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  /// 기본 결재선을 후보 목록으로 파싱 (형식이 깨졌으면 빈 리스트)
+  List<ApproverCandidate> get defaultApprovalLineCandidates {
+    final raw = defaultApprovalLine;
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is! List) return [];
+      return decoded
+          .whereType<Map>()
+          .map((e) => ApproverCandidate.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
 
   /// 온라인 폼 필드 목록 (없으면 빈 리스트)
   List<Map<String, dynamic>> get formFields {
@@ -361,6 +380,7 @@ class ApprovalTemplate {
       isActive: json['isActive'] as bool? ?? json['active'] as bool? ?? true,
       templateType: json['templateType']?.toString() ?? 'file',
       formSchema: _parseSchema(json['formSchema']),
+      defaultApprovalLine: json['defaultApprovalLine']?.toString(),
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? DateTime.now(),
     );

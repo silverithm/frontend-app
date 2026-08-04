@@ -582,6 +582,13 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                         setState(() {
                           _selectedTemplate = value;
                           _formValues.clear(); // 양식 변경 시 입력값 초기화
+                          // 양식에 기본 결재선이 정의돼 있으면 자동으로 채운다 (기안자가 수정 가능)
+                          final line = value?.defaultApprovalLineCandidates ?? [];
+                          if (line.isNotEmpty) {
+                            _approvalLine
+                              ..clear()
+                              ..addAll(line);
+                          }
                         });
                       },
                     ),
