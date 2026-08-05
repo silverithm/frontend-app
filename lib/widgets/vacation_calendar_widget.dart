@@ -496,7 +496,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       }
 
                       // 동적 셀 높이 계산
-                      final baseCellHeight = 40.0;
+                      final baseCellHeight = 44.0;
                       final additionalHeight = maxVacationsInWeek > 3
                           ? 12.0
                           : 0.0;

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_selector/file_selector.dart';
@@ -546,6 +547,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _showMessageOptions(ChatMessage message) {
     final authProvider = context.read<AuthProvider>();
     final isMyMessage = message.senderId == authProvider.currentUser?.id;
+    final rootContext = context;
 
     showModalBottomSheet(
       context: context,
@@ -599,7 +601,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 title: const Text('복사'),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: 클립보드에 복사
+                  Clipboard.setData(ClipboardData(text: message.content ?? ''));
+                  if (rootContext.mounted) {
+                    ScaffoldMessenger.of(rootContext).showSnackBar(
+                      const SnackBar(content: Text('복사되었습니다')),
+                    );
+                  }
                 },
               ),
               ListTile(

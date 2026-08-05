@@ -661,18 +661,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                         ),
                       ),
                       if (isMySchedule)
-                        GestureDetector(
-                          onTap: () => _showDeleteScheduleDialog(schedule),
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              left: AppSpacing.space2,
-                            ),
-                            child: Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: AppSemanticColors.textTertiary,
-                            ),
+                        IconButton(
+                          onPressed: () => _showDeleteScheduleDialog(schedule),
+                          icon: Icon(
+                            Icons.delete_outline,
+                            size: 18,
+                            color: AppSemanticColors.textTertiary,
                           ),
+                          tooltip: '일정 삭제',
                         ),
                     ],
                   ),

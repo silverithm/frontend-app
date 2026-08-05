@@ -5,6 +5,7 @@ import '../theme/app_typography.dart';
 import 'admin_vacation_management_screen.dart';
 import 'admin_approval_management_screen.dart';
 import 'admin_approval_template_screen.dart';
+import 'admin_user_management_screen.dart';
 
 class AdminUnifiedApprovalScreen extends StatefulWidget {
   final bool showAppBar;
@@ -22,7 +23,7 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -70,6 +71,7 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
               tabs: const [
                 Tab(text: '휴무 승인'),
                 Tab(text: '결재 승인'),
+                Tab(text: '가입 승인'),
                 Tab(text: '양식 관리'),
               ],
             ),
@@ -83,6 +85,8 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
           _VacationManagementTab(),
           // 결재 승인 탭
           AdminApprovalManagementScreen(),
+          // 가입 승인 탭 - AdminUserManagementScreen의 승인 대기 목록 재사용
+          AdminPendingUsersTab(),
           // 양식 관리 탭
           AdminApprovalTemplateScreen(),
         ],
@@ -117,6 +121,7 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
             tabs: const [
               Tab(text: '휴무 승인'),
               Tab(text: '결재 승인'),
+              Tab(text: '가입 승인'),
               Tab(text: '양식 관리'),
             ],
           ),
@@ -127,6 +132,7 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
             children: const [
               _VacationManagementTab(),
               AdminApprovalManagementScreen(),
+              AdminPendingUsersTab(),
               AdminApprovalTemplateScreen(),
             ],
           ),

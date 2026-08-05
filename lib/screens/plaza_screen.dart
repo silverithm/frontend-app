@@ -15,6 +15,8 @@ import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_chip.dart';
 import 'plaza_post_detail_screen.dart';
 
 /// 케어브이 커뮤니티: 요양 소식(뉴스) · 게시판 · 자료실
@@ -76,6 +78,43 @@ class _PlazaScreenState extends State<PlazaScreen>
   }
 }
 
+// ─── 공통: 에러 상태 (빈 상태와 구분) ───
+
+class _PlazaErrorState extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _PlazaErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppSemanticColors.statusErrorIcon,
+          ),
+          const SizedBox(height: AppSpacing.space3),
+          Text(
+            '불러오지 못했습니다',
+            style: AppTypography.bodyMedium
+                .copyWith(color: AppSemanticColors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.space4),
+          SeedButton(
+            label: '다시 시도',
+            variant: SeedButtonVariant.neutralWeak,
+            size: SeedButtonSize.small,
+            onPressed: onRetry,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── 요양 소식 ───
 
 class _NewsTab extends StatefulWidget {
@@ -97,6 +136,7 @@ class _NewsTabState extends State<_NewsTab> {
   String _category = '';
   List<Map<String, dynamic>> _articles = [];
   bool _isLoading = true;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -105,7 +145,10 @@ class _NewsTabState extends State<_NewsTab> {
   }
 
   Future<void> _load() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
     try {
       final response = await ApiService()
           .getCareNews(category: _category.isEmpty ? null : _category, size: 30);
@@ -121,7 +164,12 @@ class _NewsTabState extends State<_NewsTab> {
       }
     } catch (e) {
       debugPrint('뉴스 로드 실패: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     }
   }
 
@@ -147,10 +195,11 @@ class _NewsTabState extends State<_NewsTab> {
               final selected = _category == c['key'];
               return Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.space2),
-                child: ChoiceChip(
-                  label: Text(c['label']!, style: const TextStyle(fontSize: 12)),
+                child: SeedChip(
+                  label: c['label']!,
                   selected: selected,
-                  onSelected: (_) {
+                  size: SeedChipSize.small,
+                  onTap: () {
                     setState(() => _category = c['key']!);
                     _load();
                   },
@@ -162,7 +211,9 @@ class _NewsTabState extends State<_NewsTab> {
         Expanded(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _articles.isEmpty
+              : (_hasError && _articles.isEmpty)
+                  ? _PlazaErrorState(onRetry: _load)
+                  : _articles.isEmpty
                   ? Center(
                       child: Text('표시할 소식이 없습니다',
                           style: AppTypography.bodyMedium
@@ -238,6 +289,7 @@ class _BoardTabState extends State<_BoardTab> {
   String _board = '';
   List<Map<String, dynamic>> _posts = [];
   bool _isLoading = true;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -246,7 +298,10 @@ class _BoardTabState extends State<_BoardTab> {
   }
 
   Future<void> _load() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
     try {
       final response = await ApiService()
           .getPlazaPosts(board: _board.isEmpty ? null : _board, size: 30);
@@ -262,7 +317,12 @@ class _BoardTabState extends State<_BoardTab> {
       }
     } catch (e) {
       debugPrint('게시글 로드 실패: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     }
   }
 
@@ -412,10 +472,11 @@ class _BoardTabState extends State<_BoardTab> {
                 final selected = _board == b['key'];
                 return Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.space2),
-                  child: ChoiceChip(
-                    label: Text(b['label']!, style: const TextStyle(fontSize: 12)),
+                  child: SeedChip(
+                    label: b['label']!,
                     selected: selected,
-                    onSelected: (_) {
+                    size: SeedChipSize.small,
+                    onTap: () {
                       setState(() => _board = b['key']!);
                       _load();
                     },
@@ -427,7 +488,9 @@ class _BoardTabState extends State<_BoardTab> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _posts.isEmpty
+                : (_hasError && _posts.isEmpty)
+                    ? _PlazaErrorState(onRetry: _load)
+                    : _posts.isEmpty
                     ? Center(
                         child: Text('게시글이 없습니다. 첫 글을 남겨보세요!',
                             style: AppTypography.bodyMedium.copyWith(
@@ -555,6 +618,7 @@ class _LibraryTabState extends State<_LibraryTab> {
   String _category = '';
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = true;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -563,7 +627,10 @@ class _LibraryTabState extends State<_LibraryTab> {
   }
 
   Future<void> _load() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
     try {
       final response = await ApiService().getPlazaLibrary(
           category: _category.isEmpty ? null : _category, size: 30);
@@ -579,7 +646,12 @@ class _LibraryTabState extends State<_LibraryTab> {
       }
     } catch (e) {
       debugPrint('자료실 로드 실패: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     }
   }
 
@@ -772,10 +844,11 @@ class _LibraryTabState extends State<_LibraryTab> {
                 final selected = _category == c['key'];
                 return Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.space2),
-                  child: ChoiceChip(
-                    label: Text(c['label']!, style: const TextStyle(fontSize: 12)),
+                  child: SeedChip(
+                    label: c['label']!,
                     selected: selected,
-                    onSelected: (_) {
+                    size: SeedChipSize.small,
+                    onTap: () {
                       setState(() => _category = c['key']!);
                       _load();
                     },
@@ -787,7 +860,9 @@ class _LibraryTabState extends State<_LibraryTab> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _items.isEmpty
+                : (_hasError && _items.isEmpty)
+                    ? _PlazaErrorState(onRetry: _load)
+                    : _items.isEmpty
                     ? Center(
                         child: Text('등록된 자료가 없습니다',
                             style: AppTypography.bodyMedium.copyWith(

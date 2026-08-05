@@ -316,13 +316,6 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
         iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: AppSemanticColors.textInverse,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
         actions: [
           if (_approval.status == ApprovalStatus.pending)
             Container(

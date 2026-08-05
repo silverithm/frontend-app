@@ -149,10 +149,14 @@ class MenuScreen extends StatelessWidget {
           _MenuGroup(
             title: '계정',
             items: [
+              // 프로필 카드 탭과 동일하게 ProfileScreen으로 이동한다.
+              // ProfileScreen이 유일한 설정 화면이라 역할이 겹치지만,
+              // '계정' 그룹에서도 진입 지점을 남겨두기 위해 라벨을
+              // 명확한 문구로 구분해 둔다(동작은 그대로 ProfileScreen).
               _MenuItem(
                 icon: Icons.settings_outlined,
-                label: '설정',
-                description: '비밀번호 변경 · 앱 정보',
+                label: '계정 설정',
+                description: '비밀번호 변경',
                 onTap: () => _push(context, const ProfileScreen()),
               ),
               _MenuItem(

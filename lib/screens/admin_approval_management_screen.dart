@@ -13,6 +13,7 @@ import '../theme/app_typography.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
+import '../widgets/seed/seed_chip.dart';
 
 class AdminApprovalManagementScreen extends StatefulWidget {
   const AdminApprovalManagementScreen({super.key});
@@ -632,25 +633,15 @@ class _AdminApprovalManagementScreenState
 
   Widget _buildStatusFilterChip(String label, String value) {
     final isSelected = _statusFilter == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: AppTypography.labelSmall.copyWith(
-          color: isSelected
-              ? AppSemanticColors.textInverse
-              : AppSemanticColors.textSecondary,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
+    return SeedChip(
+      label: label,
       selected: isSelected,
-      onSelected: (selected) {
+      size: SeedChipSize.small,
+      onTap: () {
         setState(() {
           _statusFilter = value;
         });
       },
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      selectedColor: AppSemanticColors.interactivePrimaryDefault,
-      checkmarkColor: AppSemanticColors.textInverse,
     );
   }
 

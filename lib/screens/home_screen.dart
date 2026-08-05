@@ -29,7 +29,6 @@ import 'my_vacation_screen.dart';
 import 'notice_detail_screen.dart';
 import 'notice_list_screen.dart';
 import 'plaza_screen.dart';
-import 'profile_screen.dart';
 import '../widgets/vacation_request_dialog.dart';
 import 'approval_form_screen.dart';
 
@@ -382,15 +381,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ),
-                            _ProfileActionButton(
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const ProfileScreen(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.space2),
-
                             const NotificationBell(
                               iconColor: AppSemanticColors.textInverse,
                             ),
@@ -804,38 +794,6 @@ class _DashboardMetric {
   });
 }
 
-class _ProfileActionButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _ProfileActionButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        child: Container(
-          width: AppSpacing.space10,
-          height: AppSpacing.space10,
-          decoration: BoxDecoration(
-            color: AppSemanticColors.textInverse.withValues(alpha: 0.14),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: AppSemanticColors.textInverse.withValues(alpha: 0.18),
-            ),
-          ),
-          child: const Icon(
-            Icons.person_outline,
-            color: AppSemanticColors.textInverse,
-            size: 20,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _SectionCard extends StatelessWidget {
   final Widget child;

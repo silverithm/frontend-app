@@ -4,7 +4,6 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
-import '../widgets/common/notification_bell.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -271,12 +270,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               title: Text('내 휴무', style: AppTypography.heading5),
               backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
-              actions: [
-                Container(
-                  margin: const EdgeInsets.only(right: AppSpacing.space4),
-                  child: const NotificationBell(),
-                ),
-              ],
             )
           : null,
       body: RefreshIndicator(

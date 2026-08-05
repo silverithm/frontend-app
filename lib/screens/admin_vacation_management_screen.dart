@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../widgets/seed/seed_chip.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 
 class AdminVacationManagementScreen extends StatefulWidget {
@@ -149,67 +150,43 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
 
   Widget _buildStatusFilterChip(String label, String value) {
     final isSelected = _statusFilter == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: AppTypography.labelSmall.copyWith(
-          color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
+    return SeedChip(
+      label: label,
       selected: isSelected,
-      onSelected: (selected) {
+      size: SeedChipSize.small,
+      onTap: () {
         setState(() {
           _statusFilter = value;
         });
       },
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      selectedColor: AppSemanticColors.interactivePrimaryDefault,
-      checkmarkColor: AppSemanticColors.textInverse,
     );
   }
 
   Widget _buildRoleFilterChip(String label, String value) {
     final isSelected = _roleFilter == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: AppTypography.labelSmall.copyWith(
-          color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
+    return SeedChip(
+      label: label,
       selected: isSelected,
-      onSelected: (selected) {
+      size: SeedChipSize.small,
+      onTap: () {
         setState(() {
           _roleFilter = value;
         });
       },
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      selectedColor: AppSemanticColors.statusInfoIcon,
-      checkmarkColor: AppSemanticColors.textInverse,
     );
   }
 
   Widget _buildSortFilterChip(String label, String value) {
     final isSelected = _sortBy == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: AppTypography.labelSmall.copyWith(
-          color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
+    return SeedChip(
+      label: label,
       selected: isSelected,
-      onSelected: (selected) {
+      size: SeedChipSize.small,
+      onTap: () {
         setState(() {
           _sortBy = value;
         });
       },
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      selectedColor: AppSemanticColors.statusSuccessIcon,
-      checkmarkColor: AppSemanticColors.textInverse,
     );
   }
 

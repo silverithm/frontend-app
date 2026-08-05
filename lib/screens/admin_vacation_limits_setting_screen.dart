@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../widgets/seed/seed_chip.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class AdminVacationLimitsSettingScreen extends StatefulWidget {
@@ -406,27 +407,10 @@ class _AdminVacationLimitsSettingScreenState
 
   Widget _buildRoleTab(String label, String role) {
     final isSelected = _selectedRole == role;
-    return GestureDetector(
+    return SeedChip(
+      label: label,
+      selected: isSelected,
       onTap: () => setState(() => _selectedRole = role),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppSemanticColors.interactivePrimaryDefault : AppSemanticColors.surfaceDefault,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? AppSemanticColors.interactivePrimaryDefault
-                : AppSemanticColors.borderSubtle,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTypography.bodyMedium.copyWith(
-            color: isSelected ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
     );
   }
 

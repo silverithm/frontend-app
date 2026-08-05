@@ -185,7 +185,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               ),
             ),
             body: TabBarView(
-              children: [_buildPendingUsersTab(), _buildAllMembersTab()],
+              children: [const AdminPendingUsersTab(), _buildAllMembersTab()],
             ),
           ),
         );
@@ -229,89 +229,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildPendingUsersTab() {
-    return Consumer<AdminProvider>(
-      builder: (context, adminProvider, child) {
-        if (adminProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (adminProvider.errorMessage.isNotEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppSemanticColors.statusErrorIcon,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '오류 발생',
-                  style: AppTypography.heading6.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppSemanticColors.statusErrorIcon,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    adminProvider.errorMessage,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                shadcn.PrimaryButton(
-                  onPressed: _loadData,
-                  child: const Text('다시 시도'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (adminProvider.pendingUsers.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  size: 64,
-                  color: AppSemanticColors.statusSuccessIcon,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '승인 대기 중인 사용자가 없습니다',
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async => _loadData(),
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            itemCount: adminProvider.pendingUsers.length,
-            itemBuilder: (context, index) {
-              final user = adminProvider.pendingUsers[index];
-              return _buildPendingUserCard(user);
-            },
-          ),
-        );
-      },
     );
   }
 
@@ -392,119 +309,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               final user = adminProvider.companyMembers[index];
               return _buildMemberCard(user);
             },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPendingUserCard(User user) {
-    return Consumer<AdminProvider>(
-      builder: (context, adminProvider, child) {
-        final isProcessing = adminProvider.isLoading;
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor:
-                          AppSemanticColors.statusWarningBackground,
-                      child: Icon(
-                        Icons.person,
-                        color: AppSemanticColors.statusWarningIcon,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            style: AppTypography.bodyLarge.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            user.email,
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.statusWarningBackground,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        AdminUtils.getRoleDisplayName(user.role),
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.statusWarningText,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: shadcn.PrimaryButton(
-                        onPressed: isProcessing
-                            ? null
-                            : () => _showApprovalDialog(user),
-                        leading: isProcessing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.check, size: 18),
-                        child: Text(isProcessing ? '처리중...' : '승인'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: shadcn.OutlineButton(
-                        onPressed: isProcessing
-                            ? null
-                            : () => _showRejectDialog(user),
-                        leading: isProcessing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.close, size: 18),
-                        child: Text(isProcessing ? '처리중...' : '거부'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
           ),
         );
       },
@@ -660,125 +464,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     );
   }
 
-  void _showApprovalDialog(User user) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.check_circle,
-              color: AppSemanticColors.statusSuccessIcon,
-            ),
-            const SizedBox(width: 8),
-            const Text('가입 승인'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [Text('${user.name}님의 가입을 승인하시겠습니까?')],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('취소'),
-          ),
-          shadcn.PrimaryButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              final authProvider = context.read<AuthProvider>();
-              final adminProvider = context.read<AdminProvider>();
-              final success = await adminProvider.approveJoinRequest(
-                user.id,
-                authProvider.currentUser?.id ?? '',
-              );
-              if (mounted && success) {
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text('${user.name}님의 가입을 승인했습니다.'),
-                    backgroundColor: AppSemanticColors.statusSuccessIcon,
-                  ),
-                );
-              }
-            },
-            child: const Text('승인'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showRejectDialog(User user) {
-    final reasonController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.cancel, color: AppSemanticColors.statusErrorIcon),
-            const SizedBox(width: 8),
-            const Text('가입 거부'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('${user.name}님의 가입을 거부하시겠습니까?'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                labelText: '거부 사유',
-                hintText: '거부 사유를 입력해주세요',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () async {
-              if (reasonController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  SnackBar(
-                    content: const Text('거부 사유를 입력해주세요.'),
-                    backgroundColor: AppSemanticColors.statusErrorIcon,
-                  ),
-                );
-                return;
-              }
-              Navigator.of(dialogContext).pop();
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              final authProvider = context.read<AuthProvider>();
-              final adminProvider = context.read<AdminProvider>();
-              final success = await adminProvider.rejectJoinRequest(
-                user.id,
-                authProvider.currentUser?.id ?? '',
-                reasonController.text.trim(),
-              );
-              if (mounted && success) {
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text('${user.name}님의 가입을 거부했습니다.'),
-                    backgroundColor: AppSemanticColors.statusErrorIcon,
-                  ),
-                );
-              }
-            },
-            child: const Text('거부'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _toggleMemberStatus(User user) {
     final newStatus = user.status == 'active' ? 'inactive' : 'active';
     final actionText = newStatus == 'active' ? '활성화' : '비활성화';
@@ -900,6 +585,359 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               }
             },
             child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 승인 대기 사용자 목록 + 승인/거부 액션.
+/// AdminUserManagementScreen(회원 관리 > 승인 대기 탭)과
+/// AdminUnifiedApprovalScreen(승인함 > 가입 승인 탭)에서 공유한다.
+/// (admin_user_management_screen.dart에서 추출 — 로직 변경 없음)
+class AdminPendingUsersTab extends StatefulWidget {
+  const AdminPendingUsersTab({super.key});
+
+  @override
+  State<AdminPendingUsersTab> createState() => _AdminPendingUsersTabState();
+}
+
+class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  void _loadData() {
+    final authProvider = context.read<AuthProvider>();
+    final adminProvider = context.read<AdminProvider>();
+    final companyId = authProvider.currentUser?.company?.id ?? '';
+
+    if (companyId.isNotEmpty) {
+      adminProvider.loadPendingUsers(companyId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Consumer<AdminProvider>(
+      builder: (context, adminProvider, child) {
+        if (adminProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (adminProvider.errorMessage.isNotEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppSemanticColors.statusErrorIcon,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '오류 발생',
+                  style: AppTypography.heading6.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppSemanticColors.statusErrorIcon,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    adminProvider.errorMessage,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                shadcn.PrimaryButton(
+                  onPressed: _loadData,
+                  child: const Text('다시 시도'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (adminProvider.pendingUsers.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 64,
+                  color: AppSemanticColors.statusSuccessIcon,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '승인 대기 중인 사용자가 없습니다',
+                  style: AppTypography.bodyLarge.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async => _loadData(),
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            itemCount: adminProvider.pendingUsers.length,
+            itemBuilder: (context, index) {
+              final user = adminProvider.pendingUsers[index];
+              return _buildPendingUserCard(user);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPendingUserCard(User user) {
+    return Consumer<AdminProvider>(
+      builder: (context, adminProvider, child) {
+        final isProcessing = adminProvider.isLoading;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor:
+                          AppSemanticColors.statusWarningBackground,
+                      child: Icon(
+                        Icons.person,
+                        color: AppSemanticColors.statusWarningIcon,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.name,
+                            style: AppTypography.bodyLarge.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            user.email,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppSemanticColors.statusWarningBackground,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        AdminUtils.getRoleDisplayName(user.role),
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppSemanticColors.statusWarningText,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: shadcn.PrimaryButton(
+                        onPressed: isProcessing
+                            ? null
+                            : () => _showApprovalDialog(user),
+                        leading: isProcessing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.check, size: 18),
+                        child: Text(isProcessing ? '처리중...' : '승인'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: shadcn.OutlineButton(
+                        onPressed: isProcessing
+                            ? null
+                            : () => _showRejectDialog(user),
+                        leading: isProcessing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.close, size: 18),
+                        child: Text(isProcessing ? '처리중...' : '거부'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showApprovalDialog(User user) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => shadcn.AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: AppSemanticColors.statusSuccessIcon,
+            ),
+            const SizedBox(width: 8),
+            const Text('가입 승인'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [Text('${user.name}님의 가입을 승인하시겠습니까?')],
+        ),
+        actions: [
+          shadcn.OutlineButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('취소'),
+          ),
+          shadcn.PrimaryButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final authProvider = context.read<AuthProvider>();
+              final adminProvider = context.read<AdminProvider>();
+              final success = await adminProvider.approveJoinRequest(
+                user.id,
+                authProvider.currentUser?.id ?? '',
+              );
+              if (mounted && success) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text('${user.name}님의 가입을 승인했습니다.'),
+                    backgroundColor: AppSemanticColors.statusSuccessIcon,
+                  ),
+                );
+              }
+            },
+            child: const Text('승인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRejectDialog(User user) {
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => shadcn.AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.cancel, color: AppSemanticColors.statusErrorIcon),
+            const SizedBox(width: 8),
+            const Text('가입 거부'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${user.name}님의 가입을 거부하시겠습니까?'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                labelText: '거부 사유',
+                hintText: '거부 사유를 입력해주세요',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          shadcn.OutlineButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('취소'),
+          ),
+          shadcn.DestructiveButton(
+            onPressed: () async {
+              if (reasonController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(
+                    content: const Text('거부 사유를 입력해주세요.'),
+                    backgroundColor: AppSemanticColors.statusErrorIcon,
+                  ),
+                );
+                return;
+              }
+              Navigator.of(dialogContext).pop();
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final authProvider = context.read<AuthProvider>();
+              final adminProvider = context.read<AdminProvider>();
+              final success = await adminProvider.rejectJoinRequest(
+                user.id,
+                authProvider.currentUser?.id ?? '',
+                reasonController.text.trim(),
+              );
+              if (mounted && success) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text('${user.name}님의 가입을 거부했습니다.'),
+                    backgroundColor: AppSemanticColors.statusErrorIcon,
+                  ),
+                );
+              }
+            },
+            child: const Text('거부'),
           ),
         ],
       ),

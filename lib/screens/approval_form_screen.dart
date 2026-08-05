@@ -421,13 +421,6 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
         iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: AppSemanticColors.textInverse,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: Form(
         key: _formKey,
