@@ -11,6 +11,7 @@ class VacationProvider with ChangeNotifier {
   String _errorMessage = '';
   DateTime _selectedDate = DateTime.now();
   String _roleFilter = RoleUtils.allRole;
+  List<String> _roleFilters = [];
   List<String> _availableRoles = [];
 
   List<VacationRequest> get vacationRequests => _vacationRequests;
@@ -20,6 +21,7 @@ class VacationProvider with ChangeNotifier {
   String get errorMessage => _errorMessage;
   DateTime get selectedDate => _selectedDate;
   String get roleFilter => _roleFilter;
+  List<String> get roleFilters => List.unmodifiable(_roleFilters);
 
   /// 관리자 화면에서 만든 역할까지 포함한 필터 목록
   List<String> get availableRoles => _availableRoles;
@@ -44,11 +46,26 @@ class VacationProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// 직종 다중 선택 (빈 목록 = 전체). 단일 한도 조회 등 기존 로직과의
+  /// 동기화를 위해 setRoleFilter를 경유한다 — 1개 선택일 때만 그 직종,
+  /// 그 외에는 전체로 동작하고 목록 필터링은 _roleFilters로 정밀 처리.
+  void setRoleFilters(List<String> roles) {
+    final normalized = roles
+        .map(RoleUtils.normalize)
+        .where((r) => r.isNotEmpty && r != RoleUtils.allRole)
+        .toSet()
+        .toList();
+    setRoleFilter(normalized.length == 1 ? normalized.first : RoleUtils.allRole);
+    _roleFilters = normalized; // setRoleFilter의 단일 동기화를 다중 값으로 덮어쓴다
+    notifyListeners();
+  }
+
   void setRoleFilter(String role) {
     print('[VacationProvider] 역할 필터 변경: $_roleFilter -> $role');
     final oldRole = _roleFilter;
     final normalizedRole = RoleUtils.normalize(role);
     _roleFilter = normalizedRole.isEmpty ? RoleUtils.allRole : normalizedRole;
+    _roleFilters = _roleFilter == RoleUtils.allRole ? [] : [_roleFilter];
     final newRole = _roleFilter;
 
     // 캘린더 데이터는 이미 모든 역할을 포함하므로 재로드 불필요
@@ -452,14 +469,14 @@ class VacationProvider with ChangeNotifier {
       '[VacationProvider] getVacationsForDate - 날짜: ${_formatDate(date)}, 전체 휴무: ${vacations.length}개, 현재 필터: $_roleFilter',
     );
 
-    if (_roleFilter == RoleUtils.allRole) {
+    if (_roleFilters.isEmpty) {
       print('[VacationProvider] 전체 모드 - 모든 휴무 반환: ${vacations.length}개');
       return vacations;
     }
 
-    // 역할 필터링 시 디버깅 로그 추가
+    // 직종 다중 선택: 선택된 직종 중 하나라도 일치하면 통과
     final filteredVacations = vacations.where((vacation) {
-      final match = RoleUtils.matches(vacation.role, _roleFilter);
+      final match = _roleFilters.any((f) => RoleUtils.matches(vacation.role, f));
       print(
         '[VacationProvider] 휴무 필터링 - 사용자: ${vacation.userName}, 역할: ${vacation.role}, 필터: $_roleFilter, 일치: $match',
       );

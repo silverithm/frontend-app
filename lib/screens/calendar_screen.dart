@@ -31,7 +31,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     with TickerProviderStateMixin {
   DateTime _currentDate = DateTime.now();
   DateTime? _selectedDate;
-  String _roleFilter = 'all';
+  List<String> _roleFilters = [];
   late AnimationController _fabAnimationController;
   late AnimationController _filterAnimationController;
   late TabController _tabController;
@@ -824,13 +824,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                   _selectedDate = date;
                 });
               },
-              roleFilter: _roleFilter,
-              onRoleFilterChanged: (newRole) {
+              roleFilters: _roleFilters,
+              onRoleFiltersChanged: (newRoles) {
                 setState(() {
-                  _roleFilter = newRole;
+                  _roleFilters = newRoles;
                 });
                 final vacationProvider = context.read<VacationProvider>();
-                vacationProvider.setRoleFilter(newRole);
+                vacationProvider.setRoleFilters(newRoles);
                 final authProvider = context.read<AuthProvider>();
                 final companyId = authProvider.currentUser?.company?.id ?? '1';
                 vacationProvider.loadCalendarData(
@@ -1172,43 +1172,6 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     // 개인 휴무(연차/반차)는 도형 없이 빈 공간
     return const SizedBox.shrink();
-  }
-
-  Widget _buildFilterChip(String label, String value) {
-    final isSelected = _roleFilter == value;
-    return FilterChip(
-      label: Text(
-        label,
-        style: AppTypography.bodySmall.copyWith(
-          color: isSelected
-              ? AppSemanticColors.textInverse
-              : AppSemanticColors.textSecondary,
-          fontWeight: isSelected
-              ? AppTypography.fontWeightSemibold
-              : AppTypography.fontWeightMedium,
-        ),
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _roleFilter = value;
-        });
-        final vacationProvider = context.read<VacationProvider>();
-        vacationProvider.setRoleFilter(value);
-        final authProvider = context.read<AuthProvider>();
-        final companyId = authProvider.currentUser?.company?.id ?? '1';
-        vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
-      },
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      selectedColor: AppSemanticColors.interactivePrimaryDefault,
-      checkmarkColor: AppSemanticColors.textInverse,
-      side: BorderSide(
-        color: isSelected
-            ? AppSemanticColors.interactivePrimaryDefault
-            : AppSemanticColors.borderSubtle,
-        width: 1,
-      ),
-    );
   }
 
   Widget _buildStatItem(String label, String value, Color color) {

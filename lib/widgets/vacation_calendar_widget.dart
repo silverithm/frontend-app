@@ -10,16 +10,17 @@ class VacationCalendarWidget extends StatefulWidget {
   final DateTime currentDate;
   final Function(DateTime) onDateChanged;
   final Function(DateTime?) onDateSelected;
-  final String roleFilter;
-  final Function(String)? onRoleFilterChanged;
+  /// 직종 다중 선택 (빈 목록 = 전체)
+  final List<String> roleFilters;
+  final Function(List<String>)? onRoleFiltersChanged;
 
   const VacationCalendarWidget({
     super.key,
     required this.currentDate,
     required this.onDateChanged,
     required this.onDateSelected,
-    this.roleFilter = 'all',
-    this.onRoleFilterChanged,
+    this.roleFilters = const [],
+    this.onRoleFiltersChanged,
   });
 
   @override
@@ -29,6 +30,8 @@ class VacationCalendarWidget extends StatefulWidget {
 class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
     with TickerProviderStateMixin {
   DateTime? _selectedDate;
+  // 직종별 한도(limit) 기반 색상·카운트는 한도가 정의되는 단일 선택일 때만 의미가 있다
+  bool get _isSingleRole => widget.roleFilters.length == 1;
   final List<String> _weekdays = ['일', '월', '화', '수', '목', '금', '토'];
   late AnimationController _animationController;
   late AnimationController _expandController;
@@ -269,7 +272,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                 ),
 
                 // role 필터 버튼들
-                if (widget.onRoleFilterChanged != null)
+                if (widget.onRoleFiltersChanged != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -511,7 +514,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               if (_isSameMonth(day)) {
                                 // getVacationsForDate는 이미 roleFilter가 적용된 결과를 반환함
                                 final vacations = vacationProvider.getVacationsForDate(day);
-                                print('[Calendar] 날짜: ${day.day}, 필터링된 휴무자: ${vacations.length}, 필터: ${widget.roleFilter}');
+                                print('[Calendar] 날짜: ${day.day}, 필터링된 휴무자: ${vacations.length}, 필터: ${widget.roleFilters}');
                                 
                                 if (vacations.length > maxVacationsInWeek) {
                                   maxVacationsInWeek = vacations.length;
@@ -519,7 +522,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               }
                             }
                             
-                            print('[Calendar] 주별 최대 휴무자 수: $maxVacationsInWeek (필터: ${widget.roleFilter})');
+                            print('[Calendar] 주별 최대 휴무자 수: $maxVacationsInWeek (필터: ${widget.roleFilters})');
                             
                             // 주별 동적 높이 계산
                             // 기본 높이: 30 (날짜 + 패딩)
@@ -527,7 +530,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             // 휴무 제한 표시 공간: 20 (전체 모드가 아닐 때만)
                             double baseHeight = 30.0;
                             double vacationHeight = maxVacationsInWeek * 18.0;
-                            double limitHeight = widget.roleFilter != 'all' ? 20.0 : 0.0;
+                            double limitHeight = _isSingleRole ? 20.0 : 0.0;
                             double weekHeight = math.max(50.0, baseHeight + vacationHeight + limitHeight);
                             
                             print('[Calendar] 높이 계산 - 기본: $baseHeight, 휴무자: $vacationHeight, 제한: $limitHeight, 총: $weekHeight');
@@ -697,7 +700,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
 
     // 색상 결정 (같은 달의 날짜만, 전체 모드가 아닐 때만)
     Color? availabilityColor;
-    if (_isSameMonth(date) && widget.roleFilter != 'all') {
+    if (_isSameMonth(date) && _isSingleRole) {
       if (isAvailable) {
         availabilityColor = AppSemanticColors.statusSuccessBackground; // 여유 있음 - 연한 초록
       } else {
@@ -716,12 +719,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         border: isToday && !isSelected
             ? Border.all(color: AppSemanticColors.statusInfoBorder, width: 1.5)
             : _isSameMonth(date) &&
-                  widget.roleFilter != 'all' &&
+                  _isSingleRole &&
                   !isAvailable &&
                   !isSelected
             ? Border.all(color: AppSemanticColors.statusErrorBorder, width: 1) // 인원 초과 시 빨간 테두리
             : _isSameMonth(date) &&
-                  widget.roleFilter != 'all' &&
+                  _isSingleRole &&
                   isAvailable &&
                   !isSelected &&
                   !isToday
@@ -783,14 +786,14 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           top: 18, // 날짜와 간격
                           left: 0,
                           right: 0,
-                          bottom: widget.roleFilter != 'all'
+                          bottom: _isSingleRole
                               ? 18 // 휴무 제한 표시 공간 확보
                               : 2, // 전체 모드일 때는 최소 간격만
                           child: _buildVacationIndicator(date, vacations),
                         ),
 
                       // 인원 수 표시 (하단, 전체 모드가 아닐 때만)
-                      if (_isSameMonth(date) && widget.roleFilter != 'all')
+                      if (_isSameMonth(date) && _isSingleRole)
                         Positioned(
                           bottom: 2,
                           left: 0,
@@ -871,12 +874,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           top: 16,
                           left: 2,
                           right: 2,
-                          bottom: widget.roleFilter != 'all' ? 12 : 2,
+                          bottom: _isSingleRole ? 12 : 2,
                           child: _buildVacationIndicator(date, vacations),
                         ),
 
                       // 인원 수 표시 (하단, 전체 모드가 아닐 때만)
-                      if (_isSameMonth(date) && widget.roleFilter != 'all')
+                      if (_isSameMonth(date) && _isSingleRole)
                         Positioned(
                           bottom: 2,
                           left: 0,
@@ -1335,10 +1338,23 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
   }
 
   Widget _buildRoleFilterButton(String role, String label, IconData icon) {
-    final isSelected = RoleUtils.normalize(widget.roleFilter) == role;
+    final normalized = RoleUtils.normalize(role);
+    final isSelected = normalized == RoleUtils.allRole
+        ? widget.roleFilters.isEmpty
+        : widget.roleFilters.contains(normalized);
 
     return GestureDetector(
-      onTap: () => widget.onRoleFilterChanged?.call(role),
+      onTap: () {
+        final current = List<String>.from(widget.roleFilters);
+        if (normalized == RoleUtils.allRole) {
+          current.clear();
+        } else if (current.contains(normalized)) {
+          current.remove(normalized);
+        } else {
+          current.add(normalized);
+        }
+        widget.onRoleFiltersChanged?.call(current);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
