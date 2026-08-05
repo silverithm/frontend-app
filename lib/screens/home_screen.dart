@@ -892,17 +892,18 @@ class _DashboardMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 카드 radius를 스펙 공통 규칙(r3 계열, 다른 섹션 카드와 통일)에 맞춰 xl2(16)에서 xl(12)로 정돈
     return Material(
       color: AppColors.transparent,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
       child: InkWell(
         onTap: metric.onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.space4),
           decoration: BoxDecoration(
             color: metric.color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             border: Border.all(color: metric.color.withValues(alpha: 0.16)),
           ),
           child: Column(
@@ -1184,7 +1185,9 @@ class _EmptySectionState extends StatelessWidget {
 }
 
 /// 빠른 작업 버튼 — 홈 상단에서 자주 쓰는 액션으로 바로 이동
-class _QuickActionButton extends StatelessWidget {
+/// 스타일 규칙: docs/seed-component-specs.md §1 Action Button
+/// (radius r2, pressed 시 배경 전환 + scale 0.97)
+class _QuickActionButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -1196,25 +1199,38 @@ class _QuickActionButton extends StatelessWidget {
   });
 
   @override
+  State<_QuickActionButton> createState() => _QuickActionButtonState();
+}
+
+class _QuickActionButtonState extends State<_QuickActionButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppSemanticColors.surfaceDefault,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        child: Container(
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
           decoration: BoxDecoration(
+            color: _pressed
+                ? AppSemanticColors.surfaceActive
+                : AppSemanticColors.surfaceDefault,
             border: Border.all(color: AppSemanticColors.borderSubtle),
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            borderRadius: BorderRadius.circular(AppBorderRadius.lg), // r2
           ),
           child: Column(
             children: [
-              Icon(icon, size: 22, color: AppSemanticColors.brandPressed),
+              Icon(widget.icon, size: 22, color: AppSemanticColors.brandPressed),
               const SizedBox(height: AppSpacing.space1),
               Text(
-                label,
+                widget.label,
                 style: AppTypography.labelMedium.copyWith(
                   color: AppSemanticColors.textPrimary,
                 ),

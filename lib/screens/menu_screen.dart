@@ -8,6 +8,7 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/app_button.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_list_cell.dart';
 import 'admin_company_settings_screen.dart';
 import 'admin_notice_management_screen.dart';
 import 'admin_user_management_screen.dart';
@@ -184,85 +185,52 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppSemanticColors.surfaceDefault,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.space4),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppSemanticColors.borderSubtle),
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+    // SeedListSection(단일 셀) — 흰 표면 + 얇은 구분선 컨테이너로 통일
+    return SeedListSection(
+      children: [
+        SeedListCell(
+          leading: CircleAvatar(
+            radius: 24,
+            backgroundColor: AppSemanticColors.brandWeak,
+            child: Text(
+              name.isNotEmpty ? name.characters.first : '?',
+              style: AppTypography.heading5.copyWith(
+                color: AppSemanticColors.brandPressed,
+              ),
+            ),
           ),
-          child: Row(
+          title: name,
+          description: companyName,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppSemanticColors.brandWeak,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space2,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.brandWeak,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                ),
                 child: Text(
-                  name.isNotEmpty ? name.characters.first : '?',
-                  style: AppTypography.heading5.copyWith(
+                  roleLabel,
+                  style: AppTypography.labelSmall.copyWith(
                     color: AppSemanticColors.brandPressed,
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.space3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            name,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.heading6.copyWith(
-                              color: AppSemanticColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.space2,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.brandWeak,
-                            borderRadius:
-                                BorderRadius.circular(AppBorderRadius.full),
-                          ),
-                          child: Text(
-                            roleLabel,
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppSemanticColors.brandPressed,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      companyName,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(width: AppSpacing.space2),
               Icon(
                 Icons.chevron_right,
+                size: 18,
                 color: AppSemanticColors.textTertiary,
               ),
             ],
           ),
+          onTap: onTap,
         ),
-      ),
+      ],
     );
   }
 }
@@ -275,43 +243,8 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(
-            left: AppSpacing.space2,
-            bottom: AppSpacing.space2,
-          ),
-          child: Text(
-            title,
-            style: AppTypography.labelMedium.copyWith(
-              color: AppSemanticColors.textTertiary,
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppSemanticColors.surfaceDefault,
-            border: Border.all(color: AppSemanticColors.borderSubtle),
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          ),
-          child: Column(
-            children: [
-              for (var i = 0; i < items.length; i++) ...[
-                if (i > 0)
-                  Divider(
-                    height: 1,
-                    indent: AppSpacing.space12,
-                    color: AppSemanticColors.borderSubtle,
-                  ),
-                items[i],
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
+    // SeedListSection — 그룹 타이틀 + 흰 표면 카드(얇은 구분선)로 정돈
+    return SeedListSection(title: title, children: items);
   }
 }
 
@@ -332,64 +265,13 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = isDestructive
-        ? AppSemanticColors.statusErrorText
-        : AppSemanticColors.textPrimary;
-
-    return InkWell(
+    // SeedListCell — leading 아이콘 칩 + title/description + trailing chevron 구성으로 정돈
+    return SeedListCell(
+      leadingIcon: icon,
+      title: label,
+      description: description,
+      isDestructive: isDestructive,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space4,
-          vertical: AppSpacing.space3,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppSemanticColors.backgroundTertiary,
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: isDestructive
-                    ? AppSemanticColors.statusErrorIcon
-                    : AppSemanticColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: AppTypography.fontWeightMedium,
-                      color: labelColor,
-                    ),
-                  ),
-                  if (description != null)
-                    Text(
-                      description!,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: AppSemanticColors.textTertiary,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

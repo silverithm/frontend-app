@@ -94,12 +94,32 @@ class MyApp extends StatelessWidget {
         builder: (context, appProvider, child) {
           return shadcn.ShadcnApp(
             title: 'Frontend App',
+            // shadcn 위젯도 앱 테마(Seed 그레이 + 케어브이 틸)와 색을 맞춘다
             theme: shadcn.ThemeData(
-              colorScheme: shadcn.ColorSchemes.lightZinc,
+              colorScheme: shadcn.ColorSchemes.lightZinc.copyWith(
+                primary: () => const Color(0xFF20C997),
+                primaryForeground: () => const Color(0xFFFFFFFF),
+                ring: () => const Color(0xFF20C997),
+                foreground: () => const Color(0xFF1A1C20),
+                cardForeground: () => const Color(0xFF1A1C20),
+                popoverForeground: () => const Color(0xFF1A1C20),
+                secondary: () => const Color(0xFFF3F4F5),
+                secondaryForeground: () => const Color(0xFF1A1C20),
+                muted: () => const Color(0xFFF3F4F5),
+                mutedForeground: () => const Color(0xFF868B94),
+                accent: () => const Color(0xFFF3F4F5),
+                accentForeground: () => const Color(0xFF1A1C20),
+                border: () => const Color(0xFFDCDEE3),
+                input: () => const Color(0xFFDCDEE3),
+              ),
               radius: 0.5,
             ),
             darkTheme: shadcn.ThemeData(
-              colorScheme: shadcn.ColorSchemes.darkZinc,
+              colorScheme: shadcn.ColorSchemes.darkZinc.copyWith(
+                primary: () => const Color(0xFF20C997),
+                primaryForeground: () => const Color(0xFFFFFFFF),
+                ring: () => const Color(0xFF20C997),
+              ),
               radius: 0.5,
             ),
             themeMode: appProvider.isDarkMode

@@ -9,6 +9,7 @@ import '../services/storage_service.dart';
 import '../utils/constants.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/index.dart';
+import '../widgets/seed/seed_button.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -365,11 +366,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // 로그인 버튼
                       Consumer<AuthProvider>(
-                        builder: (context, authProvider, child) => AppButton(
-                          text: '로그인',
-                          isFullWidth: true,
-                          isLoading: authProvider.isLoading,
-                          onPressed: authProvider.isLoading ? null : _login,
+                        builder: (context, authProvider, child) => SizedBox(
+                          width: double.infinity,
+                          child: SeedButton(
+                            label: '로그인',
+                            variant: SeedButtonVariant.brandSolid,
+                            size: SeedButtonSize.large,
+                            isLoading: authProvider.isLoading,
+                            onPressed: authProvider.isLoading ? null : _login,
+                          ),
                         ),
                       ),
 
@@ -597,9 +602,10 @@ class _LoginScreenState extends State<LoginScreen> {
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            AppButton(
-              text: '사용방법 보러가기',
-              size: AppButtonSize.small,
+            SeedButton(
+              label: '사용방법 보러가기',
+              variant: SeedButtonVariant.brandWeak,
+              size: SeedButtonSize.small,
               onPressed: () async {
                 const url = 'https://youtu.be/x2cJedS6vaU';
                 if (await canLaunchUrl(Uri.parse(url))) {
@@ -616,9 +622,10 @@ class _LoginScreenState extends State<LoginScreen> {
               color: AppSemanticColors.textInverse.withValues(alpha: 0.3),
               margin: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
             ),
-            AppButton(
-              text: '케어브이 웹사이트',
-              size: AppButtonSize.small,
+            SeedButton(
+              label: '케어브이 웹사이트',
+              variant: SeedButtonVariant.brandWeak,
+              size: SeedButtonSize.small,
               onPressed: () async {
                 const url = 'https://carev.kr';
                 if (await canLaunchUrl(Uri.parse(url))) {

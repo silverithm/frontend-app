@@ -60,7 +60,10 @@ class _CalendarScreenState extends State<CalendarScreen>
       final companyId = authProvider.currentUser?.company?.id ?? '1';
 
       vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
-      scheduleProvider.loadCalendarData(_scheduleCurrentDate, companyId: companyId.toString());
+      scheduleProvider.loadCalendarData(
+        _scheduleCurrentDate,
+        companyId: companyId.toString(),
+      );
 
       _fabAnimationController.forward();
 
@@ -144,28 +147,32 @@ class _CalendarScreenState extends State<CalendarScreen>
                 preferredSize: const Size.fromHeight(48),
                 child: Builder(
                   builder: (context) {
-                  final isAdmin = AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser);
-                  final accentColor = AppSemanticColors.interactivePrimaryDefault;
-                  return Container(
-                    color: AppSemanticColors.interactivePrimaryDefault,
-                    child: TabBar(
-                      controller: _tabController,
-                      indicatorColor: AppSemanticColors.textInverse,
-                      indicatorWeight: 2,
-                      labelColor: AppSemanticColors.textInverse,
-                      unselectedLabelColor: AppSemanticColors.textInverse.withValues(alpha: 0.5),
-                      labelStyle: AppTypography.labelLarge.copyWith(
-                        fontWeight: AppTypography.fontWeightSemibold,
+                    final isAdmin = AdminUtils.canAccessAdminPages(
+                      context.read<AuthProvider>().currentUser,
+                    );
+                    final accentColor =
+                        AppSemanticColors.interactivePrimaryDefault;
+                    return Container(
+                      color: AppSemanticColors.interactivePrimaryDefault,
+                      child: TabBar(
+                        controller: _tabController,
+                        indicatorColor: AppSemanticColors.textInverse,
+                        indicatorWeight: 2,
+                        labelColor: AppSemanticColors.textInverse,
+                        unselectedLabelColor: AppSemanticColors.textInverse
+                            .withValues(alpha: 0.5),
+                        labelStyle: AppTypography.labelLarge.copyWith(
+                          fontWeight: AppTypography.fontWeightSemibold,
+                        ),
+                        unselectedLabelStyle: AppTypography.labelLarge.copyWith(
+                          fontWeight: FontWeight.normal,
+                        ),
+                        tabs: const [
+                          Tab(text: '휴무 달력'),
+                          Tab(text: '일정 달력'),
+                        ],
                       ),
-                      unselectedLabelStyle: AppTypography.labelLarge.copyWith(
-                        fontWeight: FontWeight.normal,
-                      ),
-                      tabs: const [
-                        Tab(text: '휴무 달력'),
-                        Tab(text: '일정 달력'),
-                      ],
-                    ),
-                  );
+                    );
                   },
                 ),
               ),
@@ -192,28 +199,27 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget _buildScheduleCalendar() {
     return Consumer<ScheduleProvider>(
       builder: (context, scheduleProvider, child) {
-        print('[CalendarScreen] 일정 달력 빌드 - 로딩: ${scheduleProvider.isLoading}, 일정수: ${scheduleProvider.schedules.length}, 날짜별: ${scheduleProvider.schedulesByDate.keys.toList()}');
+        print(
+          '[CalendarScreen] 일정 달력 빌드 - 로딩: ${scheduleProvider.isLoading}, 일정수: ${scheduleProvider.schedules.length}, 날짜별: ${scheduleProvider.schedulesByDate.keys.toList()}',
+        );
         return SingleChildScrollView(
           child: Column(
             children: [
               // 달력 위젯
               Container(
-                margin: const EdgeInsets.all(AppSpacing.space6),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space4,
+                  vertical: AppSpacing.space3,
+                ),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.surfaceDefault,
                   borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                   border: Border.all(
-                    color: AppSemanticColors.borderDefault,
+                    color: AppSemanticColors.borderSubtle,
                     width: 1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.black.withValues(alpha: 0.04),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: _buildScheduleCalendarWidget(scheduleProvider),
               ),
 
@@ -234,9 +240,20 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget _buildScheduleCalendarWidget(ScheduleProvider provider) {
     return Column(
       children: [
-        // 월 네비게이션
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+        // 월 네비게이션 — 흰 표면 위, 하단 구분선만으로 분리
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space4,
+            vertical: AppSpacing.space3,
+          ),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: AppSemanticColors.borderSubtle,
+                width: 1,
+              ),
+            ),
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -249,12 +266,20 @@ class _CalendarScreenState extends State<CalendarScreen>
                     );
                   });
                   final authProvider = context.read<AuthProvider>();
-                  final companyId = authProvider.currentUser?.company?.id ?? '1';
-                  provider.loadCalendarData(_scheduleCurrentDate, companyId: companyId.toString());
+                  final companyId =
+                      authProvider.currentUser?.company?.id ?? '1';
+                  provider.loadCalendarData(
+                    _scheduleCurrentDate,
+                    companyId: companyId.toString(),
+                  );
                 },
                 icon: Icon(
                   Icons.chevron_left,
                   color: AppSemanticColors.textSecondary,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppSemanticColors.backgroundTertiary,
+                  shape: const CircleBorder(),
                 ),
               ),
               Text(
@@ -272,21 +297,32 @@ class _CalendarScreenState extends State<CalendarScreen>
                     );
                   });
                   final authProvider = context.read<AuthProvider>();
-                  final companyId = authProvider.currentUser?.company?.id ?? '1';
-                  provider.loadCalendarData(_scheduleCurrentDate, companyId: companyId.toString());
+                  final companyId =
+                      authProvider.currentUser?.company?.id ?? '1';
+                  provider.loadCalendarData(
+                    _scheduleCurrentDate,
+                    companyId: companyId.toString(),
+                  );
                 },
                 icon: Icon(
                   Icons.chevron_right,
                   color: AppSemanticColors.textSecondary,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppSemanticColors.backgroundTertiary,
+                  shape: const CircleBorder(),
                 ),
               ),
             ],
           ),
         ),
 
-        // 요일 헤더
+        // 요일 헤더 — 같은 표면, 상하 space3 여백만
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space4,
+            vertical: AppSpacing.space3,
+          ),
           child: Row(
             children: ['일', '월', '화', '수', '목', '금', '토'].map((day) {
               final isSunday = day == '일';
@@ -299,8 +335,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                       color: isSunday
                           ? AppSemanticColors.statusErrorIcon
                           : isSaturday
-                              ? AppSemanticColors.interactivePrimaryDefault
-                              : AppSemanticColors.textSecondary,
+                          ? AppSemanticColors.interactivePrimaryDefault
+                          : AppSemanticColors.textSecondary,
                       fontWeight: AppTypography.fontWeightMedium,
                     ),
                   ),
@@ -309,8 +345,6 @@ class _CalendarScreenState extends State<CalendarScreen>
             }).toList(),
           ),
         ),
-
-        const SizedBox(height: AppSpacing.space2),
 
         // 달력 그리드
         _buildScheduleCalendarGrid(provider),
@@ -321,8 +355,16 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildScheduleCalendarGrid(ScheduleProvider provider) {
-    final firstDayOfMonth = DateTime(_scheduleCurrentDate.year, _scheduleCurrentDate.month, 1);
-    final lastDayOfMonth = DateTime(_scheduleCurrentDate.year, _scheduleCurrentDate.month + 1, 0);
+    final firstDayOfMonth = DateTime(
+      _scheduleCurrentDate.year,
+      _scheduleCurrentDate.month,
+      1,
+    );
+    final lastDayOfMonth = DateTime(
+      _scheduleCurrentDate.year,
+      _scheduleCurrentDate.month + 1,
+      0,
+    );
     final firstWeekday = firstDayOfMonth.weekday % 7;
 
     final days = <Widget>[];
@@ -334,22 +376,33 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     // 현재 달의 날짜들
     for (int day = 1; day <= lastDayOfMonth.day; day++) {
-      final date = DateTime(_scheduleCurrentDate.year, _scheduleCurrentDate.month, day);
-      final isSelected = _scheduleSelectedDate != null &&
+      final date = DateTime(
+        _scheduleCurrentDate.year,
+        _scheduleCurrentDate.month,
+        day,
+      );
+      final isSelected =
+          _scheduleSelectedDate != null &&
           _scheduleSelectedDate!.year == date.year &&
           _scheduleSelectedDate!.month == date.month &&
           _scheduleSelectedDate!.day == date.day;
-      final isToday = DateTime.now().year == date.year &&
+      final isToday =
+          DateTime.now().year == date.year &&
           DateTime.now().month == date.month &&
           DateTime.now().day == date.day;
       final hasSchedule = provider.hasSchedulesOnDate(date);
 
       // 디버깅 (일정이 있는 날짜 확인)
       if (day == 1 || hasSchedule) {
-        final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        print('[CalendarScreen] $day일 확인 - dateKey: $dateKey, hasSchedule: $hasSchedule');
+        final dateKey =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        print(
+          '[CalendarScreen] $day일 확인 - dateKey: $dateKey, hasSchedule: $hasSchedule',
+        );
         if (day == 1) {
-          print('[CalendarScreen] 저장된 모든 키: ${provider.schedulesByDate.keys.toList()}');
+          print(
+            '[CalendarScreen] 저장된 모든 키: ${provider.schedulesByDate.keys.toList()}',
+          );
         }
       }
       final isSunday = date.weekday == 7;
@@ -368,8 +421,10 @@ class _CalendarScreenState extends State<CalendarScreen>
               color: isSelected
                   ? AppSemanticColors.interactivePrimaryDefault
                   : isToday
-                      ? AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1)
-                      : null,
+                  ? AppSemanticColors.interactivePrimaryDefault.withValues(
+                      alpha: 0.1,
+                    )
+                  : null,
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
               border: isToday && !isSelected
                   ? Border.all(
@@ -387,10 +442,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                     color: isSelected
                         ? AppSemanticColors.textInverse
                         : isSunday
-                            ? AppSemanticColors.statusErrorIcon
-                            : isSaturday
-                                ? AppSemanticColors.interactivePrimaryDefault
-                                : AppSemanticColors.textPrimary,
+                        ? AppSemanticColors.statusErrorIcon
+                        : isSaturday
+                        ? AppSemanticColors.interactivePrimaryDefault
+                        : AppSemanticColors.textPrimary,
                     fontWeight: isToday || isSelected
                         ? AppTypography.fontWeightSemibold
                         : AppTypography.fontWeightNormal,
@@ -441,10 +496,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         decoration: BoxDecoration(
           color: AppSemanticColors.surfaceDefault,
           borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-          border: Border.all(
-            color: AppSemanticColors.borderDefault,
-            width: 1,
-          ),
+          border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space5),
@@ -461,7 +513,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                           padding: const EdgeInsets.all(AppSpacing.space3),
                           decoration: BoxDecoration(
                             color: AppSemanticColors.backgroundTertiary,
-                            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.xl2,
+                            ),
                           ),
                           child: Icon(
                             Icons.event_note,
@@ -543,8 +597,12 @@ class _CalendarScreenState extends State<CalendarScreen>
                         vertical: AppSpacing.space1_5,
                       ),
                       decoration: BoxDecoration(
-                        color: AppSemanticColors.statusSuccessIcon.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                        color: AppSemanticColors.statusSuccessIcon.withValues(
+                          alpha: 0.1,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.full,
+                        ),
                       ),
                       child: Text(
                         '일정 ${schedules.length}건',
@@ -554,7 +612,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                       ),
                     ),
                     const SizedBox(height: AppSpacing.space3),
-                    ...schedules.map((schedule) => _buildScheduleItem(schedule)),
+                    ...schedules.map(
+                      (schedule) => _buildScheduleItem(schedule),
+                    ),
                   ],
                 ),
             ],
@@ -568,12 +628,15 @@ class _CalendarScreenState extends State<CalendarScreen>
     final categoryColor = _getCategoryColor(schedule.category);
     final authProvider = context.read<AuthProvider>();
     final currentUserEmail = authProvider.currentUser?.email;
-    final isMySchedule = schedule.authorId != null &&
+    final isMySchedule =
+        schedule.authorId != null &&
         currentUserEmail != null &&
         schedule.authorId == currentUserEmail;
 
     return GestureDetector(
-      onLongPress: isMySchedule ? () => _showDeleteScheduleDialog(schedule) : null,
+      onLongPress: isMySchedule
+          ? () => _showDeleteScheduleDialog(schedule)
+          : null,
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.space2),
         padding: const EdgeInsets.all(AppSpacing.space4),
@@ -615,7 +678,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                         GestureDetector(
                           onTap: () => _showDeleteScheduleDialog(schedule),
                           child: Padding(
-                            padding: const EdgeInsets.only(left: AppSpacing.space2),
+                            padding: const EdgeInsets.only(
+                              left: AppSpacing.space2,
+                            ),
                             child: Icon(
                               Icons.delete_outline,
                               size: 18,
@@ -643,7 +708,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                         ),
                         const SizedBox(width: AppSpacing.space3),
                       ],
-                      if (schedule.location != null && schedule.location!.isNotEmpty) ...[
+                      if (schedule.location != null &&
+                          schedule.location!.isNotEmpty) ...[
                         Icon(
                           Icons.location_on_outlined,
                           size: 12,
@@ -659,7 +725,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                       ],
                     ],
                   ),
-                  if (schedule.authorName != null && schedule.authorName!.isNotEmpty)
+                  if (schedule.authorName != null &&
+                      schedule.authorName!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.space1),
                       child: Text(
@@ -773,35 +840,26 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
-
   /// 휴무 달력 탭 빌드
   Widget _buildVacationCalendar() {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // 달력 위젯
+          // 달력 위젯 — 하나의 연속된 흰 표면 (그림자 없이 얇은 보더만)
           Container(
-            margin: const EdgeInsets.all(AppSpacing.space6),
+            margin: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space3,
+            ),
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceDefault,
               borderRadius: BorderRadius.circular(AppBorderRadius.xl),
               border: Border.all(
-                color: AppSemanticColors.borderDefault,
+                color: AppSemanticColors.borderSubtle,
                 width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha: 0.04),
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
-                ),
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha: 0.06),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
             ),
+            clipBehavior: Clip.antiAlias,
             child: VacationCalendarWidget(
               currentDate: _currentDate,
               onDateChanged: (date) {
@@ -872,10 +930,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(AppSpacing.space3),
+                                  padding: const EdgeInsets.all(
+                                    AppSpacing.space3,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppSemanticColors.backgroundTertiary,
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.xl2,
+                                    ),
                                   ),
                                   child: Icon(
                                     Icons.calendar_today,
@@ -906,7 +968,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                               padding: const EdgeInsets.all(AppSpacing.space2),
                               decoration: BoxDecoration(
                                 color: AppSemanticColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl,
+                                ),
                               ),
                               child: Icon(
                                 Icons.close,
@@ -921,14 +985,17 @@ class _CalendarScreenState extends State<CalendarScreen>
 
                       Consumer<VacationProvider>(
                         builder: (context, vacationProvider, child) {
-                          final vacations = vacationProvider.getVacationsForDate(_selectedDate!);
+                          final vacations = vacationProvider
+                              .getVacationsForDate(_selectedDate!);
 
                           if (vacations.isEmpty) {
                             return Container(
                               padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
                                 color: AppSemanticColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl2,
+                                ),
                                 border: Border.all(
                                   color: AppSemanticColors.borderSubtle,
                                   width: 1,
@@ -962,41 +1029,62 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   vertical: AppSpacing.space1_5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                                  color: AppSemanticColors
+                                      .interactivePrimaryDefault
+                                      .withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.full,
+                                  ),
                                 ),
                                 child: Text(
                                   '휴무자 ${vacations.length}명',
                                   style: AppTypography.labelLarge.copyWith(
-                                    color: AppSemanticColors.interactivePrimaryDefault,
+                                    color: AppSemanticColors
+                                        .interactivePrimaryDefault,
                                   ),
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.space3),
                               ...vacations.map(
                                 (vacation) => Container(
-                                  margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-                                  padding: const EdgeInsets.all(AppSpacing.space4),
+                                  margin: const EdgeInsets.only(
+                                    bottom: AppSpacing.space2,
+                                  ),
+                                  padding: const EdgeInsets.all(
+                                    AppSpacing.space4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppSemanticColors.surfaceDefault,
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.xl2,
+                                    ),
                                     border: Border.all(
-                                      color: _getStatusTextColor(vacation.status).withValues(alpha: 0.2),
+                                      color: _getStatusTextColor(
+                                        vacation.status,
+                                      ).withValues(alpha: 0.2),
                                       width: 1,
                                     ),
                                   ),
                                   child: Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.all(AppSpacing.space2),
+                                        padding: const EdgeInsets.all(
+                                          AppSpacing.space2,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: _getStatusTextColor(vacation.status).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                                          color: _getStatusTextColor(
+                                            vacation.status,
+                                          ).withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            AppBorderRadius.xl,
+                                          ),
                                         ),
                                         child: Icon(
                                           _getStatusIcon(vacation.status),
                                           size: 16,
-                                          color: _getStatusTextColor(vacation.status),
+                                          color: _getStatusTextColor(
+                                            vacation.status,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: AppSpacing.space3),
@@ -1004,14 +1092,19 @@ class _CalendarScreenState extends State<CalendarScreen>
                                         child: Row(
                                           children: [
                                             _buildVacationTypeShape(vacation),
-                                            const SizedBox(width: AppSpacing.space2),
+                                            const SizedBox(
+                                              width: AppSpacing.space2,
+                                            ),
                                             Expanded(
                                               child: Text(
                                                 vacation.displayName,
-                                                style: AppTypography.bodyLarge.copyWith(
-                                                  color: AppSemanticColors.textPrimary,
-                                                  fontWeight: AppTypography.fontWeightSemibold,
-                                                ),
+                                                style: AppTypography.bodyLarge
+                                                    .copyWith(
+                                                      color: AppSemanticColors
+                                                          .textPrimary,
+                                                      fontWeight: AppTypography
+                                                          .fontWeightSemibold,
+                                                    ),
                                               ),
                                             ),
                                           ],
@@ -1023,15 +1116,22 @@ class _CalendarScreenState extends State<CalendarScreen>
                                           vertical: AppSpacing.space1,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: _getStatusTextColor(vacation.status),
-                                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                          color: _getStatusTextColor(
+                                            vacation.status,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            AppBorderRadius.lg,
+                                          ),
                                         ),
                                         child: Text(
                                           vacation.statusText,
-                                          style: AppTypography.labelSmall.copyWith(
-                                            color: AppSemanticColors.textInverse,
-                                            fontWeight: AppTypography.fontWeightBold,
-                                          ),
+                                          style: AppTypography.labelSmall
+                                              .copyWith(
+                                                color: AppSemanticColors
+                                                    .textInverse,
+                                                fontWeight: AppTypography
+                                                    .fontWeightBold,
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -1049,73 +1149,75 @@ class _CalendarScreenState extends State<CalendarScreen>
             ),
 
           // 하단 통계 섹션 (관리자만)
-          if (AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser))
-          Consumer<VacationProvider>(
-            builder: (context, vacationProvider, child) {
-              return Container(
-                margin: const EdgeInsets.fromLTRB(
-                  AppSpacing.space6,
-                  AppSpacing.space2,
-                  AppSpacing.space6,
-                  AppSpacing.space4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.borderDefault,
-                    width: 1,
+          if (AdminUtils.canAccessAdminPages(
+            context.read<AuthProvider>().currentUser,
+          ))
+            Consumer<VacationProvider>(
+              builder: (context, vacationProvider, child) {
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(
+                    AppSpacing.space6,
+                    AppSpacing.space2,
+                    AppSpacing.space6,
+                    AppSpacing.space4,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.black.withValues(alpha: 0.04),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.surfaceDefault,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    border: Border.all(
+                      color: AppSemanticColors.borderDefault,
+                      width: 1,
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.space4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(
-                        child: _buildStatItem(
-                          '${_currentDate.month}월 총 휴무',
-                          _getMonthlyTotal(vacationProvider).toString(),
-                          AppSemanticColors.interactivePrimaryDefault,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space3),
-                      Expanded(
-                        child: _buildStatItem(
-                          '승인 대기',
-                          _getMonthlyPending(vacationProvider).toString(),
-                          AppSemanticColors.statusWarningIcon,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space3),
-                      Expanded(
-                        child: _buildStatItem(
-                          '승인됨',
-                          _getMonthlyApproved(vacationProvider).toString(),
-                          AppSemanticColors.statusSuccessIcon,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space3),
-                      Expanded(
-                        child: _buildStatItem(
-                          '거절됨',
-                          _getMonthlyRejected(vacationProvider).toString(),
-                          AppSemanticColors.statusErrorIcon,
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.black.withValues(alpha: 0.04),
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
-                ),
-              );
-            },
-          ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.space4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
+                          child: _buildStatItem(
+                            '${_currentDate.month}월 총 휴무',
+                            _getMonthlyTotal(vacationProvider).toString(),
+                            AppSemanticColors.interactivePrimaryDefault,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: _buildStatItem(
+                            '승인 대기',
+                            _getMonthlyPending(vacationProvider).toString(),
+                            AppSemanticColors.statusWarningIcon,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: _buildStatItem(
+                            '승인됨',
+                            _getMonthlyApproved(vacationProvider).toString(),
+                            AppSemanticColors.statusSuccessIcon,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: _buildStatItem(
+                            '거절됨',
+                            _getMonthlyRejected(vacationProvider).toString(),
+                            AppSemanticColors.statusErrorIcon,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
 
           // 하단 여백
           const SizedBox(height: AppSpacing.space20 + AppSpacing.space6),
@@ -1212,7 +1314,11 @@ class _CalendarScreenState extends State<CalendarScreen>
     final monthEnd = DateTime(_currentDate.year, _currentDate.month + 1, 0);
 
     int total = 0;
-    for (var date = monthStart; date.isBefore(monthEnd.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
+    for (
+      var date = monthStart;
+      date.isBefore(monthEnd.add(const Duration(days: 1)));
+      date = date.add(const Duration(days: 1))
+    ) {
       final dayVacations = provider.getVacationsForDate(date);
       total += dayVacations.length;
     }
@@ -1224,9 +1330,15 @@ class _CalendarScreenState extends State<CalendarScreen>
     final monthEnd = DateTime(_currentDate.year, _currentDate.month + 1, 0);
 
     int pending = 0;
-    for (var date = monthStart; date.isBefore(monthEnd.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
+    for (
+      var date = monthStart;
+      date.isBefore(monthEnd.add(const Duration(days: 1)));
+      date = date.add(const Duration(days: 1))
+    ) {
       final dayVacations = provider.getVacationsForDate(date);
-      pending += dayVacations.where((v) => v.status == VacationStatus.pending).length;
+      pending += dayVacations
+          .where((v) => v.status == VacationStatus.pending)
+          .length;
     }
     return pending;
   }
@@ -1236,9 +1348,15 @@ class _CalendarScreenState extends State<CalendarScreen>
     final monthEnd = DateTime(_currentDate.year, _currentDate.month + 1, 0);
 
     int approved = 0;
-    for (var date = monthStart; date.isBefore(monthEnd.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
+    for (
+      var date = monthStart;
+      date.isBefore(monthEnd.add(const Duration(days: 1)));
+      date = date.add(const Duration(days: 1))
+    ) {
       final dayVacations = provider.getVacationsForDate(date);
-      approved += dayVacations.where((v) => v.status == VacationStatus.approved).length;
+      approved += dayVacations
+          .where((v) => v.status == VacationStatus.approved)
+          .length;
     }
     return approved;
   }
@@ -1248,9 +1366,15 @@ class _CalendarScreenState extends State<CalendarScreen>
     final monthEnd = DateTime(_currentDate.year, _currentDate.month + 1, 0);
 
     int rejected = 0;
-    for (var date = monthStart; date.isBefore(monthEnd.add(const Duration(days: 1))); date = date.add(const Duration(days: 1))) {
+    for (
+      var date = monthStart;
+      date.isBefore(monthEnd.add(const Duration(days: 1)));
+      date = date.add(const Duration(days: 1))
+    ) {
       final dayVacations = provider.getVacationsForDate(date);
-      rejected += dayVacations.where((v) => v.status == VacationStatus.rejected).length;
+      rejected += dayVacations
+          .where((v) => v.status == VacationStatus.rejected)
+          .length;
     }
     return rejected;
   }
@@ -1338,7 +1462,9 @@ class _CalendarScreenState extends State<CalendarScreen>
       isScrollControlled: true,
       backgroundColor: AppSemanticColors.surfaceDefault,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
       ),
       builder: (bottomSheetContext) {
         return StatefulBuilder(
@@ -1348,7 +1474,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                 left: AppSpacing.space4,
                 right: AppSpacing.space4,
                 top: AppSpacing.space4,
-                bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom +
+                    AppSpacing.space4,
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -1380,7 +1508,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: Icon(Icons.close, color: AppSemanticColors.textSecondary),
+                          icon: Icon(
+                            Icons.close,
+                            color: AppSemanticColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -1393,7 +1524,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                         labelText: '제목 *',
                         hintText: '일정 제목을 입력하세요',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.lg,
+                          ),
                         ),
                       ),
                     ),
@@ -1406,7 +1539,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                         labelText: '내용',
                         hintText: '일정 내용을 입력하세요',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.lg,
+                          ),
                         ),
                       ),
                       maxLines: 3,
@@ -1419,7 +1554,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                       decoration: InputDecoration(
                         labelText: '카테고리',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.lg,
+                          ),
                         ),
                       ),
                       items: const [
@@ -1443,7 +1580,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                         labelText: '장소',
                         hintText: '장소를 입력하세요',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.lg,
+                          ),
                         ),
                       ),
                     ),
@@ -1466,7 +1605,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                               isAllDay = value;
                             });
                           },
-                          activeTrackColor: AppSemanticColors.interactivePrimaryDefault,
+                          activeTrackColor:
+                              AppSemanticColors.interactivePrimaryDefault,
                         ),
                       ],
                     ),
@@ -1497,9 +1637,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                               decoration: InputDecoration(
                                 labelText: '시작일',
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.lg,
+                                  ),
                                 ),
-                                suffixIcon: const Icon(Icons.calendar_today, size: 18),
+                                suffixIcon: const Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                ),
                               ),
                               child: Text(
                                 '${startDate.month}/${startDate.day}',
@@ -1528,9 +1673,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                               decoration: InputDecoration(
                                 labelText: '종료일',
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.lg,
+                                  ),
                                 ),
-                                suffixIcon: const Icon(Icons.calendar_today, size: 18),
+                                suffixIcon: const Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                ),
                               ),
                               child: Text(
                                 '${endDate.month}/${endDate.day}',
@@ -1564,9 +1714,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 decoration: InputDecoration(
                                   labelText: '시작 시간',
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.lg,
+                                    ),
                                   ),
-                                  suffixIcon: const Icon(Icons.access_time, size: 18),
+                                  suffixIcon: const Icon(
+                                    Icons.access_time,
+                                    size: 18,
+                                  ),
                                 ),
                                 child: Text(
                                   '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
@@ -1593,9 +1748,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 decoration: InputDecoration(
                                   labelText: '종료 시간',
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.lg,
+                                    ),
                                   ),
-                                  suffixIcon: const Icon(Icons.access_time, size: 18),
+                                  suffixIcon: const Icon(
+                                    Icons.access_time,
+                                    size: 18,
+                                  ),
                                 ),
                                 child: Text(
                                   '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
@@ -1632,25 +1792,34 @@ class _CalendarScreenState extends State<CalendarScreen>
                             Container(
                               constraints: const BoxConstraints(maxHeight: 150),
                               decoration: BoxDecoration(
-                                border: Border.all(color: AppSemanticColors.borderDefault),
-                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                border: Border.all(
+                                  color: AppSemanticColors.borderDefault,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.lg,
+                                ),
                               ),
                               child: ListView.builder(
                                 shrinkWrap: true,
                                 itemCount: members.length,
                                 itemBuilder: (context, index) {
                                   final member = members[index];
-                                  final isSelected = selectedParticipantIds.contains(member.id.toString());
+                                  final isSelected = selectedParticipantIds
+                                      .contains(member.id.toString());
                                   return CheckboxListTile(
                                     dense: true,
                                     visualDensity: VisualDensity.compact,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.space2,
+                                    ),
                                     title: Text(
                                       member.name,
                                       style: AppTypography.bodySmall,
                                     ),
                                     subtitle: Text(
-                                      member.role == 'caregiver' ? '요양보호사' : '사무직',
+                                      member.role == 'caregiver'
+                                          ? '요양보호사'
+                                          : '사무직',
                                       style: AppTypography.caption.copyWith(
                                         color: AppSemanticColors.textTertiary,
                                       ),
@@ -1659,13 +1828,18 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     onChanged: (checked) {
                                       setModalState(() {
                                         if (checked == true) {
-                                          selectedParticipantIds.add(member.id.toString());
+                                          selectedParticipantIds.add(
+                                            member.id.toString(),
+                                          );
                                         } else {
-                                          selectedParticipantIds.remove(member.id.toString());
+                                          selectedParticipantIds.remove(
+                                            member.id.toString(),
+                                          );
                                         }
                                       });
                                     },
-                                    activeColor: AppSemanticColors.interactivePrimaryDefault,
+                                    activeColor: AppSemanticColors
+                                        .interactivePrimaryDefault,
                                   );
                                 },
                               ),
@@ -1693,7 +1867,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                               sendNotification = value;
                             });
                           },
-                          activeTrackColor: AppSemanticColors.interactivePrimaryDefault,
+                          activeTrackColor:
+                              AppSemanticColors.interactivePrimaryDefault,
                         ),
                       ],
                     ),
@@ -1712,11 +1887,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                           }
 
                           final authProvider = context.read<AuthProvider>();
-                          final scheduleProvider = context.read<ScheduleProvider>();
-                          final companyId = authProvider.currentUser?.company?.id ?? '1';
+                          final scheduleProvider = context
+                              .read<ScheduleProvider>();
+                          final companyId =
+                              authProvider.currentUser?.company?.id ?? '1';
 
-                          final startDateStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
-                          final endDateStr = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+                          final startDateStr =
+                              '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+                          final endDateStr =
+                              '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
 
                           final scheduleData = <String, dynamic>{
                             'title': titleController.text.trim(),
@@ -1754,7 +1933,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(success ? '일정이 등록되었습니다' : '일정 등록에 실패했습니다'),
+                                content: Text(
+                                  success ? '일정이 등록되었습니다' : '일정 등록에 실패했습니다',
+                                ),
                                 backgroundColor: success
                                     ? AppSemanticColors.statusSuccessIcon
                                     : AppSemanticColors.statusErrorIcon,
@@ -1763,11 +1944,16 @@ class _CalendarScreenState extends State<CalendarScreen>
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+                          backgroundColor:
+                              AppSemanticColors.interactivePrimaryDefault,
                           foregroundColor: AppSemanticColors.textInverse,
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.space3,
+                          ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.lg,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -1795,7 +1981,9 @@ class _CalendarScreenState extends State<CalendarScreen>
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
       ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(AppSpacing.space5),
@@ -1811,10 +1999,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 borderRadius: BorderRadius.circular(AppBorderRadius.base),
               ),
             ),
-            Text(
-              '관리자 기능',
-              style: AppTypography.heading5,
-            ),
+            Text('관리자 기능', style: AppTypography.heading5),
             const SizedBox(height: AppSpacing.space5),
             ListTile(
               leading: Container(
@@ -1823,7 +2008,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                   color: AppSemanticColors.statusInfoBackground,
                   borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                 ),
-                child: Icon(Icons.event_available, color: AppSemanticColors.statusInfoIcon),
+                child: Icon(
+                  Icons.event_available,
+                  color: AppSemanticColors.statusInfoIcon,
+                ),
               ),
               title: const Text('휴무 추가'),
               subtitle: const Text('직원의 휴무를 직접 추가합니다'),
@@ -1840,7 +2028,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                   color: AppSemanticColors.statusWarningBackground,
                   borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                 ),
-                child: Icon(Icons.settings, color: AppSemanticColors.statusWarningIcon),
+                child: Icon(
+                  Icons.settings,
+                  color: AppSemanticColors.statusWarningIcon,
+                ),
               ),
               title: const Text('휴무 제한 설정'),
               subtitle: const Text('날짜별 최대 휴무 인원을 설정합니다'),
@@ -1848,7 +2039,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                 Navigator.pop(context);
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const AdminVacationLimitsSettingScreen(),
+                    builder: (context) =>
+                        const AdminVacationLimitsSettingScreen(),
                   ),
                 );
               },
@@ -1862,9 +2054,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   void _showAddVacationDialog() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AdminVacationAddDialog(
-        selectedDate: _selectedDate,
-      ),
+      builder: (context) => AdminVacationAddDialog(selectedDate: _selectedDate),
     );
 
     if (result == true) {
