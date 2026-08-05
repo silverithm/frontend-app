@@ -19,7 +19,8 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import 'chat_room_info_screen.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 
 enum _ChatRoomMenuAction { info, delete }
 
@@ -492,22 +493,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _confirmDeleteChatRoom() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('채팅방 삭제'),
-        content: const Text('이 채팅방을 삭제하시겠습니까?\n삭제 후에는 채팅방을 다시 열 수 없습니다.'),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '채팅방 삭제',
+      message: '이 채팅방을 삭제하시겠습니까?\n삭제 후에는 채팅방을 다시 열 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
 
     if (confirmed != true || !mounted) return;
@@ -774,36 +765,49 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   // 리액션 누른 사람 목록 표시
   void _showReactionUsers(ReactionSummary reaction) {
-    showDialog(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Row(
+    AppDialog.showCustom<void>(
+      context,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(reaction.emoji, style: const TextStyle(fontSize: 24)),
-            const SizedBox(width: AppSpacing.space2),
-            Text('${reaction.count}명', style: AppTypography.heading5),
-          ],
-        ),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 300),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: reaction.userNames.length,
-            itemBuilder: (context, index) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-              child: Text(
-                reaction.userNames[index],
-                style: AppTypography.bodyMedium,
+            Row(
+              children: [
+                Text(reaction.emoji, style: const TextStyle(fontSize: 24)),
+                const SizedBox(width: AppSpacing.space2),
+                Text('${reaction.count}명', style: AppTypography.heading5),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.space4),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: reaction.userNames.length,
+                itemBuilder: (context, index) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.space2,
+                  ),
+                  child: Text(
+                    reaction.userNames[index],
+                    style: AppTypography.bodyMedium,
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(height: AppSpacing.space6),
+            SizedBox(
+              width: double.infinity,
+              child: SeedButton(
+                label: '닫기',
+                variant: SeedButtonVariant.brandSolid,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          shadcn.GhostButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('닫기'),
-          ),
-        ],
       ),
     );
   }
@@ -818,11 +822,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
 
     // 다운로드 진행 표시
-    showDialog(
-      context: context,
+    AppDialog.showCustom<void>(
+      context,
       barrierDismissible: false,
-      builder: (context) => shadcn.AlertDialog(
-        content: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(),
@@ -967,22 +972,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _deleteMessage(ChatMessage message) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('메시지 삭제'),
-        content: const Text('이 메시지를 삭제하시겠습니까?'),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '메시지 삭제',
+      message: '이 메시지를 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
 
     if (confirmed == true && mounted) {
