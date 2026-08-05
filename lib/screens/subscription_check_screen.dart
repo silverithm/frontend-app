@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/subscription_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/subscription.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/app_theme.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_loading.dart';
+import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_chip.dart';
 import 'payment_screen.dart';
 import 'main_screen.dart';
 
 class SubscriptionCheckScreen extends StatefulWidget {
   final bool isAdmin;
-  
+
   const SubscriptionCheckScreen({
     super.key,
     this.isAdmin = false,
@@ -82,15 +84,15 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(AppSpacing.space6),
                       child: Column(
                         children: [
                           _buildWelcomeSection(authProvider),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: AppSpacing.space8),
                           _buildSubscriptionPlans(subscriptionProvider),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: AppSpacing.space6),
                           _buildFeatureComparison(),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: AppSpacing.space8),
                           _buildFooter(),
                         ],
                       ),
@@ -111,15 +113,14 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.space6),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
-                  AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.05),
-                ],
+              color: AppSemanticColors.brandWeak,
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+              border: Border.all(
+                color: AppSemanticColors.borderDefault,
+                width: 1,
               ),
-              borderRadius: BorderRadius.circular(20),
             ),
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(
@@ -127,7 +128,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.space6),
           Text(
             '구독 정보를 확인하고 있습니다...',
             style: AppTypography.bodyLarge.copyWith(
@@ -147,15 +148,8 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
       elevation: 0,
       backgroundColor: AppColors.transparent,
       flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppSemanticColors.interactivePrimaryDefault,
-              AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
-            ],
-          ),
+        decoration: const BoxDecoration(
+          color: AppSemanticColors.interactivePrimaryDefault,
         ),
         child: FlexibleSpaceBar(
           centerTitle: true,
@@ -173,34 +167,22 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
 
   Widget _buildWelcomeSection(AuthProvider authProvider) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.space6),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppSemanticColors.surfaceDefault, AppSemanticColors.statusInfoBackground],
+        color: AppSemanticColors.surfaceDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
         children: [
           Container(
             width: 80,
             height: 80,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppSemanticColors.interactivePrimaryDefault,
-                  AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.7),
-                ],
-              ),
+            decoration: const BoxDecoration(
+              color: AppSemanticColors.interactivePrimaryDefault,
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -209,7 +191,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               size: 40,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
           Text(
             '${authProvider.currentUser?.company?.name ?? ''}에\n오신 것을 환영합니다!',
             textAlign: TextAlign.center,
@@ -218,7 +200,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.space2),
           Text(
             '서비스를 이용하시려면 요금제를 선택해주세요.',
             textAlign: TextAlign.center,
@@ -233,7 +215,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
 
   Widget _buildSubscriptionPlans(SubscriptionProvider subscriptionProvider) {
     final plans = SubscriptionPlan.getAvailablePlans();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -244,46 +226,40 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.space4),
         ...plans.map((plan) => _buildPlanCard(plan, subscriptionProvider)),
       ],
     );
   }
 
   Widget _buildPlanCard(SubscriptionPlan plan, SubscriptionProvider subscriptionProvider) {
-    final canUseFree = plan.type == SubscriptionType.FREE 
-        ? subscriptionProvider.canUseFreeSubscription 
+    final canUseFree = plan.type == SubscriptionType.FREE
+        ? subscriptionProvider.canUseFreeSubscription
         : true;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: AppSpacing.space4),
       child: Card(
-        elevation: plan.isPopular ? 8 : 4,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
           side: plan.isPopular
               ? BorderSide(
                   color: AppSemanticColors.interactivePrimaryDefault,
                   width: 2,
                 )
-              : BorderSide.none,
+              : BorderSide(
+                  color: AppSemanticColors.borderDefault,
+                  width: 1,
+                ),
         ),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: plan.isPopular
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppSemanticColors.surfaceDefault,
-                      AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.05),
-                    ],
-                  )
-                : null,
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+            color: plan.isPopular ? AppSemanticColors.brandWeak : null,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.space6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -303,15 +279,15 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                                 ),
                               ),
                               if (plan.isPopular) ...[
-                                const SizedBox(width: 8),
+                                const SizedBox(width: AppSpacing.space2),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: AppSpacing.space2,
+                                    vertical: AppSpacing.space1,
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppSemanticColors.interactivePrimaryDefault,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                   ),
                                   child: Text(
                                     '추천',
@@ -324,7 +300,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                               ],
                             ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSpacing.space1),
                           Text(
                             plan.description,
                             style: AppTypography.bodySmall.copyWith(
@@ -364,33 +340,32 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: plan.features.map((feature) => Chip(
-                    label: Text(
-                      feature,
-                      style: AppTypography.labelSmall.copyWith(fontSize: 11),
-                    ),
-                    backgroundColor: plan.isPopular
-                        ? AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1)
-                        : AppSemanticColors.backgroundSecondary,
-                    side: BorderSide.none,
-                  )).toList(),
+                  spacing: AppSpacing.space2,
+                  runSpacing: AppSpacing.space1,
+                  children: plan.features
+                      .map((feature) => SeedChip(
+                            label: feature,
+                            selected: plan.isPopular,
+                            size: SeedChipSize.small,
+                          ))
+                      .toList(),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.space5),
                 SizedBox(
                   width: double.infinity,
-                  child: shadcn.PrimaryButton(
-                    onPressed: canUseFree ? () => _selectPlan(plan, subscriptionProvider) : null,
-                    child: Text(
-                      !canUseFree
-                          ? '이미 사용함'
-                          : plan.type == SubscriptionType.FREE
-                              ? '무료 체험 시작'
-                              : '구독하기',
-                    ),
+                  child: SeedButton(
+                    label: !canUseFree
+                        ? '이미 사용함'
+                        : plan.type == SubscriptionType.FREE
+                            ? '무료 체험 시작'
+                            : '구독하기',
+                    size: SeedButtonSize.large,
+                    isDisabled: !canUseFree,
+                    onPressed: canUseFree
+                        ? () => _selectPlan(plan, subscriptionProvider)
+                        : null,
                   ),
                 ),
               ],
@@ -403,17 +378,14 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
 
   Widget _buildFeatureComparison() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.space6),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,7 +397,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
           ...[
             '직원 관리 및 승인',
             '휴무 신청 및 관리',
@@ -433,7 +405,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             '알림 시스템',
             '모바일 앱 지원',
           ].map((feature) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: AppSpacing.space2),
             child: Row(
               children: [
                 Icon(
@@ -441,7 +413,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                   color: AppSemanticColors.statusSuccessIcon,
                   size: 20,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.space3),
                 Text(
                   feature,
                   style: AppTypography.bodyMedium.copyWith(
@@ -458,10 +430,10 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
 
   Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
         color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
       ),
       child: Column(
         children: [
@@ -470,7 +442,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             color: AppSemanticColors.textSecondary,
             size: 32,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.space2),
           Text(
             '안전한 결제',
             style: AppTypography.bodyMedium.copyWith(
@@ -478,7 +450,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.space1),
           Text(
             '토스페이먼츠를 통한 안전하고 편리한 결제',
             textAlign: TextAlign.center,
@@ -502,11 +474,11 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
     if (plan.type == SubscriptionType.FREE) {
       // 무료 플랜 선택
       _showLoadingDialog();
-      
+
       final success = await subscriptionProvider.createFreeSubscription();
-      
+
       Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
-      
+
       if (success) {
         _showSuccessDialog('무료 체험이 시작되었습니다!', () {
           Navigator.of(context).pushAndRemoveUntil(
@@ -531,40 +503,30 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
   }
 
   void _showLoadingDialog() {
-    showDialog(
-      context: context,
+    AppDialog.showCustom<void>(
+      context,
       barrierDismissible: false,
-      builder: (context) => shadcn.AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppSemanticColors.interactivePrimaryDefault,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('처리 중...'),
-          ],
-        ),
+      child: const Padding(
+        padding: EdgeInsets.all(AppSpacing.space6),
+        child: AppLoading(message: '처리 중...'),
       ),
     );
   }
 
   void _showSuccessDialog(String message, VoidCallback onConfirm) {
-    showDialog(
-      context: context,
+    AppDialog.showCustom<void>(
+      context,
       barrierDismissible: false,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('성공!'),
-        content: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 60,
               height: 60,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppSemanticColors.statusSuccessIcon,
                 shape: BoxShape.circle,
               ),
@@ -584,37 +546,25 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium,
             ),
+            const SizedBox(height: AppSpacing.space6),
+            SizedBox(
+              width: double.infinity,
+              child: SeedButton(
+                label: '확인',
+                onPressed: onConfirm,
+              ),
+            ),
           ],
         ),
-        actions: [
-          shadcn.PrimaryButton(
-            onPressed: onConfirm,
-            child: const Text('확인'),
-          ),
-        ],
       ),
     );
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.error, color: AppSemanticColors.statusErrorIcon),
-            const SizedBox(width: 8),
-            const Text('오류'),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          shadcn.GhostButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+    AppDialog.showAlert(
+      context,
+      title: '오류',
+      message: message,
     );
   }
 }

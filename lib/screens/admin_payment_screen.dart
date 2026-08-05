@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -12,7 +11,10 @@ import '../providers/subscription_provider.dart';
 import '../models/subscription.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 import 'main_screen.dart';
 
 class AdminPaymentScreen extends StatefulWidget {
@@ -69,18 +71,18 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.space6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildPlanSummary(),
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.space8),
                 _buildCompanyInfo(authProvider),
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.space8),
                 _buildPaymentInfo(),
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.space8),
                 _buildTermsAgreement(),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.space6),
                 _buildPaymentButton(subscriptionProvider),
               ],
             ),
@@ -92,24 +94,14 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
 
   Widget _buildPlanSummary() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.space6),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppSemanticColors.interactivePrimaryDefault,
-            AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.8),
-          ],
+        color: AppSemanticColors.interactivePrimaryDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,7 +113,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
                 height: 50,
                 decoration: BoxDecoration(
                   color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 ),
                 child: Icon(
                   Icons.workspace_premium,
@@ -129,7 +121,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
                   size: 28,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.space4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +133,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.space1),
                     Text(
                       _selectedPlan!.description,
                       style: AppTypography.bodySmall.copyWith(
@@ -153,12 +145,12 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.space5),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.space4),
             decoration: BoxDecoration(
               color: AppSemanticColors.textInverse.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -189,17 +181,14 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
     final company = authProvider.currentUser?.company;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,7 +200,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
           _buildInfoRow('회사명', company?.name ?? ''),
           _buildInfoRow('관리자', authProvider.currentUser?.name ?? ''),
           _buildInfoRow('결제 일시', _getCurrentDateTime()),
@@ -222,17 +211,14 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
 
   Widget _buildPaymentInfo() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,13 +230,13 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
           _buildInfoRow('플랜', _selectedPlan!.name),
           _buildInfoRow('결제 주기', '매월 자동결제'),
           _buildInfoRow('다음 결제일', _getNextPaymentDate()),
-          const Divider(height: 24),
+          const Divider(height: AppSpacing.space6),
           _buildInfoRow(
-            '결제 금액', 
+            '결제 금액',
             '₩${_formatPrice(_selectedPlan!.price)}',
             isTotal: true,
           ),
@@ -264,17 +250,14 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
 
   Widget _buildTermsAgreement() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,13 +269,13 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
           Container(
             height: 150,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.space3),
             decoration: BoxDecoration(
               color: AppSemanticColors.backgroundSecondary,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
               border: Border.all(color: AppSemanticColors.borderSubtle),
             ),
             child: SingleChildScrollView(
@@ -327,7 +310,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
           Row(
             children: [
               SizedBox(
@@ -342,11 +325,11 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
                   },
                   activeColor: AppSemanticColors.interactivePrimaryDefault,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.base),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.space3),
               Expanded(
                 child: Text(
                   '위 서비스 이용약관에 동의합니다.',
@@ -368,45 +351,19 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
       children: [
         SizedBox(
           width: double.infinity,
-          height: 56,
-          child: shadcn.PrimaryButton(
+          child: SeedButton(
+            size: SeedButtonSize.large,
+            isLoading: _isProcessing || subscriptionProvider.isLoading,
+            isDisabled: !_agreeToTerms,
             onPressed: _isProcessing || subscriptionProvider.isLoading || !_agreeToTerms
                 ? null
                 : _processPayment,
-            child: _isProcessing || subscriptionProvider.isLoading
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '결제 진행 중...',
-                        style: AppTypography.bodyLarge.copyWith(
-                          color: AppSemanticColors.textInverse,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
-                    _agreeToTerms
-                      ? '₩${_formatPrice(_selectedPlan!.price)} 결제하기'
-                      : '약관에 동의해주세요',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppSemanticColors.textInverse,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            label: _agreeToTerms
+                ? '₩${_formatPrice(_selectedPlan!.price)} 결제하기'
+                : '약관에 동의해주세요',
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.space4),
         Text(
           '결제 시 이용약관과 개인정보처리방침에 동의한 것으로 간주됩니다.',
           textAlign: TextAlign.center,
@@ -414,12 +371,12 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
             color: AppSemanticColors.textSecondary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.space2),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.space4),
           decoration: BoxDecoration(
             color: AppSemanticColors.statusSuccessBackground,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             border: Border.all(color: AppSemanticColors.statusSuccessBorder),
           ),
           child: Row(
@@ -429,7 +386,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
                 color: AppSemanticColors.statusSuccessIcon,
                 size: 20,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.space3),
               Expanded(
                 child: Center(
                   child: Text(
@@ -449,7 +406,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
 
   Widget _buildInfoRow(String label, String value, {bool isTotal = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.space3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -710,25 +667,24 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
   }
 
   void _showSuccessDialog() {
-    showDialog(
-      context: context,
+    AppDialog.showCustom<void>(
+      context,
       barrierDismissible: false,
-      builder: (context) => shadcn.AlertDialog(
-        content: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppSemanticColors.statusSuccessIcon, AppSemanticColors.statusSuccessIcon],
-                ),
+              decoration: const BoxDecoration(
+                color: AppSemanticColors.statusSuccessIcon,
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.check, color: AppSemanticColors.textInverse, size: 40),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.space5),
             Text(
               '결제 완료!',
               style: AppTypography.heading5.copyWith(
@@ -736,56 +692,36 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space3),
             Text(
               '${_selectedPlan!.name} 구독이 시작되었습니다.\n관리자 권한으로 모든 기능을 이용하세요!',
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium,
             ),
+            const SizedBox(height: AppSpacing.space6),
+            SizedBox(
+              width: double.infinity,
+              child: SeedButton(
+                label: '완료',
+                onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const MainScreen()),
+                    (route) => false,
+                  );
+                },
+              ),
+            ),
           ],
         ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: shadcn.PrimaryButton(
-              onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const MainScreen()),
-                  (route) => false,
-                );
-              },
-              child: const Text('완료'),
-            ),
-          ),
-        ],
       ),
     );
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.error, color: AppSemanticColors.statusErrorIcon),
-            const SizedBox(width: 8),
-            const Text('결제 실패'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+    AppDialog.showAlert(
+      context,
+      title: '결제 실패',
+      message: message,
     );
   }
 }
@@ -1004,7 +940,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.space4),
                   Text(
                     '결제 페이지를 불러오는 중...',
                     style: AppTypography.bodyLarge.copyWith(

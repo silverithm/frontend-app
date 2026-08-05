@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,13 +13,14 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/app_theme.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 import 'main_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
   final SubscriptionPlan plan;
   final bool isAdmin;
-  
+
   const PaymentScreen({
     super.key,
     required this.plan,
@@ -36,7 +36,7 @@ class _PaymentScreenState extends State<PaymentScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   bool _isProcessing = false;
   String _authKey = '';
 
@@ -93,18 +93,18 @@ class _PaymentScreenState extends State<PaymentScreen>
             child: SlideTransition(
               position: _slideAnimation,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.space6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildPlanSummary(),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: AppSpacing.space8),
                     _buildPaymentInfo(),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: AppSpacing.space8),
                     _buildPaymentMethods(),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: AppSpacing.space8),
                     _buildSecurityInfo(),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: AppSpacing.space10),
                     _buildPaymentButton(subscriptionProvider),
                   ],
                 ),
@@ -118,24 +118,14 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPlanSummary() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.space6),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppSemanticColors.interactivePrimaryDefault,
-            AppSemanticColors.interactivePrimaryDefault.withValues(alpha:0.8),
-          ],
+        color: AppSemanticColors.interactivePrimaryDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +137,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 height: 50,
                 decoration: BoxDecoration(
                   color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 ),
                 child: Icon(
                   Icons.workspace_premium,
@@ -155,7 +145,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   size: 28,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.space4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +157,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.space1),
                     Text(
                       widget.plan.description,
                       style: AppTypography.bodySmall.copyWith(
@@ -179,12 +169,12 @@ class _PaymentScreenState extends State<PaymentScreen>
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.space5),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.space4),
             decoration: BoxDecoration(
               color: AppSemanticColors.textInverse.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -213,17 +203,14 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPaymentInfo() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,14 +222,14 @@ class _PaymentScreenState extends State<PaymentScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
           _buildInfoRow('플랜', widget.plan.name),
           _buildInfoRow('결제 주기', '매월'),
           _buildInfoRow('첫 결제일', _getFirstPaymentDate()),
           _buildInfoRow('다음 결제일', _getNextPaymentDate()),
-          const Divider(height: 24),
+          const Divider(height: AppSpacing.space6),
           _buildInfoRow(
-            '총 결제 금액', 
+            '총 결제 금액',
             '₩${_formatPrice(widget.plan.price)}',
             isTotal: true,
           ),
@@ -253,15 +240,15 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildInfoRow(String label, String value, {bool isTotal = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.space3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
             style: AppTypography.bodyMedium.copyWith(
-              color: isTotal 
-                ? AppSemanticColors.textPrimary 
+              color: isTotal
+                ? AppSemanticColors.textPrimary
                 : AppSemanticColors.textSecondary,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
             ),
@@ -280,17 +267,14 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPaymentMethods() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(
+          color: AppSemanticColors.borderDefault,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,12 +286,12 @@ class _PaymentScreenState extends State<PaymentScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.space4),
             decoration: BoxDecoration(
               color: AppSemanticColors.statusInfoBackground,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
               border: Border.all(
                 color: AppSemanticColors.interactivePrimaryDefault,
                 width: 2,
@@ -320,7 +304,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                   height: 40,
                   decoration: BoxDecoration(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                   ),
                   child: Icon(
                     Icons.credit_card,
@@ -328,7 +312,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.space3),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -357,10 +341,10 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildSecurityInfo() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
         color: AppSemanticColors.statusSuccessBackground,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         border: Border.all(
           color: AppSemanticColors.statusSuccessBorder,
         ),
@@ -372,7 +356,7 @@ class _PaymentScreenState extends State<PaymentScreen>
             color: AppSemanticColors.statusSuccessIcon,
             size: 24,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.space3),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,7 +368,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.space1),
                 Text(
                   '결제 정보는 암호화되어 안전하게 보호됩니다.\n언제든지 구독을 취소할 수 있습니다.',
                   style: AppTypography.bodySmall.copyWith(
@@ -404,43 +388,16 @@ class _PaymentScreenState extends State<PaymentScreen>
       children: [
         SizedBox(
           width: double.infinity,
-          height: 56,
-          child: shadcn.PrimaryButton(
+          child: SeedButton(
+            size: SeedButtonSize.large,
+            isLoading: _isProcessing || subscriptionProvider.isLoading,
             onPressed: _isProcessing || subscriptionProvider.isLoading
                 ? null
                 : _startPayment,
-            child: _isProcessing || subscriptionProvider.isLoading
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '결제 진행 중...',
-                        style: AppTypography.bodyLarge.copyWith(
-                          color: AppSemanticColors.textInverse,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
-                    '₩${_formatPrice(widget.plan.price)} 결제하기',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppSemanticColors.textInverse,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            label: '₩${_formatPrice(widget.plan.price)} 결제하기',
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.space4),
         Text(
           '결제 시 이용약관과 개인정보처리방침에 동의한 것으로 간주됩니다.',
           textAlign: TextAlign.center,
@@ -479,7 +436,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       final authProvider = context.read<AuthProvider>();
       final orderId = _generateOrderId();
       final amount = widget.plan.price;
-      
+
       // 토스페이먼츠 결제 URL 생성
       final paymentUrl = await _createTossPayment(
         orderId: orderId,
@@ -488,14 +445,14 @@ class _PaymentScreenState extends State<PaymentScreen>
         customerName: authProvider.currentUser?.name ?? '사용자',
         customerEmail: '', // userInfo에서 받아올 예정
       );
-      
+
       if (paymentUrl != null) {
         // WebView로 결제 진행
         await _showPaymentWebView(paymentUrl, orderId);
       } else {
         _showErrorDialog('결제 URL 생성에 실패했습니다.');
       }
-      
+
     } catch (e) {
       print('[Payment] 결제 처리 중 오류: $e');
       _showErrorDialog('결제 처리 중 오류가 발생했습니다: ${e.toString()}');
@@ -519,19 +476,19 @@ class _PaymentScreenState extends State<PaymentScreen>
   }) async {
     try {
       final clientKey = dotenv.env['TOSS_PAYMENTS_CLIENT_KEY'];
-      
+
       if (clientKey == null) {
         throw Exception('토스페이먼츠 CLIENT KEY가 설정되지 않았습니다.');
       }
-      
+
       // userInfo API에서 customerKey와 이메일 가져오기
       final userInfoResponse = await ApiService().getUserInfo();
       final customerKey = userInfoResponse['customerKey']?.toString() ?? '';
       final userEmail = userInfoResponse['userEmail']?.toString() ?? '';
-      
+
       print('[Payment] 사용할 customerKey: $customerKey');
       print('[Payment] 사용자 데이터: ${userInfoResponse['userName']} ($userEmail)');
-      
+
       // 토스페이먼츠 v1 빌링 인증 페이지 HTML 생성
       final billingAuthHtml = '''
 <!DOCTYPE html>
@@ -564,42 +521,42 @@ class _PaymentScreenState extends State<PaymentScreen>
             }
             console.log(message);
         }
-        
+
         async function loadPayment() {
             try {
                 logToFlutter('결제 시작 - customerKey: $customerKey');
                 document.getElementById('status').textContent = '토스페이먼츠 SDK 로딩 중...';
-                
+
                 if (!window.TossPayments) {
                     throw new Error('토스페이먼츠 v1 SDK가 로드되지 않았습니다.');
                 }
-                
+
                 logToFlutter('토스페이먼츠 v1 SDK 로드 완료');
                 document.getElementById('status').textContent = '결제 모듈 초기화 중...';
-                
+
                 const tossPayments = TossPayments('$clientKey');
                 logToFlutter('토스페이먼츠 객체 생성 완료');
-                
+
                 document.getElementById('status').textContent = '빌링 인증 요청 중...';
-                
+
                 logToFlutter('빌링 인증 요청 시작');
                 await tossPayments.requestBillingAuth('카드', {
                     customerKey: '$customerKey',
                     successUrl: 'https://silverithm.site/payment/success',
                     failUrl: 'https://silverithm.site/payment/fail',
                 });
-                
+
                 logToFlutter('빌링 인증 요청 완료');
             } catch (error) {
                 logToFlutter('결제 오류: ' + error.toString());
                 document.getElementById('status').textContent = '결제 중 오류가 발생했습니다: ' + error.message;
-                
+
                 setTimeout(() => {
                     window.location.href = 'https://silverithm.site/payment/fail?error=' + encodeURIComponent(error.message);
                 }, 2000);
             }
         }
-        
+
         window.onload = function() {
             logToFlutter('페이지 로드 완료, 결제 시작');
             setTimeout(loadPayment, 500);
@@ -608,14 +565,14 @@ class _PaymentScreenState extends State<PaymentScreen>
 </body>
 </html>
       ''';
-      
+
       return 'data:text/html;charset=utf-8,${Uri.encodeComponent(billingAuthHtml)}';
     } catch (e) {
       print('[Payment] 토스페이먼츠 빌링 인증 페이지 생성 오류: $e');
       return null;
     }
   }
-  
+
   Future<void> _showPaymentWebView(String paymentUrl, String orderId) async {
     final result = await Navigator.of(context).push<Map<String, dynamic>?>(
       MaterialPageRoute(
@@ -626,7 +583,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         fullscreenDialog: true,
       ),
     );
-    
+
     if (result != null && result['status'] == 'success') {
       // 빌링 인증 성공 시 authKey를 받아서 처리
       final authKey = result['authKey'] ?? '';
@@ -635,11 +592,11 @@ class _PaymentScreenState extends State<PaymentScreen>
       _showErrorDialog('결제가 실패했습니다.');
     }
   }
-  
+
   Future<void> _createSubscriptionAfterPayment(String authKey, String orderId) async {
     try {
       final subscriptionProvider = context.read<SubscriptionProvider>();
-      
+
       final success = await subscriptionProvider.createPaidSubscription(
         planType: widget.plan.type,
         paymentType: PaymentType.MONTHLY,
@@ -660,26 +617,24 @@ class _PaymentScreenState extends State<PaymentScreen>
   }
 
   void _showSuccessDialog() {
-    showDialog(
-      context: context,
+    AppDialog.showCustom<void>(
+      context,
       barrierDismissible: false,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('결제 완료!'),
-        content: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppSemanticColors.statusSuccessIcon, AppSemanticColors.statusSuccessIcon],
-                ),
+              decoration: const BoxDecoration(
+                color: AppSemanticColors.statusSuccessIcon,
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.check, color: AppSemanticColors.textInverse, size: 40),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.space5),
             Text(
               '결제 완료!',
               style: AppTypography.heading5.copyWith(
@@ -687,48 +642,36 @@ class _PaymentScreenState extends State<PaymentScreen>
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space3),
             Text(
               '${widget.plan.name} 구독이 시작되었습니다.\n모든 기능을 자유롭게 이용하세요!',
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium,
             ),
+            const SizedBox(height: AppSpacing.space6),
+            SizedBox(
+              width: double.infinity,
+              child: SeedButton(
+                label: '시작하기',
+                onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const MainScreen()),
+                    (route) => false,
+                  );
+                },
+              ),
+            ),
           ],
         ),
-        actions: [
-          shadcn.PrimaryButton(
-            onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const MainScreen()),
-                (route) => false,
-              );
-            },
-            child: const Text('시작하기'),
-          ),
-        ],
       ),
     );
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.error, color: AppSemanticColors.statusErrorIcon),
-            const SizedBox(width: 8),
-            const Text('결제 실패'),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          shadcn.GhostButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+    AppDialog.showAlert(
+      context,
+      title: '결제 실패',
+      message: message,
     );
   }
 }
@@ -780,7 +723,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
             setState(() {
               _isLoading = false;
             });
-            
+
             if (url.contains('/payment/success')) {
               print('[WebView] Success URL 전체: $url');
               final uri = Uri.parse(url);
@@ -800,15 +743,15 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
           },
           onNavigationRequest: (NavigationRequest request) {
             print('[WebView] Navigation request: ${request.url}');
-            
-            if (!request.url.startsWith('http') && 
-                !request.url.startsWith('https') && 
+
+            if (!request.url.startsWith('http') &&
+                !request.url.startsWith('https') &&
                 !request.url.startsWith('data:')) {
               print('[WebView] Handling app scheme: ${request.url}');
               _handleAppScheme(request.url);
               return NavigationDecision.prevent;
             }
-            
+
             if (request.url.contains('/payment/success')) {
               print('[WebView] Navigation Success URL 전체: ${request.url}');
               final uri = Uri.parse(request.url);
@@ -827,7 +770,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
               Navigator.of(context).pop({'status': 'fail'});
               return NavigationDecision.prevent;
             }
-            
+
             return NavigationDecision.navigate;
           },
           onWebResourceError: (WebResourceError error) {
@@ -835,19 +778,19 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
           },
         ),
       );
-    
+
     _controller.loadRequest(Uri.parse(widget.paymentUrl));
   }
 
   Future<void> _handleAppScheme(String url) async {
     try {
       print('[WebView] Handling app scheme: $url');
-      
+
       if (url.startsWith('intent://')) {
         await _handleAndroidIntent(url);
         return;
       }
-      
+
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -858,21 +801,21 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
       print('[WebView] Failed to launch app scheme: $e');
     }
   }
-  
+
   Future<void> _handleAndroidIntent(String intentUrl) async {
     try {
       final uri = Uri.parse(intentUrl);
-      
+
       String? packageName;
       String? scheme;
-      
+
       final fragment = uri.fragment;
       if (fragment != null) {
         final params = Uri.splitQueryString(fragment);
         packageName = params['package'];
         scheme = params['scheme'];
       }
-      
+
       if (packageName != null) {
         final appUri = Uri.parse('$packageName://');
         if (await canLaunchUrl(appUri)) {
@@ -880,7 +823,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
           return;
         }
       }
-      
+
       if (scheme != null) {
         final schemeUri = Uri.parse('$scheme://');
         if (await canLaunchUrl(schemeUri)) {
@@ -888,7 +831,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
           return;
         }
       }
-      
+
       if (packageName != null) {
         final playStoreUri = Uri.parse('market://details?id=$packageName');
         if (await canLaunchUrl(playStoreUri)) {
@@ -898,7 +841,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
           await launchUrl(webPlayStoreUri, mode: LaunchMode.externalApplication);
         }
       }
-      
+
       print('[WebView] Android intent handled: $intentUrl');
     } catch (e) {
       print('[WebView] Failed to handle Android intent: $e');
@@ -932,7 +875,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.space4),
                   Text(
                     '결제 페이지를 불러오는 중...',
                     style: AppTypography.bodyLarge.copyWith(
