@@ -7,7 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import '../widgets/seed/seed_button.dart';
 import 'chat_room_screen.dart';
 import 'create_chat_room_screen.dart';
 
@@ -106,6 +106,11 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (chatProvider.errorMessage.isNotEmpty &&
+              chatProvider.chatRooms.isEmpty) {
+            return _buildErrorState();
+          }
+
           if (chatProvider.chatRooms.isEmpty) {
             return _buildEmptyState();
           }
@@ -129,7 +134,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.chat_bubble_outline,
@@ -138,23 +143,47 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
           ),
           const SizedBox(height: AppSpacing.space4),
           Text(
-            '아직 채팅방이 없습니다',
-            style: AppTypography.bodyLarge.copyWith(
+            '아직 채팅방이 없어요',
+            style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textSecondary,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppSpacing.space2),
+          const SizedBox(height: AppSpacing.space1_5),
           Text(
-            '새로운 채팅방을 만들어보세요',
-            style: AppTypography.bodyMedium.copyWith(
+            '+ 버튼으로 첫 채팅을 시작해보세요',
+            style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
           ),
-          const SizedBox(height: AppSpacing.space6),
-          shadcn.PrimaryButton(
-            onPressed: _navigateToCreateChatRoom,
-            leading: const Icon(Icons.add),
-            child: const Text('채팅방 만들기'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppSemanticColors.statusErrorIcon,
+          ),
+          const SizedBox(height: AppSpacing.space3),
+          Text(
+            '채팅방 목록을 불러오지 못했습니다',
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space4),
+          SeedButton(
+            label: '다시 시도',
+            variant: SeedButtonVariant.neutralWeak,
+            size: SeedButtonSize.small,
+            onPressed: _loadChatRooms,
           ),
         ],
       ),

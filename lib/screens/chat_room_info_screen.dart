@@ -9,7 +9,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 
 class ChatRoomInfoScreen extends StatefulWidget {
   final ChatRoom room;
@@ -51,22 +52,12 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
   }
 
   Future<void> _leaveRoom() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('채팅방 나가기'),
-        content: const Text('이 채팅방을 나가시겠습니까?\n나가면 대화 내용을 더 이상 볼 수 없습니다.'),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('나가기'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '채팅방 나가기',
+      message: '이 채팅방을 나가시겠습니까?\n나가면 대화 내용을 더 이상 볼 수 없습니다.',
+      confirmText: '나가기',
+      cancelText: '취소',
     );
 
     if (confirmed == true && mounted) {
@@ -83,22 +74,12 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
   }
 
   Future<void> _kickParticipant(ChatParticipant participant) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('강제 퇴장'),
-        content: Text('${participant.userName}님을 강제 퇴장시키겠습니까?'),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('퇴장'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '강제 퇴장',
+      message: '${participant.userName}님을 강제 퇴장시키겠습니까?',
+      confirmText: '퇴장',
+      cancelText: '취소',
     );
 
     if (confirmed == true && mounted) {
@@ -149,8 +130,8 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
               children: [
                 // 채팅방 아이콘
                 Container(
-                  width: 80,
-                  height: 80,
+                  width: AppSpacing.space20,
+                  height: AppSpacing.space20,
                   decoration: BoxDecoration(
                     color: isAdmin
                         ? AppSemanticColors.interactiveSecondaryDefault
@@ -232,9 +213,10 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             ),
             child: SizedBox(
               width: double.infinity,
-              child: shadcn.DestructiveButton(
+              child: SeedButton(
+                label: '채팅방 나가기',
+                variant: SeedButtonVariant.critical,
                 onPressed: _leaveRoom,
-                child: const Text('채팅방 나가기'),
               ),
             ),
           ),
@@ -260,10 +242,11 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.space4),
-                child: shadcn.OutlineButton(
+                child: SeedButton(
+                  label: '참가자 초대',
+                  variant: SeedButtonVariant.neutralWeak,
+                  prefixIcon: Icons.person_add,
                   onPressed: _inviteParticipants,
-                  leading: const Icon(Icons.person_add),
-                  child: const Text('참가자 초대'),
                 ),
               ),
 
@@ -476,8 +459,8 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                     final file = files[index];
                     return ListTile(
                       leading: Container(
-                        width: 40,
-                        height: 40,
+                        width: AppSpacing.space10,
+                        height: AppSpacing.space10,
                         decoration: BoxDecoration(
                           color: AppSemanticColors.backgroundTertiary,
                           borderRadius: BorderRadius.circular(

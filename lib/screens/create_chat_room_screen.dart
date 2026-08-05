@@ -8,7 +8,8 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../services/api_service.dart';
 import 'chat_room_screen.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_text_field.dart';
 
 class CreateChatRoomScreen extends StatefulWidget {
   const CreateChatRoomScreen({super.key});
@@ -158,13 +159,14 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
         iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         actions: [
-          shadcn.GhostButton(
-            onPressed: _isLoading ? null : _createChatRoom,
-            child: Text(
-              '만들기',
-              style: AppTypography.labelLarge.copyWith(
-                color: AppSemanticColors.textInverse,
-              ),
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.space2),
+            child: SeedButton(
+              label: '만들기',
+              variant: SeedButtonVariant.neutralWeak,
+              size: SeedButtonSize.small,
+              isDisabled: _isLoading,
+              onPressed: _isLoading ? null : _createChatRoom,
             ),
           ),
         ],
@@ -177,55 +179,19 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 채팅방 이름
-                  Text(
-                    '채팅방 이름',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.space2),
-                  TextField(
+                  SeedTextField(
+                    label: '채팅방 이름',
                     controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: '채팅방 이름을 입력하세요',
-                      hintStyle: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                      filled: true,
-                      fillColor: AppSemanticColors.surfaceDefault,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.all(AppSpacing.space4),
-                    ),
+                    placeholder: '채팅방 이름을 입력하세요',
                   ),
                   const SizedBox(height: AppSpacing.space4),
 
                   // 채팅방 설명 (선택)
-                  Text(
-                    '설명 (선택)',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.space2),
-                  TextField(
+                  SeedTextField(
+                    label: '설명 (선택)',
                     controller: _descriptionController,
+                    placeholder: '채팅방 설명을 입력하세요',
                     maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: '채팅방 설명을 입력하세요',
-                      hintStyle: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                      filled: true,
-                      fillColor: AppSemanticColors.surfaceDefault,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.all(AppSpacing.space4),
-                    ),
                   ),
                   const SizedBox(height: AppSpacing.space6),
 
@@ -257,7 +223,10 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                     ),
                     child: Row(
                       children: [
-                        shadcn.GhostButton(
+                        SeedButton(
+                          label: '전체 선택',
+                          variant: SeedButtonVariant.brandWeak,
+                          size: SeedButtonSize.small,
                           onPressed: () {
                             setState(() {
                               _selectedParticipantIds.clear();
@@ -270,26 +239,17 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                               }
                             });
                           },
-                          child: Text(
-                            '전체 선택',
-                            style: AppTypography.labelMedium.copyWith(
-                              color:
-                                  AppSemanticColors.interactivePrimaryDefault,
-                            ),
-                          ),
                         ),
-                        shadcn.GhostButton(
+                        const SizedBox(width: AppSpacing.space2),
+                        SeedButton(
+                          label: '선택 해제',
+                          variant: SeedButtonVariant.neutralWeak,
+                          size: SeedButtonSize.small,
                           onPressed: () {
                             setState(() {
                               _selectedParticipantIds.clear();
                             });
                           },
-                          child: Text(
-                            '선택 해제',
-                            style: AppTypography.labelMedium.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                            ),
-                          ),
                         ),
                       ],
                     ),
