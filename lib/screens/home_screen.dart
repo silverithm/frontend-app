@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notice.dart';
 import '../models/schedule.dart';
 import '../models/vacation_request.dart';
@@ -15,7 +16,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../widgets/common/app_dialog.dart';
 import '../widgets/common/notification_bell.dart';
+import '../widgets/today_schedule_dialog.dart';
 import 'admin_notice_management_screen.dart';
 import 'admin_unified_approval_screen.dart';
 import 'admin_user_management_screen.dart';
@@ -110,8 +113,35 @@ class _HomeScreenState extends State<HomeScreen> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
+        _maybeShowTodaySchedulePopup();
       }
     }
+  }
+
+  /// 접속 시 오늘 일정 알림 — 하루 1회만 띄운다.
+  Future<void> _maybeShowTodaySchedulePopup() async {
+    final now = DateTime.now();
+    final todayKey =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('last_today_schedule_popup_date') == todayKey) return;
+
+    if (!mounted) return;
+    final todaySchedules =
+        context.read<ScheduleProvider>().getSchedulesForDate(now);
+    if (todaySchedules.isEmpty) return;
+
+    await prefs.setString('last_today_schedule_popup_date', todayKey);
+    if (!mounted) return;
+
+    AppDialog.showCustom(
+      context,
+      child: TodayScheduleDialog(
+        schedules: todaySchedules,
+        onViewSchedule: () => widget.onNavigateToTab?.call(3),
+      ),
+    );
   }
 
   void _openApproval() {
