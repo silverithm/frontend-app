@@ -747,21 +747,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       backgroundColor: AppSemanticColors.backgroundSecondary,
       body: CustomScrollView(
         slivers: [
-          // 흰색 배경 앱바
+          // 슬림 상단 — 타이틀 1개만 (다른 화면과 동일한 흰 배경 AppBar)
           SliverAppBar(
             expandedHeight: 56.0,
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-            iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
-            centerTitle: true,
-            title: Text(
-              '프로필',
-              style: AppTypography.heading6.copyWith(
-                color: AppSemanticColors.textInverse,
-              ),
-            ),
+            backgroundColor: AppSemanticColors.backgroundPrimary,
+            title: Text('프로필', style: AppTypography.heading5),
           ),
 
           Consumer<AuthProvider>(
@@ -835,22 +828,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ),
                               ),
 
-                              const SizedBox(height: 24),
+                              const SizedBox(height: AppSpacing.space6),
+                              Divider(
+                                height: 1,
+                                color: AppSemanticColors.borderSubtle,
+                              ),
+                              const SizedBox(height: AppSpacing.space6),
 
-                              // 사용자 정보 섹션
-                              Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: AppSemanticColors.surfaceDefault,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: AppSemanticColors.borderDefault,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
+                              // 사용자 정보 섹션 — 카드 안에 또 카드를 두지 않는다 (구분선만)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                     Text(
                                       '기본 정보',
                                       style: AppTypography.heading6.copyWith(
@@ -974,7 +962,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         ],
                                       ),
                                   ],
-                                ),
                               ),
                             ],
                           ),
@@ -983,7 +970,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.space2),
 
                   if (AdminUtils.canAccessAdminPages(user) &&
                       (user.company?.companyCode?.isNotEmpty ?? false))
@@ -1035,14 +1022,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                               ),
                               const SizedBox(height: 16),
                               Container(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(AppSpacing.space4),
                                 decoration: BoxDecoration(
                                   color: AppSemanticColors.backgroundSecondary,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: AppSemanticColors.borderDefault,
-                                    width: 1,
-                                  ),
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                                 ),
                                 child: Row(
                                   children: [
@@ -1305,7 +1288,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                               margin: const EdgeInsets.symmetric(
                                 horizontal: 20,
                               ),
-                              color: AppSemanticColors.borderDefault,
+                              color: AppSemanticColors.borderSubtle,
                             ),
 
                             _buildPolicyTile(

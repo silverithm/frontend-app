@@ -7,6 +7,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../services/api_service.dart';
+import 'chat_room_screen.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class CreateChatRoomScreen extends StatefulWidget {
@@ -116,7 +117,10 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
       );
 
       if (room != null && mounted) {
-        Navigator.of(context).pop(true);
+        // 생성한 방으로 바로 입장한다 (목록으로 돌아가 다시 누르게 하지 않는다)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => ChatRoomScreen(room: room)),
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(
           context,

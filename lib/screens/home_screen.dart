@@ -30,6 +30,8 @@ import 'notice_detail_screen.dart';
 import 'notice_list_screen.dart';
 import 'plaza_screen.dart';
 import 'profile_screen.dart';
+import '../widgets/vacation_request_dialog.dart';
+import 'approval_form_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateToTab;
@@ -255,6 +257,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// 홈에서 바로 휴무 신청 — 오늘 날짜 기본값
+  void _openVacationRequest() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => VacationRequestDialog(
+        selectedDate: DateTime.now(),
+        onRequestSubmitted: _loadDashboardData,
+      ),
+    );
+  }
+
+  /// 홈에서 바로 결재 작성 화면으로
+  void _openApprovalForm() {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const ApprovalFormScreen()))
+        .then((_) => _loadDashboardData());
+  }
+
   void _openApproval() {
     if (widget.onNavigateToTab != null) {
       widget.onNavigateToTab!(MainTabs.approval);
@@ -426,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: _QuickActionButton(
                             icon: Icons.beach_access_outlined,
                             label: '휴무 신청',
-                            onTap: _openWorkAdjustment,
+                            onTap: _openVacationRequest,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.space3),
@@ -434,7 +455,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: _QuickActionButton(
                             icon: Icons.edit_note_outlined,
                             label: isAdmin ? '결재 승인' : '결재 작성',
-                            onTap: _openApproval,
+                            // 직원은 작성 화면을 바로 연다 (탭 전환만 하는 버튼은 빠른작업이 아니다)
+                            onTap: isAdmin ? _openApproval : _openApprovalForm,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.space3),

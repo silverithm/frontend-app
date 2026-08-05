@@ -268,16 +268,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: widget.showAppBar
           ? AppBar(
-              title: Text(
-                '내 휴무',
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textInverse,
-                ),
-              ),
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-              iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
+              title: Text('내 휴무', style: AppTypography.heading5),
+              backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
-              centerTitle: true,
               actions: [
                 Container(
                   margin: const EdgeInsets.only(right: AppSpacing.space4),
@@ -497,36 +490,47 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 20),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildStatusCard(
-                                      '대기',
-                                      pendingRequests.length,
-                                      AppSemanticColors.statusWarningIcon,
-                                      Icons.schedule,
+                              const SizedBox(height: AppSpacing.space4),
+                              // 내부는 구분선으로만 나눈다 (카드 중첩 금지)
+                              IntrinsicHeight(
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildStatusCard(
+                                        '대기',
+                                        pendingRequests.length,
+                                        AppSemanticColors.statusWarningText,
+                                        Icons.schedule,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildStatusCard(
-                                      '승인',
-                                      approvedRequests.length,
-                                      AppSemanticColors.statusSuccessIcon,
-                                      Icons.check_circle,
+                                    VerticalDivider(
+                                      width: AppSpacing.space4,
+                                      thickness: 1,
+                                      color: AppSemanticColors.borderSubtle,
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildStatusCard(
-                                      '거절',
-                                      rejectedRequests.length,
-                                      AppSemanticColors.statusErrorIcon,
-                                      Icons.cancel,
+                                    Expanded(
+                                      child: _buildStatusCard(
+                                        '승인',
+                                        approvedRequests.length,
+                                        AppSemanticColors.statusSuccessText,
+                                        Icons.check_circle,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    VerticalDivider(
+                                      width: AppSpacing.space4,
+                                      thickness: 1,
+                                      color: AppSemanticColors.borderSubtle,
+                                    ),
+                                    Expanded(
+                                      child: _buildStatusCard(
+                                        '거절',
+                                        rejectedRequests.length,
+                                        AppSemanticColors.statusErrorText,
+                                        Icons.cancel,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -682,40 +686,25 @@ class _MyVacationScreenState extends State<MyVacationScreen>
   }
 
   Widget _buildStatusCard(String label, int count, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 24),
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 22),
+        const SizedBox(height: AppSpacing.space1),
+        Text(
+          count.toString(),
+          style: AppTypography.heading4.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
-          const SizedBox(height: 8),
-          Text(
-            count.toString(),
-            style: AppTypography.heading4.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+        ),
+        Text(
+          label,
+          style: AppTypography.labelSmall.copyWith(
+            color: color,
+            fontWeight: FontWeight.w500,
           ),
-          Text(
-            label,
-            style: AppTypography.labelSmall.copyWith(
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -787,9 +776,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: _getStatusTextColor(
-                                request.status,
-                              ).withValues(alpha: 0.1),
+                              color: _getStatusColor(request.status),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(

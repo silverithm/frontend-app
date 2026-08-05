@@ -37,110 +37,42 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
       return _buildEmbeddedView();
     }
 
+    // 슬림 상단: 타이틀 1개(AppBar) + 탭바만. 아이콘 배지·서브텍스트·ADMIN 배지로
+    // 이중 강조하지 않는다 (Seed 레이아웃 원칙 — 중복 레이어 금지).
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text(
-          '승인 관리',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
-        ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
+        title: Text('승인 관리', style: AppTypography.heading5),
+        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(130),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.fact_check,
-                        color: AppSemanticColors.textInverse,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '승인 요청 관리',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textInverse
-                                  .withValues(alpha: 0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'ADMIN',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.textInverse
-                              .withValues(alpha: 0.9),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: AppSemanticColors.borderDefault,
+                  width: 1,
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.textInverse.withValues(alpha: 0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  labelColor: AppSemanticColors.textInverse,
-                  unselectedLabelColor:
-                      AppSemanticColors.textInverse.withValues(alpha: 0.6),
-                  indicatorColor: AppSemanticColors.textInverse,
-                  indicatorWeight: 3,
-                  labelStyle: AppTypography.labelMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  unselectedLabelStyle: AppTypography.labelMedium,
-                  tabs: const [
-                    Tab(
-                      icon: Icon(Icons.event_note, size: 20),
-                      text: '휴무 승인',
-                    ),
-                    Tab(
-                      icon: Icon(Icons.assignment, size: 20),
-                      text: '결재 승인',
-                    ),
-                    Tab(
-                      icon: Icon(Icons.description, size: 20),
-                      text: '양식 관리',
-                    ),
-                  ],
-                ),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppSemanticColors.interactivePrimaryDefault,
+              unselectedLabelColor: AppSemanticColors.textTertiary,
+              indicatorColor: AppSemanticColors.interactivePrimaryDefault,
+              indicatorWeight: 2,
+              labelStyle: AppTypography.labelMedium.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-            ],
+              unselectedLabelStyle: AppTypography.labelMedium,
+              dividerColor: AppColors.transparent,
+              tabs: const [
+                Tab(text: '휴무 승인'),
+                Tab(text: '결재 승인'),
+                Tab(text: '양식 관리'),
+              ],
+            ),
           ),
         ),
       ),
@@ -181,20 +113,11 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
               fontWeight: FontWeight.bold,
             ),
             unselectedLabelStyle: AppTypography.labelMedium,
-            dividerColor: Colors.transparent,
+            dividerColor: AppColors.transparent,
             tabs: const [
-              Tab(
-                icon: Icon(Icons.event_note, size: 20),
-                text: '휴무 승인',
-              ),
-              Tab(
-                icon: Icon(Icons.assignment, size: 20),
-                text: '결재 승인',
-              ),
-              Tab(
-                icon: Icon(Icons.description, size: 20),
-                text: '양식 관리',
-              ),
+              Tab(text: '휴무 승인'),
+              Tab(text: '결재 승인'),
+              Tab(text: '양식 관리'),
             ],
           ),
         ),

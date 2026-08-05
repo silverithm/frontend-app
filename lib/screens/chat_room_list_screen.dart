@@ -89,19 +89,12 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text(
-          '채팅',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
-        ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
+        title: Text('채팅', style: AppTypography.heading5),
+        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: Icon(Icons.add, color: AppSemanticColors.textPrimary),
             onPressed: _navigateToCreateChatRoom,
             tooltip: '새 채팅방',
           ),
@@ -178,9 +171,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
         ),
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(
-              color: AppSemanticColors.borderDefault.withValues(alpha: 0.1),
-            ),
+            bottom: BorderSide(color: AppSemanticColors.borderSubtle),
           ),
         ),
         child: Row(

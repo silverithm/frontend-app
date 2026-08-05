@@ -133,63 +133,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           : _buildVacationListWithFilters();
     }
 
+    // 슬림 상단: 타이틀 1개만 (아이콘 배지·ADMIN 배지로 이중 강조하지 않는다).
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text('휴무 관리', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
+        title: Text('휴무 관리', style: AppTypography.heading5),
+        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(80),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.event_note,
-                    color: AppSemanticColors.textInverse,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '휴무 승인 관리',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'ADMIN',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -278,16 +228,15 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         // 필터 섹션
         SliverToBoxAdapter(
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.space4),
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceDefault,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+              border: Border(
+                bottom: BorderSide(
+                  color: AppSemanticColors.borderSubtle,
+                  width: 1,
                 ),
-              ],
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -709,21 +658,20 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     final requestId = request['id'].toString();
     final isSelected = _selectedRequests.contains(requestId);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: isSelected ? 3 : 2,
-      color: isSelected
-          ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.05)
-          : AppSemanticColors.surfaceDefault,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isSelected 
-            ? BorderSide(
-                color: AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.3),
-                width: 1.5,
-              )
-            : BorderSide.none,
+    // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+      decoration: BoxDecoration(
+        color: isSelected ? AppSemanticColors.brandWeak : AppSemanticColors.surfaceDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        border: Border.all(
+          color: isSelected
+              ? AppSemanticColors.brandDefault
+              : AppSemanticColors.borderSubtle,
+          width: isSelected ? 1.5 : 1,
+        ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: isPending ? () {
           setState(() {
@@ -735,9 +683,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
             _isSelectMode = _selectedRequests.isNotEmpty;
           });
         } : null,
-        borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.space3),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -794,16 +741,20 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     IconData statusIcon;
     String statusText;
 
+    Color statusBackground;
     if (isApproved) {
-      statusColor = AppSemanticColors.statusSuccessIcon;
+      statusColor = AppSemanticColors.statusSuccessText;
+      statusBackground = AppSemanticColors.statusSuccessBackground;
       statusIcon = Icons.check_circle;
       statusText = '승인됨';
     } else if (isPending) {
-      statusColor = AppSemanticColors.statusWarningIcon;
+      statusColor = AppSemanticColors.statusWarningText;
+      statusBackground = AppSemanticColors.statusWarningBackground;
       statusIcon = Icons.pending;
       statusText = '대기중';
     } else {
-      statusColor = AppSemanticColors.statusErrorIcon;
+      statusColor = AppSemanticColors.statusErrorText;
+      statusBackground = AppSemanticColors.statusErrorBackground;
       statusIcon = Icons.cancel;
       statusText = '거절됨';
     }
@@ -813,10 +764,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       children: [
         CircleAvatar(
           radius: 20,
-          backgroundColor: statusColor.withValues(alpha: 0.1),
+          backgroundColor: statusBackground,
           child: Icon(statusIcon, color: statusColor, size: 20),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.space3),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -835,12 +786,15 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                       maxLines: 1,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.space2),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space2,
+                      vertical: AppSpacing.space1,
+                    ),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      color: statusBackground,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                     ),
                     child: Text(
                       statusText,

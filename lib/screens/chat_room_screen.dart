@@ -1007,9 +1007,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 widget.room.name,
                 style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isAdmin
-                      ? AppSemanticColors.textInverse
-                      : AppSemanticColors.textPrimary,
+                  color: AppSemanticColors.textPrimary,
                 ),
               ),
               Consumer<ChatProvider>(
@@ -1021,32 +1019,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     return Text(
                       typingText,
                       style: AppTypography.labelSmall.copyWith(
-                        color: isAdmin
-                            ? AppSemanticColors.textInverse.withValues(
-                                alpha: 0.7,
-                              )
-                            : AppSemanticColors.textTertiary,
+                        color: AppSemanticColors.textTertiary,
                       ),
                     );
                   }
                   return Text(
                     '${widget.room.participantCount}명',
                     style: AppTypography.labelSmall.copyWith(
-                      color: isAdmin
-                          ? AppSemanticColors.textInverse.withValues(alpha: 0.7)
-                          : AppSemanticColors.textTertiary,
+                      color: AppSemanticColors.textTertiary,
                     ),
                   );
                 },
               ),
             ],
           ),
-          backgroundColor: isAdmin
-              ? AppSemanticColors.interactivePrimaryDefault
-              : AppSemanticColors.surfaceDefault,
-          foregroundColor: isAdmin
-              ? AppSemanticColors.textInverse
-              : AppSemanticColors.textPrimary,
+          backgroundColor: AppSemanticColors.surfaceDefault,
+          foregroundColor: AppSemanticColors.textPrimary,
           elevation: 0,
           actions: [
             PopupMenuButton<_ChatRoomMenuAction>(

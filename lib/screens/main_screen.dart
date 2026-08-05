@@ -4,6 +4,8 @@ import '../providers/auth_provider.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../providers/notification_provider.dart';
+import '../providers/approval_provider.dart';
+import '../providers/chat_provider.dart';
 import '../services/fcm_service.dart';
 import '../services/subscription_guard.dart';
 import '../utils/admin_utils.dart';
@@ -203,8 +205,9 @@ class _MainScreenState extends State<MainScreen>
     int index,
     IconData selectedIcon,
     IconData unselectedIcon,
-    String label,
-  ) {
+    String label, {
+    int badgeCount = 0,
+  }) {
     final isSelected = _currentIndex == index;
 
     Color iconColor = AppSemanticColors.textTertiary;
@@ -225,10 +228,37 @@ class _MainScreenState extends State<MainScreen>
               : AppColors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(
-          isSelected ? selectedIcon : unselectedIcon,
-          color: iconColor,
-          size: isSelected ? 24 : 22,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : unselectedIcon,
+              color: iconColor,
+              size: isSelected ? 24 : 22,
+            ),
+            if (badgeCount > 0)
+              Positioned(
+                top: -4,
+                right: -8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  constraints: const BoxConstraints(minWidth: 16),
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.statusErrorIcon,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? '99+' : '$badgeCount',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppSemanticColors.textInverse,
+                      fontSize: 10,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
       label: label,
@@ -246,6 +276,13 @@ class _MainScreenState extends State<MainScreen>
   }
 
   List<BottomNavigationBarItem> _buildNavItems(bool isAdmin) {
+    // 미확인 건수 뱃지 — 결재(대기 건), 채팅(미읽음)
+    final approvalProvider = context.watch<ApprovalProvider>();
+    final chatProvider = context.watch<ChatProvider>();
+    final approvalBadge =
+        isAdmin ? approvalProvider.pendingCount : approvalProvider.myPendingCount;
+    final chatBadge = chatProvider.totalUnreadCount;
+
     return [
       _buildNavItem(
         MainTabs.home,
@@ -264,12 +301,14 @@ class _MainScreenState extends State<MainScreen>
         Icons.fact_check_rounded,
         Icons.fact_check_outlined,
         isAdmin ? '승인함' : '결재',
+        badgeCount: approvalBadge,
       ),
       _buildNavItem(
         MainTabs.chat,
         Icons.chat_rounded,
         Icons.chat_bubble_outline_rounded,
         '채팅',
+        badgeCount: chatBadge,
       ),
       _buildNavItem(
         MainTabs.menu,

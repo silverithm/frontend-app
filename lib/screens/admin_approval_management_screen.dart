@@ -544,16 +544,15 @@ class _AdminApprovalManagementScreenState
 
   Widget _buildFilterSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.space4),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+        border: Border(
+          bottom: BorderSide(
+            color: AppSemanticColors.borderSubtle,
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,22 +762,20 @@ class _AdminApprovalManagementScreenState
     final isPending = request.status == ApprovalStatus.pending;
     final isSelected = _selectedRequests.contains(request.id);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: isSelected ? 3 : 2,
-      color: isSelected
-          ? AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.05)
-          : AppSemanticColors.surfaceDefault,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isSelected
-            ? BorderSide(
-                color: AppSemanticColors.interactivePrimaryDefault
-                    .withValues(alpha: 0.3),
-                width: 1.5,
-              )
-            : BorderSide.none,
+    // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+      decoration: BoxDecoration(
+        color: isSelected ? AppSemanticColors.brandWeak : AppSemanticColors.surfaceDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        border: Border.all(
+          color: isSelected
+              ? AppSemanticColors.brandDefault
+              : AppSemanticColors.borderSubtle,
+          width: isSelected ? 1.5 : 1,
+        ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: isPending
             ? () {
@@ -792,9 +789,8 @@ class _AdminApprovalManagementScreenState
                 });
               }
             : null,
-        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.space4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

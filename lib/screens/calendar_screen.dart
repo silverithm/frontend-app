@@ -89,23 +89,9 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   void _showVacationRequestDialog() {
+    // 날짜를 아직 안 골랐으면 오늘 날짜로 바로 신청할 수 있게 한다 (재시도 강요 금지)
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '날짜를 먼저 선택해주세요',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppSemanticColors.textInverse,
-            ),
-          ),
-          backgroundColor: AppSemanticColors.statusWarningIcon,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          ),
-        ),
-      );
-      return;
+      setState(() => _selectedDate = DateTime.now());
     }
 
     showDialog(

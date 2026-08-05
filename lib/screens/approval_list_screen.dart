@@ -133,16 +133,9 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: widget.showAppBar
           ? AppBar(
-              title: Text(
-                '결재',
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textInverse,
-                ),
-              ),
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-              iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
+              title: Text('결재', style: AppTypography.heading5),
+              backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
-              centerTitle: true,
             )
           : null,
       body: RefreshIndicator(
@@ -303,21 +296,26 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
 
                 return SliverList(
                   delegate: SliverChildListDelegate([
-                    // 결재 현황 요약 - 깔끔한 디자인
+                    // 결재 현황 요약 — 한 표면 + 내부는 구분선으로만 나눈다 (카드 중첩 금지)
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: Container(
-                        margin: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.fromLTRB(
+                          AppSpacing.space4,
+                          AppSpacing.space4,
+                          AppSpacing.space4,
+                          0,
+                        ),
                         decoration: BoxDecoration(
                           color: AppSemanticColors.surfaceDefault,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                           border: Border.all(
-                            color: AppSemanticColors.borderDefault,
+                            color: AppSemanticColors.borderSubtle,
                             width: 1,
                           ),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.space4),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -328,36 +326,46 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                   color: AppSemanticColors.textPrimary,
                                 ),
                               ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildStatusCard(
-                                      '대기',
-                                      pendingRequests.length,
-                                      AppSemanticColors.statusWarningIcon,
-                                      Icons.schedule,
+                              const SizedBox(height: AppSpacing.space3),
+                              IntrinsicHeight(
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildStatusCard(
+                                        '대기',
+                                        pendingRequests.length,
+                                        AppSemanticColors.statusWarningText,
+                                        AppSemanticColors.statusWarningBackground,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildStatusCard(
-                                      '승인',
-                                      approvedRequests.length,
-                                      AppSemanticColors.statusSuccessIcon,
-                                      Icons.check_circle,
+                                    VerticalDivider(
+                                      width: AppSpacing.space4,
+                                      thickness: 1,
+                                      color: AppSemanticColors.borderSubtle,
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _buildStatusCard(
-                                      '거절',
-                                      rejectedRequests.length,
-                                      AppSemanticColors.statusErrorIcon,
-                                      Icons.cancel,
+                                    Expanded(
+                                      child: _buildStatusCard(
+                                        '승인',
+                                        approvedRequests.length,
+                                        AppSemanticColors.statusSuccessText,
+                                        AppSemanticColors.statusSuccessBackground,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    VerticalDivider(
+                                      width: AppSpacing.space4,
+                                      thickness: 1,
+                                      color: AppSemanticColors.borderSubtle,
+                                    ),
+                                    Expanded(
+                                      child: _buildStatusCard(
+                                        '거절',
+                                        rejectedRequests.length,
+                                        AppSemanticColors.statusErrorText,
+                                        AppSemanticColors.statusErrorBackground,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -372,8 +380,8 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                         child: _buildSectionHeader(
                           '대기 중',
                           pendingRequests.length,
-                          AppSemanticColors.statusWarningIcon,
-                          Icons.schedule,
+                          AppSemanticColors.statusWarningText,
+                          AppSemanticColors.statusWarningBackground,
                         ),
                       ),
                       ...pendingRequests.asMap().entries.map(
@@ -414,7 +422,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                           },
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.space3),
                     ],
 
                     if (approvedRequests.isNotEmpty) ...[
@@ -423,8 +431,8 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                         child: _buildSectionHeader(
                           '승인됨',
                           approvedRequests.length,
-                          AppSemanticColors.statusSuccessIcon,
-                          Icons.check_circle,
+                          AppSemanticColors.statusSuccessText,
+                          AppSemanticColors.statusSuccessBackground,
                         ),
                       ),
                       ...approvedRequests.asMap().entries.map(
@@ -466,7 +474,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                           },
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.space3),
                     ],
 
                     if (rejectedRequests.isNotEmpty) ...[
@@ -475,8 +483,8 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                         child: _buildSectionHeader(
                           '거절됨',
                           rejectedRequests.length,
-                          AppSemanticColors.statusErrorIcon,
-                          Icons.cancel,
+                          AppSemanticColors.statusErrorText,
+                          AppSemanticColors.statusErrorBackground,
                         ),
                       ),
                       ...rejectedRequests.asMap().entries.map(
@@ -556,52 +564,57 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
     );
   }
 
-  Widget _buildStatusCard(String label, int count, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
-      ),
-      child: Column(
-        children: [
-          Text(
-            count.toString(),
-            style: AppTypography.heading4.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppSemanticColors.textPrimary,
+  Widget _buildStatusCard(
+    String label,
+    int count,
+    Color textColor,
+    Color chipBackground,
+  ) {
+    return Column(
+      children: [
+        Text(
+          count.toString(),
+          style: AppTypography.heading4.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppSemanticColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.space1),
+        // 상태 태그
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space2,
+            vertical: AppSpacing.space0_5,
+          ),
+          decoration: BoxDecoration(
+            color: chipBackground,
+            borderRadius: BorderRadius.circular(AppBorderRadius.base),
+          ),
+          child: Text(
+            label,
+            style: AppTypography.labelSmall.copyWith(
+              color: textColor,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
-          // 상태 태그
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              label,
-              style: AppTypography.labelSmall.copyWith(
-                color: color,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildSectionHeader(
     String title,
     int count,
-    Color color,
-    IconData icon,
+    Color textColor,
+    Color chipBackground,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space4,
+        AppSpacing.space3,
+        AppSpacing.space4,
+        AppSpacing.space2,
+      ),
       child: Row(
         children: [
           Text(
@@ -611,18 +624,21 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
               color: AppSemanticColors.textPrimary,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.space2),
           // 카운트 태그
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space2,
+              vertical: AppSpacing.space0_5,
+            ),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
+              color: chipBackground,
+              borderRadius: BorderRadius.circular(AppBorderRadius.base),
             ),
             child: Text(
               count.toString(),
               style: AppTypography.labelSmall.copyWith(
-                color: color,
+                color: textColor,
                 fontWeight: FontWeight.w600,
               ),
             ),

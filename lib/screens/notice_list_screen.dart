@@ -63,16 +63,9 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: widget.showAppBar
           ? AppBar(
-              title: Text(
-                '공지사항',
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textInverse,
-                ),
-              ),
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-              iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
+              title: Text('공지사항', style: AppTypography.heading5),
+              backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
-              centerTitle: true,
             )
           : null,
       body: Consumer<NoticeProvider>(
