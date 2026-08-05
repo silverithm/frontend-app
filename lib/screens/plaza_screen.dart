@@ -17,7 +17,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'plaza_post_detail_screen.dart';
 
-/// 케어브이 광장: 요양 소식(뉴스) · 게시판 · 자료실
+/// 케어브이 커뮤니티: 요양 소식(뉴스) · 게시판 · 자료실
 class PlazaScreen extends StatefulWidget {
   const PlazaScreen({super.key});
 
@@ -46,7 +46,7 @@ class _PlazaScreenState extends State<PlazaScreen>
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text('케어브이 광장',
+        title: Text('케어브이 커뮤니티',
             style: AppTypography.heading6
                 .copyWith(color: AppSemanticColors.textInverse)),
         backgroundColor: AppSemanticColors.interactivePrimaryDefault,

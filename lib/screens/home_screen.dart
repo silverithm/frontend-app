@@ -24,6 +24,7 @@ import 'admin_unified_approval_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'approval_list_screen.dart';
 import 'calendar_screen.dart';
+import 'main_screen.dart' show MainTabs;
 import 'my_vacation_screen.dart';
 import 'notice_detail_screen.dart';
 import 'notice_list_screen.dart';
@@ -139,14 +140,14 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       child: TodayScheduleDialog(
         schedules: todaySchedules,
-        onViewSchedule: () => widget.onNavigateToTab?.call(3),
+        onViewSchedule: () => widget.onNavigateToTab?.call(MainTabs.calendar),
       ),
     );
   }
 
   void _openApproval() {
     if (widget.onNavigateToTab != null) {
-      widget.onNavigateToTab!(2);
+      widget.onNavigateToTab!(MainTabs.approval);
       return;
     }
 
@@ -165,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openWorkAdjustment() {
     if (widget.onNavigateToTab != null) {
-      widget.onNavigateToTab!(3);
+      widget.onNavigateToTab!(MainTabs.calendar);
       return;
     }
 
@@ -175,11 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openMemberManagement() {
-    if (widget.onNavigateToTab != null) {
-      widget.onNavigateToTab!(4);
-      return;
-    }
-
+    // 회원관리는 하단 탭에서 빠졌으므로 항상 화면을 push한다 (전체 탭에서도 진입 가능)
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AdminUserManagementScreen()),
     );
@@ -347,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: AppSpacing.space4),
 
-                    // 케어브이 광장 진입
+                    // 케어브이 커뮤니티 진입
                     _SectionCard(
                       child: InkWell(
                         onTap: () => Navigator.of(context).push(
@@ -374,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('케어브이 광장',
+                                  Text('케어브이 커뮤니티',
                                       style: AppTypography.bodyLarge.copyWith(
                                         color: AppSemanticColors.textPrimary,
                                         fontWeight: FontWeight.w700,

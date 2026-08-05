@@ -11,11 +11,21 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'admin_unified_approval_screen.dart';
-import 'admin_user_management_screen.dart';
 import 'approval_list_screen.dart';
 import 'calendar_screen.dart';
 import 'chat_room_list_screen.dart';
 import 'home_screen.dart';
+import 'menu_screen.dart';
+
+/// 하단 탭 인덱스 — 홈 등 다른 화면에서 탭 이동 시 이 상수를 쓴다 (매직넘버 금지).
+/// 직원·관리자 모두 같은 5탭 구조라 인덱스가 역할에 따라 달라지지 않는다.
+class MainTabs {
+  static const int home = 0;
+  static const int calendar = 1;
+  static const int approval = 2;
+  static const int chat = 3;
+  static const int menu = 4;
+}
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -228,36 +238,45 @@ class _MainScreenState extends State<MainScreen>
   List<Widget> _buildScreens(bool isAdmin) {
     return [
       HomeScreen(onNavigateToTab: _onItemTapped),
-      const ChatRoomListScreen(),
-      isAdmin ? const AdminUnifiedApprovalScreen() : const ApprovalListScreen(),
       const CalendarScreen(),
-      if (isAdmin) const AdminUserManagementScreen(showBackButton: false),
+      isAdmin ? const AdminUnifiedApprovalScreen() : const ApprovalListScreen(),
+      const ChatRoomListScreen(),
+      const MenuScreen(),
     ];
   }
 
   List<BottomNavigationBarItem> _buildNavItems(bool isAdmin) {
     return [
-      _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, '홈'),
       _buildNavItem(
-        1,
+        MainTabs.home,
+        Icons.home_rounded,
+        Icons.home_outlined,
+        '홈',
+      ),
+      _buildNavItem(
+        MainTabs.calendar,
+        Icons.calendar_month_rounded,
+        Icons.calendar_month_outlined,
+        '일정',
+      ),
+      _buildNavItem(
+        MainTabs.approval,
+        Icons.fact_check_rounded,
+        Icons.fact_check_outlined,
+        isAdmin ? '승인함' : '결재',
+      ),
+      _buildNavItem(
+        MainTabs.chat,
         Icons.chat_rounded,
         Icons.chat_bubble_outline_rounded,
         '채팅',
       ),
       _buildNavItem(
-        2,
-        Icons.fact_check_rounded,
-        Icons.fact_check_outlined,
-        '전자결재',
+        MainTabs.menu,
+        Icons.menu_rounded,
+        Icons.menu_rounded,
+        '전체',
       ),
-      _buildNavItem(3, Icons.schedule_rounded, Icons.schedule_outlined, '근무조정'),
-      if (isAdmin)
-        _buildNavItem(
-          4,
-          Icons.people_alt_rounded,
-          Icons.people_outline_rounded,
-          '회원관리',
-        ),
     ];
   }
 }
