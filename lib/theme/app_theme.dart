@@ -14,18 +14,18 @@ class AppTheme {
       colorScheme: const ColorScheme.light(
         primary: AppSemanticColors.interactivePrimaryDefault,
         onPrimary: AppSemanticColors.textInverse,
-        primaryContainer: Color(0xFFF4F4F5), // zinc-100
-        onPrimaryContainer: Color(0xFF09090B), // zinc-950
+        primaryContainer: Color(0xFFF3F4F5), // zinc-100
+        onPrimaryContainer: Color(0xFF1A1C20), // zinc-950
 
         secondary: AppSemanticColors.interactiveSecondaryDefault,
-        onSecondary: Color(0xFF09090B), // zinc-950
-        secondaryContainer: Color(0xFFF4F4F5), // zinc-100
-        onSecondaryContainer: Color(0xFF09090B), // zinc-950
+        onSecondary: Color(0xFF1A1C20), // zinc-950
+        secondaryContainer: Color(0xFFF3F4F5), // zinc-100
+        onSecondaryContainer: Color(0xFF1A1C20), // zinc-950
 
-        tertiary: Color(0xFF18181B), // zinc-900
+        tertiary: Color(0xFF1A1C20), // zinc-900
         onTertiary: AppSemanticColors.textInverse,
-        tertiaryContainer: Color(0xFFF4F4F5), // zinc-100
-        onTertiaryContainer: Color(0xFF09090B), // zinc-950
+        tertiaryContainer: Color(0xFFF3F4F5), // zinc-100
+        onTertiaryContainer: Color(0xFF1A1C20), // zinc-950
 
         error: AppSemanticColors.statusErrorIcon,
         onError: AppSemanticColors.textInverse,

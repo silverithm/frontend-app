@@ -62,21 +62,21 @@ class AppTypography {
 
   static const TextStyle heading4 = TextStyle(
     fontSize: fontSize2xl,
-    fontWeight: fontWeightSemibold,
+    fontWeight: fontWeightBold,
     height: lineHeightNormal,
     letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle heading5 = TextStyle(
     fontSize: fontSizeXl,
-    fontWeight: fontWeightSemibold,
+    fontWeight: fontWeightBold,
     height: lineHeightNormal,
     letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle heading6 = TextStyle(
     fontSize: fontSizeLg,
-    fontWeight: fontWeightSemibold,
+    fontWeight: fontWeightBold,
     height: lineHeightNormal,
     letterSpacing: letterSpacingNormal,
   );
