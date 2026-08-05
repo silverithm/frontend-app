@@ -208,11 +208,18 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       for (final role in roles) {
         final coDrivers = role['coDrivers'];
         if (coDrivers is! List) continue;
-        for (final other in coDrivers) {
-          final name = other.toString().trim();
-          if (name.isEmpty || !onVacation.contains(name)) continue;
-          return '${role['routeName']}(${role['routeType']}) 노선의 $name 선생님이 이미 휴무입니다.';
-        }
+
+        final others = coDrivers
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+        // 운전자가 셋인 노선에서 한 명 쉬는 건 문제가 아니다.
+        // 내가 쉬었을 때 남는 운전자가 하나도 없을 때만 알린다.
+        final remaining = others.where((n) => !onVacation.contains(n)).toList();
+        if (remaining.isNotEmpty) continue;
+
+        final resting = others.where((n) => onVacation.contains(n)).join(', ');
+        return '${role['routeName']}(${role['routeType']}) 노선 — $resting 선생님이 이미 휴무입니다.';
       }
       return null;
     } catch (e) {
@@ -221,21 +228,26 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     }
   }
 
-  Future<void> _showDriverConflictDialog(String detail) async {
-    if (!mounted) return;
-    await showDialog<void>(
+  /// 운행 공백을 알리되 신청을 막지는 않는다 — 사정이 있을 수 있어 최종 판단은 관리자가 한다.
+  Future<bool?> _showDriverConflictDialog(String detail) async {
+    if (!mounted) return false;
+    return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('같은 노선 운전자가 이미 휴무입니다'),
+        title: const Text('이 날 운행할 운전자가 없습니다'),
         content: Text(
           '$detail\n\n'
-          '같은 노선의 운전자가 함께 쉬면 그날 차량을 운행할 사람이 없습니다.\n'
-          '휴무일을 조정하거나 관리자와 먼저 상의해 주세요.',
+          '지금 신청하면 그날 이 노선을 운행할 사람이 없습니다.\n'
+          '그래도 신청하시겠습니까? 관리자가 확인 후 조정할 수 있습니다.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('그래도 신청'),
           ),
         ],
       ),
@@ -275,8 +287,12 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       setState(() {
         _isSubmitting = false;
       });
-      await _showDriverConflictDialog(conflict);
-      return;
+      final proceed = await _showDriverConflictDialog(conflict);
+      if (proceed != true) return;
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = true;
+      });
     }
 
     _submitAnimationController.forward();
