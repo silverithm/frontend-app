@@ -7,7 +7,10 @@ import 'package:path_provider/path_provider.dart';
 
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 import '../widgets/approval/hwp_editor_view.dart';
+import '../widgets/seed/seed_button.dart';
 
 /// HWP 편집 완료 시 반환되는 결과 (작성된 파일이 임시 디렉토리에 저장된다).
 class HwpEditResult {
@@ -159,9 +162,9 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('작성한 문서를 저장하는 데 실패했습니다. 다시 시도해주세요.'),
-            backgroundColor: AppColors.red500,
+          SnackBar(
+            content: const Text('작성한 문서를 저장하는 데 실패했습니다. 다시 시도해주세요.'),
+            backgroundColor: AppSemanticColors.statusErrorIcon,
           ),
         );
       }
@@ -171,28 +174,25 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray100,
+      backgroundColor: AppSemanticColors.backgroundTertiary,
       appBar: AppBar(
         title: Text(
           widget.fileName,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: AppTypography.heading6.copyWith(
+            fontWeight: AppTypography.fontWeightSemibold,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
           if (widget.allowSave && _documentLoaded)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: TextButton.icon(
-                onPressed: _isSaving ? null : _save,
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check, size: 18),
-                label: Text(_isSaving ? '저장 중...' : widget.saveLabel),
-                style: TextButton.styleFrom(foregroundColor: AppColors.teal600),
+              padding: const EdgeInsets.only(right: AppSpacing.space2),
+              child: SeedButton(
+                label: _isSaving ? '저장 중...' : widget.saveLabel,
+                prefixIcon: Icons.check,
+                size: SeedButtonSize.small,
+                isLoading: _isSaving,
+                onPressed: _save,
               ),
             ),
         ],
@@ -202,11 +202,16 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
           if (widget.allowSave && _documentLoaded)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: AppColors.teal50,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space4,
+                vertical: AppSpacing.space2_5,
+              ),
+              color: AppSemanticColors.brandWeak,
               child: Text(
                 '문서를 작성한 뒤 우측 상단 ${widget.saveLabel} 버튼을 누르면 자동으로 첨부됩니다.',
-                style: const TextStyle(fontSize: 13, color: AppColors.teal700),
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppSemanticColors.brandPressed,
+                ),
               ),
             ),
           Expanded(
@@ -216,20 +221,19 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
                 HwpEditorView(controller: _editor),
                 if (_loadingMessage != null)
                   Container(
-                    color: AppColors.gray100,
+                    color: AppSemanticColors.backgroundTertiary,
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const CircularProgressIndicator(
-                            color: AppColors.teal500,
+                          CircularProgressIndicator(
+                            color: AppSemanticColors.brandDefault,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.space4),
                           Text(
                             _loadingMessage!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.gray500,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textTertiary,
                             ),
                           ),
                         ],
@@ -238,29 +242,30 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
                   ),
                 if (_errorMessage != null)
                   Container(
-                    color: AppColors.gray100,
+                    color: AppSemanticColors.backgroundTertiary,
                     child: Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(AppSpacing.space6),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.error_outline,
                               size: 48,
-                              color: AppColors.gray400,
+                              color: AppSemanticColors.textTertiary,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.space4),
                             Text(
                               _errorMessage!,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.gray500,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textTertiary,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            OutlinedButton(
+                            const SizedBox(height: AppSpacing.space4),
+                            SeedButton(
+                              label: '다시 시도',
+                              variant: SeedButtonVariant.neutralOutline,
                               onPressed: () {
                                 setState(() {
                                   _errorMessage = null;
@@ -268,7 +273,6 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
                                 });
                                 _load();
                               },
-                              child: const Text('다시 시도'),
                             ),
                           ],
                         ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notice.dart';
 import '../models/schedule.dart';
@@ -577,26 +576,28 @@ class _HomeScreenState extends State<HomeScreen> {
                               subtitle: '새 공지가 올라오면 이곳에 표시됩니다.',
                             )
                           else
-                            ...recentNotices.asMap().entries.map((entry) {
-                              final notice = entry.value;
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: entry.key == recentNotices.length - 1
-                                      ? 0
-                                      : AppSpacing.space3,
-                                ),
-                                child: _NoticePreviewTile(
-                                  notice: notice,
-                                  onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => NoticeDetailScreen(
-                                        noticeId: notice.id,
+                            Column(
+                              children: [
+                                for (final entry
+                                    in recentNotices.asMap().entries) ...[
+                                  if (entry.key > 0)
+                                    Divider(
+                                      height: 1,
+                                      color: AppSemanticColors.borderSubtle,
+                                    ),
+                                  _NoticePreviewTile(
+                                    notice: entry.value,
+                                    onTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => NoticeDetailScreen(
+                                          noticeId: entry.value.id,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }),
+                                ],
+                              ],
+                            ),
                         ],
                       ),
                     ),
@@ -619,21 +620,20 @@ class _HomeScreenState extends State<HomeScreen> {
                               subtitle: '근무조정 탭에서 일정과 휴무 달력을 확인할 수 있습니다.',
                             )
                           else
-                            ...monthlyPreviewSchedules.asMap().entries.map((
-                              entry,
-                            ) {
-                              final schedule = entry.value;
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom:
-                                      entry.key ==
-                                          monthlyPreviewSchedules.length - 1
-                                      ? 0
-                                      : AppSpacing.space3,
-                                ),
-                                child: _SchedulePreviewTile(schedule: schedule),
-                              );
-                            }),
+                            Column(
+                              children: [
+                                for (final entry in monthlyPreviewSchedules
+                                    .asMap()
+                                    .entries) ...[
+                                  if (entry.key > 0)
+                                    Divider(
+                                      height: 1,
+                                      color: AppSemanticColors.borderSubtle,
+                                    ),
+                                  _SchedulePreviewTile(schedule: entry.value),
+                                ],
+                              ],
+                            ),
                         ],
                       ),
                     ),
@@ -794,7 +794,8 @@ class _DashboardMetric {
   });
 }
 
-
+/// 평평한 흰 표면 — Seed 레이아웃 원칙(카드 중첩 금지)에 따라 자체 보더 1px +
+/// xl2(16) 라운드만 사용하고, 내부에는 또 다른 보더/그림자 카드를 두지 않는다.
 class _SectionCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -806,7 +807,16 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return shadcn.Card(padding: padding, child: child);
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppSemanticColors.backgroundPrimary,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
+      ),
+      child: child,
+    );
   }
 }
 
@@ -852,6 +862,15 @@ class _SectionHeader extends StatelessWidget {
         if (actionLabel != null && onAction != null)
           TextButton(
             onPressed: onAction,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space2,
+                vertical: AppSpacing.space1,
+              ),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              foregroundColor: AppSemanticColors.interactivePrimaryDefault,
+            ),
             child: Text(
               actionLabel!,
               style: AppTypography.labelMedium.copyWith(
@@ -865,6 +884,10 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+/// 대시보드 지표 타일 — 카드 중첩 금지 원칙에 따라 틴트 배경+보더 카드를
+/// 두지 않고, 아이콘 칩(작은 원형 배지) + 숫자 + 라벨로만 구성한 평평한
+/// 콘텐츠 블록. 바깥 _SectionCard가 이미 표면을 제공하므로 여기서는
+/// 보더/그림자를 추가하지 않는다.
 class _DashboardMetricCard extends StatelessWidget {
   final _DashboardMetric metric;
 
@@ -872,29 +895,23 @@ class _DashboardMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 카드 radius를 스펙 공통 규칙(r3 계열, 다른 섹션 카드와 통일)에 맞춰 xl2(16)에서 xl(12)로 정돈
     return Material(
       color: AppColors.transparent,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
       child: InkWell(
         onTap: metric.onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.space4),
-          decoration: BoxDecoration(
-            color: metric.color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            border: Border.all(color: metric.color.withValues(alpha: 0.16)),
-          ),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: AppSpacing.space9,
                 height: AppSpacing.space9,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: metric.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                 ),
                 child: Icon(metric.icon, color: metric.color, size: 20),
               ),
@@ -916,7 +933,7 @@ class _DashboardMetricCard extends StatelessWidget {
                   fontWeight: AppTypography.fontWeightSemibold,
                 ),
               ),
-              const SizedBox(height: AppSpacing.space1),
+              const SizedBox(height: AppSpacing.space0_5),
               Text(
                 metric.caption,
                 maxLines: 1,
@@ -956,19 +973,13 @@ class _NoticePreviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 구분선 리스트 아이템 — 개별 보더 카드 대신 패딩만으로 아이템을 구분한다.
     return Material(
       color: AppColors.transparent,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.space4),
-          decoration: BoxDecoration(
-            color: AppSemanticColors.backgroundSecondary,
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            border: Border.all(color: AppSemanticColors.borderDefault),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1043,13 +1054,9 @@ class _SchedulePreviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderDefault),
-      ),
+    // 구분선 리스트 아이템 — 개별 보더 카드 대신 패딩만으로 아이템을 구분한다.
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1061,7 +1068,7 @@ class _SchedulePreviewTile extends StatelessWidget {
               color: AppSemanticColors.interactivePrimaryDefault.withValues(
                 alpha: 0.12,
               ),
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
             ),
             child: Text(
               _formatDate(schedule.startDate),
@@ -1127,38 +1134,36 @@ class _EmptySectionState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // 카드 중첩 금지 — 별도 보더/배경 없이 여백만으로 구분되는 콘텐츠 블록.
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space6,
-      ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderDefault),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 28, color: AppSemanticColors.textTertiary),
-          const SizedBox(height: AppSpacing.space3),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppSemanticColors.textPrimary,
-              fontWeight: AppTypography.fontWeightSemibold,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space4,
+          vertical: AppSpacing.space6,
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 28, color: AppSemanticColors.textTertiary),
+            const SizedBox(height: AppSpacing.space3),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+                fontWeight: AppTypography.fontWeightSemibold,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.space1),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textTertiary,
+            const SizedBox(height: AppSpacing.space1),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
