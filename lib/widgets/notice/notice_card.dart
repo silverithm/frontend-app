@@ -210,11 +210,11 @@ class NoticeCardCompact extends StatelessWidget {
           children: [
             // Priority indicator
             Container(
-              width: 4,
-              height: 40,
+              width: AppSpacing.space1,
+              height: AppSpacing.space10,
               decoration: BoxDecoration(
                 color: _priorityColor,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppBorderRadius.sm),
               ),
             ),
             const SizedBox(width: AppSpacing.space3),

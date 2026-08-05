@@ -5,7 +5,8 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import 'seed/seed_button.dart';
+import 'seed/seed_chip.dart';
 
 class AdminVacationAddDialog extends StatefulWidget {
   final DateTime? selectedDate;
@@ -196,7 +197,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
           onTap: () {}, // Dialog 내부 클릭 시 이벤트 전파 차단
           child: Container(
             width: MediaQuery.of(context).size.width * 0.9,
-            constraints: BoxConstraints(maxWidth: 500, maxHeight: MediaQuery.of(context).size.height * 0.85),
+            constraints: BoxConstraints(maxWidth: 480, maxHeight: MediaQuery.of(context).size.height * 0.85),
             padding: const EdgeInsets.all(AppSpacing.space6),
             child: Form(
               key: _formKey,
@@ -350,26 +351,18 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               const SizedBox(height: AppSpacing.space2),
               Row(
                 children: [
-                  // 일반 휴무 버튼
-                  Expanded(
-                    child: _buildTypeOptionButton(
-                      text: '일반',
-                      isSelected: _selectedType == 'personal',
-                      onTap: () => setState(() => _selectedType = 'personal'),
-                      selectedColor: AppSemanticColors.statusInfoBackground,
-                      selectedTextColor: AppSemanticColors.statusInfoText,
-                    ),
+                  // 일반 휴무
+                  SeedChip(
+                    label: '일반',
+                    selected: _selectedType == 'personal',
+                    onTap: () => setState(() => _selectedType = 'personal'),
                   ),
-                  const SizedBox(width: AppSpacing.space3),
-                  // 필수 휴무 버튼
-                  Expanded(
-                    child: _buildTypeOptionButton(
-                      text: '필수',
-                      isSelected: _selectedType == 'mandatory',
-                      onTap: () => setState(() => _selectedType = 'mandatory'),
-                      selectedColor: AppSemanticColors.statusErrorBackground,
-                      selectedTextColor: AppSemanticColors.statusErrorText,
-                    ),
+                  const SizedBox(width: AppSpacing.space2),
+                  // 필수 휴무
+                  SeedChip(
+                    label: '필수',
+                    selected: _selectedType == 'mandatory',
+                    onTap: () => setState(() => _selectedType = 'mandatory'),
                   ),
                 ],
               ),
@@ -447,23 +440,17 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  shadcn.GhostButton(
+                  SeedButton(
+                    label: '취소',
+                    variant: SeedButtonVariant.neutralWeak,
                     onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-                    child: const Text('취소'),
                   ),
                   const SizedBox(width: AppSpacing.space3),
-                  shadcn.PrimaryButton(
+                  SeedButton(
+                    label: '휴무 등록',
+                    variant: SeedButtonVariant.brandSolid,
+                    isLoading: _isSubmitting,
                     onPressed: _isSubmitting ? null : _submitVacation,
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-                            ),
-                          )
-                        : const Text('휴무 등록'),
                   ),
                 ],
               ),
@@ -475,39 +462,6 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
     ),
   ),
   );
-  }
-
-  Widget _buildTypeOptionButton({
-    required String text,
-    required bool isSelected,
-    required VoidCallback onTap,
-    required Color selectedColor,
-    required Color selectedTextColor,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3_5),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedColor : AppSemanticColors.backgroundSecondary,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          border: Border.all(
-            color: isSelected ? selectedTextColor : AppSemanticColors.borderDefault,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: AppTypography.bodyMedium.copyWith(
-              color: isSelected ? selectedTextColor : AppSemanticColors.textSecondary,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   String _getRoleDisplayName(String role) {

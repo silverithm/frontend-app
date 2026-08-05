@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import 'seed/seed_button.dart';
 
 class UpdateDialog extends StatelessWidget {
   final String currentVersion;
@@ -41,35 +44,41 @@ class UpdateDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => !forceUpdate,
+    return PopScope(
+      canPop: !forceUpdate,
       child: shadcn.AlertDialog(
-        title: const Text('업데이트 알림'),
+        title: Text('업데이트 알림', style: AppTypography.heading5),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(updateMessage),
-            const SizedBox(height: 16),
+            Text(updateMessage, style: AppTypography.bodyMedium),
+            const SizedBox(height: AppSpacing.space4),
             Text(
               '현재 버전: $currentVersion',
-              style: const TextStyle(fontSize: 14, color: AppSemanticColors.textSecondary),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
             ),
             Text(
               '최신 버전: $latestVersion',
-              style: const TextStyle(fontSize: 14, color: AppSemanticColors.textSecondary),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
             ),
           ],
         ),
         actions: [
           if (!forceUpdate)
-            shadcn.GhostButton(
+            SeedButton(
+              label: '나중에',
+              variant: SeedButtonVariant.neutralWeak,
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('나중에'),
             ),
-          shadcn.PrimaryButton(
+          SeedButton(
+            label: '업데이트',
+            variant: SeedButtonVariant.brandSolid,
             onPressed: _launchStore,
-            child: const Text('업데이트'),
           ),
         ],
       ),

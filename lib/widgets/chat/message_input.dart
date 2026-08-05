@@ -31,13 +31,12 @@ class MessageInput extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+        border: Border(
+          top: BorderSide(
+            color: AppSemanticColors.borderSubtle,
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: Row(
         children: [

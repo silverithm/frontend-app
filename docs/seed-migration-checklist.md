@@ -42,15 +42,15 @@
 | 31 | screens/register_screen.dart | 다른 작업자 진행 중 | 현재 스냅샷: 그라디언트 3곳+정적그림자 4곳(L603,681,1973,2025)+shadcn버튼 2곳+구 AppButton 2곳, Seed 컴포넌트(SeedButton 등) 9곳 사용 — 초대형 파일(112KB), 마이그레이션 중간 단계 |
 | 32 | screens/signature_manage_screen.dart | [~] | raw ElevatedButton 1곳(L189) / raw Colors.white 1곳(L127) |
 | 33 | screens/subscription_check_screen.dart | [x] | 그라디언트 5곳(로딩화면/AppBar/환영섹션×2/플랜카드)+정적그림자 3곳(환영섹션/플랜카드 Card elevation/기능비교)+Card elevation 모두 제거→단색 배경+1px 보더. raw `Chip(`(요금제 기능 태그)를 SeedChip으로 교체. 결제 버튼을 SeedButton으로, shadcn.AlertDialog 3곳(로딩/성공/실패)을 AppDialog.showCustom·showAlert로 교체. radius·padding 리터럴 토큰화. analyze 0(기존 async-context info만 잔존, 로직 변경 없음). |
-| 34 | widgets/admin_vacation_add_dialog.dart | [~] | 다이얼로그(자체 그림자는 정상 범위). shadcn.GhostButton/PrimaryButton 2곳(footer 액션) |
-| 35 | widgets/today_schedule_dialog.dart | [~] | 다이얼로그(자체 그림자 정상 범위). shadcn.OutlineButton/PrimaryButton 2곳 |
-| 36 | widgets/update_dialog.dart | [~] | 소형 유틸리티 다이얼로그(강제 업데이트 안내, 노출 빈도 낮음). shadcn.AlertDialog+GhostButton+PrimaryButton |
+| 34 | widgets/admin_vacation_add_dialog.dart | [x] | shadcn.GhostButton/PrimaryButton(footer 액션)→SeedButton(neutralWeak/brandSolid, 등록 버튼 isLoading 연동). 수제 유형 토글(`_buildTypeOptionButton`, 필수=error 톤 오용)을 SeedChip 2개 행으로 교체(둘 다 선택 시 brandWeak 톤, 커스텀 색상 파라미터 제거, 사용처 없어진 헬퍼 메서드 삭제). Dropdown·TextFormField는 기존에 이미 AppBorderRadius/AppSpacing 토큰 적용되어 있음을 확인. maxWidth 500→480. analyze 0 error(기존 invalid_null_aware_operator/print/deprecated value 잔존, 로직 변경 없음). |
+| 35 | widgets/today_schedule_dialog.dart | [x] | shadcn.OutlineButton/PrimaryButton 2곳→SeedButton(neutralWeak/brandSolid). shadcn_flutter 의존 제거. analyze 0 error, 로직 변경 없음. |
+| 36 | widgets/update_dialog.dart | [x] | 제목 Text에 AppTypography.heading5, 본문/버전 텍스트에 bodyMedium 적용. shadcn.GhostButton/PrimaryButton→SeedButton(neutralWeak/brandSolid). 리터럴 SizedBox(height:16)→AppSpacing.space4 토큰화. deprecated WillPopScope→PopScope(canPop: !forceUpdate)로 교체. shadcn.AlertDialog 셸은 유지(내부만 전환). analyze 0 error(기존 use_super_parameters info만 잔존, 로직 변경 없음). |
 | 37 | widgets/vacation_calendar_widget.dart | [~] | 그림자 7곳 — 대부분 캘린더 셀/상태점(dot)의 구조적 장식(선택 상태, 휴무유형 표시)으로 프로젝트 관례상 허용 범위. 단 L1348,1355(선택된 인원 필터 pill류)는 정적 그림자로 의심되어 확인 필요. 그라디언트/shadcn버튼/칩 없음 |
 | 38 | widgets/vacation_request_dialog.dart | 다른 작업자 진행 중 | 현재 스냅샷: `Color(0x..)` 하드코딩 3곳(L52,57,65 — 다이얼로그 자체 그림자 상수 정의, 그림자 5곳도 여기서 파생되어 다이얼로그 스코프로는 허용 범위) / 구 AppButton 1곳 / Seed 컴포넌트 2곳 사용 중 |
 | 39 | widgets/chat/chat_room_tile.dart | [x] | 전 카테고리 0, radius/색상 모두 AppBorderRadius·AppSemanticColors 토큰 사용. 완료 상태 |
 | 40 | widgets/chat/message_bubble.dart | [x] | 전 카테고리 0, 말풍선 radius도 AppBorderRadius 토큰 사용(꼬리 반대쪽 xl, 꼬리쪽 base). 완료 상태 |
-| 41 | widgets/chat/message_input.dart | [ ] | **정적그림자**: 하단 고정 입력바 Container(L26-38, BoxShadow) — chat_room_screen.dart의 자체 구현(#17)과 동일 패턴 중복 |
-| 42 | widgets/notice/notice_card.dart | [~] | radius 리터럴 1곳(L217, `BorderRadius.circular(2)`) 외 대부분 AppBorderRadius/AppSpacing 토큰화 완료 |
+| 41 | widgets/chat/message_input.dart | [x] | 하단 고정 입력바 Container(L26-38)의 정적 BoxShadow 제거→상단 `AppSemanticColors.borderSubtle` 1px 보더로 교체. chat_room_screen.dart의 동일 그림자 패턴(#17)은 이번 감사 범위 밖이라 미변경. analyze 0 error(기존 unused_import(app_theme) 잔존, 로직 변경 없음). |
+| 42 | widgets/notice/notice_card.dart | [x] | `NoticeCardCompact` 인디케이터 바의 radius 리터럴(L217, `BorderRadius.circular(2)`)→`AppBorderRadius.sm`, width/height 리터럴(4/40)→`AppSpacing.space1`/`AppSpacing.space10` 토큰화. 전 카테고리 0. analyze 0 error, 로직 변경 없음. |
 | 43 | widgets/notice/notice_priority_badge.dart | [x] | 전 카테고리 0, AppBorderRadius 토큰 사용. 완료 상태 |
 
 ---

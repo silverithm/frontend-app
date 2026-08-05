@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 import '../models/schedule.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import 'seed/seed_button.dart';
 
 /// 접속 시 오늘 일정 알림 팝업 (하루 1회).
 /// AppDialog.showCustom으로 감싸서 띄운다.
@@ -105,19 +105,21 @@ class TodayScheduleDialog extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: shadcn.OutlineButton(
+                child: SeedButton(
+                  label: '닫기',
+                  variant: SeedButtonVariant.neutralWeak,
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('닫기'),
                 ),
               ),
               const SizedBox(width: AppSpacing.space2),
               Expanded(
-                child: shadcn.PrimaryButton(
+                child: SeedButton(
+                  label: '일정 보기',
+                  variant: SeedButtonVariant.brandSolid,
                   onPressed: () {
                     Navigator.of(context).pop();
                     onViewSchedule?.call();
                   },
-                  child: const Text('일정 보기'),
                 ),
               ),
             ],
