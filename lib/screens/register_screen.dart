@@ -177,16 +177,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space6),
-              AppButton(
-                text: '로그인 하러 가기',
-                isFullWidth: true,
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
+              SizedBox(
+                width: double.infinity,
+                child: SeedButton(
+                  label: '로그인 하러 가기',
+                  size: SeedButtonSize.large,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -320,13 +323,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space6),
-              AppButton(
-                text: '로그인 화면으로 이동',
-                isFullWidth: true,
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop();
-                },
+              SizedBox(
+                width: double.infinity,
+                child: SeedButton(
+                  label: '로그인 화면으로 이동',
+                  size: SeedButtonSize.large,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pop();
+                  },
+                ),
               ),
             ],
           ),
