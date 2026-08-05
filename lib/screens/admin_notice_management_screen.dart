@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/auth_provider.dart';
 import '../providers/notice_provider.dart';
 import '../models/notice.dart';
@@ -9,8 +8,11 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/notice/notice_priority_badge.dart';
+import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_chip.dart';
 import 'admin_notice_form_screen.dart';
 import 'notice_detail_screen.dart';
 
@@ -234,7 +236,7 @@ class _AdminNoticeManagementScreenState
         color: AppSemanticColors.statusErrorIcon,
         child: const Icon(
           Icons.delete,
-          color: AppColors.white,
+          color: AppSemanticColors.textInverse,
         ),
       ),
       confirmDismiss: (direction) async {
@@ -415,10 +417,11 @@ class _AdminNoticeManagementScreenState
             ),
           ),
           const SizedBox(height: AppSpacing.space4),
-          shadcn.PrimaryButton(
+          SeedButton(
+            label: '공지사항 작성',
+            variant: SeedButtonVariant.brandSolid,
+            prefixIcon: Icons.add,
             onPressed: _navigateToCreateNotice,
-            leading: const Icon(Icons.add),
-            child: const Text('공지사항 작성'),
           ),
         ],
       ),
@@ -454,9 +457,10 @@ class _AdminNoticeManagementScreenState
             ),
           ),
           const SizedBox(height: AppSpacing.space4),
-          shadcn.PrimaryButton(
+          SeedButton(
+            label: '다시 시도',
+            variant: SeedButtonVariant.neutralWeak,
             onPressed: () => _loadNotices(refresh: true),
-            child: const Text('다시 시도'),
           ),
         ],
       ),
@@ -489,19 +493,16 @@ class _AdminNoticeManagementScreenState
                           color: AppSemanticColors.textPrimary,
                         ),
                       ),
-                      shadcn.GhostButton(
+                      SeedButton(
+                        label: '초기화',
+                        variant: SeedButtonVariant.neutralWeak,
+                        size: SeedButtonSize.small,
                         onPressed: () {
                           setModalState(() {
                             _selectedStatus = null;
                             _selectedPriority = null;
                           });
                         },
-                        child: Text(
-                          '초기화',
-                          style: AppTypography.labelMedium.copyWith(
-                            color: AppSemanticColors.interactivePrimaryDefault,
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -576,13 +577,14 @@ class _AdminNoticeManagementScreenState
                   // Apply button
                   SizedBox(
                     width: double.infinity,
-                    child: shadcn.PrimaryButton(
+                    child: SeedButton(
+                      label: '적용',
+                      variant: SeedButtonVariant.brandSolid,
                       onPressed: () {
                         setState(() {});
                         Navigator.pop(context);
                         _loadNotices(refresh: true);
                       },
-                      child: const Text('적용'),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space4),
@@ -600,19 +602,10 @@ class _AdminNoticeManagementScreenState
     required bool selected,
     required VoidCallback onSelected,
   }) {
-    return FilterChip(
-      label: Text(label),
+    return SeedChip(
+      label: label,
       selected: selected,
-      onSelected: (_) => onSelected(),
-      selectedColor: AppSemanticColors.interactivePrimaryDefault.withValues(
-        alpha: 0.1,
-      ),
-      checkmarkColor: AppSemanticColors.interactivePrimaryDefault,
-      labelStyle: AppTypography.labelSmall.copyWith(
-        color: selected
-            ? AppSemanticColors.interactivePrimaryDefault
-            : AppSemanticColors.textSecondary,
-      ),
+      onTap: onSelected,
     );
   }
 
@@ -639,37 +632,12 @@ class _AdminNoticeManagementScreenState
   }
 
   Future<bool?> _showDeleteConfirmDialog(Notice notice) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Text(
-          '공지사항 삭제',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textPrimary,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '\'${notice.title}\' 공지사항을 삭제하시겠습니까?\n삭제된 공지사항은 복구할 수 없습니다.',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    return AppDialog.showConfirm(
+      context,
+      title: '공지사항 삭제',
+      message: '\'${notice.title}\' 공지사항을 삭제하시겠습니까?\n삭제된 공지사항은 복구할 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
   }
 

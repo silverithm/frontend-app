@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/in_app_review_service.dart';
@@ -10,8 +9,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
-import 'admin_vacation_limits_setting_screen.dart';
 
 class AdminVacationManagementScreen extends StatefulWidget {
   final bool showAppBar;
@@ -222,64 +222,64 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 Text('상태', style: AppTypography.labelMedium.copyWith(
                   color: AppSemanticColors.textSecondary,
                 )),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
                       _buildStatusFilterChip('전체', 'all'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       _buildStatusFilterChip('승인 대기', 'pending'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       _buildStatusFilterChip('승인됨', 'approved'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       _buildStatusFilterChip('거절됨', 'rejected'),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 
                 // 직무 필터
                 Text('직무', style: AppTypography.labelMedium.copyWith(
                   color: AppSemanticColors.textSecondary,
                 )),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
                       _buildRoleFilterChip('전체', RoleUtils.allRole),
                       for (final role in _roleFilterOptions) ...[
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.space2),
                         _buildRoleFilterChip(RoleUtils.displayName(role), role),
                       ],
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 
                 // 정렬 옵션
                 Text('정렬', style: AppTypography.labelMedium.copyWith(
                   color: AppSemanticColors.textSecondary,
                 )),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
                       _buildSortFilterChip('신청순', 'application'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       _buildSortFilterChip('최신순', 'latest'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       _buildSortFilterChip('오래된순', 'oldest'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       _buildSortFilterChip('이름순', 'name'),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       _buildSortFilterChip('직무순', 'role'),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 
                 // 검색 필드
                 TextField(
@@ -307,19 +307,19 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     filled: true,
                     fillColor: AppSemanticColors.backgroundSecondary,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       borderSide: BorderSide(
                         color: AppSemanticColors.borderFocus,
                         width: 2,
                       ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: AppSpacing.space4,
+                      vertical: AppSpacing.space3,
                     ),
                   ),
                 ),
@@ -332,7 +332,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         if (_statusFilter == 'pending' && filteredRequests.isNotEmpty)
           SliverToBoxAdapter(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4, vertical: AppSpacing.space2),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -364,14 +364,14 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2, vertical: AppSpacing.space0_5),
                         decoration: BoxDecoration(
                           color: _selectedRequests.isNotEmpty
                               ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
                               : AppSemanticColors.backgroundSecondary,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                         ),
                         child: Text(
                           '${_selectedRequests.length}/${filteredRequests.length}',
@@ -387,46 +387,32 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   ),
                   // 일괄 처리 버튼들
                   if (_selectedRequests.isNotEmpty) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.space3),
                     Row(
                       children: [
                         Expanded(
-                          child: shadcn.OutlineButton(
+                          child: SeedButton(
+                            label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
+                            variant: SeedButtonVariant.critical,
+                            isLoading: _isBulkProcessing,
+                            prefixIcon: Icons.close,
                             onPressed: _isBulkProcessing ? null : _bulkReject,
-                            leading: _isBulkProcessing
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.close, size: 18),
-                            child: Text(
-                              _isBulkProcessing ? '처리중...' : '선택 항목 거절',
-                              style: AppTypography.bodyMedium,
-                            ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.space3),
                         Expanded(
-                          child: shadcn.PrimaryButton(
+                          child: SeedButton(
+                            label: _isBulkProcessing ? '처리중...' : '선택 항목 승인',
+                            variant: SeedButtonVariant.brandSolid,
+                            isLoading: _isBulkProcessing,
+                            prefixIcon: Icons.check,
                             onPressed: _isBulkProcessing ? null : _bulkApprove,
-                            leading: _isBulkProcessing
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.check, size: 18),
-                            child: Text(
-                              _isBulkProcessing ? '처리중...' : '선택 항목 승인',
-                              style: AppTypography.bodyMedium,
-                            ),
                           ),
                         ),
                       ],
                     ),
                   ],
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.space2),
                   const Divider(),
                 ],
               ),
@@ -443,7 +429,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.event_available, size: 64, color: AppSemanticColors.textTertiary),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.space4),
                   Text(
                     '휴무 요청이 없습니다',
                     style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
@@ -454,7 +440,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           )
         else
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4, vertical: AppSpacing.space2),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -467,40 +453,6 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildVacationList() {
-    print('[AdminVacationManagement] _buildVacationList 호출');
-    print('[AdminVacationManagement] _vacationRequests.length: ${_vacationRequests.length}');
-    print('[AdminVacationManagement] _statusFilter: $_statusFilter');
-    
-    final filteredRequests = _getFilteredRequests();
-    print('[AdminVacationManagement] filteredRequests.length: ${filteredRequests.length}');
-
-    if (filteredRequests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_available, size: 64, color: AppSemanticColors.textTertiary),
-            const SizedBox(height: 16),
-            Text(
-              '휴무 요청이 없습니다',
-              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: filteredRequests.length,
-      itemBuilder: (context, index) {
-        final request = filteredRequests[index];
-        return _buildVacationCard(request);
-      },
     );
   }
 
@@ -669,8 +621,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 children: [
                   if (isPending)
                     SizedBox(
-                      width: 24,
-                      height: 24,
+                      width: AppSpacing.space6,
+                      height: AppSpacing.space6,
                       child: Checkbox(
                         value: isSelected,
                         onChanged: (value) {
@@ -687,18 +639,18 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
-                  if (isPending) const SizedBox(width: 12),
+                  if (isPending) const SizedBox(width: AppSpacing.space3),
                   Expanded(
                     child: _buildVacationCardHeader(request),
                   ),
                 ],
               ),
               if (request['reason'] != null && request['reason'].toString().isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.space3),
                 _buildReasonSection(request['reason']),
               ],
               if (!_isSelectMode) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.space3),
                 _buildActionButtons(request, isPending),
               ],
             ],
@@ -784,7 +736,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.space1),
               Text(
                 '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
                 style: AppTypography.bodyMedium.copyWith(
@@ -793,7 +745,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSpacing.space0_5),
               Text(
                 '신청일: ${_formatDate(request['createdAt'])}',
                 style: AppTypography.labelSmall.copyWith(
@@ -811,16 +763,16 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
 
   Widget _buildReasonSection(String reason) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.space3),
       decoration: BoxDecoration(
         color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.space2),
           Expanded(
             child: Text(
               reason,
@@ -837,566 +789,43 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       children: [
         // 삭제 버튼 (모든 상태에 대해 표시)
         Expanded(
-          child: shadcn.DestructiveButton(
+          child: SeedButton(
+            label: '삭제',
+            variant: SeedButtonVariant.critical,
+            size: SeedButtonSize.small,
+            prefixIcon: Icons.delete,
             onPressed: () => _showDeleteDialog(request['id'].toString()),
-            leading: const Icon(Icons.delete, size: 16),
-            child: Text('삭제', style: AppTypography.labelSmall),
           ),
         ),
         if (isPending) ...[
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.space2),
           Expanded(
-            child: shadcn.OutlineButton(
+            child: SeedButton(
+              label: _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
+              variant: SeedButtonVariant.critical,
+              size: SeedButtonSize.small,
+              isLoading: _rejectingRequests.contains(request['id'].toString()),
+              prefixIcon: Icons.close,
               onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
                   ? null
                   : () => _rejectRequest(request['id'].toString()),
-              leading: _rejectingRequests.contains(request['id'].toString())
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.close, size: 16),
-              child: Text(
-                _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
-                style: AppTypography.labelSmall,
-              ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.space2),
           Expanded(
-            child: shadcn.PrimaryButton(
+            child: SeedButton(
+              label: _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
+              variant: SeedButtonVariant.brandSolid,
+              size: SeedButtonSize.small,
+              isLoading: _approvingRequests.contains(request['id'].toString()),
+              prefixIcon: Icons.check,
               onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
                   ? null
                   : () => _approveRequest(request['id'].toString()),
-              leading: _approvingRequests.contains(request['id'].toString())
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.check, size: 16),
-              child: Text(
-                _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
-                style: AppTypography.labelSmall,
-              ),
             ),
           ),
         ],
       ],
-    );
-  }
-
-  // 이제 이 메서드는 사용하지 않음 (_buildVacationCardHeader로 대체)
-
-  Widget _buildVacationCard(Map<String, dynamic> request) {
-    final status = request['status'] ?? '';
-    final isApproved = status == 'approved';
-    final isPending = status == 'pending';
-    final isRejected = status == 'rejected';
-
-    Color statusColor;
-    IconData statusIcon;
-    String statusText;
-
-    if (isApproved) {
-      statusColor = AppSemanticColors.statusSuccessIcon;
-      statusIcon = Icons.check_circle;
-      statusText = '승인됨';
-    } else if (isPending) {
-      statusColor = AppSemanticColors.statusWarningIcon;
-      statusIcon = Icons.pending;
-      statusText = '대기중';
-    } else {
-      statusColor = AppSemanticColors.statusErrorIcon;
-      statusIcon = Icons.cancel;
-      statusText = '거절됨';
-    }
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: statusColor.withValues(alpha: 0.1),
-                  child: Icon(statusIcon, color: statusColor, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        request['userName'] ?? '알 수 없음',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                      ),
-                      Text(
-                        '신청일: ${_formatDate(request['createdAt'])}',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    statusText,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (request['reason'] != null && request['reason'].toString().isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        request['reason'],
-                        style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                // 삭제 버튼 (모든 상태에 대해 표시)
-                Expanded(
-                  child: shadcn.DestructiveButton(
-                    onPressed: () => _showDeleteDialog(request['id'].toString()),
-                    leading: const Icon(Icons.delete, size: 16),
-                    child: Text('삭제', style: AppTypography.labelSmall),
-                  ),
-                ),
-                if (isPending) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: shadcn.OutlineButton(
-                      onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
-                          ? null
-                          : () => _rejectRequest(request['id'].toString()),
-                      leading: _rejectingRequests.contains(request['id'].toString())
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.close, size: 16),
-                      child: Text(
-                        _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
-                        style: AppTypography.labelSmall,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: shadcn.PrimaryButton(
-                      onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
-                          ? null
-                          : () => _approveRequest(request['id'].toString()),
-                      leading: _approvingRequests.contains(request['id'].toString())
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.check, size: 16),
-                      child: Text(
-                        _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
-                        style: AppTypography.labelSmall,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildApprovalTab() {
-    final pendingRequests = _vacationRequests
-        .where((request) => request['status'] == 'pending')
-        .toList();
-
-    if (pendingRequests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle_outline, size: 64, color: AppSemanticColors.textTertiary),
-            const SizedBox(height: 16),
-            Text(
-              '승인 대기 중인 휴무 요청이 없습니다',
-              style: TextStyle(color: AppSemanticColors.textSecondary, fontSize: 16),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: pendingRequests.length,
-      itemBuilder: (context, index) {
-        final request = pendingRequests[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: AppSemanticColors.statusSuccessBackground,
-                      child: Text(
-                        (request['user']?['name'] ?? '?')[0].toUpperCase(),
-                        style: TextStyle(
-                          color: AppSemanticColors.statusSuccessText,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            request['user']?['name'] ?? '알 수 없음',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            request['user']?['role'] ?? '',
-                            style: TextStyle(
-                              color: AppSemanticColors.textSecondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.statusWarningBackground,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '대기중',
-                        style: TextStyle(
-                          color: AppSemanticColors.statusWarningText,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.backgroundSecondary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_today, size: 16, color: AppSemanticColors.textSecondary),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${request['startDate']} ~ ${request['endDate']}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      if (request['reason'] != null && request['reason'].isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                request['reason'],
-                                style: TextStyle(color: AppSemanticColors.textPrimary),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: shadcn.OutlineButton(
-                        onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
-                            ? null
-                            : () => _rejectRequest(request['id'].toString()),
-                        leading: _rejectingRequests.contains(request['id'].toString())
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.close),
-                        child: Text(_rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: shadcn.PrimaryButton(
-                        onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
-                            ? null
-                            : () => _approveRequest(request['id'].toString()),
-                        leading: _approvingRequests.contains(request['id'].toString())
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.check),
-                        child: Text(_approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLimitsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, color: AppSemanticColors.statusInfoIcon),
-                      const SizedBox(width: 8),
-                      const Text(
-                        '일일 휴무 한도 설정',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '각 날짜별로 승인 가능한 최대 휴무 인원을 설정할 수 있습니다.',
-                    style: TextStyle(color: AppSemanticColors.textTertiary),
-                  ),
-                  const SizedBox(height: 16),
-                  shadcn.PrimaryButton(
-                    onPressed: _showLimitSettingDialog,
-                    leading: const Icon(Icons.settings),
-                    child: const Text('한도 설정'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (_vacationLimits.isNotEmpty) ...[
-            const Text(
-              '현재 설정된 한도',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  _vacationLimits.toString(),
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistoryTab() {
-    final approvedRequests = _vacationRequests
-        .where((request) => request['status'] != 'pending')
-        .toList();
-
-    if (approvedRequests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history, size: 64, color: AppSemanticColors.textTertiary),
-            const SizedBox(height: 16),
-            Text(
-              '휴무 내역이 없습니다',
-              style: TextStyle(color: AppSemanticColors.textSecondary, fontSize: 16),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: approvedRequests.length,
-      itemBuilder: (context, index) {
-        final request = approvedRequests[index];
-        final isApproved = request['status'] == 'approved';
-        
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: isApproved ? AppSemanticColors.statusSuccessBackground : AppSemanticColors.statusErrorBackground,
-                      child: Icon(
-                        isApproved ? Icons.check : Icons.close,
-                        color: isApproved ? AppSemanticColors.statusSuccessText : AppSemanticColors.statusErrorText,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            request['user']?['name'] ?? '알 수 없음',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            '${request['startDate']} ~ ${request['endDate']}',
-                            style: TextStyle(
-                              color: AppSemanticColors.textSecondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isApproved ? AppSemanticColors.statusSuccessBackground : AppSemanticColors.statusErrorBackground,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        isApproved ? '승인됨' : '거절됨',
-                        style: TextStyle(
-                          color: isApproved ? AppSemanticColors.statusSuccessText : AppSemanticColors.statusErrorText,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (request['reason'] != null && request['reason'].isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            request['reason'],
-                            style: TextStyle(color: AppSemanticColors.textPrimary),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -1510,42 +939,18 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     }
   }
 
-  void _showLimitSettingDialog() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const AdminVacationLimitsSettingScreen(),
-      ),
+  Future<void> _showDeleteDialog(String vacationId) async {
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '휴무 삭제',
+      message: '이 휴무를 영구적으로 삭제하시겠습니까?\n삭제된 휴무는 복구할 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
-  }
 
-  void _showDeleteDialog(String vacationId) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return shadcn.AlertDialog(
-          title: const Text('휴무 삭제'),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('이 휴무를 영구적으로 삭제하시겠습니까?\n삭제된 휴무는 복구할 수 없습니다.'),
-            ],
-          ),
-          actions: [
-            shadcn.OutlineButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('취소'),
-            ),
-            shadcn.DestructiveButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteVacation(vacationId);
-              },
-              child: const Text('삭제'),
-            ),
-          ],
-        );
-      },
-    );
+    if (confirmed == true) {
+      _deleteVacation(vacationId);
+    }
   }
 
   Future<void> _deleteVacation(String vacationId) async {
@@ -1593,27 +998,12 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     final selectedList = _selectedRequests.toList();
     
     // 확인 다이얼로그 표시
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('일괄 승인'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('선택한 ${selectedList.length}개의 휴무 요청을 모두 승인하시겠습니까?'),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
-          ),
-          shadcn.PrimaryButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('승인'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '일괄 승인',
+      message: '선택한 ${selectedList.length}개의 휴무 요청을 모두 승인하시겠습니까?',
+      confirmText: '승인',
+      cancelText: '취소',
     );
     
     if (confirmed != true) return;
@@ -1684,27 +1074,12 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     final selectedList = _selectedRequests.toList();
     
     // 확인 다이얼로그 표시
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('일괄 거절'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('선택한 ${selectedList.length}개의 휴무 요청을 모두 거절하시겠습니까?'),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('거절'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '일괄 거절',
+      message: '선택한 ${selectedList.length}개의 휴무 요청을 모두 거절하시겠습니까?',
+      confirmText: '거절',
+      cancelText: '취소',
     );
     
     if (confirmed != true) return;

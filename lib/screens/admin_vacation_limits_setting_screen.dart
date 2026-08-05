@@ -7,8 +7,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class AdminVacationLimitsSettingScreen extends StatefulWidget {
   const AdminVacationLimitsSettingScreen({super.key});
@@ -253,14 +253,14 @@ class _AdminVacationLimitsSettingScreenState
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.space4),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.space3),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                   ),
                   child: Icon(
                     Icons.settings,
@@ -268,7 +268,7 @@ class _AdminVacationLimitsSettingScreenState
                     size: 24,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.space4),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,10 +283,10 @@ class _AdminVacationLimitsSettingScreenState
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2, vertical: AppSpacing.space1),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                   ),
                   child: Text(
                     'ADMIN',
@@ -305,18 +305,14 @@ class _AdminVacationLimitsSettingScreenState
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // 월 선택 헤더
+                // 월 선택 헤더 — 정적 표면은 그림자 대신 보더만 (Seed 레이아웃 원칙)
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.space4),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.surfaceDefault,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.black.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    border: Border(
+                      bottom: BorderSide(color: AppSemanticColors.borderSubtle),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -339,7 +335,7 @@ class _AdminVacationLimitsSettingScreenState
 
                 // 역할 필터 탭
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.space4),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.backgroundSecondary,
                     border: Border(
@@ -349,7 +345,7 @@ class _AdminVacationLimitsSettingScreenState
                   child: Row(
                     children: [
                       Expanded(child: _buildRoleTab('요양보호사', 'CAREGIVER')),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       Expanded(child: _buildRoleTab('사무실', 'OFFICE')),
                     ],
                   ),
@@ -360,42 +356,25 @@ class _AdminVacationLimitsSettingScreenState
                   child: _buildLimitsTable(),
                 ),
 
-                // 저장 버튼을 아래로 이동
+                // 저장 버튼을 아래로 이동 — 정적 표면은 그림자 대신 보더만 (Seed 레이아웃 원칙)
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.space4),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.surfaceDefault,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.black.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
+                    border: Border(
+                      top: BorderSide(color: AppSemanticColors.borderSubtle),
+                    ),
                   ),
                   child: SafeArea(
                     child: SizedBox(
                       width: double.infinity,
-                      height: 48,
-                      child: shadcn.PrimaryButton(
+                      child: SeedButton(
+                        label: _isSaving ? '저장 중...' : '휴무 제한 저장하기',
+                        variant: SeedButtonVariant.brandSolid,
+                        size: SeedButtonSize.large,
+                        isLoading: _isSaving,
+                        prefixIcon: Icons.save,
                         onPressed: _isSaving ? null : _saveVacationLimits,
-                        leading: _isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                                ),
-                              )
-                            : Icon(Icons.save, color: AppSemanticColors.textInverse),
-                        child: Text(
-                          _isSaving ? '저장 중...' : '휴무 제한 저장하기',
-                          style: AppTypography.bodyLarge.copyWith(
-                            color: AppSemanticColors.textInverse,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                       ),
                     ),
                   ),
@@ -424,23 +403,23 @@ class _AdminVacationLimitsSettingScreenState
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.space4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 안내 텍스트
           Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(AppSpacing.space4),
+            margin: const EdgeInsets.only(bottom: AppSpacing.space4),
             decoration: BoxDecoration(
               color: AppSemanticColors.statusInfoBackground,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
               border: Border.all(color: AppSemanticColors.statusInfoBorder),
             ),
             child: Row(
               children: [
                 Icon(Icons.info_outline, color: AppSemanticColors.statusInfoIcon, size: 20),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.space3),
                 Expanded(
                   child: Text(
                     '각 날짜별로 최대 휴무 가능 인원을 설정하세요.',
@@ -501,25 +480,19 @@ class _AdminVacationLimitsSettingScreenState
       weekdayTextColor = AppSemanticColors.textSecondary;
     }
     
+    // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         border: Border.all(
           color: borderColor,
           width: isWeekend ? 2 : 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.space4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -527,10 +500,10 @@ class _AdminVacationLimitsSettingScreenState
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3, vertical: AppSpacing.space1_5),
                   decoration: BoxDecoration(
                     color: headerColor,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                   ),
                   child: Text(
                     '${date.month}월 ${date.day}일',
@@ -540,12 +513,12 @@ class _AdminVacationLimitsSettingScreenState
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.space2),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2, vertical: AppSpacing.space1),
                   decoration: BoxDecoration(
                     color: weekdayBgColor,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
                   ),
                   child: Text(
                     '$weekdayName요일',
@@ -556,10 +529,12 @@ class _AdminVacationLimitsSettingScreenState
                 ),
               ],
             ),
-            
-            const SizedBox(height: 16),
-            
-            // 인원 수 설정
+
+            const SizedBox(height: AppSpacing.space3),
+            Divider(height: 1, color: AppSemanticColors.borderSubtle),
+            const SizedBox(height: AppSpacing.space3),
+
+            // 인원 수 설정 — 카드중첩 없이 구분선 아래 평면 레이아웃 (Seed 레이아웃 원칙)
             if (_selectedRole == 'CAREGIVER') ...[
               // 요양보호사 모드
               _buildLimitInputCard('요양보호사', '${dateKey}_CAREGIVER', Icons.favorite),
@@ -577,100 +552,91 @@ class _AdminVacationLimitsSettingScreenState
     final controller = _controllers[key];
     if (controller == null) return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppSemanticColors.borderSubtle),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 16, color: AppSemanticColors.textSecondary),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppSemanticColors.textSecondary,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: AppSemanticColors.textSecondary),
+            const SizedBox(width: AppSpacing.space1_5),
+            Text(
+              title,
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppSemanticColors.textSecondary,
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                '최대',
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.space2),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              '최대',
+              style: AppTypography.labelSmall.copyWith(
+                color: AppSemanticColors.textTertiary,
               ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 60,
-                height: 36,
-                child: TextFormField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyLarge.copyWith(
-                    fontWeight: FontWeight.bold,
+            ),
+            const SizedBox(width: AppSpacing.space2),
+            SizedBox(
+              width: 60,
+              height: AppSpacing.space9,
+              child: TextFormField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    borderSide: BorderSide(color: AppSemanticColors.borderSubtle),
                   ),
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppSemanticColors.borderSubtle),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
-                    ),
-                    contentPadding: const EdgeInsets.all(0),
-                    filled: true,
-                    fillColor: AppSemanticColors.surfaceDefault,
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
                   ),
-                  onChanged: (value) {
-                    // 빈 문자열이면 0으로 설정
-                    if (value.isEmpty) {
-                      return;
-                    }
-                    
-                    // 숫자만 허용하고 음수 방지
-                    final number = int.tryParse(value);
-                    if (number == null || number < 0) {
-                      // 이전 값을 유지하되, 잘못된 입력은 제거
-                      final validText = value.replaceAll(RegExp(r'[^0-9]'), '');
-                      if (validText.isNotEmpty) {
-                        controller.value = TextEditingValue(
-                          text: validText,
-                          selection: TextSelection.fromPosition(
-                            TextPosition(offset: validText.length),
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  contentPadding: EdgeInsets.zero,
+                  filled: true,
+                  fillColor: AppSemanticColors.backgroundSecondary,
                 ),
+                onChanged: (value) {
+                  // 빈 문자열이면 0으로 설정
+                  if (value.isEmpty) {
+                    return;
+                  }
+
+                  // 숫자만 허용하고 음수 방지
+                  final number = int.tryParse(value);
+                  if (number == null || number < 0) {
+                    // 이전 값을 유지하되, 잘못된 입력은 제거
+                    final validText = value.replaceAll(RegExp(r'[^0-9]'), '');
+                    if (validText.isNotEmpty) {
+                      controller.value = TextEditingValue(
+                        text: validText,
+                        selection: TextSelection.fromPosition(
+                          TextPosition(offset: validText.length),
+                        ),
+                      );
+                    }
+                  }
+                },
               ),
-              const SizedBox(width: 8),
-              Text(
-                '명',
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
+            ),
+            const SizedBox(width: AppSpacing.space2),
+            Text(
+              '명',
+              style: AppTypography.labelSmall.copyWith(
+                color: AppSemanticColors.textTertiary,
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
-
 }
