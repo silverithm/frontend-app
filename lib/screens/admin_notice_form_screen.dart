@@ -7,7 +7,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_snackbar.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_text_field.dart';
 
 class AdminNoticeFormScreen extends StatefulWidget {
   final Notice? notice; // null이면 새로 생성, 값이 있으면 수정
@@ -66,31 +67,6 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
         backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
-        actions: [
-          if (_isSubmitting)
-            const Padding(
-              padding: EdgeInsets.all(AppSpacing.space4),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppSemanticColors.textInverse,
-                ),
-              ),
-            )
-          else
-            shadcn.GhostButton(
-              onPressed: _handleSubmit,
-              child: Text(
-                '저장',
-                style: AppTypography.labelLarge.copyWith(
-                  color: AppSemanticColors.textInverse,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-        ],
       ),
       body: Form(
         key: _formKey,
@@ -100,31 +76,12 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
             // Title field
             _buildSectionTitle('제목'),
             const SizedBox(height: AppSpacing.space2),
-            TextFormField(
+            SeedTextField(
+              label: '제목',
+              showLabel: false,
               controller: _titleController,
-              decoration: InputDecoration(
-                hintText: '공지사항 제목을 입력하세요',
-                hintStyle: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
-                filled: true,
-                fillColor: AppSemanticColors.surfaceDefault,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  borderSide: BorderSide(color: AppSemanticColors.borderDefault),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  borderSide: BorderSide(color: AppSemanticColors.borderDefault),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  borderSide: BorderSide(
-                    color: AppSemanticColors.borderFocus,
-                    width: 2,
-                  ),
-                ),
-              ),
+              placeholder: '공지사항 제목을 입력하세요',
+              size: SeedTextFieldSize.large,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return '제목을 입력해주세요';
@@ -140,32 +97,13 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
             // Content field
             _buildSectionTitle('내용'),
             const SizedBox(height: AppSpacing.space2),
-            TextFormField(
+            SeedTextField(
+              label: '내용',
+              showLabel: false,
               controller: _contentController,
               maxLines: 10,
-              decoration: InputDecoration(
-                hintText: '공지사항 내용을 입력하세요',
-                hintStyle: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
-                filled: true,
-                fillColor: AppSemanticColors.surfaceDefault,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  borderSide: BorderSide(color: AppSemanticColors.borderDefault),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  borderSide: BorderSide(color: AppSemanticColors.borderDefault),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  borderSide: BorderSide(
-                    color: AppSemanticColors.borderFocus,
-                    width: 2,
-                  ),
-                ),
-              ),
+              placeholder: '공지사항 내용을 입력하세요',
+              size: SeedTextFieldSize.large,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return '내용을 입력해주세요';
@@ -238,6 +176,20 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.space8),
+
+            // 제출 버튼 — approval_form_screen과 동일하게 본문 하단 풀와이드 배치
+            SizedBox(
+              width: double.infinity,
+              child: SeedButton(
+                label: '저장',
+                variant: SeedButtonVariant.brandSolid,
+                size: SeedButtonSize.large,
+                isLoading: _isSubmitting,
+                isDisabled: _isSubmitting,
+                onPressed: _handleSubmit,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.space6),
           ],
         ),
       ),

@@ -11,6 +11,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/dynamic_form_fields.dart';
+import '../widgets/common/app_snackbar.dart';
+import '../widgets/seed/seed_text_field.dart';
 import 'hwp_editor_screen.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
@@ -170,12 +172,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('이미지 선택에 실패했습니다: $e'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '이미지 선택에 실패했습니다: $e');
       }
     }
   }
@@ -202,12 +199,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('문서 선택에 실패했습니다: $e'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '문서 선택에 실패했습니다: $e');
       }
     }
   }
@@ -243,9 +235,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
           size: result.size,
         );
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('작성한 문서가 첨부되었습니다')),
-      );
+      AppSnackBar.showSuccess(context, message: '작성한 문서가 첨부되었습니다');
     }
   }
 
@@ -260,16 +250,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
     // 양식 선택 확인
     if (_selectedTemplate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('결재 양식을 선택해주세요'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnackBar.showError(context, message: '결재 양식을 선택해주세요');
       return;
     }
 
@@ -277,16 +258,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
     // 파일 첨부 확인 (온라인 폼 전용 양식은 첨부 선택사항)
     if (templateType != 'form' && _selectedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('첨부파일을 선택해주세요'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnackBar.showError(context, message: '첨부파일을 선택해주세요');
       return;
     }
 
@@ -295,16 +267,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       final missingLabel = DynamicFormFields.validateRequired(
           _selectedTemplate!.formFields, _formValues);
       if (missingLabel != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('\'$missingLabel\' 항목을 입력해주세요'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        AppSnackBar.showError(context, message: '\'$missingLabel\' 항목을 입력해주세요');
         return;
       }
     }
@@ -338,16 +301,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
         print('[ApprovalForm] 파일 업로드 에러: $e');
         setState(() => _isSubmitting = false);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('파일 업로드에 실패했습니다: $e'),
-              backgroundColor: AppSemanticColors.statusErrorIcon,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          AppSnackBar.showError(context, message: '파일 업로드에 실패했습니다: $e');
         }
         return;
       }
@@ -377,29 +331,14 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     setState(() => _isSubmitting = false);
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('결재 요청이 제출되었습니다'),
-          backgroundColor: AppSemanticColors.statusSuccessIcon,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      AppSnackBar.showSuccess(context, message: '결재 요청이 제출되었습니다');
       Navigator.pop(context, true);
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(approvalProvider.errorMessage.isNotEmpty
-              ? approvalProvider.errorMessage
-              : '결재 요청에 실패했습니다'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+      AppSnackBar.showError(
+        context,
+        message: approvalProvider.errorMessage.isNotEmpty
+            ? approvalProvider.errorMessage
+            : '결재 요청에 실패했습니다',
       );
     }
   }
@@ -601,34 +540,18 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                 isRequired: true,
               ),
               const SizedBox(height: AppSpacing.space3),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.borderDefault,
-                  ),
-                ),
-                child: TextFormField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: '결재 제목을 입력하세요',
-                    hintStyle: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(AppSpacing.space4),
-                  ),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return '결재 제목을 입력해주세요';
-                    }
-                    return null;
-                  },
-                ),
+              SeedTextField(
+                label: '결재 제목',
+                showLabel: false,
+                controller: _titleController,
+                placeholder: '결재 제목을 입력하세요',
+                size: SeedTextFieldSize.large,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return '결재 제목을 입력해주세요';
+                  }
+                  return null;
+                },
               ),
 
               // 결재선 — 양식에 정의된 기본 결재선을 따른다 (기안자가 임의 지정하지 않음)

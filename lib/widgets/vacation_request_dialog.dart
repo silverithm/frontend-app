@@ -11,7 +11,10 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../utils/role_utils.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import 'common/app_button.dart';
+import 'common/app_dialog.dart';
+import 'common/app_snackbar.dart';
+import 'seed/seed_button.dart';
 
 class VacationRequestDialog extends StatefulWidget {
   final DateTime selectedDate;
@@ -231,26 +234,16 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   /// 운행 공백을 알리되 신청을 막지는 않는다 — 사정이 있을 수 있어 최종 판단은 관리자가 한다.
   Future<bool?> _showDriverConflictDialog(String detail) async {
     if (!mounted) return false;
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('이 날 운행할 운전자가 없습니다'),
-        content: Text(
+    return AppDialog.showConfirm(
+      context,
+      title: '이 날 운행할 운전자가 없습니다',
+      message:
           '$detail\n\n'
           '지금 신청하면 그날 이 노선을 운행할 사람이 없습니다.\n'
           '그래도 신청하시겠습니까? 관리자가 확인 후 조정할 수 있습니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('그래도 신청'),
-          ),
-        ],
-      ),
+      confirmText: '그래도 신청',
+      cancelText: '취소',
+      confirmVariant: AppButtonVariant.primary,
     );
   }
 
@@ -261,16 +254,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     final vacationProvider = context.read<VacationProvider>();
 
     if (authProvider.currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('로그인이 필요합니다'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.space3),
-          ),
-        ),
-      );
+      AppSnackBar.showError(context, message: '로그인이 필요합니다');
       return;
     }
 
@@ -328,34 +312,17 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         );
 
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isVacationUsed
-                  ? '${_getDurationDisplayText(_selectedDuration)} 신청이 완료되었습니다'
-                  : '미사용 휴무 신청이 완료되었습니다',
-            ),
-            backgroundColor: AppSemanticColors.statusSuccessIcon,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.space3),
-            ),
-          ),
+        AppSnackBar.showSuccess(
+          context,
+          message: _isVacationUsed
+              ? '${_getDurationDisplayText(_selectedDuration)} 신청이 완료되었습니다'
+              : '미사용 휴무 신청이 완료되었습니다',
         );
         widget.onRequestSubmitted?.call();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('신청 실패: ${e.toString()}'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.space3),
-            ),
-          ),
-        );
+        AppSnackBar.showError(context, message: '신청 실패: ${e.toString()}');
       }
     } finally {
       if (mounted) {
@@ -457,11 +424,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
               constraints: const BoxConstraints(maxWidth: 400),
               decoration: BoxDecoration(
                 color: AppSemanticColors.surfaceDefault,
-                borderRadius: BorderRadius.circular(AppSpacing.space6),
-                border: Border.all(
-                  color: AppSemanticColors.borderDefault,
-                  width: 1,
-                ),
+                borderRadius: BorderRadius.circular(AppBorderRadius.xl3),
                 boxShadow: _shadowXl,
               ),
               child: SingleChildScrollView(
@@ -480,27 +443,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               Container(
                                 width: 48,
                                 height: 48,
+                                alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      AppSemanticColors.interactivePrimaryDefault,
-                                      AppSemanticColors.interactivePrimaryDefault,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(AppSpacing.space4),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppSemanticColors.interactivePrimaryActive.withValues(alpha: 0.4),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                                  color: AppSemanticColors.brandWeak,
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                                 ),
                                 child: const Icon(
                                   Icons.event_note_rounded,
-                                  color: AppColors.white,
+                                  color: AppSemanticColors.brandPressed,
                                   size: 24,
                                 ),
                               ),
@@ -568,20 +518,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             Container(
                               width: 40,
                               height: 40,
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: AppSemanticColors.interactivePrimaryDefault,
-                                borderRadius: BorderRadius.circular(AppSpacing.space3),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.2),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                                color: AppSemanticColors.brandWeak,
+                                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                               ),
                               child: const Icon(
                                 Icons.calendar_today_rounded,
-                                color: AppColors.white,
+                                color: AppSemanticColors.brandPressed,
                                 size: 20,
                               ),
                             ),
@@ -633,13 +577,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             Container(
                               padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                color: AppSemanticColors.surfaceDefault,
-                                borderRadius: BorderRadius.circular(AppSpacing.space4),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                                 border: Border.all(
-                                  color: AppSemanticColors.borderDefault,
+                                  color: AppSemanticColors.borderSubtle,
                                   width: 1,
                                 ),
-                                boxShadow: _shadowSm,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,13 +640,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               Container(
                                 padding: const EdgeInsets.all(AppSpacing.space5),
                                 decoration: BoxDecoration(
-                                  color: AppSemanticColors.surfaceDefault,
-                                  borderRadius: BorderRadius.circular(AppSpacing.space4),
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                                   border: Border.all(
-                                    color: AppSemanticColors.borderDefault,
+                                    color: AppSemanticColors.borderSubtle,
                                     width: 1,
                                   ),
-                                  boxShadow: _shadowSm,
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -777,13 +717,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             Container(
                               padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                color: AppSemanticColors.surfaceDefault,
-                                borderRadius: BorderRadius.circular(AppSpacing.space4),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                                 border: Border.all(
-                                  color: AppSemanticColors.borderDefault,
+                                  color: AppSemanticColors.borderSubtle,
                                   width: 1,
                                 ),
-                                boxShadow: _shadowSm,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -907,13 +845,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             Container(
                               padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                color: AppSemanticColors.surfaceDefault,
-                                borderRadius: BorderRadius.circular(AppSpacing.space4),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                                 border: Border.all(
-                                  color: AppSemanticColors.borderDefault,
+                                  color: AppSemanticColors.borderSubtle,
                                   width: 1,
                                 ),
-                                boxShadow: _shadowSm,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1034,64 +970,12 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             const SizedBox(height: AppSpacing.space6),
 
                             // 제출 버튼
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    AppSemanticColors.interactivePrimaryDefault,
-                                    AppSemanticColors.interactivePrimaryDefault,
-                                    AppSemanticColors.interactivePrimaryDefault,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(AppSpacing.space4),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppSemanticColors.interactivePrimaryActive.withValues(alpha: 0.4),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: shadcn.PrimaryButton(
-                                onPressed: _isSubmitting ? null : _submitRequest,
-                                child: _isSubmitting
-                                    ? Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              valueColor: AlwaysStoppedAnimation<Color>(
-                                                AppColors.white,
-                                              ),
-                                              strokeWidth: 2,
-                                            ),
-                                          ),
-                                          const SizedBox(width: AppSpacing.space3),
-                                          Text(
-                                            '신청 중...',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.white,
-                                              letterSpacing: -0.025,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Text(
-                                        '휴무 신청하기',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.white,
-                                          letterSpacing: -0.025,
-                                        ),
-                                      ),
-                              ),
+                            SeedButton(
+                              label: _isSubmitting ? '신청 중...' : '휴무 신청하기',
+                              onPressed: _isSubmitting ? null : _submitRequest,
+                              variant: SeedButtonVariant.brandSolid,
+                              size: SeedButtonSize.large,
+                              isLoading: _isSubmitting,
                             ),
                           ],
                         ),

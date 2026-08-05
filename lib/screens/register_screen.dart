@@ -10,6 +10,7 @@ import '../models/company.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
 import '../widgets/common/index.dart';
+import '../widgets/seed/seed_text_field.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -29,8 +30,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   String _fallbackRole = 'CAREGIVER';
   String _userType = 'employee'; // 'admin' 또는 'employee'
   String _employeeJoinMethod = 'code'; // 'code' 또는 'company'
@@ -558,7 +557,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 size: 60,
                 color: AppSemanticColors.statusInfoIcon,
               ),
-              const SizedBox(height: Constants.defaultPadding),
+              const SizedBox(height: AppSpacing.space4),
 
               Text(
                 '회원가입',
@@ -916,31 +915,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: Constants.defaultPadding),
+                        const SizedBox(height: AppSpacing.space4),
 
                         // 이름 입력
-                        TextFormField(
+                        SeedTextField(
+                          label: '이름',
                           controller: _nameController,
-                          decoration: InputDecoration(
-                            labelText: '이름',
-                            hintText: '홍길동',
-                            prefixIcon: const Icon(Icons.person_outline),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderHover,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderFocus,
-                              ),
-                            ),
-                          ),
+                          placeholder: '홍길동',
+                          prefixIcon: Icons.person_outline,
+                          size: SeedTextFieldSize.large,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return '이름을 입력해주세요';
@@ -951,32 +934,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: Constants.defaultPadding),
+                        const SizedBox(height: AppSpacing.space4),
 
                         // 이메일 입력
-                        TextFormField(
+                        SeedTextField(
+                          label: '이메일',
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: '이메일',
-                            hintText: 'example@company.com',
-                            prefixIcon: const Icon(Icons.email_outlined),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderHover,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderFocus,
-                              ),
-                            ),
-                          ),
+                          placeholder: 'example@company.com',
+                          prefixIcon: Icons.email_outlined,
+                          size: SeedTextFieldSize.large,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return '이메일을 입력해주세요';
@@ -989,7 +956,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: Constants.defaultPadding),
+                        const SizedBox(height: AppSpacing.space4),
 
                         if (_userType == 'employee' &&
                             _hasEmployeeCompanyContext) ...[
@@ -1178,39 +1145,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: Constants.defaultPadding),
+                          const SizedBox(height: AppSpacing.space4),
                         ],
 
                         if (_userType == 'employee' &&
                             _employeeJoinMethod == 'code') ...[
-                          TextFormField(
+                          SeedTextField(
+                            label: '회사 코드 *',
                             controller: _companyCodeController,
                             textCapitalization: TextCapitalization.characters,
-                            decoration: InputDecoration(
-                              labelText: '회사 코드 *',
-                              hintText: '예: CV123456 또는 ABCD2345',
-                              helperText: '관리자가 프로필에서 복사한 코드를 입력해주세요.',
-                              prefixIcon: const Icon(Icons.key_outlined),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: _companyErrorMessage != null
-                                      ? AppSemanticColors.statusErrorBorder
-                                      : AppSemanticColors.borderHover,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: _companyErrorMessage != null
-                                      ? AppSemanticColors.statusErrorIcon
-                                      : AppSemanticColors.borderFocus,
-                                ),
-                              ),
-                            ),
+                            placeholder: '예: CV123456 또는 ABCD2345',
+                            helperText: '관리자가 프로필에서 복사한 코드를 입력해주세요.',
+                            errorText: _companyErrorMessage,
+                            prefixIcon: Icons.key_outlined,
+                            size: SeedTextFieldSize.large,
                             onChanged: (_) {
                               if (_companyErrorMessage != null) {
                                 setState(() {
@@ -1222,18 +1170,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               );
                             },
                           ),
-                          if (_companyErrorMessage != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8, left: 12),
-                              child: Text(
-                                _companyErrorMessage!,
-                                style: TextStyle(
-                                  color: AppSemanticColors.statusErrorIcon,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: Constants.defaultPadding),
+                          const SizedBox(height: AppSpacing.space4),
                         ],
 
                         if (_userType == 'employee' &&
@@ -1348,7 +1285,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                             ],
                           ),
-                          const SizedBox(height: Constants.defaultPadding),
+                          const SizedBox(height: AppSpacing.space4),
                         ],
 
                         if (_userType == 'employee') ...[
@@ -1464,7 +1401,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                           ],
-                          const SizedBox(height: Constants.defaultPadding),
+                          const SizedBox(height: AppSpacing.space4),
                         ],
 
                         if (_shouldShowFallbackRoleSelector) ...[
@@ -1506,33 +1443,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               });
                             },
                           ),
-                          const SizedBox(height: Constants.defaultPadding),
+                          const SizedBox(height: AppSpacing.space4),
                         ],
 
                         // 관리자인 경우 회사명 입력
                         if (_userType == 'admin') ...[
-                          TextFormField(
+                          SeedTextField(
+                            label: '회사명 *',
                             controller: _companyNameController,
-                            decoration: InputDecoration(
-                              labelText: '회사명 *',
-                              hintText: '케어브이 센터',
-                              prefixIcon: const Icon(Icons.business),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.borderHover,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.borderFocus,
-                                ),
-                              ),
-                            ),
+                            placeholder: '케어브이 센터',
+                            prefixIcon: Icons.business,
+                            size: SeedTextFieldSize.large,
                             validator: (value) {
                               if (_userType == 'admin' &&
                                   (value == null || value.isEmpty)) {
@@ -1544,37 +1465,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: Constants.defaultPadding),
+                          const SizedBox(height: AppSpacing.space4),
 
                           // 회사 주소 입력
-                          TextFormField(
+                          SeedTextField(
+                            label: '회사 주소 *',
                             controller: _companyAddressController,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: '회사 주소 *',
-                              hintText: '주소를 검색해주세요',
-                              prefixIcon: const Icon(Icons.location_on),
-                              suffixIcon: IconButton(
-                                icon: const Icon(Icons.search),
-                                onPressed: _searchAddress,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.borderHover,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.borderFocus,
-                                ),
-                              ),
-                            ),
+                            isReadOnly: true,
+                            placeholder: '주소를 검색해주세요',
+                            prefixIcon: Icons.location_on,
+                            suffixIcon: Icons.search,
+                            onSuffixIconTap: _searchAddress,
                             onTap: _searchAddress,
+                            size: SeedTextFieldSize.large,
                             validator: (value) {
                               if (_userType == 'admin' &&
                                   (value == null || value.isEmpty)) {
@@ -1583,44 +1486,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: Constants.defaultPadding),
+                          const SizedBox(height: AppSpacing.space4),
                         ],
 
                         // 비밀번호 입력
-                        TextFormField(
+                        SeedTextField(
+                          label: '비밀번호',
                           controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: '비밀번호',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderHover,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderFocus,
-                              ),
-                            ),
-                          ),
+                          obscureText: true,
+                          enableObscureToggle: true,
+                          prefixIcon: Icons.lock_outline,
+                          size: SeedTextFieldSize.large,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return '비밀번호를 입력해주세요';
@@ -1631,44 +1507,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: Constants.defaultPadding),
+                        const SizedBox(height: AppSpacing.space4),
 
                         // 비밀번호 확인
-                        TextFormField(
+                        SeedTextField(
+                          label: '비밀번호 확인',
                           controller: _confirmPasswordController,
-                          obscureText: _obscureConfirmPassword,
-                          decoration: InputDecoration(
-                            labelText: '비밀번호 확인',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderHover,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderFocus,
-                              ),
-                            ),
-                          ),
+                          obscureText: true,
+                          enableObscureToggle: true,
+                          prefixIcon: Icons.lock_outline,
+                          size: SeedTextFieldSize.large,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return '비밀번호를 다시 입력해주세요';
@@ -2084,7 +1932,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             if (authProvider.errorMessage.isNotEmpty) {
                               return Padding(
                                 padding: const EdgeInsets.only(
-                                  top: Constants.defaultPadding,
+                                  top: AppSpacing.space4,
                                 ),
                                 child: Container(
                                   padding: const EdgeInsets.all(12),

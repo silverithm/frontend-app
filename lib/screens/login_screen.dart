@@ -285,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildBottomLinks(),
               // 로그인 폼
               AppCard(
-                elevation: 8,
+                elevation: 0,
                 borderRadius: AppBorderRadius.xl,
                 child: Form(
                   key: _formKey,

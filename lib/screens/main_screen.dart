@@ -6,6 +6,8 @@ import '../providers/subscription_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/approval_provider.dart';
 import '../providers/chat_provider.dart';
+import '../providers/admin_provider.dart';
+import '../models/vacation_request.dart';
 import '../services/fcm_service.dart';
 import '../services/subscription_guard.dart';
 import '../utils/admin_utils.dart';
@@ -276,11 +278,18 @@ class _MainScreenState extends State<MainScreen>
   }
 
   List<BottomNavigationBarItem> _buildNavItems(bool isAdmin) {
-    // 미확인 건수 뱃지 — 결재(대기 건), 채팅(미읽음)
+    // 미확인 건수 뱃지 — 승인함은 결재+휴무+가입 대기 합산, 채팅은 미읽음
     final approvalProvider = context.watch<ApprovalProvider>();
     final chatProvider = context.watch<ChatProvider>();
-    final approvalBadge =
-        isAdmin ? approvalProvider.pendingCount : approvalProvider.myPendingCount;
+    final vacationProvider = context.watch<VacationProvider>();
+    final adminProvider = context.watch<AdminProvider>();
+    final approvalBadge = isAdmin
+        ? approvalProvider.pendingCount +
+            vacationProvider.vacationRequests
+                .where((r) => r.status == VacationStatus.pending)
+                .length +
+            adminProvider.pendingUsers.length
+        : approvalProvider.myPendingCount;
     final chatBadge = chatProvider.totalUnreadCount;
 
     return [

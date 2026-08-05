@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../seed/seed_button.dart';
 import 'signature_pad.dart';
 
 /// 승인 시 서명 확인 시트.
@@ -197,19 +198,14 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
             const SizedBox(height: AppSpacing.space3),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: SeedButton(
+                label: '서명하고 승인',
+                variant: SeedButtonVariant.brandSolid,
+                size: SeedButtonSize.large,
+                isDisabled: !((_useRegistered && _hasRegistered) || !_padEmpty),
                 onPressed: (_useRegistered && _hasRegistered) || !_padEmpty
                     ? _confirm
                     : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-                  foregroundColor: AppSemanticColors.textInverse,
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.space3),
-                  ),
-                ),
-                child: const Text('서명하고 승인'),
               ),
             ),
           ],

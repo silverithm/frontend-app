@@ -59,6 +59,8 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
             ),
             child: TabBar(
               controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               labelColor: AppSemanticColors.interactivePrimaryDefault,
               unselectedLabelColor: AppSemanticColors.textTertiary,
               indicatorColor: AppSemanticColors.interactivePrimaryDefault,
@@ -109,6 +111,8 @@ class _AdminUnifiedApprovalScreenState extends State<AdminUnifiedApprovalScreen>
           ),
           child: TabBar(
             controller: _tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             labelColor: AppSemanticColors.interactivePrimaryDefault,
             unselectedLabelColor: AppSemanticColors.textTertiary,
             indicatorColor: AppSemanticColors.interactivePrimaryDefault,
