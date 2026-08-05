@@ -16,6 +16,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_text_field.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 import '../providers/notice_provider.dart';
 import 'dart:math' as math;
@@ -546,15 +549,9 @@ class _CalendarScreenState extends State<CalendarScreen>
               const SizedBox(height: AppSpacing.space4),
 
               if (schedules.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space5),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.backgroundSecondary,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                    border: Border.all(
-                      color: AppSemanticColors.borderSubtle,
-                      width: 1,
-                    ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.space2,
                   ),
                   child: Row(
                     children: [
@@ -744,68 +741,36 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  void _showDeleteScheduleDialog(Schedule schedule) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        ),
-        title: Text(
-          '일정 삭제',
-          style: AppTypography.heading6.copyWith(
-            fontWeight: AppTypography.fontWeightBold,
-          ),
-        ),
-        content: Text(
-          '\'${schedule.title}\' 일정을 삭제하시겠습니까?',
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppSemanticColors.textSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(
-              '취소',
-              style: AppTypography.labelLarge.copyWith(
-                color: AppSemanticColors.textSecondary,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              final authProvider = context.read<AuthProvider>();
-              final scheduleProvider = context.read<ScheduleProvider>();
-              final companyId = authProvider.currentUser?.company?.id ?? '1';
-
-              final success = await scheduleProvider.deleteSchedule(
-                scheduleId: schedule.id,
-                companyId: companyId.toString(),
-              );
-
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success ? '일정이 삭제되었습니다' : '일정 삭제에 실패했습니다'),
-                    backgroundColor: success
-                        ? AppSemanticColors.statusSuccessIcon
-                        : AppSemanticColors.statusErrorIcon,
-                  ),
-                );
-              }
-            },
-            child: Text(
-              '삭제',
-              style: AppTypography.labelLarge.copyWith(
-                color: AppSemanticColors.statusErrorIcon,
-              ),
-            ),
-          ),
-        ],
-      ),
+  void _showDeleteScheduleDialog(Schedule schedule) async {
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '일정 삭제',
+      message: '\'${schedule.title}\' 일정을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
+
+    if (confirmed != true || !mounted) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final scheduleProvider = context.read<ScheduleProvider>();
+    final companyId = authProvider.currentUser?.company?.id ?? '1';
+
+    final success = await scheduleProvider.deleteSchedule(
+      scheduleId: schedule.id,
+      companyId: companyId.toString(),
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? '일정이 삭제되었습니다' : '일정 삭제에 실패했습니다'),
+          backgroundColor: success
+              ? AppSemanticColors.statusSuccessIcon
+              : AppSemanticColors.statusErrorIcon,
+        ),
+      );
+    }
   }
 
   Color _getCategoryColor(String category) {
@@ -971,17 +936,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                               .getVacationsForDate(_selectedDate!);
 
                           if (vacations.isEmpty) {
-                            return Container(
-                              padding: const EdgeInsets.all(AppSpacing.space5),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl2,
-                                ),
-                                border: Border.all(
-                                  color: AppSemanticColors.borderSubtle,
-                                  width: 1,
-                                ),
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.space2,
                               ),
                               child: Row(
                                 children: [
@@ -1150,13 +1107,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                       color: AppSemanticColors.borderDefault,
                       width: 1,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.black.withValues(alpha: 0.04),
-                        blurRadius: 3,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.space4),
@@ -1468,11 +1418,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                     // 핸들
                     Center(
                       child: Container(
-                        width: 40,
-                        height: 4,
+                        width: AppSpacing.space10,
+                        height: AppSpacing.space1,
                         decoration: BoxDecoration(
                           color: AppSemanticColors.borderDefault,
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(AppBorderRadius.sm),
                         ),
                       ),
                     ),
@@ -1500,32 +1450,18 @@ class _CalendarScreenState extends State<CalendarScreen>
                     const SizedBox(height: AppSpacing.space4),
 
                     // 제목
-                    TextField(
+                    SeedTextField(
+                      label: '제목 *',
                       controller: titleController,
-                      decoration: InputDecoration(
-                        labelText: '제목 *',
-                        hintText: '일정 제목을 입력하세요',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.lg,
-                          ),
-                        ),
-                      ),
+                      placeholder: '일정 제목을 입력하세요',
                     ),
                     const SizedBox(height: AppSpacing.space3),
 
                     // 내용
-                    TextField(
+                    SeedTextField(
+                      label: '내용',
                       controller: contentController,
-                      decoration: InputDecoration(
-                        labelText: '내용',
-                        hintText: '일정 내용을 입력하세요',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.lg,
-                          ),
-                        ),
-                      ),
+                      placeholder: '일정 내용을 입력하세요',
                       maxLines: 3,
                     ),
                     const SizedBox(height: AppSpacing.space3),
@@ -1556,17 +1492,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                     const SizedBox(height: AppSpacing.space3),
 
                     // 장소
-                    TextField(
+                    SeedTextField(
+                      label: '장소',
                       controller: locationController,
-                      decoration: InputDecoration(
-                        labelText: '장소',
-                        hintText: '장소를 입력하세요',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.lg,
-                          ),
-                        ),
-                      ),
+                      placeholder: '장소를 입력하세요',
                     ),
                     const SizedBox(height: AppSpacing.space3),
 
@@ -1859,7 +1788,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                     // 등록 버튼
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: SeedButton(
+                        label: '등록',
+                        variant: SeedButtonVariant.brandSolid,
+                        size: SeedButtonSize.large,
                         onPressed: () async {
                           if (titleController.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -1925,26 +1857,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                             );
                           }
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              AppSemanticColors.interactivePrimaryDefault,
-                          foregroundColor: AppSemanticColors.textInverse,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.space3,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.lg,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          '등록',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: AppSemanticColors.textInverse,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.space2),
@@ -1973,8 +1885,8 @@ class _CalendarScreenState extends State<CalendarScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40,
-              height: 4,
+              width: AppSpacing.space10,
+              height: AppSpacing.space1,
               margin: const EdgeInsets.only(bottom: AppSpacing.space5),
               decoration: BoxDecoration(
                 color: AppSemanticColors.borderSubtle,

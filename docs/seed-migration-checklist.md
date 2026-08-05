@@ -22,7 +22,7 @@
 | 11 | screens/approval_detail_screen.dart | [ ] | **승인/반려 확인 다이얼로그**: shadcn.OutlineButton/shadcn.DestructiveButton(L132,136) + shadcn.AlertDialog(L92) / radius5·padding2 리터럴 |
 | 12 | screens/approval_form_screen.dart | [~] | shadcn.PrimaryButton 1곳만. 그 외 그라디언트/그림자/칩/AppButton 0 |
 | 13 | screens/approval_list_screen.dart | [~] | shadcn.PrimaryButton 1곳만. radius4·padding5 리터럴 |
-| 14 | screens/calendar_screen.dart | [ ] | **초대형 파일(83KB), 대부분 토큰화 완료되었으나 일부 잔재 남음**: raw TextButton L767,776 + raw ElevatedButton L1862(등록 버튼) / **정적그림자**: L1148-1158 "하단 통계 섹션"(관리자 전용, BoxShadow) — 단 날짜 그리드 셀 자체의 인라인 스타일(위치·색상 계산)은 프로젝트 관례상 정상이며 대부분 AppSpacing/AppSemanticColors 토큰 사용 중 |
+| 14 | screens/calendar_screen.dart | [x] | 일정 삭제 확인 native AlertDialog+TextButton 2곳→AppDialog.showConfirm. 등록 바텀시트 raw ElevatedButton→SeedButton(brandSolid, large). 바텀시트 제목/내용/장소 TextField 3곳→SeedTextField, DropdownButtonFormField는 라디우스 토큰 정리(변경 없이 유지). "하단 통계 섹션"(L1104 부근) 정적그림자 제거→보더만. "선택된 날짜" 카드 안 빈상태 박스(휴무/일정 탭 2곳) 카드중첩 평탄화→Padding+Row로. 핸들·라디우스 잔여 리터럴 AppSpacing/AppBorderRadius 토큰화. 날짜 그리드 셀 로직 미변경. analyze 0(기존 print/미사용 import/deprecated value 등만 잔존, 로직 변경 없음). |
 | 15 | screens/chat_room_info_screen.dart | [ ] | shadcn버튼 6곳(OutlineButton/DestructiveButton)+AlertDialog |
 | 16 | screens/chat_room_list_screen.dart | [~] | shadcn.PrimaryButton 1곳만(빈 상태 액션으로 추정) |
 | 17 | screens/chat_room_screen.dart | [ ] | **정적그림자**: `_buildMessageInput` 하단 입력바 Container(L1443-1459, BoxShadow blurRadius10) — widgets/chat/message_input.dart와 완전히 동일한 구조를 중복 구현 / shadcn버튼 5곳+AlertDialog |
@@ -36,8 +36,8 @@
 | 25 | screens/notice_detail_screen.dart | [ ] | shadcn버튼 3곳(PrimaryButton/OutlineButton/DestructiveButton)+AlertDialog / radius6 리터럴 |
 | 26 | screens/notice_list_screen.dart | [~] | shadcn.PrimaryButton 1곳만 |
 | 27 | screens/payment_screen.dart | [x] | `_buildPlanSummary` 그라디언트+정적그림자, `_buildPaymentInfo`/`_buildPaymentMethods` 정적그림자 모두 제거→단색/1px 보더. 결제 버튼을 SeedButton(large, isLoading 연동)으로, shadcn.AlertDialog 2곳(성공/실패)을 AppDialog.showCustom·showAlert로 교체. radius·padding 리터럴 토큰화. 결제/웹뷰 로직 변경 없음. analyze 0(기존 print/미사용 import·필드 warning만 잔존, 로직 변경 없음). |
-| 28 | screens/plaza_post_detail_screen.dart | [~] | raw TextButton 2곳(L92,95, 삭제 확인 다이얼로그) / raw Colors.red 2곳(L97,190) |
-| 29 | screens/plaza_screen.dart | [~] | raw ElevatedButton 2곳(L427,802) / Seed 컴포넌트 4곳 이미 사용 중 |
+| 28 | screens/plaza_post_detail_screen.dart | [x] | 삭제 확인 native AlertDialog+TextButton→AppDialog.showConfirm. raw OutlinedButton 좋아요 버튼→토큰화된 아이콘 버튼(neutralOutline 스펙 수치 그대로, 좋아요 시 하트만 상태색). Colors.red 2곳→AppSemanticColors.statusErrorIcon. 댓글 입력 TextField(보더·hint·contentPadding)·Checkbox(activeColor) 스타일 토큰화, 댓글 카드 radius/spacing 잔여 리터럴 토큰화. analyze 0(기존 async-context info만 잔존, 로직 변경 없음). |
+| 29 | screens/plaza_screen.dart | [x] | 글쓰기/자료 업로드 바텀시트 raw ElevatedButton 2곳→SeedButton(brandSolid, 업로드 버튼은 isLoading 연동). TextField 4곳→SeedTextField. DropdownButtonFormField 2곳 라디우스 토큰화(AppBorderRadius). raw Checkbox 스타일 정리(activeColor 토큰). 게시판 배지 padding/radius 리터럴 토큰화. 빈 상태 문구 복원: 소식 "아직 소식이 없어요", 게시판 "아직 게시글이 없어요 / + 버튼으로 첫 글을 남겨보세요", 자료실 "아직 등록된 자료가 없어요 / + 버튼으로 첫 자료를 올려보세요". analyze 0(기존 미사용 dart:io import만 잔존, 로직 변경 없음). |
 | 30 | screens/profile_screen.dart | [ ] | **초대형 파일(73KB), 잔재 다수**: shadcn버튼 4곳(AlertDialog/GhostButton/OutlineButton/PrimaryButton)+shadcn.Card 4곳 / 구 AppButton 5곳 / Card( 계열 4곳 — 카드 중첩 의심(확인 필요) / radius19·padding15 리터럴 |
 | 31 | screens/register_screen.dart | 다른 작업자 진행 중 | 현재 스냅샷: 그라디언트 3곳+정적그림자 4곳(L603,681,1973,2025)+shadcn버튼 2곳+구 AppButton 2곳, Seed 컴포넌트(SeedButton 등) 9곳 사용 — 초대형 파일(112KB), 마이그레이션 중간 단계 |
 | 32 | screens/signature_manage_screen.dart | [~] | raw ElevatedButton 1곳(L189) / raw Colors.white 1곳(L127) |

@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_dialog.dart';
 
 /// 광장 게시글 상세 + 댓글
 class PlazaPostDetailScreen extends StatefulWidget {
@@ -83,22 +84,14 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
   }
 
   Future<void> _deletePost() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('게시글 삭제'),
-        content: const Text('이 게시글을 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소')),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('삭제', style: TextStyle(color: Colors.red))),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '게시글 삭제',
+      message: '이 게시글을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
     try {
       await ApiService().deletePlazaPost(postId: widget.postId);
       if (mounted) Navigator.pop(context);
@@ -179,20 +172,50 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                             const SizedBox(height: AppSpacing.space4),
                             Row(
                               children: [
-                                OutlinedButton.icon(
-                                  onPressed: _toggleLike,
-                                  icon: Icon(
-                                    post['likedByMe'] == true
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    size: 16,
-                                    color: post['likedByMe'] == true
-                                        ? Colors.red
-                                        : AppSemanticColors.textSecondary,
-                                  ),
-                                  label: Text(
-                                    '좋아요 ${post['likeCount'] ?? 0}',
-                                    style: const TextStyle(fontSize: 13),
+                                GestureDetector(
+                                  onTap: _toggleLike,
+                                  child: Container(
+                                    height: AppSpacing.space9,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.space3_5,
+                                      vertical: AppSpacing.space2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.transparent,
+                                      borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.lg,
+                                      ),
+                                      border: Border.all(
+                                        color: AppSemanticColors.borderDefault,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          post['likedByMe'] == true
+                                              ? Icons.favorite
+                                              : Icons.favorite_border,
+                                          size: 16,
+                                          color: post['likedByMe'] == true
+                                              ? AppSemanticColors
+                                                  .statusErrorIcon
+                                              : AppSemanticColors
+                                                  .textSecondary,
+                                        ),
+                                        const SizedBox(
+                                          width: AppSpacing.space1,
+                                        ),
+                                        Text(
+                                          '좋아요 ${post['likeCount'] ?? 0}',
+                                          style: AppTypography.bodySmall
+                                              .copyWith(
+                                            color:
+                                                AppSemanticColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -216,8 +239,8 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                                     const EdgeInsets.all(AppSpacing.space3),
                                 decoration: BoxDecoration(
                                   color: AppSemanticColors.surfaceDefault,
-                                  borderRadius:
-                                      BorderRadius.circular(AppSpacing.space3),
+                                  borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.xl),
                                   border: Border.all(
                                       color: comment['isAccepted'] == true
                                           ? AppSemanticColors.statusSuccessIcon
@@ -233,7 +256,8 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                                               size: 14,
                                               color: AppSemanticColors
                                                   .statusSuccessIcon),
-                                          const SizedBox(width: 4),
+                                          const SizedBox(
+                                              width: AppSpacing.space1),
                                         ],
                                         Expanded(
                                           child: Text(
@@ -259,7 +283,7 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                                           ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: AppSpacing.space1),
                                     Text(
                                       comment['content']?.toString() ?? '',
                                       style: AppTypography.bodySmall.copyWith(
@@ -292,20 +316,54 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                             Checkbox(
                               value: _commentAnonymous,
                               visualDensity: VisualDensity.compact,
+                              activeColor: AppSemanticColors.brandDefault,
                               onChanged: (value) => setState(
                                   () => _commentAnonymous = value ?? false),
                             ),
-                            const Text('익명', style: TextStyle(fontSize: 11)),
+                            Text(
+                              '익명',
+                              style: AppTypography.labelSmall.copyWith(
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                            ),
                             const SizedBox(width: AppSpacing.space2),
                             Expanded(
                               child: TextField(
                                 controller: _commentController,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                ),
                                 decoration: InputDecoration(
                                   hintText: '댓글을 입력하세요',
+                                  hintStyle: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textTertiary,
+                                  ),
                                   isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.space3,
+                                    vertical: AppSpacing.space2,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(
-                                        AppSpacing.space3),
+                                        AppBorderRadius.xl),
+                                    borderSide: BorderSide(
+                                      color: AppSemanticColors.borderDefault,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.xl),
+                                    borderSide: BorderSide(
+                                      color: AppSemanticColors.borderDefault,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.xl),
+                                    borderSide: BorderSide(
+                                      color: AppSemanticColors
+                                          .interactivePrimaryDefault,
+                                    ),
                                   ),
                                 ),
                               ),
