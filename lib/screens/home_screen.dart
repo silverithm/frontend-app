@@ -145,6 +145,116 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// 오늘 브리핑 — 오늘 일정 목록과 오늘 휴무자 요약
+  Widget _buildTodayBriefing(
+    ScheduleProvider scheduleProvider,
+    VacationProvider vacationProvider,
+  ) {
+    final now = DateTime.now();
+    final todaySchedules = scheduleProvider.getSchedulesForDate(now);
+    final todayKey = DateTime(now.year, now.month, now.day);
+    final todayVacationers = (vacationProvider.calendarData[todayKey] ?? [])
+        .where((v) => v.status == VacationStatus.approved)
+        .toList();
+
+    const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+    final dateLabel = '${now.month}월 ${now.day}일 (${weekdays[now.weekday - 1]})';
+
+    return _SectionCard(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space5,
+        AppSpacing.space3,
+        AppSpacing.space5,
+        AppSpacing.space5,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(title: '오늘', subtitle: dateLabel),
+          const SizedBox(height: AppSpacing.space3),
+          if (todaySchedules.isEmpty)
+            Text(
+              '오늘 예정된 일정이 없습니다.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            )
+          else
+            ...todaySchedules.take(3).map(
+              (schedule) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppSemanticColors.brandDefault,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.space2),
+                    SizedBox(
+                      width: 40,
+                      child: Text(
+                        schedule.timeText,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.space2),
+                    Expanded(
+                      child: Text(
+                        schedule.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontWeight: AppTypography.fontWeightMedium,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (todaySchedules.length > 3)
+            Text(
+              '외 ${todaySchedules.length - 3}건',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            ),
+          const SizedBox(height: AppSpacing.space2),
+          Divider(height: 1, color: AppSemanticColors.borderSubtle),
+          const SizedBox(height: AppSpacing.space3),
+          Row(
+            children: [
+              Icon(
+                Icons.beach_access_outlined,
+                size: 16,
+                color: AppSemanticColors.textTertiary,
+              ),
+              const SizedBox(width: AppSpacing.space2),
+              Expanded(
+                child: Text(
+                  todayVacationers.isEmpty
+                      ? '오늘 휴무자가 없습니다.'
+                      : '오늘 휴무 ${todayVacationers.length}명 · ${todayVacationers.take(3).map((v) => v.userName).join(', ')}${todayVacationers.length > 3 ? ' 외 ${todayVacationers.length - 3}명' : ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   void _openApproval() {
     if (widget.onNavigateToTab != null) {
       widget.onNavigateToTab!(MainTabs.approval);
@@ -305,6 +415,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
+                    // 오늘 브리핑 — 오늘 일정과 휴무 현황을 가장 먼저 보여준다
+                    _buildTodayBriefing(scheduleProvider, vacationProvider),
+                    const SizedBox(height: AppSpacing.space4),
+
+                    // 빠른 작업 — 자주 쓰는 액션 바로가기
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _QuickActionButton(
+                            icon: Icons.beach_access_outlined,
+                            label: '휴무 신청',
+                            onTap: _openWorkAdjustment,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: _QuickActionButton(
+                            icon: Icons.edit_note_outlined,
+                            label: isAdmin ? '결재 승인' : '결재 작성',
+                            onTap: _openApproval,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: _QuickActionButton(
+                            icon: Icons.campaign_outlined,
+                            label: '공지 보기',
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => isAdmin
+                                    ? const AdminNoticeManagementScreen()
+                                    : const NoticeListScreen(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+
                     _SectionCard(
                       padding: const EdgeInsets.fromLTRB(
                         AppSpacing.space5,
@@ -1028,6 +1178,50 @@ class _EmptySectionState extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 빠른 작업 버튼 — 홈 상단에서 자주 쓰는 액션으로 바로 이동
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppSemanticColors.surfaceDefault,
+      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppSemanticColors.borderSubtle),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, size: 22, color: AppSemanticColors.brandPressed),
+              const SizedBox(height: AppSpacing.space1),
+              Text(
+                label,
+                style: AppTypography.labelMedium.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

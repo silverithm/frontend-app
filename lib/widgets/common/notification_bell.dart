@@ -6,6 +6,10 @@ import '../../providers/notification_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../../screens/approval_list_screen.dart';
+import '../../screens/chat_room_list_screen.dart';
+import '../../screens/my_vacation_screen.dart';
+import '../../screens/notice_list_screen.dart';
 
 class NotificationBell extends StatelessWidget {
   final Color? iconColor;
@@ -268,6 +272,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                         if (notification.isUnread) {
                           notificationProvider.markAsRead(notification.id);
                         }
+                        _navigateByType(context, notification.type);
                       },
                     );
                   },
@@ -277,6 +282,26 @@ class _NotificationBottomSheet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// 알림 유형별 딥링크 — FCM 푸시 탭과 동일한 규칙 (fcm_service._navigateByType 참고)
+  void _navigateByType(BuildContext context, String type) {
+    Widget? target;
+    if (type.startsWith('vacation')) {
+      target = const MyVacationScreen();
+    } else if (type.startsWith('approval')) {
+      target = const ApprovalListScreen();
+    } else if (type.startsWith('notice')) {
+      target = const NoticeListScreen();
+    } else if (type.startsWith('chat')) {
+      target = const ChatRoomListScreen();
+    }
+    if (target == null) return; // system 등 — 이동할 곳 없음
+
+    Navigator.of(context).pop(); // 알림 바텀시트 닫기
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(builder: (_) => target!),
     );
   }
 

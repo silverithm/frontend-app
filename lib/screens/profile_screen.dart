@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
+import '../providers/app_version_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../models/user.dart';
 import '../services/analytics_service.dart';
@@ -1168,43 +1169,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             onTap: () => _showPasswordChangeDialog(context),
                           ),
 
-                          const Divider(height: 1, color: AppColors.transparent),
-
-                          _buildSettingTile(
-                            icon: Icons.notifications,
-                            title: '알림 설정',
-                            subtitle: _notificationsEnabled
-                                ? '푸시 알림이 활성화되어 있습니다'
-                                : '푸시 알림이 비활성화되어 있습니다',
-                            trailing: Switch(
-                              value: _notificationsEnabled,
-                              onChanged: (value) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('알림 설정 기능은 준비 중입니다'),
-                                    backgroundColor: AppSemanticColors.statusWarningIcon,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                );
-                              },
-                              activeColor: AppSemanticColors.interactivePrimaryDefault,
-                            ),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('알림 설정 기능은 준비 중입니다'),
-                                  backgroundColor: AppSemanticColors.statusWarningIcon,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                          
 
                           const Divider(height: 1, color: AppColors.transparent),
                           
@@ -1250,69 +1215,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                             },
                           ),
 
-                          const Divider(height: 1, color: AppColors.transparent),
+                          
 
-                          _buildSettingTile(
-                            icon: Icons.help,
-                            title: '도움말',
-                            subtitle: '자주 묻는 질문 및 지원',
-                            trailing: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.chevron_right,
-                                color: AppSemanticColors.textSecondary,
-                                size: 20,
-                              ),
-                            ),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('도움말 기능은 준비 중입니다'),
-                                  backgroundColor: AppSemanticColors.statusWarningIcon,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-
-                          const Divider(height: 1, color: AppColors.transparent),
-
-                          _buildSettingTile(
-                            icon: Icons.info,
-                            title: '앱 정보',
-                            subtitle: '버전 및 개발자 정보',
-                            trailing: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.chevron_right,
-                                color: AppSemanticColors.textTertiary,
-                                size: 20,
-                              ),
-                            ),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('앱 정보 기능은 준비 중입니다'),
-                                  backgroundColor: AppSemanticColors.statusWarningIcon,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                          
 
                           const Divider(height: 1, color: AppColors.transparent),
 
@@ -1468,7 +1373,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     opacity: _fadeAnimation,
                     child: Center(
                       child: Text(
-                        'Version 1.0.0',
+                        // 실제 앱 버전 표시 (하드코딩 금지)
+                        'Version ${context.watch<AppVersionProvider>().currentVersion.isEmpty ? '-' : context.watch<AppVersionProvider>().currentVersion}',
                         style: AppTypography.caption.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),

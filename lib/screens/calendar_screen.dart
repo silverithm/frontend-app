@@ -18,8 +18,6 @@ import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 import '../providers/notice_provider.dart';
-import 'notice_detail_screen.dart';
-import 'dart:async';
 import 'dart:math' as math;
 
 class CalendarScreen extends StatefulWidget {
@@ -37,10 +35,6 @@ class _CalendarScreenState extends State<CalendarScreen>
   late AnimationController _fabAnimationController;
   late AnimationController _filterAnimationController;
   late TabController _tabController;
-
-  // 공지 티커용 상태
-  int _currentNoticeIndex = 0;
-  Timer? _noticeTimer;
 
   // 일정 달력용 상태
   DateTime _scheduleCurrentDate = DateTime.now();
@@ -67,15 +61,8 @@ class _CalendarScreenState extends State<CalendarScreen>
 
       vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
       scheduleProvider.loadCalendarData(_scheduleCurrentDate, companyId: companyId.toString());
-      context.read<NoticeProvider>().loadPublishedNotices(
-        companyId: companyId,
-        refresh: true,
-      );
 
       _fabAnimationController.forward();
-
-      // 공지 티커 타이머 시작
-      _startNoticeTimer();
 
       // Analytics 화면 조회 이벤트
       AnalyticsService().logScreenView(screenName: 'calendar_screen');
@@ -90,21 +77,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     });
   }
 
-  void _startNoticeTimer() {
-    _noticeTimer?.cancel();
-    _noticeTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      final notices = context.read<NoticeProvider>().publishedNotices;
-      if (notices.length > 1) {
-        setState(() {
-          _currentNoticeIndex = (_currentNoticeIndex + 1) % notices.length;
-        });
-      }
-    });
-  }
-
   @override
   void dispose() {
-    _noticeTimer?.cancel();
     _tabController.dispose();
     _fabAnimationController.dispose();
     _filterAnimationController.dispose();
@@ -195,10 +169,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                   },
                 ),
               ),
-            ),
-            // 공지사항 티커
-            SliverToBoxAdapter(
-              child: _buildNoticeTicker(),
             ),
           ];
         },
@@ -803,100 +773,6 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
-  Widget _buildNoticeTicker() {
-    return Consumer<NoticeProvider>(
-      builder: (context, noticeProvider, child) {
-        final notices = noticeProvider.publishedNotices;
-        if (notices.isEmpty) return const SizedBox.shrink();
-
-        final safeIndex = _currentNoticeIndex % notices.length;
-        final currentNotice = notices[safeIndex];
-
-        return GestureDetector(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => NoticeDetailScreen(noticeId: currentNotice.id),
-              ),
-            );
-          },
-          child: Container(
-            color: AppSemanticColors.backgroundPrimary,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space4,
-              vertical: AppSpacing.space2,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space2,
-                    vertical: AppSpacing.space1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.statusInfoBackground,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.base),
-                  ),
-                  child: Text(
-                    '공지',
-                    style: AppTypography.caption.copyWith(
-                      color: AppSemanticColors.statusInfoIcon,
-                      fontWeight: AppTypography.fontWeightSemibold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.space2),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: AppTransitions.slow,
-                    layoutBuilder: (currentChild, previousChildren) {
-                      return Stack(
-                        alignment: Alignment.centerLeft,
-                        children: [
-                          ...previousChildren,
-                          if (currentChild != null) currentChild,
-                        ],
-                      );
-                    },
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.5),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Text(
-                      currentNotice.title,
-                      key: ValueKey(currentNotice.id),
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                if (notices.length > 1) ...[
-                  const SizedBox(width: AppSpacing.space2),
-                  Text(
-                    '${safeIndex + 1}/${notices.length}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   /// 휴무 달력 탭 빌드
   Widget _buildVacationCalendar() {
