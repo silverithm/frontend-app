@@ -9,14 +9,14 @@
 
 | # | 파일 | 상태 | 남은 잔재 (종류: 위치 대략) |
 |---|---|---|---|
-| 1 | screens/admin_approval_management_screen.dart | [ ] | shadcn버튼: L268,272,334,338,408,412,710,727,947,955 (OutlineButton/PrimaryButton/DestructiveButton, 승인/반려 포함) / shadcn.AlertDialog: L82,240,325,388 / `_buildStatusFilterChip` 5곳(L573-579, 칩 스타일 커스텀 위젯) / radius리터럴 7곳 |
-| 2 | screens/admin_approval_template_screen.dart | [ ] | shadcn버튼 5곳(PrimaryButton/OutlineButton/GhostButton/DestructiveButton)+AlertDialog / radius9·padding7 리터럴 |
+| 1 | screens/admin_approval_management_screen.dart | [x] | 없음 |
+| 2 | screens/admin_approval_template_screen.dart | [x] | 없음 |
 | 3 | screens/admin_company_settings_screen.dart | [x] | 그라디언트 1곳+정적그림자 5곳(회사정보카드/상세정보/관리자정보/구독정보/로그아웃 섹션) 모두 제거→단색 배경+1px 보더. shadcn버튼 13곳 전부 SeedButton으로(회원탈퇴=critical, 로그아웃=neutralOutline). shadcn.AlertDialog 4곳(로그아웃/구독일시정지/구독재개/회원탈퇴)을 AppDialog.showConfirm·showCustom+SeedButton 조합으로 교체. radius·padding 리터럴 전면 AppSpacing/AppBorderRadius 토큰화. analyze 0(기존 print/toList info만 잔존, 로직 변경 없음). |
 | 4 | screens/admin_notice_form_screen.dart | [x] | 그라디언트/그림자/shadcn/AppButton/칩/radius·padding 리터럴 전부 0. 완료 상태 |
 | 5 | screens/admin_notice_management_screen.dart | [ ] | shadcn버튼 6곳+AlertDialog / `_buildFilterChip` 6곳(L521-598, 칩 UI 패턴 잔존) |
 | 6 | screens/admin_payment_screen.dart | [x] | `_buildPlanSummary` 그라디언트+정적그림자, `_buildCompanyInfo`/`_buildPaymentInfo`/`_buildTermsAgreement` 정적그림자 모두 제거→단색/1px 보더. shadcn버튼(결제하기/성공다이얼로그 완료) SeedButton으로, shadcn.AlertDialog 2곳(성공/실패)을 AppDialog.showCustom·showAlert로 교체. radius·padding 리터럴 토큰화. 결제/웹뷰 로직 변경 없음. analyze 0(기존 print/null-comparison 잔존, 로직 변경 없음). |
 | 7 | screens/admin_unified_approval_screen.dart | [x] | 단순 TabBar 셸(하위 화면에 위임). 전 카테고리 0. 완료 상태 |
-| 8 | screens/admin_user_management_screen.dart | [ ] | shadcn버튼 14곳(ButtonSize 포함)+AlertDialog / **제목 중복**: AppBar 타이틀 "회원 관리"(L62 부근)와 헤더 블록 내부 텍스트 "회원 관리"(L118 부근)가 동일 문구 반복 / radius4·padding2 리터럴 |
+| 8 | screens/admin_user_management_screen.dart | [x] | 없음 |
 | 9 | screens/admin_vacation_limits_setting_screen.dart | [ ] | **정적그림자**: "월 선택 헤더" Container(L308-320), "일별 카드"(L505-520) 모두 BoxShadow / shadcn.PrimaryButton 1곳 / radius9·padding10 리터럴 |
 | 10 | screens/admin_vacation_management_screen.dart | [ ] | **최대 잔재 파일(66KB, 1770줄)**: shadcn버튼 17곳+AlertDialog / `_buildStatusFilterChip`/`_buildRoleFilterChip`/`_buildSortFilterChip` 등 칩 패턴 14곳 / Card( 계열 5곳 — 카드 중첩 의심(확인 필요) / **죽은 코드 의심**: `_buildVacationList()`(L473) 정의는 있으나 파일 내 호출부가 전무(자기 정의만 매칭) — 리팩터 후 잔존한 미사용 메서드로 추정, 삭제 검토 필요 / radius10·padding10 리터럴 |
 | 11 | screens/approval_detail_screen.dart | [ ] | **승인/반려 확인 다이얼로그**: shadcn.OutlineButton/shadcn.DestructiveButton(L132,136) + shadcn.AlertDialog(L92) / radius5·padding2 리터럴 |

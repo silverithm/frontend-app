@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
@@ -9,6 +8,8 @@ import '../utils/constants.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
   final bool showBackButton;
@@ -54,6 +55,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           return _buildNoPermissionView();
         }
 
+        // 슬림 상단: 타이틀 1개(AppBar) + 탭바만. 배지·서브텍스트로
+        // 제목을 반복하지 않는다 (Seed 레이아웃 원칙 — 중복 레이어 금지).
         return DefaultTabController(
           length: 2,
           child: Scaffold(
@@ -85,102 +88,34 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 ),
               ],
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(128),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppSemanticColors.textInverse.withValues(
-                                alpha: 0.2,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.people,
-                              color: AppSemanticColors.textInverse,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '회원 관리',
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textInverse
-                                        .withValues(alpha: 0.9),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppSemanticColors.textInverse.withValues(
-                                alpha: 0.2,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'ADMIN',
-                              style: AppTypography.labelSmall.copyWith(
-                                color: AppSemanticColors.textInverse.withValues(
-                                  alpha: 0.9,
-                                ),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                preferredSize: const Size.fromHeight(48),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.textInverse.withValues(
+                      alpha: 0.1,
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.textInverse.withValues(
-                          alpha: 0.1,
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12),
-                        ),
-                      ),
-                      child: TabBar(
-                        labelColor: AppSemanticColors.textInverse,
-                        unselectedLabelColor: AppSemanticColors.textInverse
-                            .withValues(alpha: 0.6),
-                        indicatorColor: AppSemanticColors.textInverse,
-                        indicatorWeight: 3,
-                        labelStyle: AppTypography.labelMedium.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        unselectedLabelStyle: AppTypography.labelMedium,
-                        tabs: const [
-                          Tab(
-                            icon: Icon(Icons.pending_actions, size: 20),
-                            text: '승인 대기',
-                          ),
-                          Tab(
-                            icon: Icon(Icons.people, size: 20),
-                            text: '전체 회원',
-                          ),
-                        ],
-                      ),
+                  ),
+                  child: TabBar(
+                    labelColor: AppSemanticColors.textInverse,
+                    unselectedLabelColor: AppSemanticColors.textInverse
+                        .withValues(alpha: 0.6),
+                    indicatorColor: AppSemanticColors.textInverse,
+                    indicatorWeight: 3,
+                    labelStyle: AppTypography.labelMedium.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
+                    unselectedLabelStyle: AppTypography.labelMedium,
+                    tabs: const [
+                      Tab(
+                        icon: Icon(Icons.pending_actions, size: 20),
+                        text: '승인 대기',
+                      ),
+                      Tab(
+                        icon: Icon(Icons.people, size: 20),
+                        text: '전체 회원',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -210,7 +145,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               size: 64,
               color: AppSemanticColors.statusErrorIcon,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.space4),
             Text(
               '관리자 권한이 필요합니다',
               style: AppTypography.heading6.copyWith(
@@ -218,7 +153,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 color: AppSemanticColors.statusErrorIcon,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space2),
             Text(
               '회원 관리 기능을 사용하려면 관리자 권한이 필요합니다.',
               style: AppTypography.bodyMedium.copyWith(
@@ -249,7 +184,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   size: 64,
                   color: AppSemanticColors.statusErrorIcon,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 Text(
                   '오류 발생',
                   style: AppTypography.heading6.copyWith(
@@ -257,9 +192,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space8),
                   child: Text(
                     adminProvider.errorMessage,
                     style: AppTypography.bodyMedium.copyWith(
@@ -268,10 +203,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 16),
-                shadcn.PrimaryButton(
+                const SizedBox(height: AppSpacing.space4),
+                SeedButton(
+                  label: '다시 시도',
                   onPressed: _loadData,
-                  child: const Text('다시 시도'),
+                  variant: SeedButtonVariant.brandSolid,
                 ),
               ],
             ),
@@ -288,7 +224,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   size: 64,
                   color: AppSemanticColors.textTertiary,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 Text(
                   '등록된 회원이 없습니다',
                   style: AppTypography.bodyLarge.copyWith(
@@ -317,12 +253,18 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
   Widget _buildMemberCard(User user) {
     final isActive = user.status == 'active';
+    final isStatusProcessing =
+        _processingStatusUsers.contains(user.id.toString());
+    final isDeleteProcessing =
+        _processingDeleteUsers.contains(user.id.toString());
 
-    return Card(
+    // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
+    return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.space3),
@@ -366,8 +308,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
+                    horizontal: AppSpacing.space1_5,
+                    vertical: AppSpacing.space0_5,
                   ),
                   decoration: BoxDecoration(
                     color: isActive
@@ -396,7 +338,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   size: 14,
                   color: AppSemanticColors.textTertiary,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSpacing.space1),
                 Text(
                   AdminUtils.getRoleDisplayName(user.role),
                   style: AppTypography.caption.copyWith(
@@ -409,51 +351,28 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             Row(
               children: [
                 Expanded(
-                  child: shadcn.PrimaryButton(
-                    size: shadcn.ButtonSize.small,
+                  child: SeedButton(
+                    label: isStatusProcessing
+                        ? '처리중...'
+                        : (isActive ? '비활성화' : '활성화'),
                     onPressed:
-                        _processingStatusUsers.contains(user.id.toString())
-                        ? null
-                        : () => _toggleMemberStatus(user),
-                    leading: _processingStatusUsers.contains(user.id.toString())
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Icon(
-                            isActive ? Icons.pause : Icons.play_arrow,
-                            size: 14,
-                          ),
-                    child: Text(
-                      _processingStatusUsers.contains(user.id.toString())
-                          ? '처리중...'
-                          : (isActive ? '비활성화' : '활성화'),
-                      style: AppTypography.labelSmall,
-                    ),
+                        isStatusProcessing ? null : () => _toggleMemberStatus(user),
+                    variant: SeedButtonVariant.brandSolid,
+                    size: SeedButtonSize.small,
+                    isLoading: isStatusProcessing,
+                    prefixIcon: isActive ? Icons.pause : Icons.play_arrow,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.space2),
                 Expanded(
-                  child: shadcn.DestructiveButton(
-                    size: shadcn.ButtonSize.small,
+                  child: SeedButton(
+                    label: isDeleteProcessing ? '처리중...' : '삭제',
                     onPressed:
-                        _processingDeleteUsers.contains(user.id.toString())
-                        ? null
-                        : () => _showDeleteDialog(user),
-                    leading: _processingDeleteUsers.contains(user.id.toString())
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.delete, size: 14),
-                    child: Text(
-                      _processingDeleteUsers.contains(user.id.toString())
-                          ? '처리중...'
-                          : '삭제',
-                      style: AppTypography.labelSmall,
-                    ),
+                        isDeleteProcessing ? null : () => _showDeleteDialog(user),
+                    variant: SeedButtonVariant.critical,
+                    size: SeedButtonSize.small,
+                    isLoading: isDeleteProcessing,
+                    prefixIcon: Icons.delete,
                   ),
                 ),
               ],
@@ -464,131 +383,80 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     );
   }
 
-  void _toggleMemberStatus(User user) {
+  Future<void> _toggleMemberStatus(User user) async {
     final newStatus = user.status == 'active' ? 'inactive' : 'active';
     final actionText = newStatus == 'active' ? '활성화' : '비활성화';
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              newStatus == 'active' ? Icons.play_arrow : Icons.pause,
-              color: newStatus == 'active'
-                  ? AppSemanticColors.statusSuccessIcon
-                  : AppSemanticColors.statusWarningIcon,
-            ),
-            const SizedBox(width: 8),
-            Text('회원 $actionText'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [Text('${user.name}님을 $actionText하시겠습니까?')],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('취소'),
-          ),
-          shadcn.PrimaryButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              setState(() {
-                _processingStatusUsers.add(user.id.toString());
-              });
-              try {
-                final adminProvider = context.read<AdminProvider>();
-                final success = await adminProvider.updateMemberStatus(
-                  user.id,
-                  newStatus,
-                );
-                if (success && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${user.name}님을 $actionText했습니다.'),
-                      backgroundColor: newStatus == 'active'
-                          ? AppSemanticColors.statusSuccessIcon
-                          : AppSemanticColors.statusWarningIcon,
-                    ),
-                  );
-                }
-              } finally {
-                if (mounted) {
-                  setState(() {
-                    _processingStatusUsers.remove(user.id.toString());
-                  });
-                }
-              }
-            },
-            child: Text(actionText),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '회원 $actionText',
+      message: '${user.name}님을 $actionText하시겠습니까?',
+      confirmText: actionText,
+      cancelText: '취소',
     );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _processingStatusUsers.add(user.id.toString());
+    });
+    try {
+      final adminProvider = context.read<AdminProvider>();
+      final success = await adminProvider.updateMemberStatus(
+        user.id,
+        newStatus,
+      );
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${user.name}님을 $actionText했습니다.'),
+            backgroundColor: newStatus == 'active'
+                ? AppSemanticColors.statusSuccessIcon
+                : AppSemanticColors.statusWarningIcon,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _processingStatusUsers.remove(user.id.toString());
+        });
+      }
+    }
   }
 
-  void _showDeleteDialog(User user) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning, color: AppSemanticColors.statusErrorIcon),
-            const SizedBox(width: 8),
-            const Text('회원 삭제'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('${user.name}님을 삭제하시겠습니까?'),
-            const SizedBox(height: 8),
-            Text(
-              '이 작업은 되돌릴 수 없습니다.',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.statusErrorIcon,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              setState(() {
-                _processingDeleteUsers.add(user.id.toString());
-              });
-              try {
-                final adminProvider = context.read<AdminProvider>();
-                final success = await adminProvider.deleteMember(user.id);
-                if (success && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${user.name}님을 삭제했습니다.'),
-                      backgroundColor: AppSemanticColors.statusErrorIcon,
-                    ),
-                  );
-                }
-              } finally {
-                if (mounted) {
-                  setState(() {
-                    _processingDeleteUsers.remove(user.id.toString());
-                  });
-                }
-              }
-            },
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+  Future<void> _showDeleteDialog(User user) async {
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '회원 삭제',
+      message: '${user.name}님을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _processingDeleteUsers.add(user.id.toString());
+    });
+    try {
+      final adminProvider = context.read<AdminProvider>();
+      final success = await adminProvider.deleteMember(user.id);
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${user.name}님을 삭제했습니다.'),
+            backgroundColor: AppSemanticColors.statusErrorIcon,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _processingDeleteUsers.remove(user.id.toString());
+        });
+      }
+    }
   }
 }
 
@@ -646,7 +514,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                   size: 64,
                   color: AppSemanticColors.statusErrorIcon,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 Text(
                   '오류 발생',
                   style: AppTypography.heading6.copyWith(
@@ -654,9 +522,9 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                     color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space8),
                   child: Text(
                     adminProvider.errorMessage,
                     style: AppTypography.bodyMedium.copyWith(
@@ -665,10 +533,11 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 16),
-                shadcn.PrimaryButton(
+                const SizedBox(height: AppSpacing.space4),
+                SeedButton(
+                  label: '다시 시도',
                   onPressed: _loadData,
-                  child: const Text('다시 시도'),
+                  variant: SeedButtonVariant.brandSolid,
                 ),
               ],
             ),
@@ -685,7 +554,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                   size: 64,
                   color: AppSemanticColors.statusSuccessIcon,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 Text(
                   '승인 대기 중인 사용자가 없습니다',
                   style: AppTypography.bodyLarge.copyWith(
@@ -700,7 +569,10 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
         return RefreshIndicator(
           onRefresh: () async => _loadData(),
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space2,
+            ),
             itemCount: adminProvider.pendingUsers.length,
             itemBuilder: (context, index) {
               final user = adminProvider.pendingUsers[index];
@@ -717,14 +589,16 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
       builder: (context, adminProvider, child) {
         final isProcessing = adminProvider.isLoading;
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
+        return Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.space3),
+          decoration: BoxDecoration(
+            color: AppSemanticColors.surfaceDefault,
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.space4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -738,7 +612,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                         color: AppSemanticColors.statusWarningIcon,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.space3),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -760,12 +634,12 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                        horizontal: AppSpacing.space2,
+                        vertical: AppSpacing.space1,
                       ),
                       decoration: BoxDecoration(
                         color: AppSemanticColors.statusWarningBackground,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       ),
                       child: Text(
                         AdminUtils.getRoleDisplayName(user.role),
@@ -777,42 +651,28 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 Row(
                   children: [
                     Expanded(
-                      child: shadcn.PrimaryButton(
-                        onPressed: isProcessing
-                            ? null
-                            : () => _showApprovalDialog(user),
-                        leading: isProcessing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.check, size: 18),
-                        child: Text(isProcessing ? '처리중...' : '승인'),
+                      child: SeedButton(
+                        label: isProcessing ? '처리중...' : '승인',
+                        onPressed:
+                            isProcessing ? null : () => _showApprovalDialog(user),
+                        variant: SeedButtonVariant.brandSolid,
+                        isLoading: isProcessing,
+                        prefixIcon: Icons.check,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.space3),
                     Expanded(
-                      child: shadcn.OutlineButton(
-                        onPressed: isProcessing
-                            ? null
-                            : () => _showRejectDialog(user),
-                        leading: isProcessing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.close, size: 18),
-                        child: Text(isProcessing ? '처리중...' : '거부'),
+                      child: SeedButton(
+                        label: isProcessing ? '처리중...' : '거부',
+                        onPressed:
+                            isProcessing ? null : () => _showRejectDialog(user),
+                        variant: SeedButtonVariant.critical,
+                        isLoading: isProcessing,
+                        prefixIcon: Icons.close,
                       ),
                     ),
                   ],
@@ -825,122 +685,64 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
     );
   }
 
-  void _showApprovalDialog(User user) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.check_circle,
-              color: AppSemanticColors.statusSuccessIcon,
-            ),
-            const SizedBox(width: 8),
-            const Text('가입 승인'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [Text('${user.name}님의 가입을 승인하시겠습니까?')],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('취소'),
-          ),
-          shadcn.PrimaryButton(
-            onPressed: () async {
-              Navigator.of(dialogContext).pop();
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              final authProvider = context.read<AuthProvider>();
-              final adminProvider = context.read<AdminProvider>();
-              final success = await adminProvider.approveJoinRequest(
-                user.id,
-                authProvider.currentUser?.id ?? '',
-              );
-              if (mounted && success) {
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text('${user.name}님의 가입을 승인했습니다.'),
-                    backgroundColor: AppSemanticColors.statusSuccessIcon,
-                  ),
-                );
-              }
-            },
-            child: const Text('승인'),
-          ),
-        ],
-      ),
+  Future<void> _showApprovalDialog(User user) async {
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '가입 승인',
+      message: '${user.name}님의 가입을 승인하시겠습니까?',
+      confirmText: '승인',
+      cancelText: '취소',
     );
+
+    if (confirmed != true || !mounted) return;
+
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = context.read<AuthProvider>();
+    final adminProvider = context.read<AdminProvider>();
+    final success = await adminProvider.approveJoinRequest(
+      user.id,
+      authProvider.currentUser?.id ?? '',
+    );
+    if (mounted && success) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('${user.name}님의 가입을 승인했습니다.'),
+          backgroundColor: AppSemanticColors.statusSuccessIcon,
+        ),
+      );
+    }
   }
 
-  void _showRejectDialog(User user) {
-    final reasonController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.cancel, color: AppSemanticColors.statusErrorIcon),
-            const SizedBox(width: 8),
-            const Text('가입 거부'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('${user.name}님의 가입을 거부하시겠습니까?'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                labelText: '거부 사유',
-                hintText: '거부 사유를 입력해주세요',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () async {
-              if (reasonController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(
-                  SnackBar(
-                    content: const Text('거부 사유를 입력해주세요.'),
-                    backgroundColor: AppSemanticColors.statusErrorIcon,
-                  ),
-                );
-                return;
-              }
-              Navigator.of(dialogContext).pop();
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              final authProvider = context.read<AuthProvider>();
-              final adminProvider = context.read<AdminProvider>();
-              final success = await adminProvider.rejectJoinRequest(
-                user.id,
-                authProvider.currentUser?.id ?? '',
-                reasonController.text.trim(),
-              );
-              if (mounted && success) {
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text('${user.name}님의 가입을 거부했습니다.'),
-                    backgroundColor: AppSemanticColors.statusErrorIcon,
-                  ),
-                );
-              }
-            },
-            child: const Text('거부'),
-          ),
-        ],
-      ),
+  Future<void> _showRejectDialog(User user) async {
+    final reason = await AppDialog.showInput(
+      context,
+      title: '가입 거부',
+      message: '${user.name}님의 가입을 거부하시겠습니까?',
+      hintText: '거부 사유를 입력해주세요',
+      maxLines: 3,
+      confirmText: '거부',
+      cancelText: '취소',
+      validator: (value) =>
+          (value == null || value.trim().isEmpty) ? '거부 사유를 입력해주세요' : null,
     );
+
+    if (reason == null || !mounted) return;
+
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = context.read<AuthProvider>();
+    final adminProvider = context.read<AdminProvider>();
+    final success = await adminProvider.rejectJoinRequest(
+      user.id,
+      authProvider.currentUser?.id ?? '',
+      reason.trim(),
+    );
+    if (mounted && success) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('${user.name}님의 가입을 거부했습니다.'),
+          backgroundColor: AppSemanticColors.statusErrorIcon,
+        ),
+      );
+    }
   }
 }

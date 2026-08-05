@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart' as dio;
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import '../providers/approval_provider.dart';
@@ -13,6 +12,8 @@ import '../theme/app_typography.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 
 class AdminApprovalManagementScreen extends StatefulWidget {
@@ -76,23 +77,24 @@ class _AdminApprovalManagementScreenState
     print('[Download] 최종 URL: $fullUrl');
 
     // 다운로드 진행 표시
-    showDialog(
-      context: context,
+    AppDialog.showCustom(
+      context,
       barrierDismissible: false,
-      builder: (context) => shadcn.AlertDialog(
-        content: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(width: AppSpacing.space4),
-                Expanded(child: Text('다운로드 중...\n$fileName')),
-              ],
+            const CircularProgressIndicator(),
+            const SizedBox(width: AppSpacing.space4),
+            Expanded(
+              child: Text(
+                '다운로드 중...\n$fileName',
+                style: AppTypography.bodyMedium,
+              ),
             ),
           ],
         ),
-        actions: const [],
       ),
     );
 
@@ -233,114 +235,63 @@ class _AdminApprovalManagementScreenState
   }
 
   Future<void> _rejectRequest(int requestId) async {
-    final reasonController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Text(
-          '거절 사유',
-          style: AppTypography.heading6,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '거절 사유를 입력해주세요.',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            TextField(
-              controller: reasonController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: '거절 사유를 입력하세요',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('거절'),
-          ),
-        ],
-      ),
+    final reasonInput = await AppDialog.showInput(
+      context,
+      title: '거절 사유',
+      message: '거절 사유를 입력해주세요.',
+      hintText: '거절 사유를 입력하세요',
+      maxLines: 3,
+      confirmText: '거절',
+      cancelText: '취소',
     );
 
-    if (confirmed == true && mounted) {
-      final reason = reasonController.text.trim();
-      if (reason.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('거절 사유를 입력해주세요'),
-            backgroundColor: AppSemanticColors.statusWarningIcon,
-          ),
-        );
-        return;
-      }
+    if (reasonInput == null || !mounted) return;
 
-      final approvalProvider = context.read<ApprovalProvider>();
-      final authProvider = context.read<AuthProvider>();
-      final currentUser = authProvider.currentUser;
-      final companyId = currentUser?.company?.id?.toString() ?? '';
-      final processedBy = currentUser?.id ?? '';
-      final processedByName = currentUser?.name ?? '';
-      final success = await approvalProvider.rejectApprovalRequest(
-        approvalId: requestId,
-        reason: reason,
-        companyId: companyId,
-        processedBy: processedBy,
-        processedByName: processedByName,
+    final reason = reasonInput.trim();
+    if (reason.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('거절 사유를 입력해주세요'),
+          backgroundColor: AppSemanticColors.statusWarningIcon,
+        ),
       );
-
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('결재가 거절되었습니다'),
-            backgroundColor: AppSemanticColors.statusWarningIcon,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      return;
     }
 
-    reasonController.dispose();
+    final approvalProvider = context.read<ApprovalProvider>();
+    final authProvider = context.read<AuthProvider>();
+    final currentUser = authProvider.currentUser;
+    final companyId = currentUser?.company?.id?.toString() ?? '';
+    final processedBy = currentUser?.id ?? '';
+    final processedByName = currentUser?.name ?? '';
+    final success = await approvalProvider.rejectApprovalRequest(
+      approvalId: requestId,
+      reason: reason,
+      companyId: companyId,
+      processedBy: processedBy,
+      processedByName: processedByName,
+    );
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('결재가 거절되었습니다'),
+          backgroundColor: AppSemanticColors.statusWarningIcon,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _bulkApprove() async {
     if (_selectedRequests.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('일괄 승인'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('선택한 ${_selectedRequests.length}개의 결재 요청을 모두 승인하시겠습니까?'),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.PrimaryButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('승인'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '일괄 승인',
+      message: '선택한 ${_selectedRequests.length}개의 결재 요청을 모두 승인하시겠습니까?',
+      confirmText: '승인',
+      cancelText: '취소',
     );
 
     if (confirmed != true) return;
@@ -381,45 +332,19 @@ class _AdminApprovalManagementScreenState
   Future<void> _bulkReject() async {
     if (_selectedRequests.isEmpty) return;
 
-    final reasonController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('일괄 거절'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('선택한 ${_selectedRequests.length}개의 결재 요청을 모두 거절하시겠습니까?'),
-            const SizedBox(height: AppSpacing.space4),
-            TextField(
-              controller: reasonController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: '거절 사유를 입력하세요',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('거절'),
-          ),
-        ],
-      ),
+    final reasonInput = await AppDialog.showInput(
+      context,
+      title: '일괄 거절',
+      message: '선택한 ${_selectedRequests.length}개의 결재 요청을 모두 거절하시겠습니까?',
+      hintText: '거절 사유를 입력하세요',
+      maxLines: 3,
+      confirmText: '거절',
+      cancelText: '취소',
     );
 
-    if (confirmed != true) return;
+    if (reasonInput == null) return;
 
-    final reason = reasonController.text.trim();
+    final reason = reasonInput.trim();
     if (reason.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -427,7 +352,6 @@ class _AdminApprovalManagementScreenState
           backgroundColor: AppSemanticColors.statusWarningIcon,
         ),
       );
-      reasonController.dispose();
       return;
     }
 
@@ -463,8 +387,6 @@ class _AdminApprovalManagementScreenState
     } finally {
       setState(() => _isBulkProcessing = false);
     }
-
-    reasonController.dispose();
   }
 
   @override
@@ -511,7 +433,7 @@ class _AdminApprovalManagementScreenState
                           size: 64,
                           color: AppSemanticColors.textDisabled,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.space4),
                         Text(
                           '결재 요청이 없습니다',
                           style: AppTypography.bodyMedium.copyWith(
@@ -524,8 +446,10 @@ class _AdminApprovalManagementScreenState
                 )
               else
                 SliverPadding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space4,
+                    vertical: AppSpacing.space2,
+                  ),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
@@ -565,22 +489,22 @@ class _AdminApprovalManagementScreenState
               color: AppSemanticColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.space2),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
                 _buildStatusFilterChip('전체', 'all'),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.space2),
                 _buildStatusFilterChip('승인 대기', 'pending'),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.space2),
                 _buildStatusFilterChip('승인됨', 'approved'),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.space2),
                 _buildStatusFilterChip('거절됨', 'rejected'),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
 
           // 검색 필드
           TextField(
@@ -610,19 +534,19 @@ class _AdminApprovalManagementScreenState
               filled: true,
               fillColor: AppSemanticColors.backgroundSecondary,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 borderSide: BorderSide(
                   color: AppSemanticColors.interactivePrimaryDefault,
                   width: 2,
                 ),
               ),
               contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+                horizontal: AppSpacing.space4,
+                vertical: AppSpacing.space3,
               ),
             ),
           ),
@@ -650,7 +574,10 @@ class _AdminApprovalManagementScreenState
         filteredRequests.where((r) => r.status == ApprovalStatus.pending);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: AppSpacing.space2,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -679,15 +606,18 @@ class _AdminApprovalManagementScreenState
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.space2),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space2,
+                  vertical: AppSpacing.space0_5,
+                ),
                 decoration: BoxDecoration(
                   color: _selectedRequests.isNotEmpty
                       ? AppSemanticColors.interactivePrimaryDefault
                           .withValues(alpha: 0.1)
                       : AppSemanticColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 ),
                 child: Text(
                   '${_selectedRequests.length}/${pendingRequests.length}',
@@ -703,46 +633,32 @@ class _AdminApprovalManagementScreenState
           ),
           // 일괄 처리 버튼들
           if (_selectedRequests.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space3),
             Row(
               children: [
                 Expanded(
-                  child: shadcn.OutlineButton(
+                  child: SeedButton(
+                    label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
                     onPressed: _isBulkProcessing ? null : _bulkReject,
-                    leading: _isBulkProcessing
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.close, size: 18),
-                    child: Text(
-                      _isBulkProcessing ? '처리중...' : '선택 항목 거절',
-                      style: AppTypography.bodyMedium,
-                    ),
+                    variant: SeedButtonVariant.critical,
+                    isLoading: _isBulkProcessing,
+                    prefixIcon: Icons.close,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.space3),
                 Expanded(
-                  child: shadcn.PrimaryButton(
+                  child: SeedButton(
+                    label: _isBulkProcessing ? '처리중...' : '선택 항목 승인',
                     onPressed: _isBulkProcessing ? null : _bulkApprove,
-                    leading: _isBulkProcessing
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.check, size: 18),
-                    child: Text(
-                      _isBulkProcessing ? '처리중...' : '선택 항목 승인',
-                      style: AppTypography.bodyMedium,
-                    ),
+                    variant: SeedButtonVariant.brandSolid,
+                    isLoading: _isBulkProcessing,
+                    prefixIcon: Icons.check,
                   ),
                 ),
               ],
             ),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.space2),
           const Divider(),
         ],
       ),
@@ -808,7 +724,7 @@ class _AdminApprovalManagementScreenState
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
-                  if (isPending) const SizedBox(width: 12),
+                  if (isPending) const SizedBox(width: AppSpacing.space3),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -825,21 +741,21 @@ class _AdminApprovalManagementScreenState
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.space2),
                             ApprovalStatusBadge(
                               status: request.status,
                               compact: true,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.space1),
                         Text(
                           '요청자: ${request.requesterName}',
                           style: AppTypography.bodySmall.copyWith(
                             color: AppSemanticColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSpacing.space0_5),
                         Text(
                           '요청일: ${_formatDate(request.createdAt)}',
                           style: AppTypography.labelSmall.copyWith(
@@ -852,7 +768,7 @@ class _AdminApprovalManagementScreenState
                 ],
               ),
               if (request.attachmentFileName != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 GestureDetector(
                   onTap: () => _downloadAndOpenFile(
                     request.attachmentUrl,
@@ -865,13 +781,13 @@ class _AdminApprovalManagementScreenState
                         size: 14,
                         color: AppSemanticColors.textLink,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppSpacing.space1),
                       Icon(
                         Icons.download,
                         size: 14,
                         color: AppSemanticColors.textLink,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppSpacing.space1),
                       Expanded(
                         child: Text(
                           request.attachmentFileName!,
@@ -889,12 +805,12 @@ class _AdminApprovalManagementScreenState
               ],
               if (request.rejectReason != null &&
                   request.status == ApprovalStatus.rejected) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.space2),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.statusErrorBackground,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -904,7 +820,7 @@ class _AdminApprovalManagementScreenState
                         size: 14,
                         color: AppSemanticColors.statusErrorIcon,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppSpacing.space1),
                       Expanded(
                         child: Text(
                           request.rejectReason!,
@@ -919,12 +835,12 @@ class _AdminApprovalManagementScreenState
               ],
               // 결재선 진행 상태
               if (request.approvalLine.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 Row(
                   children: [
                     Icon(Icons.route,
                         size: 14, color: AppSemanticColors.statusInfoIcon),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.space1),
                     Expanded(
                       child: Text(
                         '결재선 ${request.approvalLine.where((s) => s.isApproved).length}/${request.approvalLine.length}'
@@ -939,23 +855,25 @@ class _AdminApprovalManagementScreenState
                 ),
               ],
               if (isPending && !_isSelectMode) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.space3),
                 if (_isMyTurn(request))
                   Row(
                     children: [
                       Expanded(
-                        child: shadcn.OutlineButton(
+                        child: SeedButton(
+                          label: '거절',
                           onPressed: () => _rejectRequest(request.id),
-                          leading: const Icon(Icons.close, size: 16),
-                          child: const Text('거절'),
+                          variant: SeedButtonVariant.critical,
+                          prefixIcon: Icons.close,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       Expanded(
-                        child: shadcn.PrimaryButton(
+                        child: SeedButton(
+                          label: '승인',
                           onPressed: () => _approveRequest(request.id),
-                          leading: const Icon(Icons.check, size: 16),
-                          child: const Text('승인'),
+                          variant: SeedButtonVariant.brandSolid,
+                          prefixIcon: Icons.check,
                         ),
                       ),
                     ],
@@ -963,10 +881,10 @@ class _AdminApprovalManagementScreenState
                 else
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
                     decoration: BoxDecoration(
                       color: AppSemanticColors.backgroundTertiary,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                     ),
                     child: Center(
                       child: Text(

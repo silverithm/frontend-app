@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:provider/provider.dart';
 import 'package:file_selector/file_selector.dart';
 import '../providers/approval_provider.dart';
@@ -10,6 +9,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/template_card.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 
 /// 선택된 파일 정보를 담는 클래스
 class _TemplateFileInfo {
@@ -73,163 +74,199 @@ class _AdminApprovalTemplateScreenState
     _TemplateFileInfo? selectedFile;
     bool isSubmitting = false;
 
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => shadcn.AlertDialog(
-          title: Row(
+    AppDialog.showCustom(
+      context,
+      child: StatefulBuilder(
+        builder: (context, setDialogState) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.interactivePrimaryDefault
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  template == null ? Icons.add : Icons.edit,
-                  color: AppSemanticColors.interactivePrimaryDefault,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                template == null ? '양식 추가' : '양식 수정',
-                style: AppTypography.heading6.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '양식 이름 *',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    hintText: '양식 이름을 입력하세요',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '설명',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: descriptionController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: '양식에 대한 설명을 입력하세요 (선택)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '첨부파일 (양식 서식)',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (selectedFile != null)
+              Row(
+                children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.space2),
                     decoration: BoxDecoration(
-                      color: AppSemanticColors.statusInfoBackground,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppSemanticColors.statusInfoBorder,
-                      ),
+                      color: AppSemanticColors.interactivePrimaryDefault
+                          .withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.insert_drive_file,
-                          color: AppSemanticColors.statusInfoIcon,
+                    child: Icon(
+                      template == null ? Icons.add : Icons.edit,
+                      color: AppSemanticColors.interactivePrimaryDefault,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Text(
+                    template == null ? '양식 추가' : '양식 수정',
+                    style: AppTypography.heading6.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '양식 이름 *',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: AppSemanticColors.textSecondary,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                      const SizedBox(height: AppSpacing.space2),
+                      TextField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          hintText: '양식 이름을 입력하세요',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.space4,
+                            vertical: AppSpacing.space3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space4),
+                      Text(
+                        '설명',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space2),
+                      TextField(
+                        controller: descriptionController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: '양식에 대한 설명을 입력하세요 (선택)',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.space4,
+                            vertical: AppSpacing.space3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space4),
+                      Text(
+                        '첨부파일 (양식 서식)',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space2),
+                      if (selectedFile != null)
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.space3),
+                          decoration: BoxDecoration(
+                            color: AppSemanticColors.statusInfoBackground,
+                            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                            border: Border.all(
+                              color: AppSemanticColors.statusInfoBorder,
+                            ),
+                          ),
+                          child: Row(
                             children: [
-                              Text(
-                                selectedFile!.name,
-                                style: AppTypography.bodySmall,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              Icon(
+                                Icons.insert_drive_file,
+                                color: AppSemanticColors.statusInfoIcon,
                               ),
-                              Text(
-                                _formatFileSize(selectedFile!.size),
-                                style: AppTypography.caption.copyWith(
-                                  color: AppSemanticColors.textTertiary,
+                              const SizedBox(width: AppSpacing.space2),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      selectedFile!.name,
+                                      style: AppTypography.bodySmall,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      _formatFileSize(selectedFile!.size),
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppSemanticColors.textTertiary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  setDialogState(() {
+                                    selectedFile = null;
+                                  });
+                                },
+                                icon: Icon(
+                                  Icons.close,
+                                  color: AppSemanticColors.statusErrorIcon,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            setDialogState(() {
-                              selectedFile = null;
-                            });
-                          },
-                          icon: Icon(
-                            Icons.close,
-                            color: AppSemanticColors.statusErrorIcon,
+                        )
+                      else if (template?.fileName != null)
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.space3),
+                          decoration: BoxDecoration(
+                            color: AppSemanticColors.backgroundSecondary,
+                            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                else if (template?.fileName != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.insert_drive_file,
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            template!.fileName!,
-                            style: AppTypography.bodySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.insert_drive_file,
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                              const SizedBox(width: AppSpacing.space2),
+                              Expanded(
+                                child: Text(
+                                  template!.fileName!,
+                                  style: AppTypography.bodySmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              SeedButton(
+                                label: '변경',
+                                variant: SeedButtonVariant.neutralWeak,
+                                size: SeedButtonSize.small,
+                                onPressed: () async {
+                                  const XTypeGroup typeGroup = XTypeGroup(
+                                    label: 'documents',
+                                    extensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx'],
+                                  );
+                                  final XFile? result = await openFile(
+                                    acceptedTypeGroups: [typeGroup],
+                                  );
+                                  if (result != null) {
+                                    final file = File(result.path);
+                                    final size = await file.length();
+                                    setDialogState(() {
+                                      selectedFile = _TemplateFileInfo(
+                                        path: result.path,
+                                        name: result.name,
+                                        size: size,
+                                      );
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
                           ),
-                        ),
-                        shadcn.GhostButton(
-                          onPressed: () async {
+                        )
+                      else
+                        InkWell(
+                          onTap: () async {
                             const XTypeGroup typeGroup = XTypeGroup(
                               label: 'documents',
                               extensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx'],
@@ -249,142 +286,123 @@ class _AdminApprovalTemplateScreenState
                               });
                             }
                           },
-                          child: const Text('변경'),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  InkWell(
-                    onTap: () async {
-                      const XTypeGroup typeGroup = XTypeGroup(
-                        label: 'documents',
-                        extensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx'],
-                      );
-                      final XFile? result = await openFile(
-                        acceptedTypeGroups: [typeGroup],
-                      );
-                      if (result != null) {
-                        final file = File(result.path);
-                        final size = await file.length();
-                        setDialogState(() {
-                          selectedFile = _TemplateFileInfo(
-                            path: result.path,
-                            name: result.name,
-                            size: size,
-                          );
-                        });
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: AppSemanticColors.borderDefault,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '파일 선택',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textSecondary,
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                          child: Container(
+                            padding: const EdgeInsets.all(AppSpacing.space4),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: AppSemanticColors.borderDefault,
+                              ),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.cloud_upload_outlined,
+                                  color: AppSemanticColors.textSecondary,
+                                ),
+                                const SizedBox(width: AppSpacing.space2),
+                                Text(
+                                  '파일 선택',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space6),
+              Row(
+                children: [
+                  Expanded(
+                    child: SeedButton(
+                      label: '취소',
+                      variant: SeedButtonVariant.neutralWeak,
+                      onPressed: isSubmitting ? null : () => Navigator.pop(context),
                     ),
                   ),
-              ],
-            ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: SeedButton(
+                      label: template == null ? '추가' : '수정',
+                      variant: SeedButtonVariant.brandSolid,
+                      isLoading: isSubmitting,
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              final name = nameController.text.trim();
+                              if (name.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('양식 이름을 입력해주세요'),
+                                    backgroundColor:
+                                        AppSemanticColors.statusWarningIcon,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setDialogState(() => isSubmitting = true);
+
+                              final authProvider = context.read<AuthProvider>();
+                              final approvalProvider =
+                                  context.read<ApprovalProvider>();
+                              final companyId =
+                                  authProvider.currentUser?.company?.id ?? '1';
+
+                              bool success;
+                              if (template == null) {
+                                success = await approvalProvider.createTemplate(
+                                  companyId: companyId,
+                                  name: name,
+                                  description: descriptionController.text.trim(),
+                                  fileName: selectedFile?.name,
+                                  fileSize: selectedFile?.size,
+                                );
+                              } else {
+                                // 파일을 새로 선택하지 않으면 기존 파일 정보 사용
+                                final fileName =
+                                    selectedFile?.name ?? template.fileName;
+                                final fileSize =
+                                    selectedFile?.size ?? template.fileSize;
+
+                                success = await approvalProvider.updateTemplate(
+                                  templateId: template.id,
+                                  companyId: companyId,
+                                  name: name,
+                                  description: descriptionController.text.trim(),
+                                  fileName: fileName,
+                                  fileSize: fileSize,
+                                );
+                              }
+
+                              setDialogState(() => isSubmitting = false);
+
+                              if (success && mounted) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(template == null
+                                        ? '양식이 추가되었습니다'
+                                        : '양식이 수정되었습니다'),
+                                    backgroundColor:
+                                        AppSemanticColors.statusSuccessIcon,
+                                  ),
+                                );
+                              }
+                            },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          actions: [
-            shadcn.OutlineButton(
-              onPressed: isSubmitting ? null : () => Navigator.pop(context),
-              child: const Text('취소'),
-            ),
-            shadcn.PrimaryButton(
-              onPressed: isSubmitting
-                  ? null
-                  : () async {
-                      final name = nameController.text.trim();
-                      if (name.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('양식 이름을 입력해주세요'),
-                            backgroundColor:
-                                AppSemanticColors.statusWarningIcon,
-                          ),
-                        );
-                        return;
-                      }
-
-                      setDialogState(() => isSubmitting = true);
-
-                      final authProvider = context.read<AuthProvider>();
-                      final approvalProvider = context.read<ApprovalProvider>();
-                      final companyId =
-                          authProvider.currentUser?.company?.id ?? '1';
-
-                      bool success;
-                      if (template == null) {
-                        success = await approvalProvider.createTemplate(
-                          companyId: companyId,
-                          name: name,
-                          description: descriptionController.text.trim(),
-                          fileName: selectedFile?.name,
-                          fileSize: selectedFile?.size,
-                        );
-                      } else {
-                        // 파일을 새로 선택하지 않으면 기존 파일 정보 사용
-                        final fileName = selectedFile?.name ?? template.fileName;
-                        final fileSize = selectedFile?.size ?? template.fileSize;
-
-                        success = await approvalProvider.updateTemplate(
-                          templateId: template.id,
-                          companyId: companyId,
-                          name: name,
-                          description: descriptionController.text.trim(),
-                          fileName: fileName,
-                          fileSize: fileSize,
-                        );
-                      }
-
-                      setDialogState(() => isSubmitting = false);
-
-                      if (success && mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(template == null
-                                ? '양식이 추가되었습니다'
-                                : '양식이 수정되었습니다'),
-                            backgroundColor:
-                                AppSemanticColors.statusSuccessIcon,
-                          ),
-                        );
-                      }
-                    },
-              child: isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.textInverse),
-                      ),
-                    )
-                  : Text(template == null ? '추가' : '수정'),
-            ),
-          ],
         ),
       ),
     );
@@ -411,46 +429,12 @@ class _AdminApprovalTemplateScreenState
   }
 
   Future<void> _deleteTemplate(ApprovalTemplate template) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.statusErrorBackground,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.delete_outline,
-                color: AppSemanticColors.statusErrorIcon,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('양식 삭제'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '"${template.name}" 양식을 삭제하시겠습니까?\n삭제된 양식은 복구할 수 없습니다.',
-              style: AppTypography.bodyMedium,
-            ),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '양식 삭제',
+      message: '"${template.name}" 양식을 삭제하시겠습니까?\n삭제된 양식은 복구할 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
 
     if (confirmed == true && mounted) {
@@ -514,10 +498,10 @@ class _AdminApprovalTemplateScreenState
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(AppSpacing.space6),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.backgroundSecondary,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                   ),
                   child: Icon(
                     Icons.description_outlined,
@@ -525,14 +509,14 @@ class _AdminApprovalTemplateScreenState
                     color: AppSemanticColors.textDisabled,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.space6),
                 Text(
                   '결재 양식이 없습니다',
                   style: AppTypography.heading6.copyWith(
                     color: AppSemanticColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 Text(
                   '아래 버튼을 눌러 양식을 추가해보세요',
                   style: AppTypography.bodyMedium.copyWith(
@@ -547,7 +531,7 @@ class _AdminApprovalTemplateScreenState
         return RefreshIndicator(
           onRefresh: _loadData,
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.space4),
             itemCount: templates.length,
             itemBuilder: (context, index) {
               final template = templates[index];
