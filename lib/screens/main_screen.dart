@@ -43,6 +43,12 @@ class _MainScreenState extends State<MainScreen>
   int _currentIndex = 0;
   late AnimationController _animationController;
 
+  // 하단 탭 아이콘/뱃지 전용 명명 상수 — AppSpacing/AppTypography 스케일에
+  // 정확히 대응하는 값이 없어 이 화면 안에서만 쓰는 고정 수치로 관리한다.
+  static const double _navIconSizeSelected = 24;
+  static const double _navIconSizeUnselected = 22;
+  static const double _navBadgeFontSize = 10;
+
   @override
   void initState() {
     super.initState();
@@ -228,7 +234,7 @@ class _MainScreenState extends State<MainScreen>
           color: isSelected
               ? iconColor.withValues(alpha: 0.1)
               : AppColors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
         child: Stack(
           clipBehavior: Clip.none,
@@ -236,15 +242,18 @@ class _MainScreenState extends State<MainScreen>
             Icon(
               isSelected ? selectedIcon : unselectedIcon,
               color: iconColor,
-              size: isSelected ? 24 : 22,
+              size: isSelected ? _navIconSizeSelected : _navIconSizeUnselected,
             ),
             if (badgeCount > 0)
               Positioned(
                 top: -4,
                 right: -8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  constraints: const BoxConstraints(minWidth: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space1,
+                    vertical: AppSpacing.px,
+                  ),
+                  constraints: const BoxConstraints(minWidth: AppSpacing.space4),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.statusErrorIcon,
                     borderRadius: BorderRadius.circular(AppBorderRadius.full),
@@ -254,7 +263,7 @@ class _MainScreenState extends State<MainScreen>
                     textAlign: TextAlign.center,
                     style: AppTypography.labelSmall.copyWith(
                       color: AppSemanticColors.textInverse,
-                      fontSize: 10,
+                      fontSize: _navBadgeFontSize,
                       height: 1.2,
                     ),
                   ),

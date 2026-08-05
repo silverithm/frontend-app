@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/auth_provider.dart';
 import '../providers/notice_provider.dart';
 import '../models/notice.dart';
@@ -9,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/notice/notice_card.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/seed/seed_button.dart';
 import 'notice_detail_screen.dart';
 
 class NoticeListScreen extends StatefulWidget {
@@ -124,14 +124,14 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
           ),
           const SizedBox(height: AppSpacing.space4),
           Text(
-            '공지사항이 없습니다',
+            '아직 공지사항이 없어요',
             style: AppTypography.bodyLarge.copyWith(
               color: AppSemanticColors.textSecondary,
             ),
           ),
           const SizedBox(height: AppSpacing.space2),
           Text(
-            '새로운 공지사항이 등록되면 여기에 표시됩니다',
+            '새 공지가 등록되면 여기에 표시돼요',
             style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
@@ -170,9 +170,11 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.space4),
-          shadcn.PrimaryButton(
+          SeedButton(
+            label: '다시 시도',
+            variant: SeedButtonVariant.neutralWeak,
+            prefixIcon: Icons.refresh,
             onPressed: () => _loadNotices(refresh: true),
-            child: const Text('다시 시도'),
           ),
         ],
       ),

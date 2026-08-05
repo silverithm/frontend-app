@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/notice_provider.dart';
@@ -9,7 +8,9 @@ import '../models/notice.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/seed/seed_button.dart';
 
 class NoticeDetailScreen extends StatefulWidget {
   final int noticeId;
@@ -96,22 +97,12 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   }
 
   Future<void> _deleteComment(int commentId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: const Text('댓글 삭제'),
-        content: const Text('이 댓글을 삭제하시겠습니까?'),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '댓글 삭제',
+      message: '이 댓글을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
 
     if (confirmed == true) {
@@ -323,7 +314,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             height: 28,
             decoration: BoxDecoration(
               color: AppSemanticColors.backgroundTertiary,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppBorderRadius.full),
             ),
             child: Center(
               child: Text(
@@ -424,7 +415,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                 height: 24,
                 decoration: BoxDecoration(
                   color: AppSemanticColors.backgroundTertiary,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
                 ),
                 child: Center(
                   child: Text(
@@ -541,7 +532,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
               height: 36,
               decoration: BoxDecoration(
                 color: AppSemanticColors.interactivePrimaryDefault,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(AppBorderRadius.full),
               ),
               child: Center(
                 child: _isSubmittingComment
@@ -671,7 +662,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             backgroundColor: AppSemanticColors.statusErrorIcon,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             ),
           ),
         );
@@ -691,7 +682,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
               backgroundColor: AppSemanticColors.statusErrorIcon,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
               ),
             ),
           );
@@ -705,7 +696,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             backgroundColor: AppSemanticColors.statusErrorIcon,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             ),
           ),
         );
@@ -784,9 +775,10 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.space4),
-          shadcn.PrimaryButton(
+          SeedButton(
+            label: '돌아가기',
+            variant: SeedButtonVariant.neutralWeak,
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('돌아가기'),
           ),
         ],
       ),

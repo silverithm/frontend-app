@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/signature_pad.dart';
+import '../widgets/seed/seed_button.dart';
 
 /// 결재 서명 관리 화면.
 /// 서명을 그려 등록해두면 결재 승인 시 결재란에 자동으로 날인된다.
@@ -124,7 +125,7 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                       height: 130,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         border: Border.all(color: AppSemanticColors.borderDefault),
                         borderRadius: BorderRadius.circular(AppSpacing.space3),
                       ),
@@ -186,18 +187,13 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                   const SizedBox(height: AppSpacing.space3),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
+                    child: SeedButton(
+                      label: '서명 등록',
+                      variant: SeedButtonVariant.brandSolid,
+                      size: SeedButtonSize.large,
+                      isLoading: _isSaving,
+                      isDisabled: _padEmpty,
                       onPressed: _isSaving || _padEmpty ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-                        foregroundColor: AppSemanticColors.textInverse,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.space3),
-                        ),
-                      ),
-                      child: Text(_isSaving ? '등록 중...' : '서명 등록'),
                     ),
                   ),
                 ],
