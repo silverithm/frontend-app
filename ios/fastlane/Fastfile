@@ -22,4 +22,27 @@ platform :ios do
       skip_waiting_for_build_processing: true
     )
   end
+
+  desc "App Store 정식 심사 제출 (이미 업로드된 빌드 사용)"
+  lane :release do
+    version = ENV["APP_VERSION"] || raise("APP_VERSION 필요 (예: APP_VERSION=1.4.0)")
+    build = ENV["BUILD_NUMBER"] || raise("BUILD_NUMBER 필요 (예: BUILD_NUMBER=28)")
+    upload_to_app_store(
+      api_key: asc_api_key,
+      app_version: version,
+      build_number: build,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: false,
+      precheck_include_in_app_purchases: false,
+      run_precheck_before_submit: false,
+      force: true,
+      submit_for_review: true,
+      automatic_release: true,
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: false
+      }
+    )
+  end
 end
