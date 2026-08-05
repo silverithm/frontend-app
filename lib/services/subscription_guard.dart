@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 import '../providers/subscription_provider.dart';
 import '../providers/auth_provider.dart';
 import '../screens/subscription_check_screen.dart';
 import '../utils/admin_utils.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
+import '../widgets/common/index.dart';
+import '../widgets/seed/seed_button.dart';
 
 class SubscriptionGuard {
   static const String _tag = '[SubscriptionGuard]';
@@ -94,36 +97,63 @@ class SubscriptionGuard {
 
   /// 구독이 필요한 기능 접근 시 안내 다이얼로그 표시
   static void showSubscriptionRequiredDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Row(
+    AppDialog.showCustom<void>(
+      context,
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.workspace_premium,
-              color: AppSemanticColors.statusWarningIcon,
+            Row(
+              children: [
+                Icon(
+                  Icons.workspace_premium,
+                  color: AppSemanticColors.statusWarningIcon,
+                ),
+                const SizedBox(width: AppSpacing.space2),
+                Text(
+                  '구독 필요',
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            const Text('구독 필요'),
+            const SizedBox(height: AppSpacing.space3),
+            Text(
+              '이 기능을 사용하려면 구독이 필요합니다.\n구독 화면으로 이동하시겠습니까?',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.space6),
+            Row(
+              children: [
+                Expanded(
+                  child: SeedButton(
+                    label: '취소',
+                    variant: SeedButtonVariant.neutralOutline,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.space3),
+                Expanded(
+                  child: SeedButton(
+                    label: '구독하기',
+                    variant: SeedButtonVariant.brandSolid,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      final isAdmin = AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser);
+                      _navigateToSubscriptionCheck(context, isAdmin);
+                    },
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-        content: const Text(
-          '이 기능을 사용하려면 구독이 필요합니다.\n구독 화면으로 이동하시겠습니까?',
-        ),
-        actions: [
-          shadcn.GhostButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('취소'),
-          ),
-          shadcn.PrimaryButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              final isAdmin = AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser);
-              _navigateToSubscriptionCheck(context, isAdmin);
-            },
-            child: const Text('구독하기'),
-          ),
-        ],
       ),
     );
   }
@@ -134,36 +164,63 @@ class SubscriptionGuard {
     final daysRemaining = subscriptionProvider.getDaysRemaining();
     
     if (daysRemaining <= 7 && daysRemaining > 0) {
-      showDialog(
-        context: context,
-        builder: (context) => shadcn.AlertDialog(
-          title: Row(
+      AppDialog.showCustom<void>(
+        context,
+        barrierColor: AppColors.black.withValues(alpha: 0.5),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.warning,
-                color: AppSemanticColors.statusWarningIcon,
+              Row(
+                children: [
+                  Icon(
+                    Icons.warning,
+                    color: AppSemanticColors.statusWarningIcon,
+                  ),
+                  const SizedBox(width: AppSpacing.space2),
+                  Text(
+                    '구독 만료 예정',
+                    style: AppTypography.heading5.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Text('구독 만료 예정'),
+              const SizedBox(height: AppSpacing.space3),
+              Text(
+                '구독이 ${daysRemaining}일 후에 만료됩니다.\n계속 서비스를 이용하려면 구독을 연장해주세요.',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space6),
+              Row(
+                children: [
+                  Expanded(
+                    child: SeedButton(
+                      label: '나중에',
+                      variant: SeedButtonVariant.neutralOutline,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: SeedButton(
+                      label: '구독 연장',
+                      variant: SeedButtonVariant.brandSolid,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        final isAdmin = AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser);
+                        _navigateToSubscriptionCheck(context, isAdmin);
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          content: Text(
-            '구독이 ${daysRemaining}일 후에 만료됩니다.\n계속 서비스를 이용하려면 구독을 연장해주세요.',
-          ),
-          actions: [
-            shadcn.GhostButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('나중에'),
-            ),
-            shadcn.PrimaryButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                final isAdmin = AdminUtils.canAccessAdminPages(context.read<AuthProvider>().currentUser);
-                _navigateToSubscriptionCheck(context, isAdmin);
-              },
-              child: const Text('구독 연장'),
-            ),
-          ],
         ),
       );
     }

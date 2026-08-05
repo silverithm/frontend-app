@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
@@ -124,20 +123,23 @@ class _LoginScreenState extends State<LoginScreen> {
     bool isAdminPasswordReset = false;
     final emailController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => shadcn.AlertDialog(
-          title: Text(
-            '비밀번호 찾기',
-            style: AppTypography.heading5.copyWith(
-              color: AppSemanticColors.textPrimary,
-            ),
-          ),
-          content: Column(
+    AppDialog.showCustom<void>(
+      context,
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      child: StatefulBuilder(
+        builder: (context, setState) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                '비밀번호 찾기',
+                style: AppTypography.heading5.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space4),
               Text(
                 '가입하신 이메일을 입력하시면 임시 비밀번호를 전송해드립니다.',
                 style: AppTypography.bodyMedium.copyWith(
@@ -187,45 +189,64 @@ class _LoginScreenState extends State<LoginScreen> {
                 hintText: 'example@email.com',
                 prefixIcon: const Icon(Icons.email),
               ),
+              const SizedBox(height: AppSpacing.space6),
+              Row(
+                children: [
+                  Expanded(
+                    child: SeedButton(
+                      label: '취소',
+                      variant: SeedButtonVariant.neutralOutline,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) => SeedButton(
+                        label: '비밀번호 찾기',
+                        variant: SeedButtonVariant.brandSolid,
+                        isLoading: authProvider.isLoading,
+                        onPressed: authProvider.isLoading
+                            ? null
+                            : () async {
+                                final email = emailController.text.trim();
+                                if (email.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '이메일을 입력해주세요',
+                                        style: AppTypography.bodyMedium
+                                            .copyWith(
+                                              color: AppSemanticColors
+                                                  .textInverse,
+                                            ),
+                                      ),
+                                      backgroundColor:
+                                          AppSemanticColors.statusErrorIcon,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                Navigator.of(context).pop();
+                                if (isAdminPasswordReset) {
+                                  await authProvider.findAdminPassword(
+                                    email,
+                                    context,
+                                  );
+                                } else {
+                                  await authProvider.findPassword(
+                                    email,
+                                    context,
+                                  );
+                                }
+                              },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          actions: [
-            shadcn.OutlineButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('취소'),
-            ),
-            Consumer<AuthProvider>(
-              builder: (context, authProvider, child) => shadcn.PrimaryButton(
-                onPressed: authProvider.isLoading
-                    ? null
-                    : () async {
-                        final email = emailController.text.trim();
-                        if (email.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '이메일을 입력해주세요',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textInverse,
-                                ),
-                              ),
-                              backgroundColor:
-                                  AppSemanticColors.statusErrorIcon,
-                            ),
-                          );
-                          return;
-                        }
-                        Navigator.of(dialogContext).pop();
-                        if (isAdminPasswordReset) {
-                          await authProvider.findAdminPassword(email, context);
-                        } else {
-                          await authProvider.findPassword(email, context);
-                        }
-                      },
-                child: const Text('비밀번호 찾기'),
-              ),
-            ),
-          ],
         ),
       ),
     );

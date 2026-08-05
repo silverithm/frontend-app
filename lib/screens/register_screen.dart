@@ -17,7 +17,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'login_screen.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -590,23 +589,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.white,
-                            AppSemanticColors.backgroundSecondary,
-                          ],
-                        ),
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppSemanticColors.backgroundTertiary
-                                .withValues(alpha: 0.5),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        border: Border.all(
+                          color: AppSemanticColors.borderSubtle,
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -667,42 +654,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 16),
                     // 사용방법 버튼
-                    Container(
+                    SizedBox(
                       width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppSemanticColors.textTertiary,
-                            AppSemanticColors.statusWarningIcon,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppSemanticColors.textDisabled.withValues(
-                              alpha: 0.4,
-                            ),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: shadcn.GhostButton(
+                      child: SeedButton(
+                        label: '사용방법 보러가기',
+                        variant: SeedButtonVariant.brandSolid,
+                        size: SeedButtonSize.large,
+                        prefixIcon: Icons.play_circle_filled,
                         onPressed: () =>
                             _launchURL('https://youtu.be/x2cJedS6vaU'),
-                        leading: const Icon(
-                          Icons.play_circle_filled,
-                          color: AppColors.white,
-                          size: 24,
-                        ),
-                        child: const Text(
-                          '사용방법 보러가기',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                       ),
                     ),
                   ],
@@ -1888,15 +1848,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 color: isActive ? color : AppSemanticColors.borderHover,
                 width: 2,
               ),
-              boxShadow: isActive
-                  ? [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
             ),
             child: Center(
               child: Text(
@@ -1941,13 +1892,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppSemanticColors.borderDefault),
-        boxShadow: [
-          BoxShadow(
-            color: AppSemanticColors.borderDefault,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1958,11 +1902,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: colors,
-                  ),
+                  color: colors[0],
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
