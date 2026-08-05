@@ -436,6 +436,35 @@ class ApiService {
   }
 
   // 휴무 신청 생성
+  /// 특정 직원이 어느 노선의 무슨 운전자인지 조회한다.
+  /// 같은 노선의 주·부운전자가 같은 날 함께 쉬면 그날 차량을 몰 사람이 없으므로
+  /// 휴무 신청 전에 이 정보로 충돌을 판정한다. 배차 설정은 회사 공용(서버 저장)이다.
+  Future<List<Map<String, dynamic>>> getDriverRoles({
+    required String memberName,
+    required String companyId,
+  }) async {
+    try {
+      final uri = Uri.parse(
+        '$_baseUrl/dispatch-settings/driver-roles',
+      ).replace(queryParameters: {
+        'companyId': companyId,
+        'memberName': memberName,
+      });
+
+      final response = await http.get(uri, headers: await _getHeaders());
+      if (response.statusCode != 200) return [];
+
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      final roles = data is Map ? data['roles'] : null;
+      if (roles is! List) return [];
+      return roles.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (e) {
+      // 배차는 보조 규칙이라 조회 실패로 신청을 막지는 않는다
+      print('[API] 운전자 역할 조회 실패: $e');
+      return [];
+    }
+  }
+
   Future<Map<String, dynamic>> createVacationRequest({
     required String userName,
     required String date,

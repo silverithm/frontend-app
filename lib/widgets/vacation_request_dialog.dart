@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../models/vacation_request.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
+import 'package:intl/intl.dart';
 import '../services/analytics_service.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -105,6 +107,141 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     super.dispose();
   }
 
+  /// 같은 노선의 다른 운전자가 이미 그날 휴무인지 확인한다.
+  /// 배차에 배정되지 않은 직원이면 조회 없이 통과시킨다.
+  /// 조회가 실패해도 신청을 막지는 않는다 (배차는 보조 규칙).
+  /// 휴무 신청 전 주의사항 — 웹(vacationGuard.ts)과 같은 문구를 쓴다
+  static const List<String> _vacationNotices = [
+    '본인이 주운전자 · 부운전자인지 확인해 주세요.',
+    '요양팀은 최소 휴무 인원을 확인해 주세요.',
+    '휴무 신청은 선착순이 아닙니다. 같은 날 신청이 몰리면 서로 배려해 조정해 주세요.',
+    '근무표는 모든 선생님과의 약속입니다. 변동이 없도록 심사숙고해 입력해 주세요.',
+  ];
+
+  Widget _buildNoticeBox() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.space4),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.statusWarningBackground,
+        borderRadius: BorderRadius.circular(AppSpacing.space4),
+        border: Border.all(color: AppSemanticColors.statusWarningBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 18,
+                color: AppSemanticColors.statusWarningIcon,
+              ),
+              const SizedBox(width: AppSpacing.space2),
+              Text(
+                '신청 전 확인해 주세요',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.space2),
+          ..._vacationNotices.map(
+            (notice) => Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.space1),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('· ', style: TextStyle(color: AppSemanticColors.textSecondary)),
+                  Expanded(
+                    child: Text(
+                      notice,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.45,
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> _findDriverConflict(String memberName, String companyId) async {
+    if (companyId.isEmpty || memberName.trim().isEmpty) return null;
+    try {
+      final roles = await ApiService().getDriverRoles(
+        memberName: memberName,
+        companyId: companyId,
+      );
+      if (roles.isEmpty) return null;
+
+      final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+      final calendar = await ApiService().getVacationCalendar(
+        startDate: dateStr,
+        endDate: dateStr,
+        companyId: companyId,
+      );
+
+      final raw = calendar['vacations'] ?? calendar['content'] ?? calendar['data'];
+      final onVacation = <String>{};
+      if (raw is List) {
+        for (final item in raw) {
+          if (item is! Map) continue;
+          // 반려된 건은 그날 쉬는 게 아니므로 제외
+          final status = (item['status'] ?? '').toString().toUpperCase();
+          if (status == 'REJECTED') continue;
+          final name =
+              (item['userName'] ?? item['memberName'] ?? item['name'] ?? '').toString().trim();
+          if (name.isNotEmpty) onVacation.add(name);
+        }
+      }
+
+      for (final role in roles) {
+        final coDrivers = role['coDrivers'];
+        if (coDrivers is! List) continue;
+        for (final other in coDrivers) {
+          final name = other.toString().trim();
+          if (name.isEmpty || !onVacation.contains(name)) continue;
+          return '${role['routeName']}(${role['routeType']}) 노선의 $name 선생님이 이미 휴무입니다.';
+        }
+      }
+      return null;
+    } catch (e) {
+      print('[휴무] 배차 충돌 확인 실패: $e');
+      return null;
+    }
+  }
+
+  Future<void> _showDriverConflictDialog(String detail) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('같은 노선 운전자가 이미 휴무입니다'),
+        content: Text(
+          '$detail\n\n'
+          '같은 노선의 운전자가 함께 쉬면 그날 차량을 운행할 사람이 없습니다.\n'
+          '휴무일을 조정하거나 관리자와 먼저 상의해 주세요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _submitRequest() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -128,6 +265,19 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     setState(() {
       _isSubmitting = true;
     });
+
+    // 같은 노선의 주·부운전자가 함께 쉬면 그날 차량을 몰 사람이 없다 — 신청 전에 막는다
+    final conflict = await _findDriverConflict(
+      authProvider.currentUser!.name,
+      authProvider.currentUser!.company?.id ?? '',
+    );
+    if (conflict != null && mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
+      await _showDriverConflictDialog(conflict);
+      return;
+    }
 
     _submitAnimationController.forward();
 
@@ -451,6 +601,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                       ),
 
                       const SizedBox(height: AppSpacing.space6),
+
+                      // 신청 전 확인할 것들 — 배차·최소 인원처럼 시스템이 다 막지 못하는 부분
+                      _buildNoticeBox(),
+
+                      const SizedBox(height: AppSpacing.space5),
 
                       // 폼
                       Form(
