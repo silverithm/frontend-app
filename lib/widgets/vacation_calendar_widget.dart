@@ -1343,23 +1343,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                 : AppSemanticColors.borderDefault,
             width: 1.5,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.black.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: AppSemanticColors.borderDefault.withValues(
-                      alpha: 0.5,
-                    ),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

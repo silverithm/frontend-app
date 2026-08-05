@@ -47,27 +47,6 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
 
-  static const List<BoxShadow> _shadowSm = [
-    BoxShadow(
-      color: Color(0x1A000000), // black 0.1
-      blurRadius: 3,
-      offset: Offset(0, 1),
-    ),
-    BoxShadow(
-      color: Color(0x0F000000), // black 0.06
-      blurRadius: 2,
-      offset: Offset(0, 1),
-    ),
-  ];
-
-  static const List<BoxShadow> _shadowXl = [
-    BoxShadow(
-      color: Color(0x40000000), // black 0.25
-      blurRadius: 50,
-      offset: Offset(0, 25),
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -373,17 +352,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    selectedColor.withValues(alpha: 0.20),
-                    selectedColor.withValues(alpha: 0.60),
-                  ],
-                )
-              : null,
-          color: !isSelected ? AppSemanticColors.backgroundSecondary : null,
+          color: isSelected
+              ? selectedColor.withValues(alpha: 0.15)
+              : AppSemanticColors.backgroundSecondary,
           borderRadius: BorderRadius.circular(AppSpacing.space3),
           border: Border.all(
             color: isSelected
@@ -391,7 +362,6 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                 : AppSemanticColors.borderDefault,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? _shadowSm : null,
         ),
         child: Material(
           color: AppColors.transparent,
@@ -439,7 +409,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
               decoration: BoxDecoration(
                 color: AppSemanticColors.surfaceDefault,
                 borderRadius: BorderRadius.circular(AppBorderRadius.xl3),
-                boxShadow: _shadowXl,
+                // 다이얼로그 표면 자체의 부양 그림자 — 떠 있는 오버레이 요소로 허용 범위
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x40000000),
+                    blurRadius: 50,
+                    offset: Offset(0, 25),
+                  ),
+                ],
               ),
               child: SingleChildScrollView(
                 child: Padding(
@@ -516,16 +493,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.space5),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppSemanticColors.statusInfoBackground,
-                              AppSemanticColors.statusInfoBackground.withValues(
-                                alpha: 0.6,
-                              ),
-                            ],
-                          ),
+                          color: AppSemanticColors.statusInfoBackground,
                           borderRadius: BorderRadius.circular(
                             AppSpacing.space4,
                           ),
@@ -533,7 +501,6 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             color: AppSemanticColors.statusInfoBorder,
                             width: 1,
                           ),
-                          boxShadow: _shadowSm,
                         ),
                         child: Row(
                           children: [

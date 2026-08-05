@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../theme/app_colors.dart';
@@ -10,6 +9,7 @@ import '../../screens/approval_list_screen.dart';
 import '../../screens/chat_room_list_screen.dart';
 import '../../screens/my_vacation_screen.dart';
 import '../../screens/notice_list_screen.dart';
+import '../seed/seed_button.dart';
 
 class NotificationBell extends StatelessWidget {
   final Color? iconColor;
@@ -187,15 +187,11 @@ class _NotificationBottomSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-                shadcn.GhostButton(
+                SeedButton(
+                  label: '닫기',
                   onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    '닫기',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                      fontWeight: AppTypography.fontWeightSemibold,
-                    ),
-                  ),
+                  variant: SeedButtonVariant.neutralWeak,
+                  size: SeedButtonSize.small,
                 ),
               ],
             ),
@@ -332,15 +328,6 @@ class _NotificationBottomSheet extends StatelessWidget {
                 : AppSemanticColors.borderDefault,
             width: 1,
           ),
-          boxShadow: isUnread
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

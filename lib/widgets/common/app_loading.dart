@@ -181,16 +181,7 @@ class _AppSkeletonLoaderState extends State<AppSkeletonLoader>
           width: widget.width,
           decoration: BoxDecoration(
             borderRadius: widget.borderRadius ?? BorderRadius.circular(AppBorderRadius.base),
-            gradient: LinearGradient(
-              colors: [
-                baseColor,
-                Color.lerp(baseColor, highlightColor, _animation.value)!,
-                baseColor,
-              ],
-              stops: const [0.0, 0.5, 1.0],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+            color: Color.lerp(baseColor, highlightColor, _animation.value),
           ),
         );
       },
