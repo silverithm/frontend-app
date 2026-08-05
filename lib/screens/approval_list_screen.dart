@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../providers/approval_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/approval.dart';
@@ -10,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
+import '../widgets/seed/seed_button.dart';
 import 'approval_detail_screen.dart';
 import 'approval_form_screen.dart';
 
@@ -152,10 +152,12 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(AppSpacing.space5),
                             decoration: BoxDecoration(
                               color: AppSemanticColors.surfaceDefault,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(
+                                AppBorderRadius.xl2,
+                              ),
                               border: Border.all(
                                 color: AppSemanticColors.borderDefault,
                                 width: 1,
@@ -167,7 +169,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.space4),
                           Text(
                             '데이터를 불러오는 중...',
                             style: AppTypography.bodyMedium.copyWith(
@@ -187,11 +189,13 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                       child: FadeTransition(
                         opacity: _fadeAnimation,
                         child: Container(
-                          margin: const EdgeInsets.all(32),
-                          padding: const EdgeInsets.all(24),
+                          margin: const EdgeInsets.all(AppSpacing.space8),
+                          padding: const EdgeInsets.all(AppSpacing.space6),
                           decoration: BoxDecoration(
                             color: AppSemanticColors.surfaceDefault,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.xl2,
+                            ),
                             border: Border.all(
                               color: AppSemanticColors.statusErrorBorder,
                               width: 1,
@@ -201,10 +205,14 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(
+                                  AppSpacing.space4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppSemanticColors.statusErrorBackground,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.xl2,
+                                  ),
                                 ),
                                 child: Icon(
                                   Icons.error_outline,
@@ -212,7 +220,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                   color: AppSemanticColors.statusErrorIcon,
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: AppSpacing.space4),
                               Text(
                                 approvalProvider.errorMessage,
                                 textAlign: TextAlign.center,
@@ -221,11 +229,12 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(height: 20),
-                              shadcn.PrimaryButton(
+                              const SizedBox(height: AppSpacing.space5),
+                              SeedButton(
+                                label: '다시 시도',
+                                variant: SeedButtonVariant.neutralWeak,
+                                prefixIcon: Icons.refresh,
                                 onPressed: _refreshData,
-                                leading: const Icon(Icons.refresh),
-                                child: const Text('다시 시도'),
                               ),
                             ],
                           ),
@@ -248,10 +257,12 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(AppSpacing.space5),
                                 decoration: BoxDecoration(
                                   color: AppSemanticColors.backgroundSecondary,
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.xl2,
+                                  ),
                                 ),
                                 child: Icon(
                                   Icons.assignment_outlined,
@@ -259,17 +270,17 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                   color: AppSemanticColors.textTertiary,
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: AppSpacing.space6),
                               Text(
-                                '결재 요청 내역이 없습니다',
+                                '아직 결재 내역이 없어요',
                                 style: AppTypography.heading6.copyWith(
                                   color: AppSemanticColors.textPrimary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: AppSpacing.space2),
                               Text(
-                                '우측 하단 버튼을 눌러\n새 결재를 요청해보세요',
+                                '우측 하단 버튼을 눌러 새 결재를 작성해보세요',
                                 textAlign: TextAlign.center,
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppSemanticColors.textTertiary,

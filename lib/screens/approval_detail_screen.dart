@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,6 +14,8 @@ import '../theme/app_typography.dart';
 import '../services/api_service.dart';
 import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/approval/official_document_view.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 import 'hwp_editor_screen.dart';
 
 class ApprovalDetailScreen extends StatefulWidget {
@@ -80,65 +81,20 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
           backgroundColor: AppSemanticColors.statusErrorIcon,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           ),
         ),
       );
       return;
     }
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.statusErrorBackground,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.delete_outline,
-                color: AppSemanticColors.statusErrorIcon,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              '결재 요청 삭제',
-              style: AppTypography.heading6.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.backgroundSecondary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '이 결재 요청을 삭제하시겠습니까?\n삭제된 요청은 복구할 수 없습니다.',
-                style: AppTypography.bodyLarge,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          shadcn.OutlineButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          shadcn.DestructiveButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    // 파괴적 액션(삭제) 확인 다이얼로그
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '결재 요청 삭제',
+      message: '이 결재 요청을 삭제하시겠습니까?\n삭제된 요청은 복구할 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
     );
 
     if (confirmed == true && mounted) {
@@ -161,7 +117,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
             backgroundColor: AppSemanticColors.statusSuccessIcon,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             ),
           ),
         );
@@ -293,7 +249,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
         backgroundColor: AppSemanticColors.statusErrorIcon,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
       ),
     );
@@ -524,19 +480,11 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                       const SizedBox(height: AppSpacing.space3),
                       SizedBox(
                         width: double.infinity,
-                        child: OutlinedButton.icon(
+                        child: SeedButton(
+                          label: '문서 미리보기',
+                          variant: SeedButtonVariant.neutralOutline,
+                          prefixIcon: Icons.visibility_outlined,
                           onPressed: _openHwpPreview,
-                          icon: const Icon(Icons.visibility_outlined, size: 18),
-                          label: const Text('문서 미리보기'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor:
-                                AppSemanticColors.interactivePrimaryDefault,
-                            side: BorderSide(
-                              color:
-                                  AppSemanticColors.interactivePrimaryDefault,
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
                         ),
                       ),
                     ],

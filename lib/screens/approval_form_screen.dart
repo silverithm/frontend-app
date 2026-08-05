@@ -12,9 +12,9 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/dynamic_form_fields.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'hwp_editor_screen.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 
 class ApprovalFormScreen extends StatefulWidget {
   const ApprovalFormScreen({super.key});
@@ -454,7 +454,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                         Icons.keyboard_arrow_down,
                         color: AppSemanticColors.textSecondary,
                       ),
-                      itemHeight: 56,
+                      itemHeight: AppSpacing.space14,
                       selectedItemBuilder: (context) {
                         return templates.map((template) {
                           return Align(
@@ -515,18 +515,11 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                 const SizedBox(height: AppSpacing.space3),
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton.icon(
+                  child: SeedButton(
+                    label: '양식 문서 바로 작성하기',
+                    variant: SeedButtonVariant.neutralOutline,
+                    prefixIcon: Icons.edit_document,
                     onPressed: _writeTemplateOnWeb,
-                    icon: const Icon(Icons.edit_document, size: 18),
-                    label: const Text('양식 문서 바로 작성하기'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor:
-                          AppSemanticColors.interactivePrimaryDefault,
-                      side: BorderSide(
-                        color: AppSemanticColors.interactivePrimaryDefault,
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
                   ),
                 ),
               ],
@@ -736,26 +729,13 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
               // 제출 버튼
               SizedBox(
                 width: double.infinity,
-                child: shadcn.PrimaryButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppSemanticColors.textInverse,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          '결재 요청',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: AppSemanticColors.textInverse,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                child: SeedButton(
+                  label: '결재 요청',
+                  variant: SeedButtonVariant.brandSolid,
+                  size: SeedButtonSize.large,
+                  isLoading: _isSubmitting,
+                  isDisabled: _isSubmitting,
+                  onPressed: _submit,
                 ),
               ),
 

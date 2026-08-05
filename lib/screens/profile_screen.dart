@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/app_version_provider.dart';
@@ -17,6 +16,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/index.dart';
+import '../widgets/seed/seed_button.dart';
 import 'login_screen.dart';
 import 'subscription_check_screen.dart';
 import 'signature_manage_screen.dart';
@@ -146,198 +146,209 @@ class _ProfileScreenState extends State<ProfileScreen>
         backgroundColor: AppSemanticColors.statusSuccessIcon,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
       ),
     );
   }
 
   void _showPasswordChangeDialog(BuildContext dialogContext) {
-    showDialog(
-      context: dialogContext,
-      builder: (BuildContext context) {
-        final currentPasswordController = TextEditingController();
-        final newPasswordController = TextEditingController();
-        final confirmPasswordController = TextEditingController();
-        bool isChanging = false;
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool isChanging = false;
 
-        return StatefulBuilder(
-          builder: (context, setState) => shadcn.AlertDialog(
-            title: Row(
+    AppDialog.showCustom<void>(
+      dialogContext,
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      child: StatefulBuilder(
+        builder: (context, setState) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space2),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.statusSuccessBackground,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  ),
-                  child: const Icon(
-                    Icons.lock,
-                    color: AppSemanticColors.statusSuccessIcon,
-                    size: 24,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.space2),
+                      decoration: BoxDecoration(
+                        color: AppSemanticColors.statusSuccessBackground,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                      ),
+                      child: const Icon(
+                        Icons.lock,
+                        color: AppSemanticColors.statusSuccessIcon,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.space3),
+                    Text(
+                      '비밀번호 변경',
+                      style: AppTypography.heading5.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.space4),
+                AppPasswordInput(
+                  label: '현재 비밀번호',
+                  controller: currentPasswordController,
+                ),
+                const SizedBox(height: AppSpacing.space4),
+                AppPasswordInput(
+                  label: '새 비밀번호',
+                  controller: newPasswordController,
+                  helperText: '6자 이상 입력하세요',
+                ),
+                const SizedBox(height: AppSpacing.space4),
+                AppPasswordInput(
+                  label: '새 비밀번호 확인',
+                  controller: confirmPasswordController,
+                ),
+                const SizedBox(height: AppSpacing.space4),
+                AppStatusCard(
+                  status: AppStatusType.info,
+                  padding: const EdgeInsets.all(AppSpacing.space3),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: AppSemanticColors.statusInfoIcon,
+                        size: 20,
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
+                      Expanded(
+                        child: Text(
+                          '비밀번호는 영문, 숫자, 특수문자를 포함하여 6자 이상으로 설정하는 것을 권장합니다.',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.space3),
-                Text(
-                  '비밀번호 변경',
-                  style: AppTypography.heading5.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
+                const SizedBox(height: AppSpacing.space6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SeedButton(
+                        label: '취소',
+                        variant: SeedButtonVariant.neutralOutline,
+                        isDisabled: isChanging,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.space3),
+                    Expanded(
+                      child: SeedButton(
+                        label: '변경',
+                        variant: SeedButtonVariant.brandSolid,
+                        isLoading: isChanging,
+                        isDisabled: isChanging,
+                        onPressed: () async {
+                          if (currentPasswordController.text.isEmpty) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '현재 비밀번호를 입력해주세요',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textInverse,
+                                  ),
+                                ),
+                                backgroundColor:
+                                    AppSemanticColors.statusErrorIcon,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (newPasswordController.text.isEmpty) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '새 비밀번호를 입력해주세요',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textInverse,
+                                  ),
+                                ),
+                                backgroundColor:
+                                    AppSemanticColors.statusErrorIcon,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (newPasswordController.text.length < 6) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '비밀번호는 6자 이상이어야 합니다',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textInverse,
+                                  ),
+                                ),
+                                backgroundColor:
+                                    AppSemanticColors.statusErrorIcon,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (newPasswordController.text !=
+                              confirmPasswordController.text) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '새 비밀번호가 일치하지 않습니다',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textInverse,
+                                  ),
+                                ),
+                                backgroundColor:
+                                    AppSemanticColors.statusErrorIcon,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setState(() {
+                            isChanging = true;
+                          });
+
+                          final authProvider = context.read<AuthProvider>();
+                          final success = await authProvider.changePassword(
+                            currentPassword: currentPasswordController.text,
+                            newPassword: newPasswordController.text,
+                            context: context,
+                          );
+
+                          if (context.mounted) {
+                            if (success) {
+                              Navigator.pop(context);
+                            } else {
+                              setState(() {
+                                isChanging = false;
+                              });
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppPasswordInput(
-                    label: '현재 비밀번호',
-                    controller: currentPasswordController,
-                  ),
-                  const SizedBox(height: AppSpacing.space4),
-                  AppPasswordInput(
-                    label: '새 비밀번호',
-                    controller: newPasswordController,
-                    helperText: '6자 이상 입력하세요',
-                  ),
-                  const SizedBox(height: AppSpacing.space4),
-                  AppPasswordInput(
-                    label: '새 비밀번호 확인',
-                    controller: confirmPasswordController,
-                  ),
-                  const SizedBox(height: AppSpacing.space4),
-                  AppStatusCard(
-                    status: AppStatusType.info,
-                    padding: const EdgeInsets.all(AppSpacing.space3),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: AppSemanticColors.statusInfoIcon,
-                          size: 20,
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Expanded(
-                          child: Text(
-                            '비밀번호는 영문, 숫자, 특수문자를 포함하여 6자 이상으로 설정하는 것을 권장합니다.',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              AppButton(
-                text: '취소',
-                variant: AppButtonVariant.outline,
-                onPressed: isChanging ? null : () => Navigator.pop(context),
-              ),
-              AppButton(
-                text: '변경',
-                isLoading: isChanging,
-                onPressed: isChanging
-                    ? null
-                    : () async {
-                        if (currentPasswordController.text.isEmpty) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '현재 비밀번호를 입력해주세요',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textInverse,
-                                ),
-                              ),
-                              backgroundColor:
-                                  AppSemanticColors.statusErrorIcon,
-                            ),
-                          );
-                          return;
-                        }
-
-                        if (newPasswordController.text.isEmpty) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '새 비밀번호를 입력해주세요',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textInverse,
-                                ),
-                              ),
-                              backgroundColor:
-                                  AppSemanticColors.statusErrorIcon,
-                            ),
-                          );
-                          return;
-                        }
-
-                        if (newPasswordController.text.length < 6) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '비밀번호는 6자 이상이어야 합니다',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textInverse,
-                                ),
-                              ),
-                              backgroundColor:
-                                  AppSemanticColors.statusErrorIcon,
-                            ),
-                          );
-                          return;
-                        }
-
-                        if (newPasswordController.text !=
-                            confirmPasswordController.text) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '새 비밀번호가 일치하지 않습니다',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textInverse,
-                                ),
-                              ),
-                              backgroundColor:
-                                  AppSemanticColors.statusErrorIcon,
-                            ),
-                          );
-                          return;
-                        }
-
-                        setState(() {
-                          isChanging = true;
-                        });
-
-                        final authProvider = context.read<AuthProvider>();
-                        final success = await authProvider.changePassword(
-                          currentPassword: currentPasswordController.text,
-                          newPassword: newPasswordController.text,
-                          context: context,
-                        );
-
-                        if (context.mounted) {
-                          if (success) {
-                            Navigator.pop(context);
-                          } else {
-                            setState(() {
-                              isChanging = false;
-                            });
-                          }
-                        }
-                      },
-              ),
-            ],
           ),
-        );
-      },
+        ),
+      ),
     ).then((_) {
       // Dialog가 닫힌 후 자동으로 controller들이 dispose됩니다
     });
@@ -347,36 +358,40 @@ class _ProfileScreenState extends State<ProfileScreen>
     String selectedRole = user.role;
     bool isChanging = false;
 
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => shadcn.AlertDialog(
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space2),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.backgroundTertiary,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                ),
-                child: const Icon(
-                  Icons.swap_horiz,
-                  color: AppSemanticColors.textSecondary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.space3),
-              Text(
-                '역할 변경',
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
+    AppDialog.showCustom<void>(
+      context,
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      child: StatefulBuilder(
+        builder: (context, setState) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.space2),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.backgroundTertiary,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    ),
+                    child: const Icon(
+                      Icons.swap_horiz,
+                      color: AppSemanticColors.textSecondary,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Text(
+                    '역할 변경',
+                    style: AppTypography.heading5.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space4),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.space4),
                 decoration: BoxDecoration(
@@ -479,66 +494,78 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ],
                   ),
                 ),
+              const SizedBox(height: AppSpacing.space6),
+              Row(
+                children: [
+                  Expanded(
+                    child: SeedButton(
+                      label: '취소',
+                      variant: SeedButtonVariant.neutralOutline,
+                      isDisabled: isChanging,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: SeedButton(
+                      label: '변경',
+                      variant: SeedButtonVariant.brandSolid,
+                      isLoading: isChanging,
+                      isDisabled: isChanging || selectedRole == user.role,
+                      onPressed: () async {
+                        setState(() {
+                          isChanging = true;
+                        });
+
+                        final authProvider = context.read<AuthProvider>();
+                        final success = await authProvider.updateMemberRole(
+                          selectedRole,
+                        );
+
+                        if (success && context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('역할이 성공적으로 변경되었습니다.'),
+                              backgroundColor:
+                                  AppSemanticColors.statusSuccessIcon,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl,
+                                ),
+                              ),
+                            ),
+                          );
+                        } else if (context.mounted) {
+                          setState(() {
+                            isChanging = false;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                authProvider.errorMessage.isNotEmpty
+                                    ? authProvider.errorMessage
+                                    : '역할 변경에 실패했습니다',
+                              ),
+                              backgroundColor:
+                                  AppSemanticColors.statusErrorIcon,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          actions: [
-            shadcn.OutlineButton(
-              onPressed: isChanging ? null : () => Navigator.pop(context),
-              child: const Text('취소'),
-            ),
-            shadcn.PrimaryButton(
-              onPressed: (isChanging || selectedRole == user.role) ? null : () async {
-                setState(() {
-                  isChanging = true;
-                });
-
-                final authProvider = context.read<AuthProvider>();
-                final success = await authProvider.updateMemberRole(selectedRole);
-
-                if (success && context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('역할이 성공적으로 변경되었습니다.'),
-                      backgroundColor: AppSemanticColors.statusSuccessIcon,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      ),
-                    ),
-                  );
-                } else if (context.mounted) {
-                  setState(() {
-                    isChanging = false;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        authProvider.errorMessage.isNotEmpty
-                            ? authProvider.errorMessage
-                            : '역할 변경에 실패했습니다',
-                      ),
-                      backgroundColor: AppSemanticColors.statusErrorIcon,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      ),
-                    ),
-                  );
-                }
-              },
-              child: isChanging
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-                      ),
-                    )
-                  : const Text('변경'),
-            ),
-          ],
         ),
       ),
     );
@@ -547,38 +574,41 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _showWithdrawalDialog(BuildContext context) {
     bool isWithdrawing = false;
 
-    showDialog(
-      context: context,
+    AppDialog.showCustom<void>(
+      context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => shadcn.AlertDialog(
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space2),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.statusErrorBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                ),
-                child: Icon(
-                  Icons.person_remove,
-                  color: AppSemanticColors.statusErrorIcon,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.space3),
-              Text(
-                '회원탈퇴',
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      child: StatefulBuilder(
+        builder: (context, setState) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.space2),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.statusErrorBackground,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    ),
+                    child: Icon(
+                      Icons.person_remove,
+                      color: AppSemanticColors.statusErrorIcon,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Text(
+                    '회원탈퇴',
+                    style: AppTypography.heading5.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space4),
               Container(
                 padding: const EdgeInsets.all(AppSpacing.space4),
                 decoration: BoxDecoration(
@@ -614,37 +644,40 @@ class _ProfileScreenState extends State<ProfileScreen>
                   color: AppSemanticColors.textPrimary,
                 ),
               ),
-            ],
-          ),
-          actions: [
-            AppButton(
-              text: '취소',
-              variant: AppButtonVariant.outline,
-              onPressed: isWithdrawing ? null : () => Navigator.pop(context),
-            ),
-            AppButton(
-              text: '탈퇴하기',
-              variant: AppButtonVariant.primary,
-              isLoading: isWithdrawing,
-              onPressed: isWithdrawing
-                  ? null
-                  : () async {
-                      setState(() {
-                        isWithdrawing = true;
-                      });
+              const SizedBox(height: AppSpacing.space6),
+              Row(
+                children: [
+                  Expanded(
+                    child: SeedButton(
+                      label: '취소',
+                      variant: SeedButtonVariant.neutralOutline,
+                      isDisabled: isWithdrawing,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: SeedButton(
+                      label: '탈퇴하기',
+                      variant: SeedButtonVariant.critical,
+                      isLoading: isWithdrawing,
+                      isDisabled: isWithdrawing,
+                      onPressed: () async {
+                        setState(() {
+                          isWithdrawing = true;
+                        });
 
-                      final authProvider = context.read<AuthProvider>();
-                      final success = await authProvider.withdrawMember();
+                        final authProvider = context.read<AuthProvider>();
+                        final success = await authProvider.withdrawMember();
 
-                      if (success && context.mounted) {
-                        Navigator.pop(context);
+                        if (success && context.mounted) {
+                          Navigator.pop(context);
 
-                        // 성공 메시지 표시
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) => shadcn.AlertDialog(
-                            content: Container(
+                          // 성공 메시지 표시
+                          AppDialog.showCustom<void>(
+                            context,
+                            barrierDismissible: false,
+                            child: Container(
                               padding: const EdgeInsets.all(AppSpacing.space6),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -681,53 +714,62 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.space5),
-                                  AppButton(
-                                    text: '확인',
-                                    isFullWidth: true,
-                                    onPressed: () {
-                                      Navigator.of(
-                                        context,
-                                      ).pushAndRemoveUntil(
-                                        MaterialPageRoute(
-                                          builder: (_) => const LoginScreen(),
-                                        ),
-                                        (route) => false,
-                                      );
-                                    },
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: SeedButton(
+                                      label: '확인',
+                                      variant: SeedButtonVariant.brandSolid,
+                                      onPressed: () {
+                                        Navigator.of(
+                                          context,
+                                        ).pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const LoginScreen(),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                        );
-                      } else if (context.mounted) {
-                        setState(() {
-                          isWithdrawing = false;
-                        });
+                          );
+                        } else if (context.mounted) {
+                          setState(() {
+                            isWithdrawing = false;
+                          });
 
-                        // 에러 메시지 표시
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              authProvider.errorMessage.isNotEmpty
-                                  ? authProvider.errorMessage
-                                  : '회원탈퇴에 실패했습니다',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppSemanticColors.textInverse,
+                          // 에러 메시지 표시
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                authProvider.errorMessage.isNotEmpty
+                                    ? authProvider.errorMessage
+                                    : '회원탈퇴에 실패했습니다',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textInverse,
+                                ),
+                              ),
+                              backgroundColor:
+                                  AppSemanticColors.statusErrorIcon,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl,
+                                ),
                               ),
                             ),
-                            backgroundColor: AppSemanticColors.statusErrorIcon,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppBorderRadius.xl),
-                            ),
-                          ),
-                        );
-                      }
-                    },
-            ),
-          ],
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -792,9 +834,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                     child: SlideTransition(
                       position: _slideAnimation,
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: shadcn.Card(
-                          padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(AppSpacing.space4),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppSemanticColors.surfaceDefault,
+                            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                            border: Border.all(
+                              color: AppSemanticColors.borderDefault,
+                              width: 1,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(AppSpacing.space6),
                           child: Column(
                             children: [
                               // 프로필 이미지
@@ -846,7 +896,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         color: AppSemanticColors.textPrimary,
                                       ),
                                     ),
-                                    const SizedBox(height: 20),
+                                    const SizedBox(height: AppSpacing.space5),
 
                                     // 이름
                                     _buildInfoRow(
@@ -855,7 +905,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       title: '이름',
                                       value: user.name,
                                     ),
-                                    const SizedBox(height: 16),
+                                    const SizedBox(height: AppSpacing.space4),
 
                                     // 이메일
                                     _buildInfoRow(
@@ -864,14 +914,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       title: '이메일',
                                       value: user.email,
                                     ),
-                                    const SizedBox(height: 16),
+                                    const SizedBox(height: AppSpacing.space4),
 
                                     // 직원 유형 (클릭 가능)
                                     InkWell(
                                       onTap: () => _showRoleChangeDialog(context, user),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
                                         child: Row(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
@@ -890,10 +940,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                                               ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsets.all(4),
+                                              padding: const EdgeInsets.all(AppSpacing.space1),
                                               decoration: BoxDecoration(
                                                 color: AppSemanticColors.backgroundTertiary,
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                                               ),
                                               child: Icon(
                                                 Icons.edit,
@@ -905,7 +955,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 16),
+                                    const SizedBox(height: AppSpacing.space4),
 
                                     // 부서 (있는 경우)
                                     if (user.department != null &&
@@ -918,7 +968,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             title: '부서',
                                             value: user.department!,
                                           ),
-                                          const SizedBox(height: 16),
+                                          const SizedBox(height: AppSpacing.space4),
                                         ],
                                       ),
 
@@ -933,7 +983,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             title: '직책',
                                             value: user.position!,
                                           ),
-                                          const SizedBox(height: 16),
+                                          const SizedBox(height: AppSpacing.space4),
                                         ],
                                       ),
 
@@ -950,7 +1000,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     if (user.lastLoginAt != null)
                                       Column(
                                         children: [
-                                          const SizedBox(height: 16),
+                                          const SizedBox(height: AppSpacing.space4),
                                           _buildInfoRow(
                                             icon: Icons.login,
                                             iconColor: AppSemanticColors.textSecondary,
@@ -977,19 +1027,27 @@ class _ProfileScreenState extends State<ProfileScreen>
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: shadcn.Card(
-                          padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppSemanticColors.surfaceDefault,
+                            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                            border: Border.all(
+                              color: AppSemanticColors.borderDefault,
+                              width: 1,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(AppSpacing.space5),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.all(AppSpacing.space3),
                                     decoration: BoxDecoration(
                                       color: AppSemanticColors.statusWarningBackground,
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                                     ),
                                     child: const Icon(
                                       Icons.key,
@@ -997,7 +1055,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       size: 24,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.space3),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1020,7 +1078,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: AppSpacing.space4),
                               Container(
                                 padding: const EdgeInsets.all(AppSpacing.space4),
                                 decoration: BoxDecoration(
@@ -1049,7 +1107,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: AppSpacing.space2_5),
                               Text(
                                 '직원은 회원가입 화면에서 이 코드를 입력해 기존 회사 선택과 같은 방식으로 가입 요청을 보낼 수 있습니다.',
                                 style: AppTypography.bodySmall.copyWith(
@@ -1064,14 +1122,22 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                   if (AdminUtils.canAccessAdminPages(user) &&
                       (user.company?.companyCode?.isNotEmpty ?? false))
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.space2),
 
                   // 설정 섹션
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: shadcn.Card(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.surfaceDefault,
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                          border: Border.all(
+                            color: AppSemanticColors.borderDefault,
+                            width: 1,
+                          ),
+                        ),
                         padding: EdgeInsets.zero,
                         child: Column(
                         children: [
@@ -1082,10 +1148,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                               title: '회사 정보',
                               subtitle: '회사 정보 및 구독 관리',
                               trailing: Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(AppSpacing.space2),
                                 decoration: BoxDecoration(
                                   color: AppSemanticColors.backgroundSecondary,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                                 ),
                                 child: Icon(
                                   Icons.chevron_right,
@@ -1110,10 +1176,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                             title: '결재 서명 관리',
                             subtitle: '서명을 등록하면 결재 승인 시 자동으로 날인됩니다',
                             trailing: Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(AppSpacing.space2),
                               decoration: BoxDecoration(
                                 color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
@@ -1138,10 +1204,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                             title: '비밀번호 변경',
                             subtitle: '계정 보안을 위해 주기적으로 변경하세요',
                             trailing: Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(AppSpacing.space2),
                               decoration: BoxDecoration(
                                 color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
@@ -1161,10 +1227,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                             title: '앱 평가하기',
                             subtitle: '평점과 리뷰를 남겨주세요',
                             trailing: Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(AppSpacing.space2),
                               decoration: BoxDecoration(
                                 color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
@@ -1189,7 +1255,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     backgroundColor: AppSemanticColors.statusSuccessIcon,
                                     behavior: SnackBarBehavior.floating,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                     ),
                                     duration: const Duration(seconds: 2),
                                   ),
@@ -1209,10 +1275,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                             title: '회원탈퇴',
                             subtitle: '계정을 영구적으로 삭제합니다',
                             trailing: Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(AppSpacing.space2),
                               decoration: BoxDecoration(
                                 color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                               ),
                               child: Icon(
                                 Icons.chevron_right,
@@ -1229,7 +1295,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.space6),
 
                   // 약관 및 정책 섹션
                   FadeTransition(
@@ -1237,21 +1303,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                     child: SlideTransition(
                       position: _slideAnimation,
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: shadcn.Card(
+                        padding: const EdgeInsets.all(AppSpacing.space4),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppSemanticColors.surfaceDefault,
+                            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                            border: Border.all(
+                              color: AppSemanticColors.borderDefault,
+                              width: 1,
+                            ),
+                          ),
                           padding: EdgeInsets.zero,
                           child: Column(
                           children: [
                             // 섹션 헤더
                             Container(
-                              padding: const EdgeInsets.all(20),
+                              padding: const EdgeInsets.all(AppSpacing.space5),
                               child: Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(12),
+                                    padding: const EdgeInsets.all(AppSpacing.space3),
                                     decoration: BoxDecoration(
                                       color: AppSemanticColors.backgroundTertiary,
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                                     ),
                                     child: Icon(
                                       Icons.gavel,
@@ -1259,7 +1333,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       size: 24,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.space3),
                                   Text(
                                     '약관 및 정책',
                                     style: AppTypography.heading6.copyWith(
@@ -1286,7 +1360,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             Container(
                               height: 1,
                               margin: const EdgeInsets.symmetric(
-                                horizontal: 20,
+                                horizontal: AppSpacing.space5,
                               ),
                               color: AppSemanticColors.borderSubtle,
                             ),
@@ -1308,13 +1382,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.space6),
 
                   // 로그아웃 버튼
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
                       child: SizedBox(
                         width: double.infinity,
                         child: FilledButton(
@@ -1326,16 +1400,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 AppSemanticColors.statusErrorIcon,
                             disabledForegroundColor:
                                 AppSemanticColors.textInverse,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.space3_5,
+                            ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                             ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(Icons.logout, size: 18),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: AppSpacing.space2),
                               Text(
                                 '로그아웃',
                                 style: AppTypography.labelLarge.copyWith(
@@ -1349,7 +1425,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.space6),
 
                   // 앱 버전 정보
                   FadeTransition(
@@ -1397,17 +1473,20 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.vertical(
-          top: isFirst ? const Radius.circular(20) : Radius.zero,
-          bottom: isLast ? const Radius.circular(20) : Radius.zero,
+          top: isFirst ? const Radius.circular(AppBorderRadius.xl2) : Radius.zero,
+          bottom: isLast ? const Radius.circular(AppBorderRadius.xl2) : Radius.zero,
         ),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space5,
+          vertical: AppSpacing.space2,
+        ),
         leading: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.space3),
           decoration: BoxDecoration(
             color: AppSemanticColors.backgroundTertiary,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           ),
           child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
         ),
@@ -1435,7 +1514,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, color: iconColor, size: 20),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.space2),
         SizedBox(
           width: 60,
           child: Text(
@@ -1446,7 +1525,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.space2),
         Expanded(
           child: Text(
             value,
@@ -1505,12 +1584,15 @@ class _ProfileScreenState extends State<ProfileScreen>
     bool isLast = false,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space5,
+          vertical: AppSpacing.space2,
+        ),
       leading: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.space3),
         decoration: BoxDecoration(
           color: AppSemanticColors.backgroundTertiary,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
         child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
       ),
@@ -1552,9 +1634,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           );
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
           child: Row(
             children: [
               Container(
@@ -1562,7 +1644,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 height: 40,
                 decoration: BoxDecoration(
                   color: AppSemanticColors.backgroundTertiary,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
                 ),
                 child: Icon(
                   Icons.workspace_premium,
@@ -1570,7 +1652,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   size: 20,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.space4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1583,7 +1665,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         color: AppSemanticColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.space0_5),
                     Text(
                       '구독이 필요합니다 (탭하여 구독하기)',
                       style: TextStyle(
@@ -1624,9 +1706,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       onTap: () {
         _showSubscriptionDetails(subscription);
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
         child: Row(
           children: [
             Container(
@@ -1634,7 +1716,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               height: 40,
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha:0.1),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppBorderRadius.full),
               ),
               child: Icon(
                 statusIcon,
@@ -1642,7 +1724,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 size: 20,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.space4),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1655,7 +1737,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       color: AppSemanticColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.space0_5),
                   Row(
                     children: [
                       Text(
@@ -1665,15 +1747,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                           color: AppSemanticColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.space2),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                          horizontal: AppSpacing.space1_5,
+                          vertical: AppSpacing.space0_5,
                         ),
                         decoration: BoxDecoration(
                           color: statusColor,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                         ),
                         child: Text(
                           subscription.statusDisplayName,
@@ -1701,30 +1783,33 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _showSubscriptionDetails(subscription) {
-    showDialog(
-      context: context,
-      builder: (context) => shadcn.AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.workspace_premium,
-              color: subscription.isActive
-                  ? AppSemanticColors.statusSuccessIcon
-                  : AppSemanticColors.statusWarningIcon,
-            ),
-            const SizedBox(width: AppSpacing.space2),
-            Text(
-              '구독 정보',
-              style: AppTypography.heading5.copyWith(
-                color: AppSemanticColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
+    AppDialog.showCustom<void>(
+      context,
+      barrierColor: AppColors.black.withValues(alpha: 0.5),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.workspace_premium,
+                  color: subscription.isActive
+                      ? AppSemanticColors.statusSuccessIcon
+                      : AppSemanticColors.statusWarningIcon,
+                ),
+                const SizedBox(width: AppSpacing.space2),
+                Text(
+                  '구독 정보',
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.space4),
             _buildDetailRow('플랜', subscription.planDisplayName),
             const SizedBox(height: AppSpacing.space3),
             _buildDetailRow('상태', subscription.statusDisplayName),
@@ -1748,26 +1833,37 @@ class _ProfileScreenState extends State<ProfileScreen>
                 _formatDate(subscription.startDate!),
               ),
             },
+            const SizedBox(height: AppSpacing.space6),
+            Row(
+              children: [
+                if (!subscription.isActive) ...[
+                  Expanded(
+                    child: SeedButton(
+                      label: '구독 갱신',
+                      variant: SeedButtonVariant.brandSolid,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SubscriptionCheckScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                ],
+                Expanded(
+                  child: SeedButton(
+                    label: '확인',
+                    variant: SeedButtonVariant.neutralOutline,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-        actions: [
-          if (!subscription.isActive)
-            shadcn.PrimaryButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const SubscriptionCheckScreen(),
-                  ),
-                );
-              },
-              child: const Text('구독 갱신'),
-            ),
-          shadcn.GhostButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인'),
-          ),
-        ],
       ),
     );
   }
