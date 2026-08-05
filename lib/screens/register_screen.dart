@@ -10,6 +10,8 @@ import '../models/company.dart';
 import '../services/api_service.dart';
 import '../utils/constants.dart';
 import '../widgets/common/index.dart';
+import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_section_header.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -535,13 +537,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
+      backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
+        backgroundColor: AppSemanticColors.backgroundPrimary,
+        iconTheme: IconThemeData(color: AppSemanticColors.textPrimary),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppSemanticColors.textInverse),
+          icon: Icon(Icons.arrow_back, color: AppSemanticColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -709,20 +711,227 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 24),
 
-              // 회원가입 폼
-              Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+              // 회원가입 폼 — 흰 화면과 같은 표면에 평평하게(카드 래핑 제거)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.space2,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(Constants.largePadding),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // 사용자 유형 선택
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 사용자 유형 선택
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.backgroundSecondary,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppSemanticColors.borderDefault,
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SeedSectionHeader(title: '가입 유형 선택'),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () {
+                                      _companyCodeDebounce?.cancel();
+                                      setState(() {
+                                        _userType = 'admin';
+                                        _companyErrorMessage = null;
+                                        _positionErrorMessage = null;
+                                      });
+                                      _clearPositionState();
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: _userType == 'admin'
+                                            ? AppSemanticColors.statusInfoIcon
+                                            : AppColors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: _userType == 'admin'
+                                              ? AppSemanticColors.statusInfoIcon
+                                              : AppSemanticColors.borderHover,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.admin_panel_settings,
+                                            color: _userType == 'admin'
+                                                ? AppColors.white
+                                                : AppSemanticColors
+                                                      .statusInfoIcon,
+                                            size: 32,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            '관리자',
+                                            style: TextStyle(
+                                              color: _userType == 'admin'
+                                                  ? AppColors.white
+                                                  : AppSemanticColors
+                                                        .statusInfoIcon,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '근무표 관리',
+                                            style: TextStyle(
+                                              color: _userType == 'admin'
+                                                  ? AppSemanticColors
+                                                        .textInverse
+                                                        .withValues(alpha: 0.7)
+                                                  : AppSemanticColors
+                                                        .textSecondary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _userType = 'employee';
+                                        _companyErrorMessage = null;
+                                        _positionErrorMessage = null;
+                                      });
+                                      if (_employeeJoinMethod == 'company' &&
+                                          _selectedCompany != null) {
+                                        _loadPositions(
+                                          companyId: _selectedCompany!.id,
+                                        );
+                                      } else {
+                                        _queueCompanyCodePositionLoad(
+                                          _companyCodeController.text,
+                                        );
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: _userType == 'employee'
+                                            ? AppSemanticColors
+                                                  .statusSuccessIcon
+                                            : AppColors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: _userType == 'employee'
+                                              ? AppSemanticColors
+                                                    .statusSuccessIcon
+                                              : AppSemanticColors.borderHover,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.person,
+                                            color: _userType == 'employee'
+                                                ? AppColors.white
+                                                : AppSemanticColors
+                                                      .statusSuccessIcon,
+                                            size: 32,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            '직원',
+                                            style: TextStyle(
+                                              color: _userType == 'employee'
+                                                  ? AppColors.white
+                                                  : AppSemanticColors
+                                                        .statusSuccessIcon,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '근무표 작성',
+                                            style: TextStyle(
+                                              color: _userType == 'employee'
+                                                  ? AppSemanticColors
+                                                        .textInverse
+                                                        .withValues(alpha: 0.7)
+                                                  : AppSemanticColors
+                                                        .textSecondary,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space4),
+
+                      // 이름 입력
+                      SeedTextField(
+                        label: '이름',
+                        controller: _nameController,
+                        placeholder: '홍길동',
+                        prefixIcon: Icons.person_outline,
+                        size: SeedTextFieldSize.large,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '이름을 입력해주세요';
+                          }
+                          if (value.length < 2) {
+                            return '이름은 2자 이상이어야 합니다';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.space4),
+
+                      // 이메일 입력
+                      SeedTextField(
+                        label: '이메일',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        placeholder: 'example@company.com',
+                        prefixIcon: Icons.email_outlined,
+                        size: SeedTextFieldSize.large,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '이메일을 입력해주세요';
+                          }
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value)) {
+                            return '올바른 이메일 형식을 입력해주세요';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.space4),
+
+                      if (_userType == 'employee' &&
+                          _hasEmployeeCompanyContext) ...[
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -736,24 +945,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.supervisor_account,
-                                    color: AppSemanticColors.statusInfoIcon,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '가입 유형 선택',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppSemanticColors
-                                          .interactivePrimaryDefault,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
+                              const SeedSectionHeader(
+                                title: '회사 연결 방식',
+                                subtitle:
+                                    '관리자가 프로필에서 복사한 회사 코드로 가입하면 더 빠르게 연결할 수 있습니다.',
                               ),
                               const SizedBox(height: 16),
                               Row(
@@ -763,26 +958,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       onTap: () {
                                         _companyCodeDebounce?.cancel();
                                         setState(() {
-                                          _userType = 'admin';
+                                          _employeeJoinMethod = 'code';
                                           _companyErrorMessage = null;
-                                          _positionErrorMessage = null;
+                                          _selectedCompany = null;
                                         });
-                                        _clearPositionState();
+                                        _queueCompanyCodePositionLoad(
+                                          _companyCodeController.text,
+                                        );
                                       },
                                       borderRadius: BorderRadius.circular(12),
                                       child: Container(
-                                        padding: const EdgeInsets.all(16),
+                                        padding: const EdgeInsets.all(14),
                                         decoration: BoxDecoration(
-                                          color: _userType == 'admin'
-                                              ? AppSemanticColors.statusInfoIcon
+                                          color: _employeeJoinMethod == 'code'
+                                              ? AppSemanticColors
+                                                    .statusWarningIcon
                                               : AppColors.white,
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                           border: Border.all(
-                                            color: _userType == 'admin'
+                                            color: _employeeJoinMethod == 'code'
                                                 ? AppSemanticColors
-                                                      .statusInfoIcon
+                                                      .statusWarningIcon
                                                 : AppSemanticColors.borderHover,
                                             width: 2,
                                           ),
@@ -790,38 +988,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         child: Column(
                                           children: [
                                             Icon(
-                                              Icons.admin_panel_settings,
-                                              color: _userType == 'admin'
+                                              Icons.key,
+                                              color:
+                                                  _employeeJoinMethod == 'code'
                                                   ? AppColors.white
                                                   : AppSemanticColors
-                                                        .statusInfoIcon,
-                                              size: 32,
+                                                        .statusWarningIcon,
+                                              size: 28,
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              '관리자',
+                                              '회사 코드',
                                               style: TextStyle(
-                                                color: _userType == 'admin'
+                                                color:
+                                                    _employeeJoinMethod ==
+                                                        'code'
                                                     ? AppColors.white
                                                     : AppSemanticColors
-                                                          .statusInfoIcon,
+                                                          .statusWarningIcon,
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 14,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '근무표 관리',
-                                              style: TextStyle(
-                                                color: _userType == 'admin'
-                                                    ? AppSemanticColors
-                                                          .textInverse
-                                                          .withValues(
-                                                            alpha: 0.7,
-                                                          )
-                                                    : AppSemanticColors
-                                                          .textSecondary,
-                                                fontSize: 12,
                                               ),
                                             ),
                                           ],
@@ -833,37 +1019,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   Expanded(
                                     child: InkWell(
                                       onTap: () {
+                                        _companyCodeDebounce?.cancel();
                                         setState(() {
-                                          _userType = 'employee';
+                                          _employeeJoinMethod = 'company';
                                           _companyErrorMessage = null;
-                                          _positionErrorMessage = null;
                                         });
-                                        if (_employeeJoinMethod == 'company' &&
-                                            _selectedCompany != null) {
+                                        if (_selectedCompany != null) {
                                           _loadPositions(
                                             companyId: _selectedCompany!.id,
                                           );
                                         } else {
-                                          _queueCompanyCodePositionLoad(
-                                            _companyCodeController.text,
-                                          );
+                                          _clearPositionState();
                                         }
                                       },
                                       borderRadius: BorderRadius.circular(12),
                                       child: Container(
-                                        padding: const EdgeInsets.all(16),
+                                        padding: const EdgeInsets.all(14),
                                         decoration: BoxDecoration(
-                                          color: _userType == 'employee'
-                                              ? AppSemanticColors
-                                                    .statusSuccessIcon
+                                          color:
+                                              _employeeJoinMethod == 'company'
+                                              ? AppSemanticColors.statusInfoIcon
                                               : AppColors.white,
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                           border: Border.all(
-                                            color: _userType == 'employee'
+                                            color:
+                                                _employeeJoinMethod == 'company'
                                                 ? AppSemanticColors
-                                                      .statusSuccessIcon
+                                                      .statusInfoIcon
                                                 : AppSemanticColors.borderHover,
                                             width: 2,
                                           ),
@@ -871,469 +1055,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         child: Column(
                                           children: [
                                             Icon(
-                                              Icons.person,
-                                              color: _userType == 'employee'
-                                                  ? AppColors.white
-                                                  : AppSemanticColors
-                                                        .statusSuccessIcon,
-                                              size: 32,
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              '직원',
-                                              style: TextStyle(
-                                                color: _userType == 'employee'
-                                                    ? AppColors.white
-                                                    : AppSemanticColors
-                                                          .statusSuccessIcon,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '근무표 작성',
-                                              style: TextStyle(
-                                                color: _userType == 'employee'
-                                                    ? AppSemanticColors
-                                                          .textInverse
-                                                          .withValues(
-                                                            alpha: 0.7,
-                                                          )
-                                                    : AppSemanticColors
-                                                          .textSecondary,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-
-                        // 이름 입력
-                        SeedTextField(
-                          label: '이름',
-                          controller: _nameController,
-                          placeholder: '홍길동',
-                          prefixIcon: Icons.person_outline,
-                          size: SeedTextFieldSize.large,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return '이름을 입력해주세요';
-                            }
-                            if (value.length < 2) {
-                              return '이름은 2자 이상이어야 합니다';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-
-                        // 이메일 입력
-                        SeedTextField(
-                          label: '이메일',
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          placeholder: 'example@company.com',
-                          prefixIcon: Icons.email_outlined,
-                          size: SeedTextFieldSize.large,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return '이메일을 입력해주세요';
-                            }
-                            if (!RegExp(
-                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            ).hasMatch(value)) {
-                              return '올바른 이메일 형식을 입력해주세요';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-
-                        if (_userType == 'employee' &&
-                            _hasEmployeeCompanyContext) ...[
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppSemanticColors.backgroundSecondary,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppSemanticColors.borderDefault,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.key,
-                                      color:
-                                          AppSemanticColors.statusWarningIcon,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '회사 연결 방식',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppSemanticColors
-                                            .interactivePrimaryDefault,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '관리자가 프로필에서 복사한 회사 코드로 가입하면 더 빠르게 연결할 수 있습니다.',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppSemanticColors.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: InkWell(
-                                        onTap: () {
-                                          _companyCodeDebounce?.cancel();
-                                          setState(() {
-                                            _employeeJoinMethod = 'code';
-                                            _companyErrorMessage = null;
-                                            _selectedCompany = null;
-                                          });
-                                          _queueCompanyCodePositionLoad(
-                                            _companyCodeController.text,
-                                          );
-                                        },
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(14),
-                                          decoration: BoxDecoration(
-                                            color: _employeeJoinMethod == 'code'
-                                                ? AppSemanticColors
-                                                      .statusWarningIcon
-                                                : AppColors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color:
-                                                  _employeeJoinMethod == 'code'
-                                                  ? AppSemanticColors
-                                                        .statusWarningIcon
-                                                  : AppSemanticColors
-                                                        .borderHover,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              Icon(
-                                                Icons.key,
-                                                color:
-                                                    _employeeJoinMethod ==
-                                                        'code'
-                                                    ? AppColors.white
-                                                    : AppSemanticColors
-                                                          .statusWarningIcon,
-                                                size: 28,
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                '회사 코드',
-                                                style: TextStyle(
-                                                  color:
-                                                      _employeeJoinMethod ==
-                                                          'code'
-                                                      ? AppColors.white
-                                                      : AppSemanticColors
-                                                            .statusWarningIcon,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: InkWell(
-                                        onTap: () {
-                                          _companyCodeDebounce?.cancel();
-                                          setState(() {
-                                            _employeeJoinMethod = 'company';
-                                            _companyErrorMessage = null;
-                                          });
-                                          if (_selectedCompany != null) {
-                                            _loadPositions(
-                                              companyId: _selectedCompany!.id,
-                                            );
-                                          } else {
-                                            _clearPositionState();
-                                          }
-                                        },
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(14),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                _employeeJoinMethod == 'company'
-                                                ? AppSemanticColors
-                                                      .statusInfoIcon
-                                                : AppColors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
+                                              Icons.apartment,
                                               color:
                                                   _employeeJoinMethod ==
                                                       'company'
-                                                  ? AppSemanticColors
-                                                        .statusInfoIcon
+                                                  ? AppColors.white
                                                   : AppSemanticColors
-                                                        .borderHover,
-                                              width: 2,
+                                                        .statusInfoIcon,
+                                              size: 28,
                                             ),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              Icon(
-                                                Icons.apartment,
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              '회사 선택',
+                                              style: TextStyle(
                                                 color:
                                                     _employeeJoinMethod ==
                                                         'company'
                                                     ? AppColors.white
                                                     : AppSemanticColors
                                                           .statusInfoIcon,
-                                                size: 28,
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                '회사 선택',
-                                                style: TextStyle(
-                                                  color:
-                                                      _employeeJoinMethod ==
-                                                          'company'
-                                                      ? AppColors.white
-                                                      : AppSemanticColors
-                                                            .statusInfoIcon,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.space4),
-                        ],
-
-                        if (_userType == 'employee' &&
-                            _employeeJoinMethod == 'code') ...[
-                          SeedTextField(
-                            label: '회사 코드 *',
-                            controller: _companyCodeController,
-                            textCapitalization: TextCapitalization.characters,
-                            placeholder: '예: CV123456 또는 ABCD2345',
-                            helperText: '관리자가 프로필에서 복사한 코드를 입력해주세요.',
-                            errorText: _companyErrorMessage,
-                            prefixIcon: Icons.key_outlined,
-                            size: SeedTextFieldSize.large,
-                            onChanged: (_) {
-                              if (_companyErrorMessage != null) {
-                                setState(() {
-                                  _companyErrorMessage = null;
-                                });
-                              }
-                              _queueCompanyCodePositionLoad(
-                                _companyCodeController.text,
-                              );
-                            },
-                          ),
-                          const SizedBox(height: AppSpacing.space4),
-                        ],
-
-                        if (_userType == 'employee' &&
-                            _employeeJoinMethod == 'company') ...[
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              DropdownButtonFormField<Company?>(
-                                value: _selectedCompany,
-                                decoration: InputDecoration(
-                                  labelText: '회사 *',
-                                  prefixIcon: const Icon(
-                                    Icons.business_outlined,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: _companyErrorMessage != null
-                                          ? AppSemanticColors.statusErrorBorder
-                                          : AppSemanticColors.borderHover,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: _companyErrorMessage != null
-                                          ? AppSemanticColors.statusErrorIcon
-                                          : AppSemanticColors.borderFocus,
-                                    ),
-                                  ),
-                                ),
-                                hint: const Text('회사를 선택해주세요'),
-                                selectedItemBuilder: (BuildContext context) {
-                                  return context
-                                      .watch<CompanyProvider>()
-                                      .companies
-                                      .map(
-                                        (company) => DropdownMenuItem<Company?>(
-                                          value: company,
-                                          child: Text(
-                                            company.name,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList();
-                                },
-                                items: context
-                                    .watch<CompanyProvider>()
-                                    .companies
-                                    .map(
-                                      (company) => DropdownMenuItem<Company?>(
-                                        value: company,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              company.name,
-                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
                                                 fontSize: 14,
-                                                fontWeight: FontWeight.w500,
                                               ),
                                             ),
-                                            if (company.userEmails.isNotEmpty)
-                                              Text(
-                                                company.userEmails.first,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: AppSemanticColors
-                                                      .textSecondary,
-                                                ),
-                                              ),
                                           ],
                                         ),
                                       ),
-                                    )
-                                    .toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedCompany = value;
-                                    _companyErrorMessage = null;
-                                    _positionErrorMessage = null;
-                                  });
-                                  if (value != null) {
-                                    _loadPositions(companyId: value.id);
-                                  } else {
-                                    _clearPositionState();
-                                  }
-                                },
-                              ),
-                              if (_companyErrorMessage != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 8,
-                                    left: 12,
-                                  ),
-                                  child: Text(
-                                    _companyErrorMessage!,
-                                    style: TextStyle(
-                                      color: AppSemanticColors.statusErrorIcon,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.space4),
-                        ],
-
-                        if (_userType == 'employee') ...[
-                          if (_isLoadingPositions)
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppSemanticColors.borderDefault,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    '등록된 역할을 불러오는 중입니다...',
-                                    style: AppTypography.bodyMedium.copyWith(
-                                      color: AppSemanticColors.textSecondary,
                                     ),
                                   ),
                                 ],
                               ),
-                            )
-                          else ...[
-                            DropdownButtonFormField<PositionOption?>(
-                              value: _selectedPosition,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.space4),
+                      ],
+
+                      if (_userType == 'employee' &&
+                          _employeeJoinMethod == 'code') ...[
+                        SeedTextField(
+                          label: '회사 코드 *',
+                          controller: _companyCodeController,
+                          textCapitalization: TextCapitalization.characters,
+                          placeholder: '예: CV123456 또는 ABCD2345',
+                          helperText: '관리자가 프로필에서 복사한 코드를 입력해주세요.',
+                          errorText: _companyErrorMessage,
+                          prefixIcon: Icons.key_outlined,
+                          size: SeedTextFieldSize.large,
+                          onChanged: (_) {
+                            if (_companyErrorMessage != null) {
+                              setState(() {
+                                _companyErrorMessage = null;
+                              });
+                            }
+                            _queueCompanyCodePositionLoad(
+                              _companyCodeController.text,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.space4),
+                      ],
+
+                      if (_userType == 'employee' &&
+                          _employeeJoinMethod == 'company') ...[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            DropdownButtonFormField<Company?>(
+                              value: _selectedCompany,
                               decoration: InputDecoration(
-                                labelText: '역할',
-                                hintText: _positions.isEmpty
-                                    ? '관리자가 등록한 역할이 없습니다'
-                                    : '가입할 역할을 선택해주세요',
-                                prefixIcon: const Icon(Icons.badge_outlined),
+                                labelText: '회사 *',
+                                prefixIcon: const Icon(Icons.business_outlined),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color: _positionErrorMessage != null
+                                    color: _companyErrorMessage != null
                                         ? AppSemanticColors.statusErrorBorder
                                         : AppSemanticColors.borderHover,
                                   ),
@@ -1341,639 +1140,725 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color: _positionErrorMessage != null
+                                    color: _companyErrorMessage != null
                                         ? AppSemanticColors.statusErrorIcon
                                         : AppSemanticColors.borderFocus,
                                   ),
                                 ),
-                                helperText:
-                                    _selectedPosition?.memberRole != null
-                                    ? '기본 분류: ${_getMemberRoleLabel(_selectedPosition?.memberRole)}'
-                                    : (_positions.isEmpty
-                                          ? '관리자가 역할을 등록하지 않았다면 아래 기본 분류로 가입할 수 있습니다.'
-                                          : '이 역할은 기본 분류가 아직 지정되지 않았습니다. 아래에서 선택해주세요.'),
                               ),
-                              items: _positions
-                                  .map(
-                                    (position) =>
-                                        DropdownMenuItem<PositionOption?>(
-                                          value: position,
-                                          child: Text(position.name),
+                              hint: const Text('회사를 선택해주세요'),
+                              selectedItemBuilder: (BuildContext context) {
+                                return context
+                                    .watch<CompanyProvider>()
+                                    .companies
+                                    .map(
+                                      (company) => DropdownMenuItem<Company?>(
+                                        value: company,
+                                        child: Text(
+                                          company.name,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
+                                      ),
+                                    )
+                                    .toList();
+                              },
+                              items: context
+                                  .watch<CompanyProvider>()
+                                  .companies
+                                  .map(
+                                    (company) => DropdownMenuItem<Company?>(
+                                      value: company,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            company.name,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          if (company.userEmails.isNotEmpty)
+                                            Text(
+                                              company.userEmails.first,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppSemanticColors
+                                                    .textSecondary,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
                                   )
                                   .toList(),
-                              onChanged: _positions.isEmpty
-                                  ? null
-                                  : (value) {
-                                      setState(() {
-                                        _selectedPosition = value;
-                                        _positionErrorMessage = null;
-                                      });
-                                    },
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCompany = value;
+                                  _companyErrorMessage = null;
+                                  _positionErrorMessage = null;
+                                });
+                                if (value != null) {
+                                  _loadPositions(companyId: value.id);
+                                } else {
+                                  _clearPositionState();
+                                }
+                              },
                             ),
-                            if (_positionErrorMessage != null)
+                            if (_companyErrorMessage != null)
                               Padding(
                                 padding: const EdgeInsets.only(
                                   top: 8,
                                   left: 12,
                                 ),
                                 child: Text(
-                                  _positionErrorMessage!,
+                                  _companyErrorMessage!,
                                   style: TextStyle(
                                     color: AppSemanticColors.statusErrorIcon,
                                     fontSize: 12,
                                   ),
                                 ),
                               ),
-                            if (_selectedPosition?.description?.isNotEmpty ??
-                                false)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 8,
-                                  left: 12,
-                                ),
-                                child: Text(
-                                  _selectedPosition!.description!,
-                                  style: TextStyle(
-                                    color: AppSemanticColors.textSecondary,
-                                    fontSize: 12,
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.space4),
+                      ],
+
+                      if (_userType == 'employee') ...[
+                        if (_isLoadingPositions)
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppSemanticColors.backgroundSecondary,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppSemanticColors.borderDefault,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
                                   ),
                                 ),
-                              ),
-                          ],
-                          const SizedBox(height: AppSpacing.space4),
-                        ],
-
-                        if (_shouldShowFallbackRoleSelector) ...[
-                          DropdownButtonFormField<String>(
-                            value: _fallbackRole,
+                                const SizedBox(width: 12),
+                                Text(
+                                  '등록된 역할을 불러오는 중입니다...',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          DropdownButtonFormField<PositionOption?>(
+                            value: _selectedPosition,
                             decoration: InputDecoration(
-                              labelText: '기본 분류',
-                              helperText: '휴무/근태 계산에 사용하는 내부 기준입니다.',
-                              prefixIcon: const Icon(Icons.work_outline),
+                              labelText: '역할',
+                              hintText: _positions.isEmpty
+                                  ? '관리자가 등록한 역할이 없습니다'
+                                  : '가입할 역할을 선택해주세요',
+                              prefixIcon: const Icon(Icons.badge_outlined),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppSemanticColors.borderHover,
+                                  color: _positionErrorMessage != null
+                                      ? AppSemanticColors.statusErrorBorder
+                                      : AppSemanticColors.borderHover,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: AppSemanticColors.borderFocus,
+                                  color: _positionErrorMessage != null
+                                      ? AppSemanticColors.statusErrorIcon
+                                      : AppSemanticColors.borderFocus,
+                                ),
+                              ),
+                              helperText: _selectedPosition?.memberRole != null
+                                  ? '기본 분류: ${_getMemberRoleLabel(_selectedPosition?.memberRole)}'
+                                  : (_positions.isEmpty
+                                        ? '관리자가 역할을 등록하지 않았다면 아래 기본 분류로 가입할 수 있습니다.'
+                                        : '이 역할은 기본 분류가 아직 지정되지 않았습니다. 아래에서 선택해주세요.'),
+                            ),
+                            items: _positions
+                                .map(
+                                  (position) =>
+                                      DropdownMenuItem<PositionOption?>(
+                                        value: position,
+                                        child: Text(position.name),
+                                      ),
+                                )
+                                .toList(),
+                            onChanged: _positions.isEmpty
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      _selectedPosition = value;
+                                      _positionErrorMessage = null;
+                                    });
+                                  },
+                          ),
+                          if (_positionErrorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, left: 12),
+                              child: Text(
+                                _positionErrorMessage!,
+                                style: TextStyle(
+                                  color: AppSemanticColors.statusErrorIcon,
+                                  fontSize: 12,
                                 ),
                               ),
                             ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'CAREGIVER',
-                                child: Text('요양보호사'),
+                          if (_selectedPosition?.description?.isNotEmpty ??
+                              false)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, left: 12),
+                              child: Text(
+                                _selectedPosition!.description!,
+                                style: TextStyle(
+                                  color: AppSemanticColors.textSecondary,
+                                  fontSize: 12,
+                                ),
                               ),
-                              DropdownMenuItem(
-                                value: 'OFFICE',
-                                child: Text('사무직'),
+                            ),
+                        ],
+                        const SizedBox(height: AppSpacing.space4),
+                      ],
+
+                      if (_shouldShowFallbackRoleSelector) ...[
+                        DropdownButtonFormField<String>(
+                          value: _fallbackRole,
+                          decoration: InputDecoration(
+                            labelText: '기본 분류',
+                            helperText: '휴무/근태 계산에 사용하는 내부 기준입니다.',
+                            prefixIcon: const Icon(Icons.work_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppSemanticColors.borderHover,
                               ),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _fallbackRole = value ?? 'CAREGIVER';
-                              });
-                            },
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppSemanticColors.borderFocus,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: AppSpacing.space4),
-                        ],
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'CAREGIVER',
+                              child: Text('요양보호사'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'OFFICE',
+                              child: Text('사무직'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              _fallbackRole = value ?? 'CAREGIVER';
+                            });
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.space4),
+                      ],
 
-                        // 관리자인 경우 회사명 입력
-                        if (_userType == 'admin') ...[
-                          SeedTextField(
-                            label: '회사명 *',
-                            controller: _companyNameController,
-                            placeholder: '케어브이 센터',
-                            prefixIcon: Icons.business,
-                            size: SeedTextFieldSize.large,
-                            validator: (value) {
-                              if (_userType == 'admin' &&
-                                  (value == null || value.isEmpty)) {
-                                return '회사명을 입력해주세요';
-                              }
-                              if (_userType == 'admin' && value!.length < 2) {
-                                return '회사명은 2자 이상이어야 합니다';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: AppSpacing.space4),
-
-                          // 회사 주소 입력
-                          SeedTextField(
-                            label: '회사 주소 *',
-                            controller: _companyAddressController,
-                            isReadOnly: true,
-                            placeholder: '주소를 검색해주세요',
-                            prefixIcon: Icons.location_on,
-                            suffixIcon: Icons.search,
-                            onSuffixIconTap: _searchAddress,
-                            onTap: _searchAddress,
-                            size: SeedTextFieldSize.large,
-                            validator: (value) {
-                              if (_userType == 'admin' &&
-                                  (value == null || value.isEmpty)) {
-                                return '회사 주소를 입력해주세요';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: AppSpacing.space4),
-                        ],
-
-                        // 비밀번호 입력
+                      // 관리자인 경우 회사명 입력
+                      if (_userType == 'admin') ...[
                         SeedTextField(
-                          label: '비밀번호',
-                          controller: _passwordController,
-                          obscureText: true,
-                          enableObscureToggle: true,
-                          prefixIcon: Icons.lock_outline,
+                          label: '회사명 *',
+                          controller: _companyNameController,
+                          placeholder: '케어브이 센터',
+                          prefixIcon: Icons.business,
                           size: SeedTextFieldSize.large,
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return '비밀번호를 입력해주세요';
+                            if (_userType == 'admin' &&
+                                (value == null || value.isEmpty)) {
+                              return '회사명을 입력해주세요';
                             }
-                            if (value.length < 6) {
-                              return '비밀번호는 6자 이상이어야 합니다';
+                            if (_userType == 'admin' && value!.length < 2) {
+                              return '회사명은 2자 이상이어야 합니다';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: AppSpacing.space4),
 
-                        // 비밀번호 확인
+                        // 회사 주소 입력
                         SeedTextField(
-                          label: '비밀번호 확인',
-                          controller: _confirmPasswordController,
-                          obscureText: true,
-                          enableObscureToggle: true,
-                          prefixIcon: Icons.lock_outline,
+                          label: '회사 주소 *',
+                          controller: _companyAddressController,
+                          isReadOnly: true,
+                          placeholder: '주소를 검색해주세요',
+                          prefixIcon: Icons.location_on,
+                          suffixIcon: Icons.search,
+                          onSuffixIconTap: _searchAddress,
+                          onTap: _searchAddress,
                           size: SeedTextFieldSize.large,
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return '비밀번호를 다시 입력해주세요';
-                            }
-                            if (value != _passwordController.text) {
-                              return '비밀번호가 일치하지 않습니다';
+                            if (_userType == 'admin' &&
+                                (value == null || value.isEmpty)) {
+                              return '회사 주소를 입력해주세요';
                             }
                             return null;
                           },
                         ),
-                        const SizedBox(height: Constants.largePadding),
+                        const SizedBox(height: AppSpacing.space4),
+                      ],
 
-                        // 약관 동의 섹션
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.backgroundSecondary,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: _agreementErrorMessage != null
-                                  ? AppSemanticColors.statusErrorBorder
-                                  : AppSemanticColors.borderDefault,
-                              width: 1,
-                            ),
+                      // 비밀번호 입력
+                      SeedTextField(
+                        label: '비밀번호',
+                        controller: _passwordController,
+                        obscureText: true,
+                        enableObscureToggle: true,
+                        prefixIcon: Icons.lock_outline,
+                        size: SeedTextFieldSize.large,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '비밀번호를 입력해주세요';
+                          }
+                          if (value.length < 6) {
+                            return '비밀번호는 6자 이상이어야 합니다';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.space4),
+
+                      // 비밀번호 확인
+                      SeedTextField(
+                        label: '비밀번호 확인',
+                        controller: _confirmPasswordController,
+                        obscureText: true,
+                        enableObscureToggle: true,
+                        prefixIcon: Icons.lock_outline,
+                        size: SeedTextFieldSize.large,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '비밀번호를 다시 입력해주세요';
+                          }
+                          if (value != _passwordController.text) {
+                            return '비밀번호가 일치하지 않습니다';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: Constants.largePadding),
+
+                      // 약관 동의 섹션
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.backgroundSecondary,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _agreementErrorMessage != null
+                                ? AppSemanticColors.statusErrorBorder
+                                : AppSemanticColors.borderDefault,
+                            width: 1,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.gavel,
-                                    color: AppSemanticColors.statusInfoIcon,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '약관 동의',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppSemanticColors.textPrimary,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '(필수)',
-                                    style: TextStyle(
-                                      color: AppSemanticColors.statusErrorIcon,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SeedSectionHeader(title: '약관 동의 (필수)'),
+                            const SizedBox(height: 16),
 
-                              // 개인정보 처리방침 동의
-                              InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _agreeToPrivacyPolicy =
-                                        !_agreeToPrivacyPolicy;
-                                    if (_agreeToPrivacyPolicy &&
-                                        _agreeToTermsOfService) {
-                                      _agreementErrorMessage = null;
-                                    }
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: _agreeToPrivacyPolicy
-                                                ? AppSemanticColors
-                                                      .statusInfoIcon
-                                                : AppSemanticColors
-                                                      .textDisabled,
-                                            width: 2,
-                                          ),
+                            // 개인정보 처리방침 동의
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _agreeToPrivacyPolicy =
+                                      !_agreeToPrivacyPolicy;
+                                  if (_agreeToPrivacyPolicy &&
+                                      _agreeToTermsOfService) {
+                                    _agreementErrorMessage = null;
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
                                           color: _agreeToPrivacyPolicy
                                               ? AppSemanticColors.statusInfoIcon
-                                              : AppColors.transparent,
+                                              : AppSemanticColors.textDisabled,
+                                          width: 2,
                                         ),
-                                        child: _agreeToPrivacyPolicy
-                                            ? const Icon(
-                                                Icons.check,
-                                                color: AppColors.white,
-                                                size: 14,
-                                              )
-                                            : null,
+                                        color: _agreeToPrivacyPolicy
+                                            ? AppSemanticColors.statusInfoIcon
+                                            : AppColors.transparent,
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: RichText(
-                                          text: TextSpan(
-                                            children: [
-                                              TextSpan(
-                                                text: '개인정보 처리방침',
-                                                style: TextStyle(
-                                                  color: AppSemanticColors
-                                                      .textPrimary,
-                                                  fontSize: 14,
-                                                ),
+                                      child: _agreeToPrivacyPolicy
+                                          ? const Icon(
+                                              Icons.check,
+                                              color: AppColors.white,
+                                              size: 14,
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: '개인정보 처리방침',
+                                              style: TextStyle(
+                                                color: AppSemanticColors
+                                                    .textPrimary,
+                                                fontSize: 14,
                                               ),
-                                              TextSpan(
-                                                text: '에 동의합니다',
-                                                style: TextStyle(
-                                                  color: AppSemanticColors
-                                                      .textSecondary,
-                                                  fontSize: 14,
-                                                ),
+                                            ),
+                                            TextSpan(
+                                              text: '에 동의합니다',
+                                              style: TextStyle(
+                                                color: AppSemanticColors
+                                                    .textSecondary,
+                                                fontSize: 14,
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      InkWell(
-                                        onTap: () => _launchURL(
-                                          'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
-                                        ),
-                                        borderRadius: BorderRadius.circular(6),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppSemanticColors
-                                                .backgroundSecondary,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                            border: Border.all(
-                                              color: AppSemanticColors
-                                                  .borderDefault,
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '보기',
-                                            style: TextStyle(
-                                              color: AppSemanticColors
-                                                  .textSecondary,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    InkWell(
+                                      onTap: () => _launchURL(
+                                        'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              // 서비스 이용약관 동의
-                              InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _agreeToTermsOfService =
-                                        !_agreeToTermsOfService;
-                                    if (_agreeToPrivacyPolicy &&
-                                        _agreeToTermsOfService) {
-                                      _agreementErrorMessage = null;
-                                    }
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 20,
-                                        height: 20,
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: _agreeToTermsOfService
-                                                ? AppSemanticColors
-                                                      .statusInfoIcon
-                                                : AppSemanticColors
-                                                      .textDisabled,
-                                            width: 2,
+                                          color: AppSemanticColors
+                                              .backgroundSecondary,
+                                          borderRadius: BorderRadius.circular(
+                                            6,
                                           ),
-                                          color: _agreeToTermsOfService
-                                              ? AppSemanticColors.statusInfoIcon
-                                              : AppColors.transparent,
-                                        ),
-                                        child: _agreeToTermsOfService
-                                            ? const Icon(
-                                                Icons.check,
-                                                color: AppColors.white,
-                                                size: 14,
-                                              )
-                                            : null,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: RichText(
-                                          text: TextSpan(
-                                            children: [
-                                              TextSpan(
-                                                text: '서비스 이용약관',
-                                                style: TextStyle(
-                                                  color: AppSemanticColors
-                                                      .textPrimary,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                              TextSpan(
-                                                text: '에 동의합니다',
-                                                style: TextStyle(
-                                                  color: AppSemanticColors
-                                                      .textSecondary,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      InkWell(
-                                        onTap: () => _launchURL(
-                                          'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
-                                        ),
-                                        borderRadius: BorderRadius.circular(6),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppSemanticColors
-                                                .backgroundSecondary,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                            border: Border.all(
-                                              color: AppSemanticColors
-                                                  .borderDefault,
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '보기',
-                                            style: TextStyle(
-                                              color: AppSemanticColors
-                                                  .textSecondary,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              // 전체 동의 체크박스
-                              const SizedBox(height: 12),
-                              Container(
-                                height: 1,
-                                color: AppSemanticColors.borderHover,
-                              ),
-                              const SizedBox(height: 12),
-                              InkWell(
-                                onTap: () {
-                                  final newValue =
-                                      !(_agreeToPrivacyPolicy &&
-                                          _agreeToTermsOfService);
-                                  setState(() {
-                                    _agreeToPrivacyPolicy = newValue;
-                                    _agreeToTermsOfService = newValue;
-                                    if (newValue) {
-                                      _agreementErrorMessage = null;
-                                    }
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
                                           border: Border.all(
                                             color:
-                                                (_agreeToPrivacyPolicy &&
-                                                    _agreeToTermsOfService)
-                                                ? AppSemanticColors
-                                                      .statusSuccessIcon
-                                                : AppSemanticColors
-                                                      .textDisabled,
-                                            width: 2,
+                                                AppSemanticColors.borderDefault,
+                                            width: 1,
                                           ),
-                                          color:
-                                              (_agreeToPrivacyPolicy &&
-                                                  _agreeToTermsOfService)
-                                              ? AppSemanticColors
-                                                    .statusSuccessIcon
-                                              : AppColors.transparent,
                                         ),
-                                        child:
-                                            (_agreeToPrivacyPolicy &&
-                                                _agreeToTermsOfService)
-                                            ? const Icon(
-                                                Icons.check,
-                                                color: AppColors.white,
-                                                size: 14,
-                                              )
-                                            : null,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        '위 약관에 모두 동의합니다',
-                                        style: TextStyle(
-                                          color: AppSemanticColors.textPrimary,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              // 에러 메시지
-                              if (_agreementErrorMessage != null) ...[
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      color: AppSemanticColors.statusErrorIcon,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        _agreementErrorMessage!,
-                                        style: TextStyle(
-                                          color:
-                                              AppSemanticColors.statusErrorIcon,
-                                          fontSize: 12,
+                                        child: Text(
+                                          '보기',
+                                          style: TextStyle(
+                                            color:
+                                                AppSemanticColors.textSecondary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: Constants.largePadding),
+                              ),
+                            ),
 
-                        // 회원가입 버튼
-                        Consumer<AuthProvider>(
-                          builder: (context, authProvider, child) {
-                            final isFormValid =
-                                _agreeToPrivacyPolicy && _agreeToTermsOfService;
-
-                            return shadcn.PrimaryButton(
-                              onPressed:
-                                  (authProvider.isLoading || !isFormValid)
-                                  ? null
-                                  : _handleRegister,
-                              child: authProvider.isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              AppColors.white,
-                                            ),
-                                      ),
-                                    )
-                                  : Text(
-                                      isFormValid ? '회원가입' : '약관 동의 후 회원가입 가능',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            );
-                          },
-                        ),
-
-                        // 에러 메시지
-                        Consumer<AuthProvider>(
-                          builder: (context, authProvider, child) {
-                            if (authProvider.errorMessage.isNotEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  top: AppSpacing.space4,
+                            // 서비스 이용약관 동의
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _agreeToTermsOfService =
+                                      !_agreeToTermsOfService;
+                                  if (_agreeToPrivacyPolicy &&
+                                      _agreeToTermsOfService) {
+                                    _agreementErrorMessage = null;
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
                                 ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        AppSemanticColors.statusErrorBackground,
-                                    border: Border.all(
-                                      color:
-                                          AppSemanticColors.statusErrorBorder,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.error_outline,
-                                        color:
-                                            AppSemanticColors.statusErrorIcon,
-                                        size: 20,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: _agreeToTermsOfService
+                                              ? AppSemanticColors.statusInfoIcon
+                                              : AppSemanticColors.textDisabled,
+                                          width: 2,
+                                        ),
+                                        color: _agreeToTermsOfService
+                                            ? AppSemanticColors.statusInfoIcon
+                                            : AppColors.transparent,
                                       ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
+                                      child: _agreeToTermsOfService
+                                          ? const Icon(
+                                              Icons.check,
+                                              color: AppColors.white,
+                                              size: 14,
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: '서비스 이용약관',
+                                              style: TextStyle(
+                                                color: AppSemanticColors
+                                                    .textPrimary,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text: '에 동의합니다',
+                                              style: TextStyle(
+                                                color: AppSemanticColors
+                                                    .textSecondary,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    InkWell(
+                                      onTap: () => _launchURL(
+                                        'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppSemanticColors
+                                              .backgroundSecondary,
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          border: Border.all(
+                                            color:
+                                                AppSemanticColors.borderDefault,
+                                            width: 1,
+                                          ),
+                                        ),
                                         child: Text(
-                                          authProvider.errorMessage,
+                                          '보기',
                                           style: TextStyle(
-                                            color: AppSemanticColors
-                                                .statusErrorText,
-                                            fontSize: 14,
+                                            color:
+                                                AppSemanticColors.textSecondary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
+                              ),
+                            ),
+
+                            // 전체 동의 체크박스
+                            const SizedBox(height: 12),
+                            Container(
+                              height: 1,
+                              color: AppSemanticColors.borderHover,
+                            ),
+                            const SizedBox(height: 12),
+                            InkWell(
+                              onTap: () {
+                                final newValue =
+                                    !(_agreeToPrivacyPolicy &&
+                                        _agreeToTermsOfService);
+                                setState(() {
+                                  _agreeToPrivacyPolicy = newValue;
+                                  _agreeToTermsOfService = newValue;
+                                  if (newValue) {
+                                    _agreementErrorMessage = null;
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color:
+                                              (_agreeToPrivacyPolicy &&
+                                                  _agreeToTermsOfService)
+                                              ? AppSemanticColors
+                                                    .statusSuccessIcon
+                                              : AppSemanticColors.textDisabled,
+                                          width: 2,
+                                        ),
+                                        color:
+                                            (_agreeToPrivacyPolicy &&
+                                                _agreeToTermsOfService)
+                                            ? AppSemanticColors
+                                                  .statusSuccessIcon
+                                            : AppColors.transparent,
+                                      ),
+                                      child:
+                                          (_agreeToPrivacyPolicy &&
+                                              _agreeToTermsOfService)
+                                          ? const Icon(
+                                              Icons.check,
+                                              color: AppColors.white,
+                                              size: 14,
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      '위 약관에 모두 동의합니다',
+                                      style: TextStyle(
+                                        color: AppSemanticColors.textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // 에러 메시지
+                            if (_agreementErrorMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: AppSemanticColors.statusErrorIcon,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      _agreementErrorMessage!,
+                                      style: TextStyle(
+                                        color:
+                                            AppSemanticColors.statusErrorIcon,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: Constants.largePadding),
+
+                      // 회원가입 버튼
+                      Consumer<AuthProvider>(
+                        builder: (context, authProvider, child) {
+                          final isFormValid =
+                              _agreeToPrivacyPolicy && _agreeToTermsOfService;
+
+                          return SeedButton(
+                            label: isFormValid ? '회원가입' : '약관 동의 후 회원가입 가능',
+                            variant: SeedButtonVariant.brandSolid,
+                            size: SeedButtonSize.large,
+                            isLoading: authProvider.isLoading,
+                            isDisabled: !isFormValid,
+                            onPressed: (authProvider.isLoading || !isFormValid)
+                                ? null
+                                : _handleRegister,
+                          );
+                        },
+                      ),
+
+                      // 에러 메시지
+                      Consumer<AuthProvider>(
+                        builder: (context, authProvider, child) {
+                          if (authProvider.errorMessage.isNotEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.space4,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppSemanticColors.statusErrorBackground,
+                                  border: Border.all(
+                                    color: AppSemanticColors.statusErrorBorder,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      color: AppSemanticColors.statusErrorIcon,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        authProvider.errorMessage,
+                                        style: TextStyle(
+                                          color:
+                                              AppSemanticColors.statusErrorText,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),

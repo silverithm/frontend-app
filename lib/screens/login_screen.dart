@@ -10,6 +10,8 @@ import '../utils/constants.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/index.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_callout.dart';
+import '../widgets/seed/seed_text_field.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -207,7 +209,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: AppSemanticColors.textInverse,
                                 ),
                               ),
-                              backgroundColor: AppSemanticColors.statusErrorIcon,
+                              backgroundColor:
+                                  AppSemanticColors.statusErrorIcon,
                             ),
                           );
                           return;
@@ -267,186 +270,164 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+      backgroundColor: AppSemanticColors.backgroundPrimary,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-              // 로고 및 제목
-              Image.asset(
-                'assets/images/app_icon_with_text_3.png',
-                width: 80,
-                height: 80,
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              // 개인정보처리방침 및 서비스 이용약관 링크
-              _buildBottomLinks(),
-              // 로그인 폼
-              AppCard(
-                elevation: 0,
-                borderRadius: AppBorderRadius.xl,
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 헤더
-                      Column(
-                        children: [
-                          Text(
-                            '로그인',
-                            style: AppTypography.heading4,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: AppSpacing.space2),
-                          Text(
-                            _isAdminLogin ? '관리자 계정으로 로그인' : '직원 계정으로 로그인',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.interactivePrimaryDefault,
-                              fontWeight: AppTypography.fontWeightMedium,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.space8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space6,
+            vertical: AppSpacing.space6,
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.space8),
 
-                      // 사용자 타입 선택
-                      _buildUserTypeToggle(),
-                      const SizedBox(height: AppSpacing.space6),
-
-                      // 이메일 입력
-                      AppInput(
-                        label: '이메일',
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: const Icon(Icons.person_outline),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '사용자명 또는 이메일을 입력해주세요';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.space4),
-
-                      // 이메일 기억하기 체크박스
-                      _buildRememberEmailCheckbox(),
-                      const SizedBox(height: AppSpacing.space4),
-
-                      // 비밀번호 입력
-                      AppPasswordInput(
-                        label: '비밀번호',
-                        controller: _passwordController,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '비밀번호를 입력해주세요';
-                          }
-                          if (value.length < 6) {
-                            return '비밀번호는 6자 이상이어야 합니다';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.space2),
-
-                      // 비밀번호 찾기 링크
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: AppButton(
-                          text: '비밀번호 찾기',
-                          variant: AppButtonVariant.text,
-                          size: AppButtonSize.small,
-                          onPressed: _showForgotPasswordDialog,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space8),
-
-                      // 로그인 버튼
-                      Consumer<AuthProvider>(
-                        builder: (context, authProvider, child) => SizedBox(
-                          width: double.infinity,
-                          child: SeedButton(
-                            label: '로그인',
-                            variant: SeedButtonVariant.brandSolid,
-                            size: SeedButtonSize.large,
-                            isLoading: authProvider.isLoading,
-                            onPressed: authProvider.isLoading ? null : _login,
-                          ),
-                        ),
-                      ),
-
-                      // 에러 메시지
-                      Consumer<AuthProvider>(
-                        builder: (context, authProvider, child) {
-                          if (authProvider.errorMessage.isNotEmpty) {
-                            return Padding(
-                              padding: const EdgeInsets.only(
-                                top: AppSpacing.space4,
-                              ),
-                              child: AppStatusCard(
-                                status: AppStatusType.error,
-                                padding: const EdgeInsets.all(
-                                  AppSpacing.space3,
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.error_outline,
-                                      color: AppSemanticColors.statusErrorIcon,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: AppSpacing.space2),
-                                    Expanded(
-                                      child: Text(
-                                        authProvider.errorMessage,
-                                        style: AppTypography.bodySmall.copyWith(
-                                          color:
-                                              AppSemanticColors.statusErrorText,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.space6),
-
-                      // 회원가입 링크
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '계정이 없으신가요? ',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                          AppButton(
-                            text: '회원가입',
-                            variant: AppButtonVariant.text,
-                            size: AppButtonSize.small,
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const RegisterScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
+                // 브랜드 영역 — 로고(틸)만 포인트로 사용, 화면 배경은 흰색
+                Center(
+                  child: Image.asset(
+                    'assets/images/app_icon_with_text_3.png',
+                    width: 72,
+                    height: 72,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.space10),
+
+                // 헤더
+                Text(
+                  '로그인',
+                  style: AppTypography.heading4,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.space2),
+                Text(
+                  _isAdminLogin ? '관리자 계정으로 로그인' : '직원 계정으로 로그인',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.interactivePrimaryDefault,
+                    fontWeight: AppTypography.fontWeightMedium,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.space8),
+
+                // 사용자 타입 선택
+                _buildUserTypeToggle(),
+                const SizedBox(height: AppSpacing.space6),
+
+                // 이메일 입력
+                SeedTextField(
+                  label: '이메일',
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.person_outline,
+                  size: SeedTextFieldSize.large,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '사용자명 또는 이메일을 입력해주세요';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.space4),
+
+                // 이메일 기억하기 체크박스
+                _buildRememberEmailCheckbox(),
+                const SizedBox(height: AppSpacing.space4),
+
+                // 비밀번호 입력
+                SeedTextField(
+                  label: '비밀번호',
+                  controller: _passwordController,
+                  obscureText: true,
+                  enableObscureToggle: true,
+                  prefixIcon: Icons.lock_outline,
+                  size: SeedTextFieldSize.large,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '비밀번호를 입력해주세요';
+                    }
+                    if (value.length < 6) {
+                      return '비밀번호는 6자 이상이어야 합니다';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.space2),
+
+                // 비밀번호 찾기 링크
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SeedButton(
+                    label: '비밀번호 찾기',
+                    variant: SeedButtonVariant.neutralWeak,
+                    size: SeedButtonSize.small,
+                    onPressed: _showForgotPasswordDialog,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space8),
+
+                // 로그인 버튼
+                Consumer<AuthProvider>(
+                  builder: (context, authProvider, child) => SeedButton(
+                    label: '로그인',
+                    variant: SeedButtonVariant.brandSolid,
+                    size: SeedButtonSize.large,
+                    isLoading: authProvider.isLoading,
+                    onPressed: authProvider.isLoading ? null : _login,
+                  ),
+                ),
+
+                // 에러 메시지
+                Consumer<AuthProvider>(
+                  builder: (context, authProvider, child) {
+                    if (authProvider.errorMessage.isNotEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.space4),
+                        child: SeedCallout(
+                          variant: SeedCalloutVariant.danger,
+                          title: authProvider.errorMessage,
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+                const SizedBox(height: AppSpacing.space6),
+
+                // 회원가입 링크
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '계정이 없으신가요? ',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                    ),
+                    SeedButton(
+                      label: '회원가입',
+                      variant: SeedButtonVariant.neutralWeak,
+                      size: SeedButtonSize.small,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: AppSpacing.space10),
+                Divider(color: AppSemanticColors.borderSubtle, height: 1),
+                const SizedBox(height: AppSpacing.space4),
+
+                // 하단 링크들 (사용법, 웹사이트) — 위계상 폼 아래로 이동
+                _buildBottomLinks(),
+              ],
+            ),
           ),
         ),
       ),
@@ -595,50 +576,47 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildBottomLinks() {
-    return Column(
-      children: [
-        // 상단 링크들 (사용법, 웹사이트) - Wrap 사용하여 화면에 맞게 배치
-        Wrap(
-          alignment: WrapAlignment.center,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            SeedButton(
-              label: '사용방법 보러가기',
-              variant: SeedButtonVariant.brandWeak,
-              size: SeedButtonSize.small,
-              onPressed: () async {
-                const url = 'https://youtu.be/x2cJedS6vaU';
-                if (await canLaunchUrl(Uri.parse(url))) {
-                  await launchUrl(
-                    Uri.parse(url),
-                    mode: LaunchMode.externalApplication,
-                  );
-                }
-              },
-            ),
-            Container(
-              width: 1,
-              height: 12,
-              color: AppSemanticColors.textInverse.withValues(alpha: 0.3),
-              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
-            ),
-            SeedButton(
-              label: '케어브이 웹사이트',
-              variant: SeedButtonVariant.brandWeak,
-              size: SeedButtonSize.small,
-              onPressed: () async {
-                const url = 'https://carev.kr';
-                if (await canLaunchUrl(Uri.parse(url))) {
-                  await launchUrl(
-                    Uri.parse(url),
-                    mode: LaunchMode.externalApplication,
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-      ],
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          SeedButton(
+            label: '사용방법 보러가기',
+            variant: SeedButtonVariant.neutralWeak,
+            size: SeedButtonSize.small,
+            onPressed: () async {
+              const url = 'https://youtu.be/x2cJedS6vaU';
+              if (await canLaunchUrl(Uri.parse(url))) {
+                await launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                );
+              }
+            },
+          ),
+          Container(
+            width: 1,
+            height: 12,
+            color: AppSemanticColors.borderDefault,
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+          ),
+          SeedButton(
+            label: '케어브이 웹사이트',
+            variant: SeedButtonVariant.neutralWeak,
+            size: SeedButtonSize.small,
+            onPressed: () async {
+              const url = 'https://carev.kr';
+              if (await canLaunchUrl(Uri.parse(url))) {
+                await launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                );
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 }

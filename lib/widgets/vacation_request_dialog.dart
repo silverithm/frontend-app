@@ -15,6 +15,7 @@ import 'common/app_button.dart';
 import 'common/app_dialog.dart';
 import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
+import 'seed/seed_text_field.dart';
 
 class VacationRequestDialog extends StatefulWidget {
   final DateTime selectedDate;
@@ -158,7 +159,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('· ', style: TextStyle(color: AppSemanticColors.textSecondary)),
+                  Text(
+                    '· ',
+                    style: TextStyle(color: AppSemanticColors.textSecondary),
+                  ),
                   Expanded(
                     child: Text(
                       notice,
@@ -178,7 +182,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     );
   }
 
-  Future<String?> _findDriverConflict(String memberName, String companyId) async {
+  Future<String?> _findDriverConflict(
+    String memberName,
+    String companyId,
+  ) async {
     if (companyId.isEmpty || memberName.trim().isEmpty) return null;
     try {
       final roles = await ApiService().getDriverRoles(
@@ -194,7 +201,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         companyId: companyId,
       );
 
-      final raw = calendar['vacations'] ?? calendar['content'] ?? calendar['data'];
+      final raw =
+          calendar['vacations'] ?? calendar['content'] ?? calendar['data'];
       final onVacation = <String>{};
       if (raw is List) {
         for (final item in raw) {
@@ -203,7 +211,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
           final status = (item['status'] ?? '').toString().toUpperCase();
           if (status == 'REJECTED') continue;
           final name =
-              (item['userName'] ?? item['memberName'] ?? item['name'] ?? '').toString().trim();
+              (item['userName'] ?? item['memberName'] ?? item['name'] ?? '')
+                  .toString()
+                  .trim();
           if (name.isNotEmpty) onVacation.add(name);
         }
       }
@@ -376,7 +386,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
           color: !isSelected ? AppSemanticColors.backgroundSecondary : null,
           borderRadius: BorderRadius.circular(AppSpacing.space3),
           border: Border.all(
-            color: isSelected ? selectedColor.withValues(alpha: 0.6) : AppSemanticColors.borderDefault,
+            color: isSelected
+                ? selectedColor.withValues(alpha: 0.6)
+                : AppSemanticColors.borderDefault,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected ? _shadowSm : null,
@@ -397,7 +409,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
-                    color: isSelected ? selectedTextColor.withValues(alpha: 0.9) : AppSemanticColors.textSecondary,
+                    color: isSelected
+                        ? selectedTextColor.withValues(alpha: 0.9)
+                        : AppSemanticColors.textSecondary,
                     letterSpacing: -0.025,
                   ),
                 ),
@@ -446,7 +460,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   color: AppSemanticColors.brandWeak,
-                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.xl2,
+                                  ),
                                 ),
                                 child: const Icon(
                                   Icons.event_note_rounded,
@@ -471,7 +487,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             height: 40,
                             decoration: BoxDecoration(
                               color: AppSemanticColors.backgroundSecondary,
-                              borderRadius: BorderRadius.circular(AppSpacing.space2),
+                              borderRadius: BorderRadius.circular(
+                                AppSpacing.space2,
+                              ),
                               border: Border.all(
                                 color: AppSemanticColors.borderDefault,
                                 width: 1,
@@ -503,10 +521,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             end: Alignment.bottomRight,
                             colors: [
                               AppSemanticColors.statusInfoBackground,
-                              AppSemanticColors.statusInfoBackground.withValues(alpha: 0.6),
+                              AppSemanticColors.statusInfoBackground.withValues(
+                                alpha: 0.6,
+                              ),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(AppSpacing.space4),
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.space4,
+                          ),
                           border: Border.all(
                             color: AppSemanticColors.statusInfoBorder,
                             width: 1,
@@ -521,7 +543,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: AppSemanticColors.brandWeak,
-                                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl,
+                                ),
                               ),
                               child: const Icon(
                                 Icons.calendar_today_rounded,
@@ -537,7 +561,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   Text(
                                     '선택된 날짜',
                                     style: TextStyle(
-                                      color: AppSemanticColors.interactivePrimaryDefault,
+                                      color: AppSemanticColors
+                                          .interactivePrimaryDefault,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       letterSpacing: 0.025,
@@ -577,7 +602,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             Container(
                               padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl2,
+                                ),
                                 border: Border.all(
                                   color: AppSemanticColors.borderSubtle,
                                   width: 1,
@@ -609,8 +636,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             _isVacationUsed = false;
                                           });
                                         },
-                                        selectedColor: AppSemanticColors.statusWarningBorder,
-                                        selectedTextColor: AppSemanticColors.statusWarningText,
+                                        selectedColor: AppSemanticColors
+                                            .statusWarningBorder,
+                                        selectedTextColor:
+                                            AppSemanticColors.statusWarningText,
                                       ),
 
                                       const SizedBox(width: AppSpacing.space2),
@@ -624,8 +653,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             _isVacationUsed = true;
                                           });
                                         },
-                                        selectedColor: AppSemanticColors.interactivePrimaryActive,
-                                        selectedTextColor: AppSemanticColors.interactivePrimaryDefault,
+                                        selectedColor: AppSemanticColors
+                                            .interactivePrimaryActive,
+                                        selectedTextColor: AppSemanticColors
+                                            .interactivePrimaryDefault,
                                       ),
                                     ],
                                   ),
@@ -638,9 +669,13 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             // 연차 유형 선택 (사용 선택시에만 표시)
                             if (_isVacationUsed)
                               Container(
-                                padding: const EdgeInsets.all(AppSpacing.space5),
+                                padding: const EdgeInsets.all(
+                                  AppSpacing.space5,
+                                ),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.xl2,
+                                  ),
                                   border: Border.all(
                                     color: AppSemanticColors.borderSubtle,
                                     width: 1,
@@ -666,44 +701,63 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                         // 연차
                                         _buildOptionButton(
                                           text: '연차',
-                                          isSelected: _selectedDuration == VacationDuration.fullDay,
+                                          isSelected:
+                                              _selectedDuration ==
+                                              VacationDuration.fullDay,
                                           onTap: () {
                                             setState(() {
-                                              _selectedDuration = VacationDuration.fullDay;
+                                              _selectedDuration =
+                                                  VacationDuration.fullDay;
                                             });
                                           },
-                                          selectedColor: AppSemanticColors.statusSuccessBorder,
-                                          selectedTextColor: AppSemanticColors.statusSuccessIcon,
+                                          selectedColor: AppSemanticColors
+                                              .statusSuccessBorder,
+                                          selectedTextColor: AppSemanticColors
+                                              .statusSuccessIcon,
                                         ),
 
-                                        const SizedBox(width: AppSpacing.space2),
+                                        const SizedBox(
+                                          width: AppSpacing.space2,
+                                        ),
 
                                         // 오전 반차
                                         _buildOptionButton(
                                           text: '오전 반차',
-                                          isSelected: _selectedDuration == VacationDuration.halfDayAm,
+                                          isSelected:
+                                              _selectedDuration ==
+                                              VacationDuration.halfDayAm,
                                           onTap: () {
                                             setState(() {
-                                              _selectedDuration = VacationDuration.halfDayAm;
+                                              _selectedDuration =
+                                                  VacationDuration.halfDayAm;
                                             });
                                           },
-                                          selectedColor: AppSemanticColors.statusWarningBorder,
-                                          selectedTextColor: AppSemanticColors.statusWarningText,
+                                          selectedColor: AppSemanticColors
+                                              .statusWarningBorder,
+                                          selectedTextColor: AppSemanticColors
+                                              .statusWarningText,
                                         ),
 
-                                        const SizedBox(width: AppSpacing.space2),
+                                        const SizedBox(
+                                          width: AppSpacing.space2,
+                                        ),
 
                                         // 오후 반차
                                         _buildOptionButton(
                                           text: '오후 반차',
-                                          isSelected: _selectedDuration == VacationDuration.halfDayPm,
+                                          isSelected:
+                                              _selectedDuration ==
+                                              VacationDuration.halfDayPm,
                                           onTap: () {
                                             setState(() {
-                                              _selectedDuration = VacationDuration.halfDayPm;
+                                              _selectedDuration =
+                                                  VacationDuration.halfDayPm;
                                             });
                                           },
-                                          selectedColor: AppSemanticColors.interactivePrimaryActive,
-                                          selectedTextColor: AppSemanticColors.interactivePrimaryDefault,
+                                          selectedColor: AppSemanticColors
+                                              .interactivePrimaryActive,
+                                          selectedTextColor: AppSemanticColors
+                                              .interactivePrimaryDefault,
                                         ),
                                       ],
                                     ),
@@ -711,13 +765,16 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 ),
                               ),
 
-                            if (_isVacationUsed) const SizedBox(height: AppSpacing.space4),
+                            if (_isVacationUsed)
+                              const SizedBox(height: AppSpacing.space4),
 
                             // 휴무 유형 선택
                             Container(
                               padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl2,
+                                ),
                                 border: Border.all(
                                   color: AppSemanticColors.borderSubtle,
                                   width: 1,
@@ -743,14 +800,19 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       // 일반 휴무
                                       _buildOptionButton(
                                         text: '일반',
-                                        isSelected: _selectedType == VacationType.personal,
+                                        isSelected:
+                                            _selectedType ==
+                                            VacationType.personal,
                                         onTap: () {
                                           setState(() {
-                                            _selectedType = VacationType.personal;
+                                            _selectedType =
+                                                VacationType.personal;
                                           });
                                         },
-                                        selectedColor: AppSemanticColors.interactivePrimaryActive,
-                                        selectedTextColor: AppSemanticColors.interactivePrimaryDefault,
+                                        selectedColor: AppSemanticColors
+                                            .interactivePrimaryActive,
+                                        selectedTextColor: AppSemanticColors
+                                            .interactivePrimaryDefault,
                                       ),
 
                                       const SizedBox(width: AppSpacing.space3),
@@ -758,14 +820,19 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       // 필수 휴무
                                       _buildOptionButton(
                                         text: '필수',
-                                        isSelected: _selectedType == VacationType.mandatory,
+                                        isSelected:
+                                            _selectedType ==
+                                            VacationType.mandatory,
                                         onTap: () {
                                           setState(() {
-                                            _selectedType = VacationType.mandatory;
+                                            _selectedType =
+                                                VacationType.mandatory;
                                           });
                                         },
-                                        selectedColor: AppSemanticColors.statusErrorBorder,
-                                        selectedTextColor: AppSemanticColors.statusErrorIcon,
+                                        selectedColor:
+                                            AppSemanticColors.statusErrorBorder,
+                                        selectedTextColor:
+                                            AppSemanticColors.statusErrorIcon,
                                       ),
 
                                       const SizedBox(width: AppSpacing.space3),
@@ -773,21 +840,27 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       // 대체휴무 (연차 차감 없이 근무일과 맞바꾸는 휴무)
                                       _buildOptionButton(
                                         text: '대체',
-                                        isSelected: _selectedType == VacationType.substitute,
+                                        isSelected:
+                                            _selectedType ==
+                                            VacationType.substitute,
                                         onTap: () {
                                           setState(() {
-                                            _selectedType = VacationType.substitute;
+                                            _selectedType =
+                                                VacationType.substitute;
                                           });
                                         },
-                                        selectedColor: AppSemanticColors.statusInfoBorder,
-                                        selectedTextColor: AppSemanticColors.statusInfoIcon,
+                                        selectedColor:
+                                            AppSemanticColors.statusInfoBorder,
+                                        selectedTextColor:
+                                            AppSemanticColors.statusInfoIcon,
                                       ),
                                     ],
                                   ),
 
                                   // 연차 미사용 세부 유형 (대체휴무는 자동으로 substitute)
                                   if (!_isVacationUsed &&
-                                      _selectedType != VacationType.substitute) ...[
+                                      _selectedType !=
+                                          VacationType.substitute) ...[
                                     const SizedBox(height: AppSpacing.space4),
                                     Text(
                                       '세부 유형',
@@ -801,8 +874,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                     Wrap(
                                       spacing: AppSpacing.space2,
                                       runSpacing: AppSpacing.space2,
-                                      children: VacationDetailType.values.map((detail) {
-                                        final isSelected = _detailType == detail;
+                                      children: VacationDetailType.values.map((
+                                        detail,
+                                      ) {
+                                        final isSelected =
+                                            _detailType == detail;
                                         return GestureDetector(
                                           onTap: () {
                                             setState(() {
@@ -816,9 +892,12 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             ),
                                             decoration: BoxDecoration(
                                               color: isSelected
-                                                  ? AppSemanticColors.interactivePrimaryDefault
-                                                  : AppSemanticColors.backgroundTertiary,
-                                              borderRadius: BorderRadius.circular(20),
+                                                  ? AppSemanticColors
+                                                        .interactivePrimaryDefault
+                                                  : AppSemanticColors
+                                                        .backgroundTertiary,
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
                                             child: Text(
                                               detail.label,
@@ -826,8 +905,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                                 color: isSelected
-                                                    ? AppSemanticColors.textInverse
-                                                    : AppSemanticColors.textSecondary,
+                                                    ? AppSemanticColors
+                                                          .textInverse
+                                                    : AppSemanticColors
+                                                          .textSecondary,
                                               ),
                                             ),
                                           ),
@@ -845,7 +926,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                             Container(
                               padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.xl2,
+                                ),
                                 border: Border.all(
                                   color: AppSemanticColors.borderSubtle,
                                   width: 1,
@@ -872,24 +955,39 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                         ),
                                       ),
                                       Container(
-                                        margin: const EdgeInsets.only(left: AppSpacing.space2),
+                                        margin: const EdgeInsets.only(
+                                          left: AppSpacing.space2,
+                                        ),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: AppSpacing.space2,
                                           vertical: AppSpacing.space1,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: _selectedType == VacationType.mandatory
-                                              ? AppSemanticColors.statusErrorBackground
-                                              : AppSemanticColors.backgroundTertiary,
-                                          borderRadius: BorderRadius.circular(AppSpacing.space2),
+                                          color:
+                                              _selectedType ==
+                                                  VacationType.mandatory
+                                              ? AppSemanticColors
+                                                    .statusErrorBackground
+                                              : AppSemanticColors
+                                                    .backgroundTertiary,
+                                          borderRadius: BorderRadius.circular(
+                                            AppSpacing.space2,
+                                          ),
                                         ),
                                         child: Text(
-                                          _selectedType == VacationType.mandatory ? '필수' : '선택사항',
+                                          _selectedType ==
+                                                  VacationType.mandatory
+                                              ? '필수'
+                                              : '선택사항',
                                           style: TextStyle(
                                             fontSize: 10,
-                                            color: _selectedType == VacationType.mandatory
-                                                ? AppSemanticColors.statusErrorIcon
-                                                : AppSemanticColors.textTertiary,
+                                            color:
+                                                _selectedType ==
+                                                    VacationType.mandatory
+                                                ? AppSemanticColors
+                                                      .statusErrorIcon
+                                                : AppSemanticColors
+                                                      .textTertiary,
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -897,71 +995,25 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                     ],
                                   ),
                                   const SizedBox(height: AppSpacing.space4),
-                                  TextFormField(
+                                  SeedTextField(
+                                    label: '휴무 사유',
+                                    showLabel: false,
                                     controller: _reasonController,
                                     maxLines: 5,
-                                    maxLength: 200,
+                                    size: SeedTextFieldSize.large,
+                                    placeholder:
+                                        _selectedType == VacationType.mandatory
+                                        ? '필수 휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 정기 교육 참석\n• 건강검진\n• 회사 행사 등'
+                                        : '휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 개인 사정\n• 병원 진료\n• 가족 행사 등',
                                     validator: (value) {
-                                      if (_selectedType == VacationType.mandatory &&
-                                          (value == null || value.trim().isEmpty)) {
+                                      if (_selectedType ==
+                                              VacationType.mandatory &&
+                                          (value == null ||
+                                              value.trim().isEmpty)) {
                                         return '필수 휴무는 사유를 반드시 입력해주세요';
                                       }
                                       return null;
                                     },
-                                    decoration: InputDecoration(
-                                      hintText: _selectedType == VacationType.mandatory
-                                          ? '필수 휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 정기 교육 참석\n• 건강검진\n• 회사 행사 등'
-                                          : '휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 개인 사정\n• 병원 진료\n• 가족 행사 등',
-                                      hintStyle: TextStyle(
-                                        color: AppSemanticColors.textTertiary,
-                                        fontSize: 14,
-                                        height: 1.5,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
-                                        borderSide: BorderSide(
-                                          color: AppSemanticColors.borderDefault,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
-                                        borderSide: BorderSide(
-                                          color: AppSemanticColors.borderFocus,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
-                                        borderSide: BorderSide(
-                                          color: AppSemanticColors.borderDefault,
-                                        ),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
-                                        borderSide: BorderSide(
-                                          color: AppSemanticColors.statusErrorIcon,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(AppSpacing.space4),
-                                        borderSide: BorderSide(
-                                          color: AppSemanticColors.statusErrorIcon,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      filled: true,
-                                      fillColor: AppSemanticColors.backgroundSecondary,
-                                      contentPadding: const EdgeInsets.all(AppSpacing.space5),
-                                      counterStyle: TextStyle(
-                                        color: AppSemanticColors.textTertiary,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      height: 1.5,
-                                    ),
                                   ),
                                 ],
                               ),
