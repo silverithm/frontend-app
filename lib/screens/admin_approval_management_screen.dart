@@ -9,6 +9,7 @@ import '../models/approval.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../utils/admin_utils.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
@@ -184,7 +185,7 @@ class _AdminApprovalManagementScreenState
     return filtered;
   }
 
-  Future<void> _approveRequest(int requestId) async {
+  Future<void> _approveRequest(int requestId, {bool force = false}) async {
     // 서명 확인 (등록 서명 또는 즉석 그리기)
     final signature = await showSignatureConfirmSheet(context);
     if (signature == null || !mounted) return;
@@ -201,18 +202,19 @@ class _AdminApprovalManagementScreenState
       processedBy: processedBy,
       processedByName: processedByName,
       signatureBase64: signature.signatureBase64,
+      force: force,
     );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('결재가 승인되었습니다'),
+          content: Text(force ? '직권 승인(전결) 처리되었습니다' : '결재가 승인되었습니다'),
           backgroundColor: AppSemanticColors.statusSuccessIcon,
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else if (mounted) {
-      // 결재선 차례가 아니면 서버가 403으로 거부한다
+      // 결재선 차례가 아니고 직권 권한도 없으면 서버가 403으로 거부한다
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(approvalProvider.errorMessage.isNotEmpty
@@ -234,7 +236,32 @@ class _AdminApprovalManagementScreenState
     return currentStep.approverId == myId;
   }
 
-  Future<void> _rejectRequest(int requestId) async {
+  /// 직권 승인/반려로 건너뛰게 될 남은 결재 단계 (내 차례 제외)
+  String _remainingStepsText(ApprovalRequest request) {
+    final myId = context.read<AuthProvider>().currentUser?.id ?? '';
+    return request.approvalLine
+        .where((step) => step.isPending && step.approverId != myId)
+        .map((step) => '${step.roleText} ${step.approverName}')
+        .join(' → ');
+  }
+
+  /// 직권 승인/반려 전 경고 — 건너뛰게 될 남은 결재 단계를 보여주고 확인받는다
+  Future<bool> _confirmForceAction(ApprovalRequest request, {required String actionLabel}) async {
+    final remaining = _remainingStepsText(request);
+    final message = remaining.isEmpty
+        ? '아직 처리되지 않은 결재 단계가 있습니다.\n남은 단계를 건너뛰고 즉시 $actionLabel합니다. 계속하시겠습니까?'
+        : '아직 처리되지 않은 결재 단계가 남아 있습니다.\n남은 단계: $remaining\n\n남은 단계를 건너뛰고 즉시 $actionLabel합니다. 계속하시겠습니까?';
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '$actionLabel (전결)',
+      message: message,
+      confirmText: actionLabel,
+      cancelText: '취소',
+    );
+    return confirmed == true;
+  }
+
+  Future<void> _rejectRequest(int requestId, {bool force = false}) async {
     final reasonInput = await AppDialog.showInput(
       context,
       title: '거절 사유',
@@ -270,12 +297,13 @@ class _AdminApprovalManagementScreenState
       companyId: companyId,
       processedBy: processedBy,
       processedByName: processedByName,
+      force: force,
     );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('결재가 거절되었습니다'),
+          content: Text(force ? '직권 반려(전결) 처리되었습니다' : '결재가 거절되었습니다'),
           backgroundColor: AppSemanticColors.statusWarningIcon,
           behavior: SnackBarBehavior.floating,
         ),
@@ -872,6 +900,39 @@ class _AdminApprovalManagementScreenState
                         child: SeedButton(
                           label: '승인',
                           onPressed: () => _approveRequest(request.id),
+                          variant: SeedButtonVariant.brandSolid,
+                          prefixIcon: Icons.check,
+                        ),
+                      ),
+                    ],
+                  )
+                else if (AdminUtils.hasAdminPermission(
+                    context.read<AuthProvider>().currentUser))
+                  // 내 차례가 아니어도 기관 관리자는 직권 승인(전결)·직권 반려 가능
+                  // (실제 권한 재검증은 서버가 하므로 여기서는 노출 조건만 담당)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SeedButton(
+                          label: '직권 반려',
+                          onPressed: () async {
+                            if (await _confirmForceAction(request, actionLabel: '직권 반려')) {
+                              _rejectRequest(request.id, force: true);
+                            }
+                          },
+                          variant: SeedButtonVariant.neutralOutline,
+                          prefixIcon: Icons.close,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
+                      Expanded(
+                        child: SeedButton(
+                          label: '직권 승인',
+                          onPressed: () async {
+                            if (await _confirmForceAction(request, actionLabel: '직권 승인')) {
+                              _approveRequest(request.id, force: true);
+                            }
+                          },
                           variant: SeedButtonVariant.brandSolid,
                           prefixIcon: Icons.check,
                         ),

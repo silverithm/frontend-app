@@ -279,12 +279,14 @@ class ApprovalProvider with ChangeNotifier {
   }
 
   // 결재 요청 승인
+  // force=true면 내 차례가 아니어도 남은 단계를 건너뛰고 직권 승인(전결)한다
   Future<bool> approveApprovalRequest({
     required int approvalId,
     required String companyId,
     required String processedBy,
     required String processedByName,
     String? signatureBase64,
+    bool force = false,
   }) async {
     try {
       setLoading(true);
@@ -295,6 +297,7 @@ class ApprovalProvider with ChangeNotifier {
         processedBy: processedBy,
         processedByName: processedByName,
         signatureBase64: signatureBase64,
+        force: force,
       );
 
       print('[ApprovalProvider] 결재 요청 승인 응답: $response');
@@ -313,12 +316,14 @@ class ApprovalProvider with ChangeNotifier {
   }
 
   // 결재 요청 거절
+  // force=true면 내 차례가 아니어도 남은 단계를 건너뛰고 직권 반려한다
   Future<bool> rejectApprovalRequest({
     required int approvalId,
     required String reason,
     required String companyId,
     required String processedBy,
     required String processedByName,
+    bool force = false,
   }) async {
     try {
       setLoading(true);
@@ -329,6 +334,7 @@ class ApprovalProvider with ChangeNotifier {
         processedBy: processedBy,
         processedByName: processedByName,
         reason: reason,
+        force: force,
       );
 
       print('[ApprovalProvider] 결재 요청 거절 응답: $response');

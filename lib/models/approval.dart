@@ -53,6 +53,47 @@ class ApprovalStepModel {
   bool get isPending => status == 'PENDING';
 }
 
+/// 공문 하단 발신부 (기관 주소·연락처) — 기관 단위 값이라 값이 비면 그 줄만 빠진다
+class ApprovalDocumentFooter {
+  final String? postalCode;
+  final String? address;
+  final String? homepageUrl;
+  final String? phoneNumber;
+  final String? faxNumber;
+  final String? contactEmail;
+  final String? disclosureType; // 공개 | 부분공개 | 비공개 (비어 있으면 "공개")
+
+  ApprovalDocumentFooter({
+    this.postalCode,
+    this.address,
+    this.homepageUrl,
+    this.phoneNumber,
+    this.faxNumber,
+    this.contactEmail,
+    this.disclosureType,
+  });
+
+  factory ApprovalDocumentFooter.fromJson(Map<String, dynamic> json) {
+    return ApprovalDocumentFooter(
+      postalCode: json['postalCode']?.toString(),
+      address: json['address']?.toString(),
+      homepageUrl: json['homepageUrl']?.toString(),
+      phoneNumber: json['phoneNumber']?.toString(),
+      faxNumber: json['faxNumber']?.toString(),
+      contactEmail: json['contactEmail']?.toString(),
+      disclosureType: json['disclosureType']?.toString(),
+    );
+  }
+
+  bool get hasAnyValue =>
+      (postalCode?.isNotEmpty ?? false) ||
+      (address?.isNotEmpty ?? false) ||
+      (homepageUrl?.isNotEmpty ?? false) ||
+      (phoneNumber?.isNotEmpty ?? false) ||
+      (faxNumber?.isNotEmpty ?? false) ||
+      (contactEmail?.isNotEmpty ?? false);
+}
+
 /// 결재선 지정 가능한 결재자 후보
 class ApproverCandidate {
   final String approverType; // ADMIN | MEMBER
@@ -105,6 +146,7 @@ class ApprovalRequest {
   final String? docNumberDisplay;
   final String? companySealUrl;
   final Map<String, dynamic>? formData; // 온라인 폼 데이터
+  final ApprovalDocumentFooter? documentFooter; // 공문 하단 발신부
 
   ApprovalRequest({
     required this.id,
@@ -129,6 +171,7 @@ class ApprovalRequest {
     this.docNumberDisplay,
     this.companySealUrl,
     this.formData,
+    this.documentFooter,
   });
 
   factory ApprovalRequest.fromJson(Map<String, dynamic> json) {
@@ -187,6 +230,10 @@ class ApprovalRequest {
       docNumberDisplay: json['docNumberDisplay']?.toString(),
       companySealUrl: json['companySealUrl']?.toString(),
       formData: _parseFormData(json['formData']),
+      documentFooter: json['documentFooter'] is Map
+          ? ApprovalDocumentFooter.fromJson(
+              Map<String, dynamic>.from(json['documentFooter'] as Map))
+          : null,
     );
   }
 
@@ -301,6 +348,7 @@ class ApprovalTemplate {
   final int companyId;
   final String name;
   final String? description;
+  final String? category; // 대분류 (공문·교육·인사 등, 없으면 미분류)
   final String? fileUrl;
   final String? fileName;
   final int? fileSize;
@@ -317,6 +365,7 @@ class ApprovalTemplate {
     required this.companyId,
     required this.name,
     this.description,
+    this.category,
     this.fileUrl,
     this.fileName,
     this.fileSize,
@@ -374,6 +423,7 @@ class ApprovalTemplate {
       companyId: parseIntField(json['companyId']),
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString(),
+      category: json['category']?.toString(),
       fileUrl: json['fileUrl']?.toString(),
       fileName: json['fileName']?.toString(),
       fileSize: parseNullableIntField(json['fileSize']),
@@ -406,6 +456,7 @@ class ApprovalTemplate {
       'companyId': companyId,
       'name': name,
       'description': description,
+      'category': category,
       'fileUrl': fileUrl,
       'fileName': fileName,
       'fileSize': fileSize,

@@ -27,6 +27,9 @@ class OfficialDocumentView extends StatelessWidget {
   String _formatShort(DateTime? date) =>
       date == null ? '' : DateFormat('yy.MM.dd').format(date);
 
+  String _formatDotted(DateTime? date) =>
+      date == null ? '' : DateFormat('yyyy . MM. dd.').format(date);
+
   @override
   Widget build(BuildContext context) {
     final isApproved = approval.status == ApprovalStatus.approved;
@@ -163,10 +166,103 @@ class OfficialDocumentView extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: _muted),
             ),
           ],
+
+          // 발신부 — 표준 공문 하단 시행/접수·주소·연락처 (값이 없으면 통째로 생략)
+          _buildFooter(isApproved),
         ],
       ),
     );
   }
+
+  /// 공문 하단 발신부. 기관 정보가 하나도 없고 문서번호도 없으면 아예 렌더링하지 않는다
+  /// (웹 OfficialDocument.tsx의 DocumentFooterBlock과 동일한 조건).
+  Widget _buildFooter(bool isApproved) {
+    final footer = approval.documentFooter;
+    final docNumber = approval.docNumberDisplay ?? approval.docNumber;
+    final hasDocNumber = docNumber != null && docNumber.isNotEmpty;
+    final hasCompanyInfo = footer?.hasAnyValue ?? false;
+    if (!hasCompanyInfo && !hasDocNumber) return const SizedBox.shrink();
+
+    final receivedAt = isApproved ? approval.processedAt : null;
+    final addressLine = [footer?.address]
+        .where((v) => v != null && v.isNotEmpty)
+        .join('  ');
+    final postalCode = footer?.postalCode?.isNotEmpty == true ? footer!.postalCode : null;
+    final contactsParts = <String>[
+      if (footer?.phoneNumber?.isNotEmpty == true) '전화  ${footer!.phoneNumber}',
+      if (footer?.faxNumber?.isNotEmpty == true) '전송  ${footer!.faxNumber}',
+    ];
+    final contacts = contactsParts.join('  ');
+    final hasEmail = footer?.contactEmail?.isNotEmpty == true;
+    final disclosureType = footer?.disclosureType?.isNotEmpty == true
+        ? footer!.disclosureType!
+        : '공개';
+
+    final rows = <Widget>[];
+
+    if (hasDocNumber || receivedAt != null) {
+      rows.add(_footerRow([
+        _footerTerm('시행'),
+        _footerVal(docNumber ?? ''),
+        _footerTerm('접수'),
+        _footerVal(_formatDotted(receivedAt)),
+      ]));
+    }
+
+    if (postalCode != null || addressLine.isNotEmpty || (footer?.homepageUrl?.isNotEmpty == true)) {
+      rows.add(_footerRow([
+        if (postalCode != null || addressLine.isNotEmpty) ...[
+          _footerTerm('우'),
+          _footerVal([postalCode, addressLine].where((v) => v != null && v.isNotEmpty).join('  ')),
+        ],
+        if (footer?.homepageUrl?.isNotEmpty == true) _footerVal('/ ${footer!.homepageUrl}'),
+      ]));
+    }
+
+    if (contacts.isNotEmpty || hasEmail) {
+      rows.add(_footerRow([
+        if (contacts.isNotEmpty) _footerVal(contacts),
+        if (hasEmail) _footerVal(', 담당자 E-MAIL : ${footer!.contactEmail}'),
+        _footerVal('/ $disclosureType'),
+      ]));
+    }
+
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(height: 1, color: const Color(0xFFD1D5DB)),
+          const SizedBox(height: 8),
+          ...rows,
+        ],
+      ),
+    );
+  }
+
+  Widget _footerRow(List<Widget> children) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 2,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _footerTerm(String text) => Text(
+        text,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _ink),
+      );
+
+  Widget _footerVal(String text) => Text(
+        text,
+        style: const TextStyle(fontSize: 10, color: _muted),
+      );
 
   /// 결재란 표: 첫 칸=기안자, 이후 결재선 (legacy는 결재 1칸)
   Widget _buildApprovalTable() {

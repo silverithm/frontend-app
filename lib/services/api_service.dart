@@ -717,6 +717,57 @@ class ApiService {
     });
   }
 
+  // 휴무 입력 마감일 설정 조회 (다음 달만 받기 nextMonthOnly 포함)
+  Future<Map<String, dynamic>> getVacationDeadlineSetting({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/vacation/deadline-setting',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 휴무 마감일 설정 조회 요청: $uri');
+
+      return await http.get(uri, headers: await _getHeaders());
+    });
+  }
+
+  // 월별 마감일 지정 조회 — {"dates": {"2026-08": "2026-08-16", ...}}
+  Future<Map<String, dynamic>> getVacationDeadlineDates({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/vacation/deadline-dates',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 월별 마감일 지정 조회 요청: $uri');
+
+      return await http.get(uri, headers: await _getHeaders());
+    });
+  }
+
+  // 근무조정 중요 행사 조회 — {"events": [{id,title,description,startDate,endDate,warnOnRequest}, ...]}
+  Future<Map<String, dynamic>> getVacationEvents({
+    required String companyId,
+    required String startDate,
+    required String endDate,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/vacation/events').replace(
+        queryParameters: {
+          'companyId': companyId,
+          'startDate': startDate,
+          'endDate': endDate,
+        },
+      );
+
+      print('[API] 근무조정 중요 행사 조회 요청: $uri');
+
+      return await http.get(uri, headers: await _getHeaders());
+    });
+  }
+
   // 사용자 알림 조회
   Future<Map<String, dynamic>> getNotifications({
     required String userId,
@@ -2049,11 +2100,13 @@ class ApiService {
   }
 
   // 결재 요청 승인 — signatureBase64가 있으면 즉석 서명 날인, 없으면 등록 서명 자동 사용
+  // force=true면 내 차례가 아니어도 남은 결재 단계를 건너뛰고 직권 승인(전결)한다 (서버가 권한 재검증)
   Future<Map<String, dynamic>> approveApprovalRequest({
     required int approvalId,
     required String processedBy,
     required String processedByName,
     String? signatureBase64,
+    bool force = false,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/approve')
@@ -2061,6 +2114,7 @@ class ApiService {
             queryParameters: {
               'processedBy': processedBy,
               'processedByName': processedByName,
+              if (force) 'force': 'true',
             },
           );
 
@@ -2160,11 +2214,13 @@ class ApiService {
   }
 
   // 결재 요청 거절
+  // force=true면 내 차례가 아니어도 남은 결재 단계를 건너뛰고 직권 반려한다 (서버가 권한 재검증)
   Future<Map<String, dynamic>> rejectApprovalRequest({
     required int approvalId,
     required String processedBy,
     required String processedByName,
     required String reason,
+    bool force = false,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/reject')
@@ -2172,6 +2228,7 @@ class ApiService {
             queryParameters: {
               'processedBy': processedBy,
               'processedByName': processedByName,
+              if (force) 'force': 'true',
             },
           );
 
@@ -3169,6 +3226,8 @@ class ApiService {
   }
 
   // 광장 게시글 작성
+  // contactInfo/contactPublic: 구인·구직(job_offer/job_seek) 게시판 전용 연락처 필드.
+  // 서버가 board에 따라 무시/정규화하므로 다른 게시판이어도 그대로 보내도 안전하다.
   Future<Map<String, dynamic>> createPlazaPost({
     required String board,
     required String title,
@@ -3176,6 +3235,8 @@ class ApiService {
     required bool isAnonymous,
     String? authorName,
     String? companyName,
+    String? contactInfo,
+    bool contactPublic = false,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/plaza/posts');
@@ -3190,6 +3251,40 @@ class ApiService {
           'isAnonymous': isAnonymous,
           if (authorName != null) 'authorName': authorName,
           if (companyName != null) 'companyName': companyName,
+          if (contactInfo != null && contactInfo.isNotEmpty) 'contactInfo': contactInfo,
+          'contactPublic': contactPublic,
+        }),
+      );
+    });
+  }
+
+  // 광장 게시글 수정 (본인 글) — 구인·구직 연락처 포함
+  Future<Map<String, dynamic>> updatePlazaPost({
+    required int postId,
+    required String board,
+    required String title,
+    required String content,
+    required bool isAnonymous,
+    String? authorName,
+    String? companyName,
+    String? contactInfo,
+    bool contactPublic = false,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/posts/$postId');
+      final headers = await _getHeaders();
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'board': board,
+          'title': title,
+          'content': content,
+          'isAnonymous': isAnonymous,
+          if (authorName != null) 'authorName': authorName,
+          if (companyName != null) 'companyName': companyName,
+          if (contactInfo != null && contactInfo.isNotEmpty) 'contactInfo': contactInfo,
+          'contactPublic': contactPublic,
         }),
       );
     });
@@ -3245,6 +3340,17 @@ class ApiService {
       final uri = Uri.parse('$_baseUrl/v1/plaza/comments/$commentId');
       final headers = await _getHeaders();
       return await http.delete(uri, headers: headers);
+    });
+  }
+
+  // 광장 자료실 이용 자격 확인 — 자유게시판 글 1개 이상 필요.
+  // 비로그인이면 { allowed:false, reason:'LOGIN_REQUIRED' }, 조건 미충족이면
+  // { allowed:false, reason:'FREE_POST_REQUIRED' } (둘 다 200 OK로 내려온다).
+  Future<Map<String, dynamic>> getPlazaLibraryAccess() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/library/access');
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
     });
   }
 
@@ -3310,6 +3416,137 @@ class ApiService {
   // 광장 자료 다운로드 URL (dio로 직접 저장할 때 사용)
   String plazaLibraryDownloadUrl(int itemId) =>
       '$_baseUrl/v1/plaza/library/$itemId/download';
+
+  // 광장 자료 수정 (본인 자료) — 파일은 그대로, 제목/분류/설명만 변경
+  Future<Map<String, dynamic>> updatePlazaLibraryItem({
+    required int itemId,
+    required String category,
+    required String title,
+    String? description,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/plaza/library/$itemId');
+      final headers = await _getHeaders();
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'category': category,
+          'title': title,
+          'description': description ?? '',
+        }),
+      );
+    });
+  }
+
+  // ===== 고충·신고 / 건의함 (VoiceBox) =====
+
+  // 고충·신고 또는 건의 제출 (익명 여부 포함) — 같은 기관 인증 사용자 누구나 가능
+  Future<Map<String, dynamic>> submitVoiceBoxMessage({
+    required String type, // 'GRIEVANCE' | 'SUGGESTION'
+    required String title,
+    required String content,
+    required bool isAnonymous,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/voice-box');
+      final headers = await _getHeaders();
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'type': type,
+          'title': title,
+          'content': content,
+          'isAnonymous': isAnonymous,
+        }),
+      );
+    });
+  }
+
+  // 본인이 제출한 고충·신고/건의 내역 (상태·답변 포함)
+  Future<Map<String, dynamic>> getMyVoiceBoxMessages() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/voice-box',
+      ).replace(queryParameters: {'scope': 'mine'});
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // ===== 장기요양 소식 (외부 공지) =====
+
+  // 노인장기요양보험 공지·법령·평가·교육 자료 목록 (전 기관 공용, 인증 필요)
+  Future<Map<String, dynamic>> getExternalNotices({
+    String? source,
+    int page = 0,
+    int size = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/external-notices').replace(
+        queryParameters: {
+          if (source != null && source.isNotEmpty) 'source': source,
+          'page': page.toString(),
+          'size': size.toString(),
+        },
+      );
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // ===== 회원 프로필 사진 =====
+
+  // 프로필 사진 업로드 (multipart, jpg/png/webp, 5MB 제한 — 최종 검증은 서버에서)
+  Future<Map<String, dynamic>> uploadMemberProfileImage({
+    required String memberId,
+    required String filePath,
+  }) async {
+    final token = StorageService().getToken();
+    final fileName = filePath.split('/').last;
+
+    final formData = dio.FormData.fromMap({
+      'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
+    });
+
+    final dioClient = dio.Dio();
+    dioClient.options.connectTimeout = const Duration(seconds: 30);
+    dioClient.options.sendTimeout = const Duration(seconds: 60);
+    dioClient.options.receiveTimeout = const Duration(seconds: 30);
+
+    try {
+      final response = await dioClient.post(
+        '$_baseUrl/v1/members/$memberId/profile-image',
+        data: formData,
+        options: dio.Options(headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+        }),
+      );
+
+      if (response.data is Map) {
+        return Map<String, dynamic>.from(response.data);
+      }
+      throw ApiException('프로필 사진 업로드 실패', response.statusCode ?? 500);
+    } on dio.DioException catch (e) {
+      final data = e.response?.data;
+      final message = (data is Map && data['error'] != null)
+          ? data['error'].toString()
+          : '프로필 사진 업로드에 실패했습니다';
+      throw ApiException(message, e.response?.statusCode ?? 500);
+    }
+  }
+
+  // 프로필 사진 삭제
+  Future<Map<String, dynamic>> deleteMemberProfileImage({
+    required String memberId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/members/$memberId/profile-image');
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
+    });
+  }
 }
 
 // API 예외 클래스
