@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../models/user.dart';
 import '../models/admin_signin_response.dart';
 import '../models/member_signin_response.dart';
@@ -7,6 +6,7 @@ import '../services/storage_service.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart';
 import '../services/fcm_service.dart';
+import '../widgets/common/app_snackbar.dart';
 
 class AuthProvider with ChangeNotifier {
   User? _currentUser;
@@ -670,20 +670,16 @@ class AuthProvider with ChangeNotifier {
       if (!context.mounted) return;
 
       if (response['message'] != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
-            backgroundColor: AppSemanticColors.statusSuccessIcon,
-            duration: const Duration(seconds: 3),
-          ),
+        AppSnackBar.showSuccess(
+          context,
+          message: response['message'],
+          duration: const Duration(seconds: 3),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['error'] ?? '비밀번호 찾기에 실패했습니다.'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            duration: const Duration(seconds: 3),
-          ),
+        AppSnackBar.showError(
+          context,
+          message: response['error'] ?? '비밀번호 찾기에 실패했습니다.',
+          duration: const Duration(seconds: 3),
         );
       }
     } catch (e) {
@@ -701,12 +697,10 @@ class AuthProvider with ChangeNotifier {
 
       setError(errorMessage);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            duration: const Duration(seconds: 4),
-          ),
+        AppSnackBar.showError(
+          context,
+          message: errorMessage,
+          duration: const Duration(seconds: 4),
         );
       }
     } finally {
@@ -725,20 +719,16 @@ class AuthProvider with ChangeNotifier {
       if (!context.mounted) return;
 
       if (response['message'] != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
-            backgroundColor: AppSemanticColors.statusSuccessIcon,
-            duration: const Duration(seconds: 3),
-          ),
+        AppSnackBar.showSuccess(
+          context,
+          message: response['message'],
+          duration: const Duration(seconds: 3),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['error'] ?? '관리자 비밀번호 찾기에 실패했습니다.'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            duration: const Duration(seconds: 3),
-          ),
+        AppSnackBar.showError(
+          context,
+          message: response['error'] ?? '관리자 비밀번호 찾기에 실패했습니다.',
+          duration: const Duration(seconds: 3),
         );
       }
     } catch (e) {
@@ -756,12 +746,10 @@ class AuthProvider with ChangeNotifier {
 
       setError(errorMessage);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            duration: const Duration(seconds: 4),
-          ),
+        AppSnackBar.showError(
+          context,
+          message: errorMessage,
+          duration: const Duration(seconds: 4),
         );
       }
     } finally {
@@ -786,32 +774,14 @@ class AuthProvider with ChangeNotifier {
 
       if (response['message'] != null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message']),
-              backgroundColor: AppSemanticColors.statusSuccessIcon,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          AppSnackBar.showSuccess(context, message: response['message']);
         }
         return true;
       } else {
         final errorMsg = response['error'] ?? '비밀번호 변경에 실패했습니다.';
         setError(errorMsg);
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMsg),
-              backgroundColor: AppSemanticColors.statusErrorIcon,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          AppSnackBar.showError(context, message: errorMsg);
         }
         return false;
       }
@@ -823,16 +793,7 @@ class AuthProvider with ChangeNotifier {
         setError('비밀번호 변경 중 오류가 발생했습니다: ${e.toString()}');
       }
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_errorMessage),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        AppSnackBar.showError(context, message: _errorMessage);
       }
       return false;
     } finally {
