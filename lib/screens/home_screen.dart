@@ -15,8 +15,11 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/daily_greeting.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/notification_bell.dart';
+import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_callout.dart';
 import '../widgets/today_schedule_dialog.dart';
 import 'admin_notice_management_screen.dart';
 import 'admin_unified_approval_screen.dart';
@@ -186,8 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     Container(
-                      width: 6,
-                      height: 6,
+                      width: AppSpacing.space1_5,
+                      height: AppSpacing.space1_5,
                       decoration: const BoxDecoration(
                         color: AppSemanticColors.brandDefault,
                         shape: BoxShape.circle,
@@ -195,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: AppSpacing.space2),
                     SizedBox(
-                      width: 40,
+                      width: AppSpacing.space10,
                       child: Text(
                         schedule.timeText,
                         style: AppTypography.bodySmall.copyWith(
@@ -232,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(
                 Icons.beach_access_outlined,
-                size: 16,
+                size: AppSpacing.space4,
                 color: AppSemanticColors.textTertiary,
               ),
               const SizedBox(width: AppSpacing.space2),
@@ -355,57 +358,42 @@ class _HomeScreenState extends State<HomeScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
-              child: Container(
-                color: AppSemanticColors.interactivePrimaryDefault,
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.space5,
-                      AppSpacing.space4,
-                      AppSpacing.space5,
-                      AppSpacing.space5,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '홈',
-                                style: AppTypography.heading5.copyWith(
-                                  color: AppSemanticColors.textInverse,
-                                  fontWeight: AppTypography.fontWeightBold,
-                                ),
+              // 플랫한 표면 헤더 — 스크롤 본문과 같은 backgroundPrimary를 써서
+              // 이질적인 대면적 브랜드 블록 없이 콘텐츠와 자연스럽게 이어지도록 한다.
+              // 브랜드 색은 오늘의 한마디 카드(소면적)에만 강조로 사용한다.
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space5,
+                    AppSpacing.space4,
+                    AppSpacing.space5,
+                    AppSpacing.space4,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${user.name}님, 안녕하세요',
+                              style: AppTypography.heading6.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                                fontWeight: AppTypography.fontWeightBold,
                               ),
                             ),
-                            const NotificationBell(
-                              iconColor: AppSemanticColors.textInverse,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                        Text(
-                          '${user.name}님, 반갑습니다.',
-                          style: AppTypography.heading6.copyWith(
-                            color: AppSemanticColors.textInverse,
-                            fontWeight: AppTypography.fontWeightBold,
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.space1),
-                        Text(
-                          isAdmin
-                              ? '대시보드, 공지사항, 월간 일정을 한 번에 확인하세요.'
-                              : '오늘 필요한 공지와 월간 일정을 먼저 확인하세요.',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textInverse.withValues(
-                              alpha: 0.8,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                          const NotificationBell(),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                      SeedCallout(
+                        variant: SeedCalloutVariant.brand,
+                        icon: Icons.format_quote_outlined,
+                        title: getDailyGreeting(),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -429,40 +417,60 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildTodayBriefing(scheduleProvider, vacationProvider),
                     const SizedBox(height: AppSpacing.space4),
 
-                    // 빠른 작업 — 자주 쓰는 액션 바로가기
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _QuickActionButton(
-                            icon: Icons.beach_access_outlined,
-                            label: '휴무 신청',
-                            onTap: _openVacationRequest,
+                    // 빠른 작업 — 자주 쓰는 액션 바로가기. 다른 섹션과 동일하게
+                    // _SectionCard/_SectionHeader로 감싸 리듬을 맞춘다.
+                    _SectionCard(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.space5,
+                        AppSpacing.space3,
+                        AppSpacing.space5,
+                        AppSpacing.space5,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionHeader(
+                            title: '빠른 작업',
+                            subtitle: '자주 쓰는 기능 바로가기',
                           ),
-                        ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Expanded(
-                          child: _QuickActionButton(
-                            icon: Icons.edit_note_outlined,
-                            label: isAdmin ? '결재 승인' : '결재 작성',
-                            // 직원은 작성 화면을 바로 연다 (탭 전환만 하는 버튼은 빠른작업이 아니다)
-                            onTap: isAdmin ? _openApproval : _openApprovalForm,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Expanded(
-                          child: _QuickActionButton(
-                            icon: Icons.campaign_outlined,
-                            label: '공지 보기',
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => isAdmin
-                                    ? const AdminNoticeManagementScreen()
-                                    : const NoticeListScreen(),
+                          const SizedBox(height: AppSpacing.space4),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _QuickActionButton(
+                                  icon: Icons.beach_access_outlined,
+                                  label: '휴무 신청',
+                                  onTap: _openVacationRequest,
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: AppSpacing.space3),
+                              Expanded(
+                                child: _QuickActionButton(
+                                  icon: Icons.edit_note_outlined,
+                                  label: isAdmin ? '결재 승인' : '결재 작성',
+                                  // 직원은 작성 화면을 바로 연다 (탭 전환만 하는 버튼은 빠른작업이 아니다)
+                                  onTap:
+                                      isAdmin ? _openApproval : _openApprovalForm,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.space3),
+                              Expanded(
+                                child: _QuickActionButton(
+                                  icon: Icons.campaign_outlined,
+                                  label: '공지 보기',
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => isAdmin
+                                          ? const AdminNoticeManagementScreen()
+                                          : const NoticeListScreen(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.space4),
 
@@ -860,24 +868,11 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
         if (actionLabel != null && onAction != null)
-          TextButton(
+          SeedButton(
+            label: actionLabel!,
             onPressed: onAction,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space2,
-                vertical: AppSpacing.space1,
-              ),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: AppSemanticColors.interactivePrimaryDefault,
-            ),
-            child: Text(
-              actionLabel!,
-              style: AppTypography.labelMedium.copyWith(
-                color: AppSemanticColors.interactivePrimaryDefault,
-                fontWeight: AppTypography.fontWeightSemibold,
-              ),
-            ),
+            variant: SeedButtonVariant.neutralWeak,
+            size: SeedButtonSize.xsmall,
           ),
       ],
     );
@@ -1025,6 +1020,12 @@ class _NoticePreviewTile extends StatelessWidget {
                     style: AppTypography.labelSmall.copyWith(
                       color: AppSemanticColors.textTertiary,
                     ),
+                  ),
+                  // 탭 가능함을 알리는 chevron — ripple만으로는 눈에 잘 안 띈다.
+                  Icon(
+                    Icons.chevron_right,
+                    size: AppSpacing.space4,
+                    color: AppSemanticColors.textTertiary,
                   ),
                 ],
               ),
