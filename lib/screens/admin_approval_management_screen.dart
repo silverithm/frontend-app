@@ -640,7 +640,7 @@ class _AdminApprovalManagementScreenState
                   child: SeedButton(
                     label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
                     onPressed: _isBulkProcessing ? null : _bulkReject,
-                    variant: SeedButtonVariant.critical,
+                    variant: SeedButtonVariant.neutralOutline,
                     isLoading: _isBulkProcessing,
                     prefixIcon: Icons.close,
                   ),
@@ -863,7 +863,7 @@ class _AdminApprovalManagementScreenState
                         child: SeedButton(
                           label: '거절',
                           onPressed: () => _rejectRequest(request.id),
-                          variant: SeedButtonVariant.critical,
+                          variant: SeedButtonVariant.neutralOutline,
                           prefixIcon: Icons.close,
                         ),
                       ),

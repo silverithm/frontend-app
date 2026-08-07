@@ -393,7 +393,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                         Expanded(
                           child: SeedButton(
                             label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
-                            variant: SeedButtonVariant.critical,
+                            variant: SeedButtonVariant.neutralOutline,
                             isLoading: _isBulkProcessing,
                             prefixIcon: Icons.close,
                             onPressed: _isBulkProcessing ? null : _bulkReject,
@@ -802,7 +802,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           Expanded(
             child: SeedButton(
               label: _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
-              variant: SeedButtonVariant.critical,
+              variant: SeedButtonVariant.neutralOutline,
               size: SeedButtonSize.small,
               isLoading: _rejectingRequests.contains(request['id'].toString()),
               prefixIcon: Icons.close,

@@ -670,7 +670,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                         label: isProcessing ? '처리중...' : '거부',
                         onPressed:
                             isProcessing ? null : () => _showRejectDialog(user),
-                        variant: SeedButtonVariant.critical,
+                        variant: SeedButtonVariant.neutralOutline,
                         isLoading: isProcessing,
                         prefixIcon: Icons.close,
                       ),

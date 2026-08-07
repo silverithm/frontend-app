@@ -216,7 +216,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
               width: double.infinity,
               child: SeedButton(
                 label: '채팅방 나가기',
-                variant: SeedButtonVariant.critical,
+                variant: SeedButtonVariant.neutralOutline,
                 onPressed: _leaveRoom,
               ),
             ),
