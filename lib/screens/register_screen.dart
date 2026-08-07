@@ -83,22 +83,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('링크를 열 수 없습니다: $url'),
-              backgroundColor: AppSemanticColors.statusErrorIcon,
-            ),
-          );
+          AppSnackBar.showError(context, message: '링크를 열 수 없습니다: $url');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('링크 열기 중 오류가 발생했습니다'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '링크 열기 중 오류가 발생했습니다');
       }
     }
   }

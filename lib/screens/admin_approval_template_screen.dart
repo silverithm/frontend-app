@@ -10,6 +10,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/template_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 
 /// 선택된 파일 정보를 담는 클래스
@@ -338,12 +339,9 @@ class _AdminApprovalTemplateScreenState
                           : () async {
                               final name = nameController.text.trim();
                               if (name.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('양식 이름을 입력해주세요'),
-                                    backgroundColor:
-                                        AppSemanticColors.statusWarningIcon,
-                                  ),
+                                AppSnackBar.showWarning(
+                                  context,
+                                  message: '양식 이름을 입력해주세요',
                                 );
                                 return;
                               }
@@ -386,14 +384,11 @@ class _AdminApprovalTemplateScreenState
 
                               if (success && mounted) {
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(template == null
-                                        ? '양식이 추가되었습니다'
-                                        : '양식이 수정되었습니다'),
-                                    backgroundColor:
-                                        AppSemanticColors.statusSuccessIcon,
-                                  ),
+                                AppSnackBar.showSuccess(
+                                  context,
+                                  message: template == null
+                                      ? '양식이 추가되었습니다'
+                                      : '양식이 수정되었습니다',
                                 );
                               }
                             },
@@ -418,13 +413,11 @@ class _AdminApprovalTemplateScreenState
     );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              template.isActive ? '양식이 비활성화되었습니다' : '양식이 활성화되었습니다'),
-          backgroundColor: AppSemanticColors.statusSuccessIcon,
-        ),
-      );
+      if (template.isActive) {
+        AppSnackBar.showWarning(context, message: '양식이 비활성화되었습니다');
+      } else {
+        AppSnackBar.showSuccess(context, message: '양식이 활성화되었습니다');
+      }
     }
   }
 
@@ -449,21 +442,15 @@ class _AdminApprovalTemplateScreenState
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('양식이 삭제되었습니다'),
-              backgroundColor: AppSemanticColors.statusSuccessIcon,
-            ),
-          );
+          // 삭제는 되돌릴 수 없는 행위지만, 이 알림은 정상 완료 통보이지 오류가 아니다 — 빨강 금지
+          AppSnackBar.showInfo(context, message: '양식이 삭제되었습니다');
         } else {
           // 에러 메시지 표시
           final errorMsg = approvalProvider.errorMessage;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMsg.isNotEmpty ? errorMsg : '양식 삭제에 실패했습니다'),
-              backgroundColor: AppSemanticColors.statusErrorIcon,
-              duration: const Duration(seconds: 4),
-            ),
+          AppSnackBar.showError(
+            context,
+            message: errorMsg.isNotEmpty ? errorMsg : '양식 삭제에 실패했습니다',
+            duration: const Duration(seconds: 4),
           );
         }
       }

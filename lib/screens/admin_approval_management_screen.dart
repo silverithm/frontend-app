@@ -14,6 +14,7 @@ import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 
@@ -206,23 +207,17 @@ class _AdminApprovalManagementScreenState
     );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(force ? '직권 승인(전결) 처리되었습니다' : '결재가 승인되었습니다'),
-          backgroundColor: AppSemanticColors.statusSuccessIcon,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.showSuccess(
+        context,
+        message: force ? '직권 승인(전결) 처리되었습니다' : '결재가 승인되었습니다',
       );
     } else if (mounted) {
       // 결재선 차례가 아니고 직권 권한도 없으면 서버가 403으로 거부한다
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(approvalProvider.errorMessage.isNotEmpty
-              ? approvalProvider.errorMessage
-              : '결재 승인에 실패했습니다'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.showError(
+        context,
+        message: approvalProvider.errorMessage.isNotEmpty
+            ? approvalProvider.errorMessage
+            : '결재 승인에 실패했습니다',
       );
     }
   }
@@ -276,12 +271,7 @@ class _AdminApprovalManagementScreenState
 
     final reason = reasonInput.trim();
     if (reason.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('거절 사유를 입력해주세요'),
-          backgroundColor: AppSemanticColors.statusWarningIcon,
-        ),
-      );
+      AppSnackBar.showWarning(context, message: '거절 사유를 입력해주세요');
       return;
     }
 
@@ -301,12 +291,10 @@ class _AdminApprovalManagementScreenState
     );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(force ? '직권 반려(전결) 처리되었습니다' : '결재가 거절되었습니다'),
-          backgroundColor: AppSemanticColors.statusWarningIcon,
-          behavior: SnackBarBehavior.floating,
-        ),
+      // 거절은 비파괴적 부정 결과 — 경고 톤이지 오류가 아니다
+      AppSnackBar.showWarning(
+        context,
+        message: force ? '직권 반려(전결) 처리되었습니다' : '결재가 거절되었습니다',
       );
     }
   }
@@ -341,11 +329,9 @@ class _AdminApprovalManagementScreenState
       );
 
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${_selectedRequests.length}개의 결재가 승인되었습니다'),
-            backgroundColor: AppSemanticColors.statusSuccessIcon,
-          ),
+        AppSnackBar.showSuccess(
+          context,
+          message: '${_selectedRequests.length}개의 결재가 승인되었습니다',
         );
         setState(() {
           _selectedRequests.clear();
@@ -374,12 +360,7 @@ class _AdminApprovalManagementScreenState
 
     final reason = reasonInput.trim();
     if (reason.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('거절 사유를 입력해주세요'),
-          backgroundColor: AppSemanticColors.statusWarningIcon,
-        ),
-      );
+      AppSnackBar.showWarning(context, message: '거절 사유를 입력해주세요');
       return;
     }
 
@@ -401,11 +382,9 @@ class _AdminApprovalManagementScreenState
       );
 
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${_selectedRequests.length}개의 결재가 거절되었습니다'),
-            backgroundColor: AppSemanticColors.statusWarningIcon,
-          ),
+        AppSnackBar.showWarning(
+          context,
+          message: '${_selectedRequests.length}개의 결재가 거절되었습니다',
         );
         setState(() {
           _selectedRequests.clear();

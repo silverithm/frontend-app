@@ -15,6 +15,7 @@ import '../services/api_service.dart';
 import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/approval/official_document_view.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import 'hwp_editor_screen.dart';
 
@@ -75,15 +76,9 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
   Future<void> _deleteApproval() async {
     // ID가 유효하지 않으면 삭제 불가
     if (_approval.id <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('결재 요청 정보가 올바르지 않습니다. 다시 시도해주세요.'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          ),
-        ),
+      AppSnackBar.showError(
+        context,
+        message: '결재 요청 정보가 올바르지 않습니다. 다시 시도해주세요.',
       );
       return;
     }
@@ -112,16 +107,8 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       setState(() => _isDeleting = false);
 
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('결재 요청이 삭제되었습니다'),
-            backgroundColor: AppSemanticColors.statusSuccessIcon,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            ),
-          ),
-        );
+        // 삭제는 되돌릴 수 없는 행위지만, 이 알림은 정상 완료 통보이지 오류가 아니다 — 빨강 금지
+        AppSnackBar.showInfo(context, message: '결재 요청이 삭제되었습니다');
         Navigator.pop(context, true);
       }
     }
@@ -244,16 +231,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppSemanticColors.statusErrorIcon,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-      ),
-    );
+    AppSnackBar.showError(context, message: message);
   }
 
   @override

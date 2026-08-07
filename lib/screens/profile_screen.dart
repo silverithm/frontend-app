@@ -83,33 +83,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '링크를 열 수 없습니다: $url',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textInverse,
-                ),
-              ),
-              backgroundColor: AppSemanticColors.statusErrorIcon,
-            ),
-          );
+          AppSnackBar.showError(context, message: '링크를 열 수 없습니다: $url');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '링크 열기 중 오류가 발생했습니다',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textInverse,
-                ),
-              ),
-              backgroundColor: AppSemanticColors.statusErrorIcon,
-            ),
-          );
-        }
+        AppSnackBar.showError(context, message: '링크 열기 중 오류가 발생했습니다');
+      }
     }
   }
 
@@ -139,21 +119,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '회사 코드가 복사되었습니다',
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
-        ),
-        backgroundColor: AppSemanticColors.statusSuccessIcon,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-      ),
-    );
+    // 복사 완료는 단순 안내이지 성공 알림이 아니다 — 빨강/초록 금지
+    AppSnackBar.showInfo(context, message: '회사 코드가 복사되었습니다');
   }
 
   /// 프로필 사진 업로드/삭제는 Member(직원) 계정만 가능하다 — 백엔드
@@ -472,51 +439,27 @@ class _ProfileScreenState extends State<ProfileScreen>
                         onPressed: () async {
                           if (currentPasswordController.text.isEmpty) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '현재 비밀번호를 입력해주세요',
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textInverse,
-                                  ),
-                                ),
-                                backgroundColor:
-                                    AppSemanticColors.statusErrorIcon,
-                              ),
+                            AppSnackBar.showError(
+                              context,
+                              message: '현재 비밀번호를 입력해주세요',
                             );
                             return;
                           }
 
                           if (newPasswordController.text.isEmpty) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '새 비밀번호를 입력해주세요',
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textInverse,
-                                  ),
-                                ),
-                                backgroundColor:
-                                    AppSemanticColors.statusErrorIcon,
-                              ),
+                            AppSnackBar.showError(
+                              context,
+                              message: '새 비밀번호를 입력해주세요',
                             );
                             return;
                           }
 
                           if (newPasswordController.text.length < 6) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '비밀번호는 6자 이상이어야 합니다',
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textInverse,
-                                  ),
-                                ),
-                                backgroundColor:
-                                    AppSemanticColors.statusErrorIcon,
-                              ),
+                            AppSnackBar.showError(
+                              context,
+                              message: '비밀번호는 6자 이상이어야 합니다',
                             );
                             return;
                           }
@@ -524,17 +467,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                           if (newPasswordController.text !=
                               confirmPasswordController.text) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '새 비밀번호가 일치하지 않습니다',
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textInverse,
-                                  ),
-                                ),
-                                backgroundColor:
-                                    AppSemanticColors.statusErrorIcon,
-                              ),
+                            AppSnackBar.showError(
+                              context,
+                              message: '새 비밀번호가 일치하지 않습니다',
                             );
                             return;
                           }
@@ -744,39 +679,19 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                         if (success && context.mounted) {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('역할이 성공적으로 변경되었습니다.'),
-                              backgroundColor:
-                                  AppSemanticColors.statusSuccessIcon,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
-                              ),
-                            ),
+                          AppSnackBar.showSuccess(
+                            context,
+                            message: '역할이 성공적으로 변경되었습니다.',
                           );
                         } else if (context.mounted) {
                           setState(() {
                             isChanging = false;
                           });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                authProvider.errorMessage.isNotEmpty
-                                    ? authProvider.errorMessage
-                                    : '역할 변경에 실패했습니다',
-                              ),
-                              backgroundColor:
-                                  AppSemanticColors.statusErrorIcon,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
-                              ),
-                            ),
+                          AppSnackBar.showError(
+                            context,
+                            message: authProvider.errorMessage.isNotEmpty
+                                ? authProvider.errorMessage
+                                : '역할 변경에 실패했습니다',
                           );
                         }
                       },
@@ -962,25 +877,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                           });
 
                           // 에러 메시지 표시
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                authProvider.errorMessage.isNotEmpty
-                                    ? authProvider.errorMessage
-                                    : '회원탈퇴에 실패했습니다',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textInverse,
-                                ),
-                              ),
-                              backgroundColor:
-                                  AppSemanticColors.statusErrorIcon,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
-                              ),
-                            ),
+                          AppSnackBar.showError(
+                            context,
+                            message: authProvider.errorMessage.isNotEmpty
+                                ? authProvider.errorMessage
+                                : '회원탈퇴에 실패했습니다',
                           );
                         }
                       },
@@ -1522,16 +1423,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                               await InAppReviewService().requestReviewManually();
                               
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('앱 평가 페이지로 이동합니다'),
-                                    backgroundColor: AppSemanticColors.statusSuccessIcon,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                                    ),
-                                    duration: const Duration(seconds: 2),
-                                  ),
+                                // 단순 이동 안내이지 성공 알림이 아니다
+                                AppSnackBar.showInfo(
+                                  context,
+                                  message: '앱 평가 페이지로 이동합니다',
+                                  duration: const Duration(seconds: 2),
                                 );
                               }
                             },

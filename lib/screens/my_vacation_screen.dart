@@ -9,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_section_header.dart';
 import '../widgets/vacation_planning_banner.dart';
 import 'dart:math' as math;
 
@@ -504,6 +505,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
                 return SliverList(
                   delegate: SliverChildListDelegate([
+                    // one-surface 원칙: 신청현황 요약 + 상태별 섹션 + 신청 카드들을
+                    // 흰 카드 여러 개로 쪼개지 않고 하나의 표면 위에서 Divider로만 구분한다.
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: Container(
@@ -518,223 +521,134 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                             width: 1,
                           ),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.space5),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(AppSpacing.space5),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(
-                                      AppSpacing.space3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          AppSemanticColors.backgroundTertiary,
-                                      borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.xl2,
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(
+                                          AppSpacing.space3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppSemanticColors
+                                              .backgroundTertiary,
+                                          borderRadius: BorderRadius.circular(
+                                            AppBorderRadius.xl2,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.analytics,
+                                          color:
+                                              AppSemanticColors.textSecondary,
+                                          size: 24,
+                                        ),
                                       ),
-                                    ),
-                                    child: Icon(
-                                      Icons.analytics,
-                                      color: AppSemanticColors.textSecondary,
-                                      size: 24,
-                                    ),
+                                      const SizedBox(width: AppSpacing.space3),
+                                      Text(
+                                        '신청 현황',
+                                        style: AppTypography.heading6
+                                            .copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppSemanticColors
+                                                  .textPrimary,
+                                            ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: AppSpacing.space3),
-                                  Text(
-                                    '신청 현황',
-                                    style: AppTypography.heading6.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppSemanticColors.textPrimary,
+                                  const SizedBox(height: AppSpacing.space4),
+                                  // 내부는 구분선으로만 나눈다 (카드 중첩 금지)
+                                  IntrinsicHeight(
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildStatusCard(
+                                            '대기',
+                                            pendingRequests.length,
+                                            AppSemanticColors
+                                                .statusWarningText,
+                                            Icons.schedule,
+                                          ),
+                                        ),
+                                        VerticalDivider(
+                                          width: AppSpacing.space4,
+                                          thickness: 1,
+                                          color:
+                                              AppSemanticColors.borderSubtle,
+                                        ),
+                                        Expanded(
+                                          child: _buildStatusCard(
+                                            '승인',
+                                            approvedRequests.length,
+                                            AppSemanticColors
+                                                .statusSuccessText,
+                                            Icons.check_circle,
+                                          ),
+                                        ),
+                                        VerticalDivider(
+                                          width: AppSpacing.space4,
+                                          thickness: 1,
+                                          color:
+                                              AppSemanticColors.borderSubtle,
+                                        ),
+                                        Expanded(
+                                          child: _buildStatusCard(
+                                            '거절',
+                                            rejectedRequests.length,
+                                            AppSemanticColors.statusErrorText,
+                                            Icons.cancel,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: AppSpacing.space4),
-                              // 내부는 구분선으로만 나눈다 (카드 중첩 금지)
-                              IntrinsicHeight(
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildStatusCard(
-                                        '대기',
-                                        pendingRequests.length,
-                                        AppSemanticColors.statusWarningText,
-                                        Icons.schedule,
-                                      ),
-                                    ),
-                                    VerticalDivider(
-                                      width: AppSpacing.space4,
-                                      thickness: 1,
-                                      color: AppSemanticColors.borderSubtle,
-                                    ),
-                                    Expanded(
-                                      child: _buildStatusCard(
-                                        '승인',
-                                        approvedRequests.length,
-                                        AppSemanticColors.statusSuccessText,
-                                        Icons.check_circle,
-                                      ),
-                                    ),
-                                    VerticalDivider(
-                                      width: AppSpacing.space4,
-                                      thickness: 1,
-                                      color: AppSemanticColors.borderSubtle,
-                                    ),
-                                    Expanded(
-                                      child: _buildStatusCard(
-                                        '거절',
-                                        rejectedRequests.length,
-                                        AppSemanticColors.statusErrorText,
-                                        Icons.cancel,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            ),
+
+                            // 신청 목록 — 상태 그룹마다 Divider로만 구분(각 그룹의 헤더/카드는
+                            // 개별 흰 카드로 다시 감싸지 않고 같은 표면 위에 이어 붙인다)
+                            if (pendingRequests.isNotEmpty)
+                              ..._buildRequestGroup(
+                                title: '대기 중',
+                                requests: pendingRequests,
+                                headerColor:
+                                    AppSemanticColors.statusWarningIcon,
+                                headerIcon: Icons.schedule,
+                                baseDelayIndex: 0,
                               ),
-                            ],
-                          ),
+
+                            if (approvedRequests.isNotEmpty)
+                              ..._buildRequestGroup(
+                                title: '승인됨',
+                                requests: approvedRequests,
+                                headerColor:
+                                    AppSemanticColors.statusSuccessIcon,
+                                headerIcon: Icons.check_circle,
+                                baseDelayIndex: pendingRequests.length,
+                              ),
+
+                            if (rejectedRequests.isNotEmpty)
+                              ..._buildRequestGroup(
+                                title: '거절됨',
+                                requests: rejectedRequests,
+                                headerColor: AppSemanticColors.statusErrorIcon,
+                                headerIcon: Icons.cancel,
+                                baseDelayIndex:
+                                    pendingRequests.length +
+                                    approvedRequests.length,
+                              ),
+
+                            const SizedBox(height: AppSpacing.space2),
+                          ],
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: AppSpacing.space2),
-
-                    // 신청 목록
-                    if (pendingRequests.isNotEmpty) ...[
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: _buildSectionHeader(
-                          '대기 중',
-                          pendingRequests.length,
-                          AppSemanticColors.statusWarningIcon,
-                          Icons.schedule,
-                        ),
-                      ),
-                      ...pendingRequests.asMap().entries.map(
-                        (entry) => AnimatedBuilder(
-                          animation: _animationController,
-                          builder: (context, child) {
-                            final delay = entry.key * 0.1;
-                            final animation =
-                                Tween<double>(begin: 0.0, end: 1.0).animate(
-                                  CurvedAnimation(
-                                    parent: _animationController,
-                                    curve: Interval(
-                                      delay,
-                                      delay + 0.3,
-                                      curve: Curves.easeOutBack,
-                                    ),
-                                  ),
-                                );
-
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(0.3, 0),
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: _buildRequestCard(entry.value),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space4),
-                    ],
-
-                    if (approvedRequests.isNotEmpty) ...[
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: _buildSectionHeader(
-                          '승인됨',
-                          approvedRequests.length,
-                          AppSemanticColors.statusSuccessIcon,
-                          Icons.check_circle,
-                        ),
-                      ),
-                      ...approvedRequests.asMap().entries.map(
-                        (entry) => AnimatedBuilder(
-                          animation: _animationController,
-                          builder: (context, child) {
-                            final delay =
-                                (pendingRequests.length + entry.key) * 0.1;
-                            final animation =
-                                Tween<double>(begin: 0.0, end: 1.0).animate(
-                                  CurvedAnimation(
-                                    parent: _animationController,
-                                    curve: Interval(
-                                      delay,
-                                      delay + 0.3,
-                                      curve: Curves.easeOutBack,
-                                    ),
-                                  ),
-                                );
-
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(0.3, 0),
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: _buildRequestCard(entry.value),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space4),
-                    ],
-
-                    if (rejectedRequests.isNotEmpty) ...[
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: _buildSectionHeader(
-                          '거절됨',
-                          rejectedRequests.length,
-                          AppSemanticColors.statusErrorIcon,
-                          Icons.cancel,
-                        ),
-                      ),
-                      ...rejectedRequests.asMap().entries.map(
-                        (entry) => AnimatedBuilder(
-                          animation: _animationController,
-                          builder: (context, child) {
-                            final delay =
-                                (pendingRequests.length +
-                                    approvedRequests.length +
-                                    entry.key) *
-                                0.1;
-                            final animation =
-                                Tween<double>(begin: 0.0, end: 1.0).animate(
-                                  CurvedAnimation(
-                                    parent: _animationController,
-                                    curve: Interval(
-                                      delay,
-                                      delay + 0.3,
-                                      curve: Curves.easeOutBack,
-                                    ),
-                                  ),
-                                );
-
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(0.3, 0),
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: _buildRequestCard(entry.value),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
 
                     const SizedBox(height: AppSpacing.space20), // 바텀 패딩
                   ]),
@@ -772,6 +686,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
   // one-surface 원칙: 섹션헤더는 독립된 흰 카드가 아니라 목록 안의 플랫한 라벨이어야 한다
   // (신청현황 요약 카드·신청 카드들과 나란히 흰 박스가 반복되던 것을 정리).
+  // 텍스트 부분은 공용 SeedSectionHeader로 통일하고, 상태별 색상 아이콘만 앞에 붙인다
+  // (SeedSectionHeader는 아이콘/컬러 파라미터를 지원하지 않으므로).
   Widget _buildSectionHeader(
     String title,
     int count,
@@ -789,39 +705,90 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         children: [
           Icon(icon, color: color, size: AppSpacing.space5),
           const SizedBox(width: AppSpacing.space2),
-          Text(
-            '$title ($count)',
-            style: AppTypography.heading6.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppSemanticColors.textPrimary,
-            ),
-          ),
+          Expanded(child: SeedSectionHeader(title: '$title ($count)')),
         ],
       ),
     );
   }
 
+  // 상태 그룹(대기/승인/거절) 하나를 [Divider, 섹션헤더, 카드…]로 구성해
+  // 신청현황 요약과 같은 표면 위에 이어붙일 수 있게 한다 (카드 중첩 금지).
+  List<Widget> _buildRequestGroup({
+    required String title,
+    required List<VacationRequest> requests,
+    required Color headerColor,
+    required IconData headerIcon,
+    required int baseDelayIndex,
+  }) {
+    final children = <Widget>[
+      Divider(height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
+      SlideTransition(
+        position: _slideAnimation,
+        child: _buildSectionHeader(
+          title,
+          requests.length,
+          headerColor,
+          headerIcon,
+        ),
+      ),
+    ];
+
+    for (var i = 0; i < requests.length; i++) {
+      final request = requests[i];
+      final delay = (baseDelayIndex + i) * 0.1;
+
+      children.add(
+        AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
+              CurvedAnimation(
+                parent: _animationController,
+                curve: Interval(delay, delay + 0.3, curve: Curves.easeOutBack),
+              ),
+            );
+
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.3, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: _buildRequestCard(request),
+              ),
+            );
+          },
+        ),
+      );
+
+      if (i != requests.length - 1) {
+        children.add(
+          Divider(
+            height: 1,
+            thickness: 1,
+            indent: AppSpacing.space5,
+            endIndent: AppSpacing.space5,
+            color: AppSemanticColors.borderSubtle,
+          ),
+        );
+      }
+    }
+
+    return children;
+  }
+
+  // one-surface 원칙: 바깥의 흰 카드 wrapper(Container 배경/보더/margin)는 제거하고
+  // 내용(Padding 이하)만 유지 — 상위 표면 위에 이어 붙는 한 섹션으로 렌더링된다.
   Widget _buildRequestCard(VacationRequest request) {
     final canDelete =
         request.status == VacationStatus.pending; // 대기 중인 상태에서만 삭제 가능
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
-        0,
-        AppSpacing.space4,
-        AppSpacing.space3,
-      ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.space5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1084,8 +1051,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Color _getStatusColor(VacationStatus status) {

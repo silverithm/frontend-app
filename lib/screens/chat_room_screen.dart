@@ -21,6 +21,7 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import 'chat_room_info_screen.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 
@@ -298,22 +299,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             file = compressedFile;
             final compressedSize = await file.length();
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
+              AppSnackBar.showSuccess(
+                context,
+                message:
                     '압축 완료: ${_formatFileSize(fileSize)} → ${_formatFileSize(compressedSize)}',
-                  ),
-                  backgroundColor: AppSemanticColors.statusSuccessIcon,
-                ),
               );
             }
           } else {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('이미지 압축에 실패했습니다. 다른 이미지를 선택해주세요.'),
-                  backgroundColor: AppSemanticColors.statusErrorIcon,
-                ),
+              AppSnackBar.showError(
+                context,
+                message: '이미지 압축에 실패했습니다. 다른 이미지를 선택해주세요.',
               );
             }
             return;
@@ -459,13 +455,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         // 문서 파일은 10MB 초과시 업로드 불가
         if (fileSize > _maxFileSize) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
+            AppSnackBar.showError(
+              context,
+              message:
                   '파일 크기가 너무 큽니다 (${_formatFileSize(fileSize)}). 최대 10MB까지 업로드 가능합니다.',
-                ),
-                backgroundColor: AppSemanticColors.statusErrorIcon,
-              ),
             );
           }
           return;

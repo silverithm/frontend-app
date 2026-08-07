@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/hwp_editor_view.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 
 /// HWP 편집 완료 시 반환되는 결과 (작성된 파일이 임시 디렉토리에 저장된다).
@@ -161,11 +162,9 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
       debugPrint('[HwpEditorScreen] 문서 저장 실패: $e');
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('작성한 문서를 저장하는 데 실패했습니다. 다시 시도해주세요.'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
+        AppSnackBar.showError(
+          context,
+          message: '작성한 문서를 저장하는 데 실패했습니다. 다시 시도해주세요.',
         );
       }
     }
