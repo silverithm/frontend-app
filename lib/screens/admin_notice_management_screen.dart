@@ -638,6 +638,7 @@ class _AdminNoticeManagementScreenState
       message: '\'${notice.title}\' 공지사항을 삭제하시겠습니까?\n삭제된 공지사항은 복구할 수 없습니다.',
       confirmText: '삭제',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
   }
 

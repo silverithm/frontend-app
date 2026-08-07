@@ -946,6 +946,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       message: '이 휴무를 영구적으로 삭제하시겠습니까?\n삭제된 휴무는 복구할 수 없습니다.',
       confirmText: '삭제',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
 
     if (confirmed == true) {

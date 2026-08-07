@@ -11,7 +11,6 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../utils/role_utils.dart';
-import 'common/app_button.dart';
 import 'common/app_dialog.dart';
 import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
@@ -232,7 +231,6 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
           '그래도 신청하시겠습니까? 관리자가 확인 후 조정할 수 있습니다.',
       confirmText: '그래도 신청',
       cancelText: '취소',
-      confirmVariant: AppButtonVariant.primary,
     );
   }
 

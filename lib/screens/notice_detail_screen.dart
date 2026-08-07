@@ -103,6 +103,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       message: '이 댓글을 삭제하시겠습니까?',
       confirmText: '삭제',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
 
     if (confirmed == true) {

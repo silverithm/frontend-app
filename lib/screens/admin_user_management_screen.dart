@@ -432,6 +432,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       message: '${user.name}님을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
       confirmText: '삭제',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
 
     if (confirmed != true || !mounted) return;

@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_button.dart';
 
 /// 광장 게시글 상세 + 댓글
 class PlazaPostDetailScreen extends StatefulWidget {
@@ -90,6 +91,7 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
       message: '이 게시글을 삭제하시겠습니까?',
       confirmText: '삭제',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
     if (confirmed != true || !mounted) return;
     try {

@@ -503,6 +503,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       message: '이 채팅방을 삭제하시겠습니까?\n삭제 후에는 채팅방을 다시 열 수 없습니다.',
       confirmText: '삭제',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
 
     if (confirmed != true || !mounted) return;
@@ -982,6 +983,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       message: '이 메시지를 삭제하시겠습니까?',
       confirmText: '삭제',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
 
     if (confirmed == true && mounted) {

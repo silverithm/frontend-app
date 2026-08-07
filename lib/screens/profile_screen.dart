@@ -114,7 +114,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       title: '로그아웃',
       message: '정말 로그아웃하시겠습니까?',
       confirmText: '로그아웃',
-      confirmVariant: AppButtonVariant.primary,
     ).then((confirmed) async {
       if (confirmed != true) return;
 
@@ -1391,35 +1390,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
                       child: SizedBox(
                         width: double.infinity,
-                        child: FilledButton(
+                        child: SeedButton(
+                          label: '로그아웃',
+                          variant: SeedButtonVariant.neutralOutline,
+                          size: SeedButtonSize.large,
+                          prefixIcon: Icons.logout,
                           onPressed: () => _showLogoutDialog(context),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppSemanticColors.statusErrorIcon,
-                            foregroundColor: AppSemanticColors.textInverse,
-                            disabledBackgroundColor:
-                                AppSemanticColors.statusErrorIcon,
-                            disabledForegroundColor:
-                                AppSemanticColors.textInverse,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.space3_5,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.logout, size: 18),
-                              const SizedBox(width: AppSpacing.space2),
-                              Text(
-                                '로그아웃',
-                                style: AppTypography.labelLarge.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                     ),

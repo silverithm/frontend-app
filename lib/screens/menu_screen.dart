@@ -6,7 +6,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
-import '../widgets/common/app_button.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import 'admin_company_settings_screen.dart';
@@ -36,7 +35,6 @@ class MenuScreen extends StatelessWidget {
       title: '로그아웃',
       message: '정말 로그아웃하시겠습니까?',
       confirmText: '로그아웃',
-      confirmVariant: AppButtonVariant.primary,
     ).then((confirmed) async {
       if (confirmed != true) return;
 

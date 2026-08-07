@@ -81,6 +81,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
       message: '${participant.userName}님을 강제 퇴장시키겠습니까?',
       confirmText: '퇴장',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
 
     if (confirmed == true && mounted) {

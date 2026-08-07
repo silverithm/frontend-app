@@ -95,6 +95,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       message: '이 결재 요청을 삭제하시겠습니까?\n삭제된 요청은 복구할 수 없습니다.',
       confirmText: '삭제',
       cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
     );
 
     if (confirmed == true && mounted) {

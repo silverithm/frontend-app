@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
-import 'app_button.dart';
+import '../seed/seed_button.dart';
 import 'app_input.dart';
 
 class AppDialog {
+  /// 확인 다이얼로그. 되돌릴 수 없는 행위(삭제·탈퇴)만 [confirmVariant]에
+  /// [SeedButtonVariant.critical]을 넘긴다 — 반려·거절·로그아웃은 파괴적 행위가 아니다.
   static Future<bool?> showConfirm(
     BuildContext context, {
     required String title,
     required String message,
     String confirmText = '확인',
     String cancelText = '취소',
-    AppButtonVariant confirmVariant = AppButtonVariant.primary,
-    AppButtonVariant cancelVariant = AppButtonVariant.outline,
+    SeedButtonVariant confirmVariant = SeedButtonVariant.brandSolid,
+    SeedButtonVariant cancelVariant = SeedButtonVariant.neutralOutline,
   }) {
     return showDialog<bool>(
       context: context,
@@ -47,16 +48,18 @@ class AppDialog {
               Row(
                 children: [
                   Expanded(
-                    child: shadcn.OutlineButton(
+                    child: SeedButton(
+                      label: cancelText,
+                      variant: cancelVariant,
                       onPressed: () => Navigator.of(context).pop(false),
-                      child: Text(cancelText),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.space3),
                   Expanded(
-                    child: shadcn.PrimaryButton(
+                    child: SeedButton(
+                      label: confirmText,
+                      variant: confirmVariant,
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: Text(confirmText),
                     ),
                   ),
                 ],
@@ -73,7 +76,7 @@ class AppDialog {
     required String title,
     required String message,
     String buttonText = '확인',
-    AppButtonVariant buttonVariant = AppButtonVariant.primary,
+    SeedButtonVariant buttonVariant = SeedButtonVariant.brandSolid,
   }) {
     return showDialog<void>(
       context: context,
@@ -105,9 +108,10 @@ class AppDialog {
               const SizedBox(height: AppSpacing.space6),
               SizedBox(
                 width: double.infinity,
-                child: shadcn.PrimaryButton(
+                child: SeedButton(
+                  label: buttonText,
+                  variant: buttonVariant,
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(buttonText),
                 ),
               ),
             ],
@@ -184,20 +188,21 @@ class AppDialog {
               Row(
                 children: [
                   Expanded(
-                    child: shadcn.OutlineButton(
+                    child: SeedButton(
+                      label: cancelText,
+                      variant: SeedButtonVariant.neutralOutline,
                       onPressed: () => Navigator.of(context).pop(),
-                      child: Text(cancelText),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.space3),
                   Expanded(
-                    child: shadcn.PrimaryButton(
+                    child: SeedButton(
+                      label: confirmText,
                       onPressed: () {
                         if (formKey.currentState?.validate() ?? true) {
                           Navigator.of(context).pop(controller.text);
                         }
                       },
-                      child: Text(confirmText),
                     ),
                   ),
                 ],
