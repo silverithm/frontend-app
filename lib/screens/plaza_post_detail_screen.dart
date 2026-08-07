@@ -8,7 +8,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/plaza_html_body.dart';
 import '../widgets/seed/seed_button.dart';
+import 'plaza_screen.dart' show plazaBoardLabel, plazaIsJobBoard, showPlazaPostEditor;
 
 /// 광장 게시글 상세 + 댓글
 class PlazaPostDetailScreen extends StatefulWidget {
@@ -84,6 +86,11 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
     }
   }
 
+  Future<void> _editPost() async {
+    final updated = await showPlazaPostEditor(context, existingPost: _post);
+    if (updated == true) _load();
+  }
+
   Future<void> _deletePost() async {
     final confirmed = await AppDialog.showConfirm(
       context,
@@ -131,11 +138,16 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
         backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         actions: [
-          if (post?['isMine'] == true)
+          if (post?['isMine'] == true) ...[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: _editPost,
+            ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
               onPressed: _deletePost,
             ),
+          ],
         ],
       ),
       body: _isLoading
@@ -150,6 +162,22 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                         child: ListView(
                           padding: const EdgeInsets.all(AppSpacing.space4),
                           children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.space1_5,
+                                  vertical: AppSpacing.space0_5),
+                              decoration: BoxDecoration(
+                                color: AppSemanticColors.backgroundTertiary,
+                                borderRadius:
+                                    BorderRadius.circular(AppBorderRadius.md),
+                              ),
+                              child: Text(
+                                plazaBoardLabel(post['board']?.toString()),
+                                style: AppTypography.caption.copyWith(
+                                    color: AppSemanticColors.textSecondary),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.space2),
                             Text(
                               post['title']?.toString() ?? '',
                               style: AppTypography.heading5.copyWith(
@@ -164,13 +192,13 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                                   color: AppSemanticColors.textTertiary),
                             ),
                             const Divider(height: AppSpacing.space6),
-                            Text(
-                              post['content']?.toString() ?? '',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                                height: 1.6,
-                              ),
-                            ),
+                            // 웹 리치텍스트 에디터가 저장한 HTML을 그대로 렌더링한다
+                            // (예전에는 태그가 그대로 노출되는 표시 버그가 있었다)
+                            PlazaHtmlBody(html: post['content']?.toString() ?? ''),
+                            if (plazaIsJobBoard(post['board']?.toString())) ...[
+                              const SizedBox(height: AppSpacing.space4),
+                              _ContactInfoCard(post: post),
+                            ],
                             const SizedBox(height: AppSpacing.space4),
                             Row(
                               children: [
@@ -382,6 +410,68 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                     ),
                   ],
                 ),
+    );
+  }
+}
+
+/// 구인·구직 글의 연락처 표시. 비공개(회원 전용)이면서 비로그인/서버가 감춘 경우
+/// `contactInfo`가 null로 내려오므로 그 상태를 그대로 안내한다.
+class _ContactInfoCard extends StatelessWidget {
+  final Map<String, dynamic> post;
+
+  const _ContactInfoCard({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    final contactInfo = post['contactInfo']?.toString();
+    final isPublic = post['contactPublic'] == true;
+    final hasContact = contactInfo != null && contactInfo.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.space3_5),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.brandWeak,
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.call_outlined, size: 18, color: AppSemanticColors.brandPressed),
+          const SizedBox(width: AppSpacing.space2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '연락처',
+                      style: AppTypography.labelMedium
+                          .copyWith(color: AppSemanticColors.brandPressed),
+                    ),
+                    const SizedBox(width: AppSpacing.space1_5),
+                    Text(
+                      isPublic ? '전체공개' : '회원공개',
+                      style: AppTypography.caption
+                          .copyWith(color: AppSemanticColors.textTertiary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.space1),
+                Text(
+                  hasContact ? contactInfo : '로그인 후 연락처를 볼 수 있어요',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: hasContact
+                        ? AppSemanticColors.textPrimary
+                        : AppSemanticColors.textTertiary,
+                    fontWeight: hasContact ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

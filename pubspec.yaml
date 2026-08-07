@@ -100,6 +100,9 @@ dependencies:
   open_filex: ^4.5.0
   dio: ^5.4.0
 
+  # 커뮤니티 게시글 리치텍스트(HTML) 렌더링을 위한 패키지 (표시 전용, webview 불필요)
+  flutter_html: ^3.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

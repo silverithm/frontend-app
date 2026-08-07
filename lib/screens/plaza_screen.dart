@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart' as dio;
@@ -15,10 +13,202 @@ import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../utils/html_utils.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'plaza_post_detail_screen.dart';
+
+/// 게시판 key → 화면 표시 라벨. 목록·상세·글쓰기 시트가 공통으로 쓴다.
+String plazaBoardLabel(String? key) {
+  switch (key) {
+    case 'qna':
+      return 'Q&A';
+    case 'review':
+      return '후기';
+    case 'job_offer':
+      return '구인';
+    case 'job_seek':
+      return '구직';
+    default:
+      return '자유';
+  }
+}
+
+bool plazaIsJobBoard(String? key) => key == 'job_offer' || key == 'job_seek';
+
+/// 게시글 작성/수정 바텀시트. [existingPost]를 주면 수정 모드(제목·내용·연락처를
+/// 채워서 열고 저장 시 PUT), 생략하면 [initialBoard]로 새 글을 작성한다(POST).
+/// 게시판 탭(작성)과 게시글 상세 화면(수정)이 함께 쓴다.
+Future<bool?> showPlazaPostEditor(
+  BuildContext context, {
+  Map<String, dynamic>? existingPost,
+  String initialBoard = 'free',
+}) async {
+  final isEdit = existingPost != null;
+  final titleController =
+      TextEditingController(text: existingPost?['title']?.toString() ?? '');
+  final contentController =
+      TextEditingController(text: existingPost?['content']?.toString() ?? '');
+  final contactController = TextEditingController(
+      text: existingPost?['contactInfo']?.toString() ?? '');
+  String board = existingPost?['board']?.toString() ?? initialBoard;
+  bool isAnonymous = existingPost?['isAnonymous'] == true;
+  bool contactPublic = existingPost?['contactPublic'] == true;
+  final user = context.read<AuthProvider>().currentUser;
+
+  final saved = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppSemanticColors.surfaceDefault,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
+    ),
+    builder: (sheetContext) => StatefulBuilder(
+      builder: (context, setSheetState) {
+        final isJobBoard = plazaIsJobBoard(board);
+        return Padding(
+          padding: EdgeInsets.only(
+            left: AppSpacing.space4,
+            right: AppSpacing.space4,
+            top: AppSpacing.space4,
+            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(isEdit ? '글 수정' : '글 쓰기',
+                    style: AppTypography.heading6
+                        .copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(height: AppSpacing.space3),
+                DropdownButtonFormField<String>(
+                  initialValue: board,
+                  decoration: InputDecoration(
+                    labelText: '게시판',
+                    border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppBorderRadius.xl)),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'free', child: Text('자유')),
+                    DropdownMenuItem(value: 'qna', child: Text('Q&A')),
+                    DropdownMenuItem(value: 'review', child: Text('후기')),
+                    DropdownMenuItem(value: 'job_offer', child: Text('구인')),
+                    DropdownMenuItem(value: 'job_seek', child: Text('구직')),
+                  ],
+                  onChanged: (value) =>
+                      setSheetState(() => board = value ?? 'free'),
+                ),
+                const SizedBox(height: AppSpacing.space3),
+                SeedTextField(
+                  label: '제목',
+                  controller: titleController,
+                ),
+                const SizedBox(height: AppSpacing.space3),
+                SeedTextField(
+                  label: '내용',
+                  controller: contentController,
+                  maxLines: 6,
+                ),
+                if (isJobBoard) ...[
+                  const SizedBox(height: AppSpacing.space3),
+                  SeedTextField(
+                    label: '연락처',
+                    placeholder: '전화번호·이메일 등',
+                    controller: contactController,
+                  ),
+                  const SizedBox(height: AppSpacing.space1),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: contactPublic,
+                        activeColor: AppSemanticColors.brandDefault,
+                        onChanged: (value) => setSheetState(
+                            () => contactPublic = value ?? false),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '연락처 전체 공개 (끄면 로그인 회원에게만 보여요)',
+                          style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                Row(
+                  children: [
+                    Checkbox(
+                      value: isAnonymous,
+                      activeColor: AppSemanticColors.brandDefault,
+                      onChanged: (value) =>
+                          setSheetState(() => isAnonymous = value ?? false),
+                    ),
+                    Text(
+                      '익명으로 작성',
+                      style: AppTypography.bodySmall
+                          .copyWith(color: AppSemanticColors.textSecondary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.space2),
+                SizedBox(
+                  width: double.infinity,
+                  child: SeedButton(
+                    label: isEdit ? '수정' : '등록',
+                    variant: SeedButtonVariant.brandSolid,
+                    onPressed: () async {
+                      if (titleController.text.trim().isEmpty ||
+                          contentController.text.trim().isEmpty) {
+                        return;
+                      }
+                      try {
+                        if (isEdit) {
+                          await ApiService().updatePlazaPost(
+                            postId: existingPost['id'] as int,
+                            board: board,
+                            title: titleController.text.trim(),
+                            content: contentController.text.trim(),
+                            isAnonymous: isAnonymous,
+                            authorName: user?.name,
+                            companyName: user?.company?.name,
+                            contactInfo:
+                                isJobBoard ? contactController.text.trim() : null,
+                            contactPublic: isJobBoard && contactPublic,
+                          );
+                        } else {
+                          await ApiService().createPlazaPost(
+                            board: board,
+                            title: titleController.text.trim(),
+                            content: contentController.text.trim(),
+                            isAnonymous: isAnonymous,
+                            authorName: user?.name,
+                            companyName: user?.company?.name,
+                            contactInfo:
+                                isJobBoard ? contactController.text.trim() : null,
+                            contactPublic: isJobBoard && contactPublic,
+                          );
+                        }
+                        if (context.mounted) Navigator.pop(context, true);
+                      } catch (e) {
+                        debugPrint('게시글 ${isEdit ? '수정' : '작성'} 실패: $e');
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  );
+
+  return saved;
+}
 
 /// 케어브이 커뮤니티: 요양 소식(뉴스) · 게시판 · 자료실
 class PlazaScreen extends StatefulWidget {
@@ -69,10 +259,10 @@ class _PlazaScreenState extends State<PlazaScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          _NewsTab(),
-          _BoardTab(),
-          _LibraryTab(),
+        children: [
+          const _NewsTab(),
+          const _BoardTab(),
+          _LibraryTab(onGoToFreeBoard: () => _tabController.animateTo(1)),
         ],
       ),
     );
@@ -285,6 +475,8 @@ class _BoardTabState extends State<_BoardTab> {
     {'key': 'free', 'label': '자유'},
     {'key': 'qna', 'label': 'Q&A'},
     {'key': 'review', 'label': '후기'},
+    {'key': 'job_offer', 'label': '구인'},
+    {'key': 'job_seek', 'label': '구직'},
   ];
 
   String _board = '';
@@ -327,124 +519,11 @@ class _BoardTabState extends State<_BoardTab> {
     }
   }
 
-  String _boardLabel(String? key) {
-    switch (key) {
-      case 'qna':
-        return 'Q&A';
-      case 'review':
-        return '후기';
-      default:
-        return '자유';
-    }
-  }
-
   Future<void> _showWriteSheet() async {
-    final titleController = TextEditingController();
-    final contentController = TextEditingController();
-    String board = _board.isEmpty ? 'free' : _board;
-    bool isAnonymous = false;
-    final user = context.read<AuthProvider>().currentUser;
-
-    final created = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
-      ),
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.space4,
-            right: AppSpacing.space4,
-            top: AppSpacing.space4,
-            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('글 쓰기',
-                    style: AppTypography.heading6
-                        .copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: AppSpacing.space3),
-                DropdownButtonFormField<String>(
-                  initialValue: board,
-                  decoration: InputDecoration(
-                    labelText: '게시판',
-                    border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.xl)),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'free', child: Text('자유')),
-                    DropdownMenuItem(value: 'qna', child: Text('Q&A')),
-                    DropdownMenuItem(value: 'review', child: Text('후기')),
-                  ],
-                  onChanged: (value) =>
-                      setSheetState(() => board = value ?? 'free'),
-                ),
-                const SizedBox(height: AppSpacing.space3),
-                SeedTextField(
-                  label: '제목',
-                  controller: titleController,
-                ),
-                const SizedBox(height: AppSpacing.space3),
-                SeedTextField(
-                  label: '내용',
-                  controller: contentController,
-                  maxLines: 6,
-                ),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: isAnonymous,
-                      activeColor: AppSemanticColors.brandDefault,
-                      onChanged: (value) =>
-                          setSheetState(() => isAnonymous = value ?? false),
-                    ),
-                    Text(
-                      '익명으로 작성',
-                      style: AppTypography.bodySmall
-                          .copyWith(color: AppSemanticColors.textSecondary),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.space2),
-                SizedBox(
-                  width: double.infinity,
-                  child: SeedButton(
-                    label: '등록',
-                    variant: SeedButtonVariant.brandSolid,
-                    onPressed: () async {
-                      if (titleController.text.trim().isEmpty ||
-                          contentController.text.trim().isEmpty) {
-                        return;
-                      }
-                      try {
-                        await ApiService().createPlazaPost(
-                          board: board,
-                          title: titleController.text.trim(),
-                          content: contentController.text.trim(),
-                          isAnonymous: isAnonymous,
-                          authorName: user?.name,
-                          companyName: user?.company?.name,
-                        );
-                        if (context.mounted) Navigator.pop(context, true);
-                      } catch (e) {
-                        debugPrint('게시글 작성 실패: $e');
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    final created = await showPlazaPostEditor(
+      context,
+      initialBoard: _board.isEmpty ? 'free' : _board,
     );
-
     if (created == true) _load();
   }
 
@@ -551,7 +630,7 @@ class _BoardTabState extends State<_BoardTab> {
                                                 AppBorderRadius.md),
                                           ),
                                           child: Text(
-                                            _boardLabel(
+                                            plazaBoardLabel(
                                                 post['board']?.toString()),
                                             style: AppTypography.caption
                                                 .copyWith(
@@ -583,6 +662,22 @@ class _BoardTabState extends State<_BoardTab> {
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
+                                    if ((post['preview']?.toString() ?? '')
+                                        .trim()
+                                        .isNotEmpty) ...[
+                                      const SizedBox(height: AppSpacing.space1),
+                                      Text(
+                                        // 서버가 내려주는 preview는 HTML 원문 일부라 태그를 제거해 보여준다
+                                        htmlToPreviewText(
+                                            post['preview'].toString(),
+                                            maxLength: 60),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.bodySmall.copyWith(
+                                            color:
+                                                AppSemanticColors.textSecondary),
+                                      ),
+                                    ],
                                     const SizedBox(height: AppSpacing.space1),
                                     Text(
                                       '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('MM.dd').format(createdAt)}' : ''}'
@@ -607,8 +702,151 @@ class _BoardTabState extends State<_BoardTab> {
 
 // ─── 자료실 ───
 
+/// 자료 업로드/수정 바텀시트. [existingItem]을 주면 수정 모드(파일은 그대로 두고
+/// 제목·분류·설명만 PUT), 생략하면 새 파일을 선택해 업로드한다(POST).
+Future<bool?> showPlazaLibraryEditor(
+  BuildContext context, {
+  Map<String, dynamic>? existingItem,
+}) async {
+  final isEdit = existingItem != null;
+  final titleController =
+      TextEditingController(text: existingItem?['title']?.toString() ?? '');
+  final descriptionController = TextEditingController(
+      text: existingItem?['description']?.toString() ?? '');
+  String category = existingItem?['category']?.toString() ?? 'form';
+  XFile? pickedFile;
+  bool isSaving = false;
+  final user = context.read<AuthProvider>().currentUser;
+
+  final saved = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppSemanticColors.surfaceDefault,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
+    ),
+    builder: (sheetContext) => StatefulBuilder(
+      builder: (context, setSheetState) => Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.space4,
+          right: AppSpacing.space4,
+          top: AppSpacing.space4,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(isEdit ? '자료 정보 수정' : '자료 올리기',
+                  style: AppTypography.heading6
+                      .copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: AppSpacing.space3),
+              DropdownButtonFormField<String>(
+                initialValue: category,
+                decoration: InputDecoration(
+                  labelText: '분류',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl)),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'form', child: Text('서식')),
+                  DropdownMenuItem(value: 'eval', child: Text('평가')),
+                  DropdownMenuItem(value: 'program', child: Text('프로그램')),
+                  DropdownMenuItem(value: 'etc', child: Text('기타')),
+                ],
+                onChanged: (value) =>
+                    setSheetState(() => category = value ?? 'form'),
+              ),
+              const SizedBox(height: AppSpacing.space3),
+              SeedTextField(
+                label: '제목',
+                controller: titleController,
+              ),
+              const SizedBox(height: AppSpacing.space3),
+              SeedTextField(
+                label: '설명 (선택)',
+                controller: descriptionController,
+                maxLines: 3,
+              ),
+              const SizedBox(height: AppSpacing.space3),
+              if (isEdit)
+                // 수정은 파일을 바꾸지 않는다 — 재업로드하면 다운로드 수 등 이력이 초기화된다
+                Text(
+                  '파일: ${existingItem['fileName'] ?? ''} (파일 자체는 변경할 수 없어요)',
+                  style: AppTypography.bodySmall
+                      .copyWith(color: AppSemanticColors.textTertiary),
+                )
+              else
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final file = await openFile();
+                    if (file != null) {
+                      setSheetState(() => pickedFile = file);
+                    }
+                  },
+                  icon: const Icon(Icons.attach_file, size: 16),
+                  label: Text(pickedFile?.name ?? '파일 선택',
+                      style: AppTypography.bodySmall,
+                      overflow: TextOverflow.ellipsis),
+                ),
+              const SizedBox(height: AppSpacing.space3),
+              SizedBox(
+                width: double.infinity,
+                child: SeedButton(
+                  label: isSaving ? '저장 중...' : (isEdit ? '수정' : '업로드'),
+                  variant: SeedButtonVariant.brandSolid,
+                  isLoading: isSaving,
+                  isDisabled: isSaving,
+                  onPressed: () async {
+                    if (titleController.text.trim().isEmpty ||
+                        (!isEdit && pickedFile == null)) {
+                      return;
+                    }
+                    setSheetState(() => isSaving = true);
+                    try {
+                      if (isEdit) {
+                        await ApiService().updatePlazaLibraryItem(
+                          itemId: existingItem['id'] as int,
+                          category: category,
+                          title: titleController.text.trim(),
+                          description: descriptionController.text.trim(),
+                        );
+                      } else {
+                        await ApiService().uploadPlazaLibraryItem(
+                          filePath: pickedFile!.path,
+                          category: category,
+                          title: titleController.text.trim(),
+                          description: descriptionController.text.trim(),
+                          uploaderName: user?.name,
+                          companyName: user?.company?.name,
+                        );
+                      }
+                      if (context.mounted) {
+                        Navigator.pop(context, true);
+                      }
+                    } catch (e) {
+                      debugPrint('자료 ${isEdit ? '수정' : '업로드'} 실패: $e');
+                      setSheetState(() => isSaving = false);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  return saved;
+}
+
 class _LibraryTab extends StatefulWidget {
-  const _LibraryTab();
+  /// 이용 조건 안내에서 "자유게시판에 글쓰기"를 눌렀을 때 게시판 탭으로 이동시키는 콜백.
+  final VoidCallback? onGoToFreeBoard;
+
+  const _LibraryTab({this.onGoToFreeBoard});
 
   @override
   State<_LibraryTab> createState() => _LibraryTabState();
@@ -628,10 +866,42 @@ class _LibraryTabState extends State<_LibraryTab> {
   bool _isLoading = true;
   bool _hasError = false;
 
+  // 자료실 이용 자격 — 자유게시판 글 1개 이상 필요. null이면 아직 확인 전(허용으로 간주하지 않는다).
+  bool _accessAllowed = false;
+  String? _accessReason; // 'LOGIN_REQUIRED' | 'FREE_POST_REQUIRED'
+
   @override
   void initState() {
     super.initState();
-    _load();
+    _checkAccessAndLoad();
+  }
+
+  Future<void> _checkAccessAndLoad() async {
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
+    try {
+      final access = await ApiService().getPlazaLibraryAccess();
+      final allowed = access['allowed'] == true;
+      if (!mounted) return;
+      setState(() {
+        _accessAllowed = allowed;
+        _accessReason = access['reason']?.toString();
+        _isLoading = allowed; // 허용이면 이어서 목록을 불러오는 동안 로딩 유지
+      });
+      if (allowed) {
+        await _load();
+      }
+    } catch (e) {
+      debugPrint('자료실 이용 조건 확인 실패: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+    }
   }
 
   Future<void> _load() async {
@@ -697,244 +967,227 @@ class _LibraryTabState extends State<_LibraryTab> {
     } catch (e) {
       debugPrint('자료 다운로드 실패: $e');
       if (mounted) {
+        // 403(이용 조건 미충족)이면 원시 에러 대신 원인을 알려준다 — 대개 목록 진입 시
+        // 이미 자격을 확인하지만, 확인 이후 자격이 바뀌는 경합 상황을 대비한다
+        final is403 = e is dio.DioException && e.response?.statusCode == 403;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('다운로드에 실패했습니다')),
+          SnackBar(
+            content: Text(is403
+                ? '자료실은 자유게시판에 글을 1개 이상 작성한 회원만 이용할 수 있습니다'
+                : '다운로드에 실패했습니다'),
+          ),
         );
       }
     }
   }
 
   Future<void> _showUploadSheet() async {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-    String category = 'form';
-    XFile? pickedFile;
-    bool isUploading = false;
-    final user = context.read<AuthProvider>().currentUser;
+    final uploaded = await showPlazaLibraryEditor(context);
+    if (uploaded == true) _load();
+  }
 
-    final uploaded = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
-      ),
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.space4,
-            right: AppSpacing.space4,
-            top: AppSpacing.space4,
-            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
+  Future<void> _showEditSheet(Map<String, dynamic> item) async {
+    final updated = await showPlazaLibraryEditor(context, existingItem: item);
+    if (updated == true) _load();
+  }
+
+  Widget _buildAccessGuard() {
+    final isLoginRequired = _accessReason == 'LOGIN_REQUIRED';
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.space4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SeedCallout(
+            variant: SeedCalloutVariant.info,
+            icon: Icons.lock_outline,
+            title: isLoginRequired ? '로그인이 필요해요' : '자유게시판 글쓰기가 필요해요',
+            description: isLoginRequired
+                ? '자료실은 로그인 후 이용할 수 있어요.'
+                : '자료실은 자유게시판에 글을 1개 이상 작성한 회원만 이용할 수 있어요. '
+                    '나누는 만큼 받을 수 있도록 만든 조건이에요.',
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('자료 올리기',
-                    style: AppTypography.heading6
-                        .copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: AppSpacing.space3),
-                DropdownButtonFormField<String>(
-                  initialValue: category,
-                  decoration: InputDecoration(
-                    labelText: '분류',
-                    border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.xl)),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'form', child: Text('서식')),
-                    DropdownMenuItem(value: 'eval', child: Text('평가')),
-                    DropdownMenuItem(value: 'program', child: Text('프로그램')),
-                    DropdownMenuItem(value: 'etc', child: Text('기타')),
-                  ],
-                  onChanged: (value) =>
-                      setSheetState(() => category = value ?? 'form'),
-                ),
-                const SizedBox(height: AppSpacing.space3),
-                SeedTextField(
-                  label: '제목',
-                  controller: titleController,
-                ),
-                const SizedBox(height: AppSpacing.space3),
-                SeedTextField(
-                  label: '설명 (선택)',
-                  controller: descriptionController,
-                  maxLines: 3,
-                ),
-                const SizedBox(height: AppSpacing.space3),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final file = await openFile();
-                    if (file != null) {
-                      setSheetState(() => pickedFile = file);
-                    }
-                  },
-                  icon: const Icon(Icons.attach_file, size: 16),
-                  label: Text(pickedFile?.name ?? '파일 선택',
-                      style: AppTypography.bodySmall,
-                      overflow: TextOverflow.ellipsis),
-                ),
-                const SizedBox(height: AppSpacing.space3),
-                SizedBox(
-                  width: double.infinity,
-                  child: SeedButton(
-                    label: isUploading ? '업로드 중...' : '업로드',
-                    variant: SeedButtonVariant.brandSolid,
-                    isLoading: isUploading,
-                    isDisabled: isUploading,
-                    onPressed: () async {
-                      if (titleController.text.trim().isEmpty ||
-                          pickedFile == null) {
-                        return;
-                      }
-                      setSheetState(() => isUploading = true);
-                      try {
-                        await ApiService().uploadPlazaLibraryItem(
-                          filePath: pickedFile!.path,
-                          category: category,
-                          title: titleController.text.trim(),
-                          description: descriptionController.text.trim(),
-                          uploaderName: user?.name,
-                          companyName: user?.company?.name,
-                        );
-                        if (context.mounted) {
-                          Navigator.pop(context, true);
-                        }
-                      } catch (e) {
-                        debugPrint('자료 업로드 실패: $e');
-                        setSheetState(() => isUploading = false);
-                      }
-                    },
-                  ),
-                ),
-              ],
+          const SizedBox(height: AppSpacing.space4),
+          if (!isLoginRequired && widget.onGoToFreeBoard != null)
+            SizedBox(
+              width: double.infinity,
+              child: SeedButton(
+                label: '자유게시판에 글쓰기',
+                variant: SeedButtonVariant.brandSolid,
+                onPressed: widget.onGoToFreeBoard,
+              ),
+            ),
+          const SizedBox(height: AppSpacing.space2),
+          SizedBox(
+            width: double.infinity,
+            child: SeedButton(
+              label: '다시 확인',
+              variant: SeedButtonVariant.neutralOutline,
+              onPressed: _checkAccessAndLoad,
             ),
           ),
-        ),
+        ],
       ),
     );
-
-    if (uploaded == true) _load();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showUploadSheet,
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        child: Icon(Icons.upload_file, color: AppSemanticColors.textInverse),
-      ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space3, vertical: AppSpacing.space2),
-              children: _categories.map((c) {
-                final selected = _category == c['key'];
-                return Padding(
-                  padding: const EdgeInsets.only(right: AppSpacing.space2),
-                  child: SeedChip(
-                    label: c['label']!,
-                    selected: selected,
-                    size: SeedChipSize.small,
-                    onTap: () {
-                      setState(() => _category = c['key']!);
-                      _load();
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : (_hasError && _items.isEmpty)
-                    ? _PlazaErrorState(onRetry: _load)
-                    : _items.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('아직 등록된 자료가 없어요',
-                                style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textSecondary,
-                                    fontWeight: FontWeight.bold)),
-                            const SizedBox(height: AppSpacing.space1_5),
-                            Text('+ 버튼으로 첫 자료를 올려보세요',
-                                style: AppTypography.bodySmall.copyWith(
-                                    color: AppSemanticColors.textTertiary)),
-                          ],
-                        ))
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.all(AppSpacing.space3),
-                          itemCount: _items.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppSpacing.space2),
-                          itemBuilder: (context, index) {
-                            final item = _items[index];
-                            return Container(
-                              padding: const EdgeInsets.all(AppSpacing.space3),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.surfaceDefault,
-                                borderRadius:
-                                    BorderRadius.circular(AppSpacing.space3),
-                                border: Border.all(
-                                    color: AppSemanticColors.borderDefault),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.description_outlined,
-                                      color: AppSemanticColors.statusInfoIcon),
-                                  const SizedBox(width: AppSpacing.space3),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item['title']?.toString() ?? '',
-                                          style: AppTypography.bodyMedium
-                                              .copyWith(
-                                            color:
-                                                AppSemanticColors.textPrimary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드 ${item['downloadCount'] ?? 0}',
-                                          style: AppTypography.caption.copyWith(
-                                              color: AppSemanticColors
-                                                  .textTertiary),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.download,
-                                        color: AppSemanticColors
-                                            .interactivePrimaryDefault),
-                                    onPressed: () => _download(item),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+      floatingActionButton: _accessAllowed
+          ? FloatingActionButton(
+              onPressed: _showUploadSheet,
+              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+              child:
+                  Icon(Icons.upload_file, color: AppSemanticColors.textInverse),
+            )
+          : null,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : !_accessAllowed
+              ? (_hasError
+                  ? _PlazaErrorState(onRetry: _checkAccessAndLoad)
+                  : Center(child: SingleChildScrollView(child: _buildAccessGuard())))
+              : Column(
+                      children: [
+                        SizedBox(
+                          height: 48,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.space3,
+                                vertical: AppSpacing.space2),
+                            children: _categories.map((c) {
+                              final selected = _category == c['key'];
+                              return Padding(
+                                padding: const EdgeInsets.only(
+                                    right: AppSpacing.space2),
+                                child: SeedChip(
+                                  label: c['label']!,
+                                  selected: selected,
+                                  size: SeedChipSize.small,
+                                  onTap: () {
+                                    setState(() => _category = c['key']!);
+                                    _load();
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
-                      ),
-          ),
-        ],
-      ),
+                        Expanded(
+                          child: (_hasError && _items.isEmpty)
+                              ? _PlazaErrorState(onRetry: _load)
+                              : _items.isEmpty
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text('아직 등록된 자료가 없어요',
+                                              style: AppTypography.bodyMedium
+                                                  .copyWith(
+                                                      color: AppSemanticColors
+                                                          .textSecondary,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                          const SizedBox(
+                                              height: AppSpacing.space1_5),
+                                          Text('+ 버튼으로 첫 자료를 올려보세요',
+                                              style: AppTypography.bodySmall
+                                                  .copyWith(
+                                                      color: AppSemanticColors
+                                                          .textTertiary)),
+                                        ],
+                                      ))
+                                  : RefreshIndicator(
+                                      onRefresh: _load,
+                                      child: ListView.separated(
+                                        padding: const EdgeInsets.all(
+                                            AppSpacing.space3),
+                                        itemCount: _items.length,
+                                        separatorBuilder: (_, __) =>
+                                            const SizedBox(
+                                                height: AppSpacing.space2),
+                                        itemBuilder: (context, index) {
+                                          final item = _items[index];
+                                          return Container(
+                                            padding: const EdgeInsets.all(
+                                                AppSpacing.space3),
+                                            decoration: BoxDecoration(
+                                              color: AppSemanticColors
+                                                  .surfaceDefault,
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      AppSpacing.space3),
+                                              border: Border.all(
+                                                  color: AppSemanticColors
+                                                      .borderDefault),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                    Icons.description_outlined,
+                                                    color: AppSemanticColors
+                                                        .statusInfoIcon),
+                                                const SizedBox(
+                                                    width: AppSpacing.space3),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        item['title']
+                                                                ?.toString() ??
+                                                            '',
+                                                        style: AppTypography
+                                                            .bodyMedium
+                                                            .copyWith(
+                                                          color:
+                                                              AppSemanticColors
+                                                                  .textPrimary,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드 ${item['downloadCount'] ?? 0}',
+                                                        style: AppTypography
+                                                            .caption
+                                                            .copyWith(
+                                                                color: AppSemanticColors
+                                                                    .textTertiary),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                if (item['isMine'] == true)
+                                                  IconButton(
+                                                    icon: Icon(
+                                                        Icons.edit_outlined,
+                                                        color: AppSemanticColors
+                                                            .textSecondary),
+                                                    onPressed: () =>
+                                                        _showEditSheet(item),
+                                                  ),
+                                                IconButton(
+                                                  icon: Icon(Icons.download,
+                                                      color: AppSemanticColors
+                                                          .interactivePrimaryDefault),
+                                                  onPressed: () =>
+                                                      _download(item),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                        ),
+                      ],
+                    ),
     );
   }
 }
