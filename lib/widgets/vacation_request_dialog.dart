@@ -15,6 +15,7 @@ import 'common/app_dialog.dart';
 import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
 import 'seed/seed_text_field.dart';
+import 'vacation_planning_banner.dart';
 
 class VacationRequestDialog extends StatefulWidget {
   final DateTime selectedDate;
@@ -92,12 +93,13 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   /// 같은 노선의 다른 운전자가 이미 그날 휴무인지 확인한다.
   /// 배차에 배정되지 않은 직원이면 조회 없이 통과시킨다.
   /// 조회가 실패해도 신청을 막지는 않는다 (배차는 보조 규칙).
-  /// 휴무 신청 전 주의사항 — 웹(vacationGuard.ts)과 같은 문구를 쓴다
+  /// 휴무 신청 전 필수 숙지 사항 — 웹(src/lib/vacationGuard.ts VACATION_NOTICES)과 같은 문구·제목을 쓴다
+  static const String _vacationNoticeTitle = '휴무 등록 전 필수 숙지 사항';
   static const List<String> _vacationNotices = [
-    '본인이 주운전자 · 부운전자인지 확인해 주세요.',
-    '요양팀은 최소 휴무 인원을 확인해 주세요.',
-    '휴무 신청은 선착순이 아닙니다. 같은 날 신청이 몰리면 서로 배려해 조정해 주세요.',
-    '근무표는 모든 선생님과의 약속입니다. 변동이 없도록 심사숙고해 입력해 주세요.',
+    '근무표는 모든 선생님과의 약속입니다. 본인의 일정 변동이 다른 선생님들의 업무 과중을 불러일으키니, 심사숙고하여 정해진 기일까지 입력 부탁드립니다.',
+    '휴무 신청은 선착순이 아닙니다. 특정일에 휴무가 중복될 경우 서로 배려하여 조정 부탁드립니다.',
+    '당일 최소 휴무 인원과 주/부운전자 중복 여부를 꼭 확인하시기 바랍니다.',
+    '휴무, 연차 사용의 최종 승인은 센터 운영 전반을 고려하여 이루어집니다.',
   ];
 
   Widget _buildNoticeBox() {
@@ -105,9 +107,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.space4),
       decoration: BoxDecoration(
-        color: AppSemanticColors.statusWarningBackground,
+        color: AppSemanticColors.statusErrorBackground,
         borderRadius: BorderRadius.circular(AppSpacing.space4),
-        border: Border.all(color: AppSemanticColors.statusWarningBorder),
+        border: Border.all(color: AppSemanticColors.statusErrorBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,11 +119,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
               Icon(
                 Icons.info_outline_rounded,
                 size: 18,
-                color: AppSemanticColors.statusWarningIcon,
+                color: AppSemanticColors.statusErrorIcon,
               ),
               const SizedBox(width: AppSpacing.space2),
               Text(
-                '신청 전 확인해 주세요',
+                _vacationNoticeTitle,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -242,6 +244,18 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
 
     if (authProvider.currentUser == null) {
       AppSnackBar.showError(context, message: '로그인이 필요합니다');
+      return;
+    }
+
+    // 기관이 "다음 달만 받기"를 켜뒀으면 화면에서 먼저 막는다 (서버도 같은 규칙으로 한 번 더 막는다)
+    if (!vacationProvider.isDateAllowedForRequest(widget.selectedDate)) {
+      final allowedMonth = vacationProvider.nextMonthOnlyMonth;
+      AppDialog.showAlert(
+        context,
+        title: '신청할 수 없는 날짜입니다',
+        message:
+            '${allowedMonth.year}년 ${allowedMonth.month}월 휴무만 신청하실 수 있습니다.',
+      );
       return;
     }
 
@@ -550,7 +564,47 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                         ),
                       ),
 
-                      const SizedBox(height: AppSpacing.space6),
+                      const SizedBox(height: AppSpacing.space5),
+
+                      // 근무조정 컨텍스트 — 다음 달만 받기 제한 · 이번 달 마감일 · 이 날의 중요 행사
+                      Consumer<VacationProvider>(
+                        builder: (context, vacationProvider, _) {
+                          final month = DateTime(
+                            widget.selectedDate.year,
+                            widget.selectedDate.month,
+                          );
+                          final allowedMonth = vacationProvider.isNextMonthOnly
+                              ? vacationProvider.nextMonthOnlyMonth
+                              : null;
+                          final deadline = vacationProvider.deadlineForMonth(
+                            month,
+                          );
+                          final warnEvents = vacationProvider
+                              .eventsForDate(widget.selectedDate)
+                              .where((e) => e.warnOnRequest)
+                              .toList();
+                          final hasBanner =
+                              allowedMonth != null ||
+                              deadline != null ||
+                              warnEvents.isNotEmpty;
+                          if (!hasBanner) return const SizedBox.shrink();
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              VacationPlanningBanner(
+                                nextMonthOnly: vacationProvider.isNextMonthOnly,
+                                allowedMonth: allowedMonth,
+                                deadline: deadline,
+                                deadlinePassed: vacationProvider
+                                    .isDeadlinePassedForMonth(month),
+                                events: warnEvents,
+                                eventsHeading: '이 날은 기관 행사가 있습니다',
+                              ),
+                              const SizedBox(height: AppSpacing.space5),
+                            ],
+                          );
+                        },
+                      ),
 
                       // 신청 전 확인할 것들 — 배차·최소 인원처럼 시스템이 다 막지 못하는 부분
                       _buildNoticeBox(),
@@ -986,13 +1040,28 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
 
                             const SizedBox(height: AppSpacing.space6),
 
-                            // 제출 버튼
-                            SeedButton(
-                              label: _isSubmitting ? '신청 중...' : '휴무 신청하기',
-                              onPressed: _isSubmitting ? null : _submitRequest,
-                              variant: SeedButtonVariant.brandSolid,
-                              size: SeedButtonSize.large,
-                              isLoading: _isSubmitting,
+                            // 제출 버튼 — "다음 달만 받기"가 켜져 있고 이 날짜가 밖이면 아예 누르지 못하게 한다
+                            Builder(
+                              builder: (context) {
+                                final isAllowed = context
+                                    .watch<VacationProvider>()
+                                    .isDateAllowedForRequest(
+                                      widget.selectedDate,
+                                    );
+                                return SeedButton(
+                                  label: !isAllowed
+                                      ? '신청할 수 없는 날짜예요'
+                                      : _isSubmitting
+                                      ? '신청 중...'
+                                      : '휴무 신청하기',
+                                  onPressed: (_isSubmitting || !isAllowed)
+                                      ? null
+                                      : _submitRequest,
+                                  variant: SeedButtonVariant.brandSolid,
+                                  size: SeedButtonSize.large,
+                                  isLoading: _isSubmitting,
+                                );
+                              },
                             ),
                           ],
                         ),

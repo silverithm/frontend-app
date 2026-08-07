@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/vacation_provider.dart';
+import '../models/vacation_planning.dart';
 import '../models/vacation_request.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../utils/korean_holidays.dart';
 import '../utils/role_utils.dart';
 import 'dart:math' as math;
 
@@ -649,224 +651,307 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
       }
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isSelected
-            ? AppSemanticColors.statusInfoIcon
-            : isToday
-            ? AppSemanticColors.statusInfoBackground
-            : availabilityColor ?? AppColors.transparent, // 여유 인원에 따른 색상
-        borderRadius: BorderRadius.circular(8),
-        border: isToday && !isSelected
-            ? Border.all(color: AppSemanticColors.statusInfoBorder, width: 1.5)
-            : _isSameMonth(date) && _isSingleRole && !isAvailable && !isSelected
-            ? Border.all(
-                color: AppSemanticColors.statusErrorBorder,
-                width: 1,
-              ) // 인원 초과 시 빨간 테두리
-            : _isSameMonth(date) &&
-                  _isSingleRole &&
-                  isAvailable &&
-                  !isSelected &&
-                  !isToday
-            ? Border.all(
-                color: AppSemanticColors.statusSuccessBorder,
-                width: 1,
-              ) // 여유 있을 시 초록 테두리
-            : null,
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: AppSemanticColors.statusInfoBorder.withValues(
-                    alpha: 0.4,
-                  ),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
-      child: Material(
-        color: AppColors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
+    // 근무조정 컨텍스트 — 공휴일·마감일·중요 행사·다음 달만 받기 제한 (같은 달의 날짜만 계산)
+    final holidayName = _isSameMonth(date)
+        ? KoreanHolidays.getHolidayName(date)
+        : null;
+    final dayEvents = _isSameMonth(date)
+        ? vacationProvider.eventsForDate(date)
+        : const <VacationEvent>[];
+    final monthDeadline = vacationProvider.deadlineForMonth(
+      DateTime(date.year, date.month, 1),
+    );
+    final isDeadlineDay =
+        _isSameMonth(date) &&
+        monthDeadline != null &&
+        _isSameDay(monthDeadline, date);
+    // 제한이 켜져 있을 때 이 날짜로는 신청할 수 없음을 옅게 알려준다 (탭 자체는 막지 않음 — 신청 시 다이얼로그에서 막는다)
+    final isRestrictedDate =
+        _isSameMonth(date) &&
+        vacationProvider.isNextMonthOnly &&
+        !vacationProvider.isDateAllowedForRequest(date);
+
+    return Opacity(
+      opacity: isRestrictedDate ? 0.45 : 1.0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppSemanticColors.statusInfoIcon
+              : isToday
+              ? AppSemanticColors.statusInfoBackground
+              : availabilityColor ?? AppColors.transparent, // 여유 인원에 따른 색상
           borderRadius: BorderRadius.circular(8),
-          onTap: () => _selectDate(date),
-          child: Container(
-            width: double.infinity,
-            height: cellHeight,
-            padding: const EdgeInsets.all(3),
-            child: _isExpanded
-                ? Stack(
-                    children: [
-                      // 날짜 숫자 (좌측 상단)
-                      Positioned(
-                        top: 2,
-                        left: 2,
-                        child: Text(
-                          date.day.toString(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: !_isSameMonth(date)
-                                ? AppSemanticColors.textDisabled
-                                : isSelected
-                                ? AppSemanticColors.textInverse
-                                : isToday
-                                ? AppSemanticColors.statusInfoText
-                                : date.weekday == DateTime.sunday
-                                ? AppSemanticColors.statusErrorIcon
-                                : date.weekday == DateTime.saturday
-                                ? AppSemanticColors.statusInfoIcon
-                                : AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                      ),
-
-                      // 휴무자 이름들 (가운데부터 위쪽으로)
-                      if (_isSameMonth(date) && vacations.isNotEmpty)
-                        Positioned(
-                          top: 18, // 날짜와 간격
-                          left: 0,
-                          right: 0,
-                          bottom: _isSingleRole
-                              ? 18 // 휴무 제한 표시 공간 확보
-                              : 2, // 전체 모드일 때는 최소 간격만
-                          child: _buildVacationIndicator(date, vacations),
-                        ),
-
-                      // 인원 수 표시 (하단, 전체 모드가 아닐 때만)
-                      if (_isSameMonth(date) && _isSingleRole)
-                        Positioned(
-                          bottom: 2,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.white.withValues(alpha: 0.2)
-                                    : isAvailable
-                                    ? AppSemanticColors.statusSuccessBackground
-                                    : AppSemanticColors.statusErrorBackground,
-                                borderRadius: BorderRadius.circular(3),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.white.withValues(alpha: 0.4)
-                                      : isAvailable
-                                      ? AppSemanticColors.statusSuccessBorder
-                                      : AppSemanticColors.statusErrorBorder,
-                                  width: 0.5,
-                                ),
-                              ),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  '$currentCount/$limit',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected
-                                        ? AppSemanticColors.textInverse
-                                        : isAvailable
-                                        ? AppSemanticColors.statusSuccessText
-                                        : AppSemanticColors.statusErrorText,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  )
-                : Stack(
-                    children: [
-                      // 날짜 숫자 (좌측 상단)
-                      Positioned(
-                        top: 2,
-                        left: 2,
-                        child: Text(
-                          date.day.toString(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: !_isSameMonth(date)
-                                ? AppSemanticColors.textDisabled
-                                : isSelected
-                                ? AppSemanticColors.textInverse
-                                : isToday
-                                ? AppSemanticColors.statusInfoText
-                                : date.weekday == DateTime.sunday
-                                ? AppSemanticColors.statusErrorIcon
-                                : date.weekday == DateTime.saturday
-                                ? AppSemanticColors.statusInfoIcon
-                                : AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                      ),
-
-                      // 휴무자 표시 영역 (중앙)
-                      if (_isSameMonth(date) && vacations.isNotEmpty)
-                        Positioned(
-                          top: 16,
-                          left: 2,
-                          right: 2,
-                          bottom: _isSingleRole ? 12 : 2,
-                          child: _buildVacationIndicator(date, vacations),
-                        ),
-
-                      // 인원 수 표시 (하단, 전체 모드가 아닐 때만)
-                      if (_isSameMonth(date) && _isSingleRole)
-                        Positioned(
-                          bottom: 2,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 3,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.white.withValues(alpha: 0.2)
-                                    : isAvailable
-                                    ? AppSemanticColors.statusSuccessBackground
-                                    : AppSemanticColors.statusErrorBackground,
-                                borderRadius: BorderRadius.circular(3),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.white.withValues(alpha: 0.4)
-                                      : isAvailable
-                                      ? AppSemanticColors.statusSuccessBorder
-                                      : AppSemanticColors.statusErrorBorder,
-                                  width: 0.5,
-                                ),
-                              ),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  '$currentCount/$limit',
-                                  style: TextStyle(
-                                    fontSize: 5,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected
-                                        ? AppSemanticColors.textInverse
-                                        : isAvailable
-                                        ? AppSemanticColors.statusSuccessText
-                                        : AppSemanticColors.statusErrorText,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+          border: isToday && !isSelected
+              ? Border.all(
+                  color: AppSemanticColors.statusInfoBorder,
+                  width: 1.5,
+                )
+              : _isSameMonth(date) &&
+                    _isSingleRole &&
+                    !isAvailable &&
+                    !isSelected
+              ? Border.all(
+                  color: AppSemanticColors.statusErrorBorder,
+                  width: 1,
+                ) // 인원 초과 시 빨간 테두리
+              : _isSameMonth(date) &&
+                    _isSingleRole &&
+                    isAvailable &&
+                    !isSelected &&
+                    !isToday
+              ? Border.all(
+                  color: AppSemanticColors.statusSuccessBorder,
+                  width: 1,
+                ) // 여유 있을 시 초록 테두리
+              : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppSemanticColors.statusInfoBorder.withValues(
+                      alpha: 0.4,
+                    ),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: AppColors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => _selectDate(date),
+            child: Container(
+              width: double.infinity,
+              height: cellHeight,
+              padding: const EdgeInsets.all(3),
+              child: _isExpanded
+                  ? Stack(
+                      children: [
+                        // 날짜 숫자 (좌측 상단)
+                        Positioned(
+                          top: 2,
+                          left: 2,
+                          child: Text(
+                            date.day.toString(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: !_isSameMonth(date)
+                                  ? AppSemanticColors.textDisabled
+                                  : isSelected
+                                  ? AppSemanticColors.textInverse
+                                  : isToday
+                                  ? AppSemanticColors.statusInfoText
+                                  : (date.weekday == DateTime.sunday ||
+                                        holidayName != null)
+                                  ? AppSemanticColors.statusErrorIcon
+                                  : date.weekday == DateTime.saturday
+                                  ? AppSemanticColors.statusInfoIcon
+                                  : AppSemanticColors.textPrimary,
+                            ),
+                          ),
+                        ),
+
+                        // 마감일·중요 행사 배지 (우측 상단) — 신청 화면에서 자세히 안내하므로 여기선 작은 표시만
+                        if (isDeadlineDay || dayEvents.isNotEmpty)
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isDeadlineDay)
+                                  Icon(
+                                    Icons.star_rounded,
+                                    size: 11,
+                                    color: AppSemanticColors.statusWarningIcon,
+                                  ),
+                                if (isDeadlineDay && dayEvents.isNotEmpty)
+                                  const SizedBox(width: 1),
+                                if (dayEvents.isNotEmpty)
+                                  Icon(
+                                    Icons.push_pin_rounded,
+                                    size: 10,
+                                    color: AppColors.purple600,
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                        // 휴무자 이름들 (가운데부터 위쪽으로)
+                        if (_isSameMonth(date) && vacations.isNotEmpty)
+                          Positioned(
+                            top: 18, // 날짜와 간격
+                            left: 0,
+                            right: 0,
+                            bottom: _isSingleRole
+                                ? 18 // 휴무 제한 표시 공간 확보
+                                : 2, // 전체 모드일 때는 최소 간격만
+                            child: _buildVacationIndicator(date, vacations),
+                          ),
+
+                        // 인원 수 표시 (하단, 전체 모드가 아닐 때만)
+                        if (_isSameMonth(date) && _isSingleRole)
+                          Positioned(
+                            bottom: 2,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.white.withValues(alpha: 0.2)
+                                      : isAvailable
+                                      ? AppSemanticColors
+                                            .statusSuccessBackground
+                                      : AppSemanticColors.statusErrorBackground,
+                                  borderRadius: BorderRadius.circular(3),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.white.withValues(alpha: 0.4)
+                                        : isAvailable
+                                        ? AppSemanticColors.statusSuccessBorder
+                                        : AppSemanticColors.statusErrorBorder,
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '$currentCount/$limit',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected
+                                          ? AppSemanticColors.textInverse
+                                          : isAvailable
+                                          ? AppSemanticColors.statusSuccessText
+                                          : AppSemanticColors.statusErrorText,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    )
+                  : Stack(
+                      children: [
+                        // 날짜 숫자 (좌측 상단)
+                        Positioned(
+                          top: 2,
+                          left: 2,
+                          child: Text(
+                            date.day.toString(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: !_isSameMonth(date)
+                                  ? AppSemanticColors.textDisabled
+                                  : isSelected
+                                  ? AppSemanticColors.textInverse
+                                  : isToday
+                                  ? AppSemanticColors.statusInfoText
+                                  : (date.weekday == DateTime.sunday ||
+                                        holidayName != null)
+                                  ? AppSemanticColors.statusErrorIcon
+                                  : date.weekday == DateTime.saturday
+                                  ? AppSemanticColors.statusInfoIcon
+                                  : AppSemanticColors.textPrimary,
+                            ),
+                          ),
+                        ),
+
+                        // 마감일·중요 행사 배지 (우측 상단, 컴팩트)
+                        if (isDeadlineDay || dayEvents.isNotEmpty)
+                          Positioned(
+                            top: 1,
+                            right: 1,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isDeadlineDay)
+                                  Icon(
+                                    Icons.star_rounded,
+                                    size: 8,
+                                    color: AppSemanticColors.statusWarningIcon,
+                                  ),
+                                if (dayEvents.isNotEmpty)
+                                  Icon(
+                                    Icons.push_pin_rounded,
+                                    size: 7,
+                                    color: AppColors.purple600,
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                        // 휴무자 표시 영역 (중앙)
+                        if (_isSameMonth(date) && vacations.isNotEmpty)
+                          Positioned(
+                            top: 16,
+                            left: 2,
+                            right: 2,
+                            bottom: _isSingleRole ? 12 : 2,
+                            child: _buildVacationIndicator(date, vacations),
+                          ),
+
+                        // 인원 수 표시 (하단, 전체 모드가 아닐 때만)
+                        if (_isSameMonth(date) && _isSingleRole)
+                          Positioned(
+                            bottom: 2,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.white.withValues(alpha: 0.2)
+                                      : isAvailable
+                                      ? AppSemanticColors
+                                            .statusSuccessBackground
+                                      : AppSemanticColors.statusErrorBackground,
+                                  borderRadius: BorderRadius.circular(3),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.white.withValues(alpha: 0.4)
+                                        : isAvailable
+                                        ? AppSemanticColors.statusSuccessBorder
+                                        : AppSemanticColors.statusErrorBorder,
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '$currentCount/$limit',
+                                    style: TextStyle(
+                                      fontSize: 5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected
+                                          ? AppSemanticColors.textInverse
+                                          : isAvailable
+                                          ? AppSemanticColors.statusSuccessText
+                                          : AppSemanticColors.statusErrorText,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),

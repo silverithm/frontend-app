@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/vacation_planning_banner.dart';
 import 'dart:math' as math;
 
 class MyVacationScreen extends StatefulWidget {
@@ -79,11 +80,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     final vacationProvider = context.read<VacationProvider>();
 
     if (authProvider.currentUser != null) {
+      final companyId = authProvider.currentUser!.company?.id ?? '1';
       vacationProvider.loadMyVacationRequests(
         authProvider.currentUser!.id,
-        companyId: authProvider.currentUser!.company?.id ?? '1',
+        companyId: companyId,
         userName: authProvider.currentUser!.name,
       );
+      // 휴무 달력 탭을 거치지 않고 바로 "내 휴무"로 들어올 수도 있어 마감일 설정을 여기서도 로드한다
+      vacationProvider.loadPlanningSettings(companyId: companyId);
       _hasLoadedInitialData = true;
     }
   }
@@ -214,8 +218,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         });
 
                         final authProvider = context.read<AuthProvider>();
-                        final vacationProvider =
-                            context.read<VacationProvider>();
+                        final vacationProvider = context
+                            .read<VacationProvider>();
                         final user = authProvider.currentUser;
 
                         bool success = false;
@@ -223,9 +227,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         // 관리자인 경우 관리자용 API 사용
                         if (user?.role == 'ADMIN') {
                           success = await vacationProvider
-                              .deleteVacationByAdmin(
-                                vacationId: request.id,
-                              );
+                              .deleteVacationByAdmin(vacationId: request.id);
                         } else {
                           // 직원인 경우 기존 API 사용
                           success = await vacationProvider
@@ -300,6 +302,35 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
+            // 다음 신청 시 참고할 마감일·"다음 달만 받기" 안내 — 신청 내역만 보고는 알 수 없던 컨텍스트
+            SliverToBoxAdapter(
+              child: Consumer<VacationProvider>(
+                builder: (context, vacationProvider, child) {
+                  final now = DateTime.now();
+                  final month = vacationProvider.isNextMonthOnly
+                      ? vacationProvider.nextMonthOnlyMonth
+                      : DateTime(now.year, now.month);
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space4,
+                      AppSpacing.space3,
+                      AppSpacing.space4,
+                      0,
+                    ),
+                    child: VacationPlanningBanner(
+                      nextMonthOnly: vacationProvider.isNextMonthOnly,
+                      allowedMonth: vacationProvider.isNextMonthOnly
+                          ? vacationProvider.nextMonthOnlyMonth
+                          : null,
+                      deadline: vacationProvider.deadlineForMonth(month),
+                      deadlinePassed: vacationProvider.isDeadlinePassedForMonth(
+                        month,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
             Consumer<VacationProvider>(
               builder: (context, vacationProvider, child) {
                 if (vacationProvider.isLoading) {
@@ -955,9 +986,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                   Container(
                     decoration: BoxDecoration(
                       color: AppSemanticColors.statusErrorBackground,
-                      borderRadius: BorderRadius.circular(
-                        AppBorderRadius.xl,
-                      ),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                     ),
                     child: IconButton(
                       onPressed: () => _showDeleteDialog(request),

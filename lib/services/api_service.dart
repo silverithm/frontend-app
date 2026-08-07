@@ -444,12 +444,9 @@ class ApiService {
     required String companyId,
   }) async {
     try {
-      final uri = Uri.parse(
-        '$_baseUrl/dispatch-settings/driver-roles',
-      ).replace(queryParameters: {
-        'companyId': companyId,
-        'memberName': memberName,
-      });
+      final uri = Uri.parse('$_baseUrl/dispatch-settings/driver-roles').replace(
+        queryParameters: {'companyId': companyId, 'memberName': memberName},
+      );
 
       final response = await http.get(uri, headers: await _getHeaders());
       if (response.statusCode != 200) return [];
@@ -457,7 +454,10 @@ class ApiService {
       final data = json.decode(utf8.decode(response.bodyBytes));
       final roles = data is Map ? data['roles'] : null;
       if (roles is! List) return [];
-      return roles.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return roles
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     } catch (e) {
       // 배차는 보조 규칙이라 조회 실패로 신청을 막지는 않는다
       print('[API] 운전자 역할 조회 실패: $e');
@@ -475,7 +475,8 @@ class ApiService {
     required String companyId,
     String? userId,
     String? duration,
-    String? vacationType, // 연차 미사용 세부 유형 (personal/sick/emergency/family/other/substitute)
+    String?
+    vacationType, // 연차 미사용 세부 유형 (personal/sick/emergency/family/other/substitute)
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final queryParams = {'companyId': companyId};
@@ -630,7 +631,9 @@ class ApiService {
   // FCM 토큰 삭제 (로그아웃 시 — 관리자)
   Future<void> deleteAdminFcmToken({required String userId}) async {
     final response = await http.delete(
-      Uri.parse('$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token'),
+      Uri.parse(
+        '$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token',
+      ),
       headers: await _getHeaders(),
     );
     _handleResponse(response);
@@ -2063,7 +2066,8 @@ class ApiService {
     String? attachmentFileName,
     int? attachmentFileSize,
     Map<String, dynamic>? formData,
-    List<Map<String, dynamic>>? approvalLine, // [{approverType, approverId}] 순서=결재 순서
+    List<Map<String, dynamic>>?
+    approvalLine, // [{approverType, approverId}] 순서=결재 순서
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approvals').replace(
@@ -2139,8 +2143,9 @@ class ApiService {
     required String companyId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/approvals/approver-candidates')
-          .replace(queryParameters: {'companyId': companyId});
+      final uri = Uri.parse(
+        '$_baseUrl/v1/approvals/approver-candidates',
+      ).replace(queryParameters: {'companyId': companyId});
       final headers = await _getHeaders();
       return await http.get(uri, headers: headers);
     });
@@ -2157,7 +2162,8 @@ class ApiService {
       final uri = isAdmin
           ? Uri.parse('$_baseUrl/v1/users/push-enabled')
           : Uri.parse(
-              '$_baseUrl${Constants.fcmTokenEndpoint}/$userId/push-enabled');
+              '$_baseUrl${Constants.fcmTokenEndpoint}/$userId/push-enabled',
+            );
       return await http.get(uri, headers: await _getHeaders());
     });
   }
@@ -2171,7 +2177,8 @@ class ApiService {
       final uri = isAdmin
           ? Uri.parse('$_baseUrl/v1/users/push-enabled')
           : Uri.parse(
-              '$_baseUrl${Constants.fcmTokenEndpoint}/$userId/push-enabled');
+              '$_baseUrl${Constants.fcmTokenEndpoint}/$userId/push-enabled',
+            );
       return await http.put(
         uri,
         headers: await _getHeaders(),
@@ -3102,7 +3109,9 @@ class ApiService {
   }
 
   // 일정 할 일 목록
-  Future<Map<String, dynamic>> getScheduleTasks({required int scheduleId}) async {
+  Future<Map<String, dynamic>> getScheduleTasks({
+    required int scheduleId,
+  }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId/tasks');
       final headers = await _getHeaders();
@@ -3137,7 +3146,9 @@ class ApiService {
     required bool completed,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/schedules/$scheduleId/tasks/$taskId/completion');
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedules/$scheduleId/tasks/$taskId/completion',
+      );
       final headers = await _getHeaders();
       return await http.put(
         uri,
@@ -3166,11 +3177,13 @@ class ApiService {
     String? endDate,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/schedules/my-tasks').replace(queryParameters: {
-        'companyId': companyId,
-        if (startDate != null) 'startDate': startDate,
-        if (endDate != null) 'endDate': endDate,
-      });
+      final uri = Uri.parse('$_baseUrl/v1/schedules/my-tasks').replace(
+        queryParameters: {
+          'companyId': companyId,
+          if (startDate != null) 'startDate': startDate,
+          if (endDate != null) 'endDate': endDate,
+        },
+      );
       final headers = await _getHeaders();
       return await http.get(uri, headers: headers);
     });
@@ -3185,11 +3198,13 @@ class ApiService {
     int size = 20,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/news').replace(queryParameters: {
-        if (category != null && category.isNotEmpty) 'category': category,
-        'page': page.toString(),
-        'size': size.toString(),
-      });
+      final uri = Uri.parse('$_baseUrl/v1/news').replace(
+        queryParameters: {
+          if (category != null && category.isNotEmpty) 'category': category,
+          'page': page.toString(),
+          'size': size.toString(),
+        },
+      );
       final headers = await _getHeaders();
       return await http.get(uri, headers: headers);
     });
@@ -3204,13 +3219,15 @@ class ApiService {
     int size = 20,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/plaza/posts').replace(queryParameters: {
-        if (board != null && board.isNotEmpty) 'board': board,
-        'sort': sort,
-        if (search != null && search.isNotEmpty) 'search': search,
-        'page': page.toString(),
-        'size': size.toString(),
-      });
+      final uri = Uri.parse('$_baseUrl/v1/plaza/posts').replace(
+        queryParameters: {
+          if (board != null && board.isNotEmpty) 'board': board,
+          'sort': sort,
+          if (search != null && search.isNotEmpty) 'search': search,
+          'page': page.toString(),
+          'size': size.toString(),
+        },
+      );
       final headers = await _getHeaders();
       return await http.get(uri, headers: headers);
     });
@@ -3251,7 +3268,8 @@ class ApiService {
           'isAnonymous': isAnonymous,
           if (authorName != null) 'authorName': authorName,
           if (companyName != null) 'companyName': companyName,
-          if (contactInfo != null && contactInfo.isNotEmpty) 'contactInfo': contactInfo,
+          if (contactInfo != null && contactInfo.isNotEmpty)
+            'contactInfo': contactInfo,
           'contactPublic': contactPublic,
         }),
       );
@@ -3283,7 +3301,8 @@ class ApiService {
           'isAnonymous': isAnonymous,
           if (authorName != null) 'authorName': authorName,
           if (companyName != null) 'companyName': companyName,
-          if (contactInfo != null && contactInfo.isNotEmpty) 'contactInfo': contactInfo,
+          if (contactInfo != null && contactInfo.isNotEmpty)
+            'contactInfo': contactInfo,
           'contactPublic': contactPublic,
         }),
       );
@@ -3300,7 +3319,9 @@ class ApiService {
   }
 
   // 광장 게시글 좋아요 토글
-  Future<Map<String, dynamic>> togglePlazaPostLike({required int postId}) async {
+  Future<Map<String, dynamic>> togglePlazaPostLike({
+    required int postId,
+  }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/plaza/posts/$postId/like');
       final headers = await _getHeaders();
@@ -3335,7 +3356,9 @@ class ApiService {
   }
 
   // 광장 댓글 삭제 (본인 댓글)
-  Future<Map<String, dynamic>> deletePlazaComment({required int commentId}) async {
+  Future<Map<String, dynamic>> deletePlazaComment({
+    required int commentId,
+  }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/plaza/comments/$commentId');
       final headers = await _getHeaders();
@@ -3362,12 +3385,14 @@ class ApiService {
     int size = 20,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/plaza/library').replace(queryParameters: {
-        if (category != null && category.isNotEmpty) 'category': category,
-        if (search != null && search.isNotEmpty) 'search': search,
-        'page': page.toString(),
-        'size': size.toString(),
-      });
+      final uri = Uri.parse('$_baseUrl/v1/plaza/library').replace(
+        queryParameters: {
+          if (category != null && category.isNotEmpty) 'category': category,
+          if (search != null && search.isNotEmpty) 'search': search,
+          'page': page.toString(),
+          'size': size.toString(),
+        },
+      );
       final headers = await _getHeaders();
       return await http.get(uri, headers: headers);
     });
@@ -3389,7 +3414,8 @@ class ApiService {
       'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
       'category': category,
       'title': title,
-      if (description != null && description.isNotEmpty) 'description': description,
+      if (description != null && description.isNotEmpty)
+        'description': description,
       if (uploaderName != null) 'uploaderName': uploaderName,
       if (companyName != null) 'companyName': companyName,
     });
@@ -3402,9 +3428,9 @@ class ApiService {
     final response = await dioClient.post(
       '$_baseUrl/v1/plaza/library',
       data: formData,
-      options: dio.Options(headers: {
-        if (token != null) 'Authorization': 'Bearer $token',
-      }),
+      options: dio.Options(
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
+      ),
     );
 
     if (response.statusCode == 200 && response.data is Map) {
@@ -3519,9 +3545,9 @@ class ApiService {
       final response = await dioClient.post(
         '$_baseUrl/v1/members/$memberId/profile-image',
         data: formData,
-        options: dio.Options(headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-        }),
+        options: dio.Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        ),
       );
 
       if (response.data is Map) {

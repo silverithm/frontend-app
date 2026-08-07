@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../models/vacation_planning.dart';
 import '../models/vacation_request.dart';
 import '../services/api_service.dart';
+import '../utils/korean_holidays.dart';
 import '../utils/role_utils.dart';
 
 class VacationProvider with ChangeNotifier {
@@ -14,6 +16,16 @@ class VacationProvider with ChangeNotifier {
   List<String> _roleFilters = [];
   List<String> _availableRoles = [];
 
+  // 휴무 입력 마감일 설정 (다음 달만 받기 포함) — 기관당 한 벌, 자주 바뀌지 않아 세션 중 1회만 로드
+  VacationDeadlineSetting _deadlineSetting = VacationDeadlineSetting.disabled;
+  bool _planningSettingsLoaded = false;
+
+  // 월별 마감일 직접 지정 — {"2026-08": "2026-08-16", ...} (키: 마감일이 속한 달)
+  Map<String, DateTime> _deadlineDates = {};
+
+  // 근무조정 중요 행사 — 현재 보고 있는 달 기준으로 로드
+  List<VacationEvent> _events = [];
+
   List<VacationRequest> get vacationRequests => _vacationRequests;
   Map<DateTime, List<VacationRequest>> get calendarData => _calendarData;
   Map<DateTime, int> get vacationLimits => _vacationLimits;
@@ -25,6 +37,63 @@ class VacationProvider with ChangeNotifier {
 
   /// 관리자 화면에서 만든 역할까지 포함한 필터 목록
   List<String> get availableRoles => _availableRoles;
+
+  VacationDeadlineSetting get deadlineSetting => _deadlineSetting;
+  List<VacationEvent> get events => List.unmodifiable(_events);
+
+  /// 기관이 "다음 달만 받기"를 켰는지
+  bool get isNextMonthOnly => _deadlineSetting.nextMonthOnly;
+
+  /// "다음 달만 받기"가 켜져 있을 때 신청 가능한 유일한 달 (매번 현재 시각 기준으로 계산)
+  DateTime get nextMonthOnlyMonth {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month + 1, 1);
+  }
+
+  /// 이 날짜로 휴무를 신청할 수 있는지 — "다음 달만 받기"가 꺼져 있으면 항상 true.
+  /// 서버(VacationController.validateNextMonthOnly)가 신청 시 같은 규칙으로 다시 검증한다.
+  bool isDateAllowedForRequest(DateTime date) {
+    if (!isNextMonthOnly) return true;
+    final target = nextMonthOnlyMonth;
+    return date.year == target.year && date.month == target.month;
+  }
+
+  /// 특정 달에 적용되는 마감일 — 월별 지정이 있으면 그 날짜, 없으면 매월 고정일(말일 클램프).
+  /// 마감일 표시 자체가 꺼져 있으면 null.
+  DateTime? deadlineForMonth(DateTime month) {
+    final key =
+        '${month.year.toString().padLeft(4, '0')}-${month.month.toString().padLeft(2, '0')}';
+    final override = _deadlineDates[key];
+    if (override != null) return override;
+    if (!_deadlineSetting.enabled) return null;
+    final lastDay = DateTime(month.year, month.month + 1, 0).day;
+    final day = _deadlineSetting.deadlineDay.clamp(1, lastDay);
+    return DateTime(month.year, month.month, day);
+  }
+
+  /// 그 달의 마감일이 이미 지났는지 (마감일 당일까지는 아직 유효한 것으로 본다)
+  bool isDeadlinePassedForMonth(DateTime month) {
+    final deadline = deadlineForMonth(month);
+    if (deadline == null) return false;
+    final endOfDeadlineDay = DateTime(
+      deadline.year,
+      deadline.month,
+      deadline.day,
+      23,
+      59,
+      59,
+    );
+    return DateTime.now().isAfter(endOfDeadlineDay);
+  }
+
+  /// 그 날짜에 걸친 중요 행사들 (기간 행사는 매일 표시 — 웹과 동일 규칙)
+  List<VacationEvent> eventsForDate(DateTime date) {
+    return _events.where((e) => e.covers(date)).toList();
+  }
+
+  /// 공휴일이면 이름을, 아니면 null
+  String? holidayNameForDate(DateTime date) =>
+      KoreanHolidays.getHolidayName(date);
 
   void setLoading(bool loading) {
     _isLoading = loading;
@@ -55,7 +124,9 @@ class VacationProvider with ChangeNotifier {
         .where((r) => r.isNotEmpty && r != RoleUtils.allRole)
         .toSet()
         .toList();
-    setRoleFilter(normalized.length == 1 ? normalized.first : RoleUtils.allRole);
+    setRoleFilter(
+      normalized.length == 1 ? normalized.first : RoleUtils.allRole,
+    );
     _roleFilters = normalized; // setRoleFilter의 단일 동기화를 다중 값으로 덮어쓴다
     notifyListeners();
   }
@@ -171,6 +242,10 @@ class VacationProvider with ChangeNotifier {
       // 역할 필터 목록도 갱신 (관리자가 만든 역할 반영)
       await loadAvailableRoles(companyId: companyId);
 
+      // 마감일 설정(다음 달만 받기 포함)은 세션 중 1회만, 중요 행사는 달이 바뀔 때마다 로드
+      await loadPlanningSettings(companyId: companyId);
+      await loadEvents(month, companyId: companyId);
+
       notifyListeners();
     } catch (e) {
       print('[VacationProvider] 캘린더 데이터 로드 에러: $e');
@@ -182,6 +257,75 @@ class VacationProvider with ChangeNotifier {
       notifyListeners();
     } finally {
       setLoading(false);
+    }
+  }
+
+  /// 휴무 입력 마감일 설정(다음 달만 받기 포함) + 월별 마감일 지정 로드.
+  /// 조회 실패는 제한 없음으로 본다 — 마감일 안내는 편의 기능이라 실패로 휴무 조회 자체를 막지 않는다.
+  Future<void> loadPlanningSettings({
+    String? companyId,
+    bool forceReload = false,
+  }) async {
+    if (_planningSettingsLoaded && !forceReload) return;
+    final id = companyId ?? '1';
+
+    try {
+      final response = await ApiService().getVacationDeadlineSetting(
+        companyId: id,
+      );
+      _deadlineSetting = VacationDeadlineSetting.fromJson(response);
+    } catch (e) {
+      print('[VacationProvider] 휴무 마감일 설정 로드 실패: $e');
+      _deadlineSetting = VacationDeadlineSetting.disabled;
+    }
+
+    try {
+      final response = await ApiService().getVacationDeadlineDates(
+        companyId: id,
+      );
+      final dates = response['dates'];
+      final parsed = <String, DateTime>{};
+      if (dates is Map) {
+        for (final entry in dates.entries) {
+          final parsedDate = DateTime.tryParse(entry.value.toString());
+          if (parsedDate != null) {
+            parsed[entry.key.toString()] = parsedDate;
+          }
+        }
+      }
+      _deadlineDates = parsed;
+    } catch (e) {
+      print('[VacationProvider] 월별 마감일 지정 로드 실패: $e');
+      _deadlineDates = {};
+    }
+
+    _planningSettingsLoaded = true;
+    notifyListeners();
+  }
+
+  /// 근무조정 중요 행사 로드. 다음 달 휴무를 신청하는 흐름이 많아 보고 있는 달의 다음 달까지 함께 받는다.
+  Future<void> loadEvents(DateTime month, {String? companyId}) async {
+    try {
+      final start = DateTime(month.year, month.month, 1);
+      final end = DateTime(month.year, month.month + 2, 0);
+      final response = await ApiService().getVacationEvents(
+        companyId: companyId ?? '1',
+        startDate: _formatDate(start),
+        endDate: _formatDate(end),
+      );
+      final list = response['events'];
+      _events = list is List
+          ? list
+                .whereType<Map>()
+                .map(
+                  (e) => VacationEvent.fromJson(Map<String, dynamic>.from(e)),
+                )
+                .toList()
+          : [];
+      notifyListeners();
+    } catch (e) {
+      print('[VacationProvider] 중요 행사 로드 실패: $e');
+      _events = [];
     }
   }
 
@@ -242,7 +386,8 @@ class VacationProvider with ChangeNotifier {
     required VacationType type,
     required VacationDuration duration,
     required bool isVacationUsed, // 연차 사용 여부 추가
-    String? vacationDetailType, // 연차 미사용 세부 유형 (personal/sick/emergency/family/other)
+    String?
+    vacationDetailType, // 연차 미사용 세부 유형 (personal/sick/emergency/family/other)
     String? reason,
     String? password,
     String? companyId,
@@ -283,7 +428,10 @@ class VacationProvider with ChangeNotifier {
       final response = await ApiService().createVacationRequest(
         userName: userName,
         date: _formatDate(date),
-        type: type.toString().split('.').last, // 'personal' / 'mandatory' / 'substitute'
+        type: type
+            .toString()
+            .split('.')
+            .last, // 'personal' / 'mandatory' / 'substitute'
         vacationType: effectiveDetailType,
         reason: reason ?? '',
         role: userRole,
@@ -397,9 +545,7 @@ class VacationProvider with ChangeNotifier {
   }
 
   // 관리자용 휴무 삭제 (Spring Boot API 연동)
-  Future<bool> deleteVacationByAdmin({
-    required String vacationId,
-  }) async {
+  Future<bool> deleteVacationByAdmin({required String vacationId}) async {
     try {
       setLoading(true);
       clearError();
@@ -476,7 +622,9 @@ class VacationProvider with ChangeNotifier {
 
     // 직종 다중 선택: 선택된 직종 중 하나라도 일치하면 통과
     final filteredVacations = vacations.where((vacation) {
-      final match = _roleFilters.any((f) => RoleUtils.matches(vacation.role, f));
+      final match = _roleFilters.any(
+        (f) => RoleUtils.matches(vacation.role, f),
+      );
       print(
         '[VacationProvider] 휴무 필터링 - 사용자: ${vacation.userName}, 역할: ${vacation.role}, 필터: $_roleFilter, 일치: $match',
       );

@@ -9,6 +9,7 @@ import '../models/schedule.dart';
 import '../models/user.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/vacation_calendar_widget.dart';
+import '../widgets/vacation_planning_banner.dart';
 import '../widgets/vacation_request_dialog.dart';
 import '../widgets/admin_vacation_add_dialog.dart';
 import '../services/analytics_service.dart';
@@ -92,9 +93,24 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   void _showVacationRequestDialog() {
+    final vacationProvider = context.read<VacationProvider>();
+    final targetDate = _selectedDate ?? DateTime.now();
+
+    // 기관이 "다음 달만 받기"를 켜뒀으면 눌러보기 전에 먼저 막는다 (서버도 같은 규칙으로 다시 검증)
+    if (!vacationProvider.isDateAllowedForRequest(targetDate)) {
+      final allowedMonth = vacationProvider.nextMonthOnlyMonth;
+      AppDialog.showAlert(
+        context,
+        title: '신청할 수 없는 날짜입니다',
+        message:
+            '${allowedMonth.year}년 ${allowedMonth.month}월 휴무만 신청하실 수 있습니다.',
+      );
+      return;
+    }
+
     // 날짜를 아직 안 골랐으면 오늘 날짜로 바로 신청할 수 있게 한다 (재시도 강요 금지)
     if (_selectedDate == null) {
-      setState(() => _selectedDate = DateTime.now());
+      setState(() => _selectedDate = targetDate);
     }
 
     showDialog(
@@ -793,6 +809,31 @@ class _CalendarScreenState extends State<CalendarScreen>
     return SingleChildScrollView(
       child: Column(
         children: [
+          // 근무조정 컨텍스트 — 다음 달만 받기 제한 · 이번 달 마감일 (행사는 날짜별 배지·신청 시 안내로 대체)
+          Consumer<VacationProvider>(
+            builder: (context, vacationProvider, _) {
+              final month = DateTime(_currentDate.year, _currentDate.month);
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.space4,
+                  AppSpacing.space3,
+                  AppSpacing.space4,
+                  0,
+                ),
+                child: VacationPlanningBanner(
+                  nextMonthOnly: vacationProvider.isNextMonthOnly,
+                  allowedMonth: vacationProvider.isNextMonthOnly
+                      ? vacationProvider.nextMonthOnlyMonth
+                      : null,
+                  deadline: vacationProvider.deadlineForMonth(month),
+                  deadlinePassed: vacationProvider.isDeadlinePassedForMonth(
+                    month,
+                  ),
+                ),
+              );
+            },
+          ),
+
           // 달력 위젯 — 하나의 연속된 흰 표면 (그림자 없이 얇은 보더만)
           Container(
             margin: const EdgeInsets.symmetric(
@@ -1423,7 +1464,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                         height: AppSpacing.space1,
                         decoration: BoxDecoration(
                           color: AppSemanticColors.borderDefault,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.sm),
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.sm,
+                          ),
                         ),
                       ),
                     ),
