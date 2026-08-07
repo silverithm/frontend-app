@@ -9,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/chat/chat_member_list.dart';
 import 'chat_room_screen.dart';
 import 'create_chat_room_screen.dart';
 
@@ -19,14 +20,24 @@ class ChatRoomListScreen extends StatefulWidget {
   State<ChatRoomListScreen> createState() => _ChatRoomListScreenState();
 }
 
-class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
+class _ChatRoomListScreenState extends State<ChatRoomListScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadChatRooms();
       _connectWebSocket();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadChatRooms() async {
@@ -100,35 +111,55 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
             tooltip: '새 채팅방',
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppSemanticColors.interactivePrimaryDefault,
+          unselectedLabelColor: AppSemanticColors.textTertiary,
+          indicatorColor: AppSemanticColors.interactivePrimaryDefault,
+          tabs: const [
+            Tab(text: '대화'),
+            Tab(text: '직원'),
+          ],
+        ),
       ),
-      body: Consumer<ChatProvider>(
-        builder: (context, chatProvider, child) {
-          if (chatProvider.isLoading && chatProvider.chatRooms.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (chatProvider.errorMessage.isNotEmpty &&
-              chatProvider.chatRooms.isEmpty) {
-            return _buildErrorState();
-          }
-
-          if (chatProvider.chatRooms.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          return RefreshIndicator(
-            onRefresh: _loadChatRooms,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-              itemCount: chatProvider.chatRooms.length,
-              itemBuilder: (context, index) {
-                final room = chatProvider.chatRooms[index];
-                return _buildChatRoomTile(room, isAdmin);
-              },
-            ),
-          );
-        },
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildRoomsTab(isAdmin),
+          ChatMemberList(onOpenRoom: _navigateToChatRoom),
+        ],
       ),
+    );
+  }
+
+  Widget _buildRoomsTab(bool isAdmin) {
+    return Consumer<ChatProvider>(
+      builder: (context, chatProvider, child) {
+        if (chatProvider.isLoading && chatProvider.chatRooms.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (chatProvider.errorMessage.isNotEmpty &&
+            chatProvider.chatRooms.isEmpty) {
+          return _buildErrorState();
+        }
+
+        if (chatProvider.chatRooms.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        return RefreshIndicator(
+          onRefresh: _loadChatRooms,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+            itemCount: chatProvider.chatRooms.length,
+            itemBuilder: (context, index) {
+              final room = chatProvider.chatRooms[index];
+              return _buildChatRoomTile(room, isAdmin);
+            },
+          ),
+        );
+      },
     );
   }
 

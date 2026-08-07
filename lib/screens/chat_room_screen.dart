@@ -24,8 +24,9 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/chat/chat_image_viewer.dart';
 
-enum _ChatRoomMenuAction { info, delete }
+enum _ChatRoomMenuAction { info, search, files, delete }
 
 class ChatRoomScreen extends StatefulWidget {
   final ChatRoom room;
@@ -42,6 +43,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final FocusNode _focusNode = FocusNode();
   Timer? _typingTimer;
   bool _isTyping = false;
+
+  // @멘션 — 입력 중인 '@뒤 글자'와 후보 목록
+  String? _mentionQuery;
+  List<ChatParticipant> _mentionCandidates = [];
 
   // dispose 안전을 위해 provider 캐시
   late final ChatProvider _chatProvider;
@@ -112,6 +117,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _onTextChanged() {
+    _updateMentionCandidates();
+
     final chatProvider = context.read<ChatProvider>();
     final authProvider = context.read<AuthProvider>();
     final hasText = _messageController.text.trim().isNotEmpty;
@@ -140,6 +147,127 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
       }
     });
+  }
+
+  // ===================== @멘션 =====================
+
+  /// 커서 앞의 '@…'를 찾아 후보를 추린다. 공백이 들어오면 멘션 입력이 끝난 것으로 본다.
+  void _updateMentionCandidates() {
+    final selection = _messageController.selection;
+    final text = _messageController.text;
+    final cursor = selection.baseOffset;
+
+    if (cursor < 0 || cursor > text.length) {
+      _setMentionQuery(null);
+      return;
+    }
+
+    final before = text.substring(0, cursor);
+    final atIndex = before.lastIndexOf('@');
+    if (atIndex < 0) {
+      _setMentionQuery(null);
+      return;
+    }
+
+    // '@' 바로 앞은 줄머리이거나 공백이어야 멘션으로 본다 (이메일 주소 오인 방지)
+    if (atIndex > 0 && !RegExp(r'\s').hasMatch(before[atIndex - 1])) {
+      _setMentionQuery(null);
+      return;
+    }
+
+    final query = before.substring(atIndex + 1);
+    if (query.contains(' ') || query.contains('\n')) {
+      _setMentionQuery(null);
+      return;
+    }
+
+    _setMentionQuery(query);
+  }
+
+  void _setMentionQuery(String? query) {
+    if (query == null) {
+      if (_mentionQuery != null) {
+        setState(() {
+          _mentionQuery = null;
+          _mentionCandidates = [];
+        });
+      }
+      return;
+    }
+
+    final myId = context.read<AuthProvider>().currentUser?.id;
+    final participants = context.read<ChatProvider>().participants;
+    final lower = query.toLowerCase();
+
+    final candidates = participants
+        .where((p) => p.userId != myId)
+        .where((p) => query.isEmpty || p.userName.toLowerCase().contains(lower))
+        .take(5)
+        .toList();
+
+    setState(() {
+      _mentionQuery = query;
+      _mentionCandidates = candidates;
+    });
+  }
+
+  /// 후보를 고르면 '@이름 '으로 바꿔 넣고 커서를 뒤로 옮긴다.
+  void _applyMention(ChatParticipant participant) {
+    final text = _messageController.text;
+    final cursor = _messageController.selection.baseOffset;
+    if (cursor < 0) return;
+
+    final before = text.substring(0, cursor);
+    final atIndex = before.lastIndexOf('@');
+    if (atIndex < 0) return;
+
+    final replacement = '@${participant.userName} ';
+    final newText = text.replaceRange(atIndex, cursor, replacement);
+    final newCursor = atIndex + replacement.length;
+
+    _messageController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newCursor),
+    );
+
+    setState(() {
+      _mentionQuery = null;
+      _mentionCandidates = [];
+    });
+  }
+
+  Widget _buildMentionSuggestions() {
+    if (_mentionQuery == null || _mentionCandidates.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 220),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.surfaceDefault,
+        border: Border(
+          top: BorderSide(color: AppSemanticColors.borderSubtle, width: 1),
+        ),
+      ),
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        itemCount: _mentionCandidates.length,
+        itemBuilder: (context, index) {
+          final participant = _mentionCandidates[index];
+          return ListTile(
+            dense: true,
+            leading: SeedAvatar(
+              name: participant.userName,
+              imageUrl: participant.profileImageUrl,
+              size: SeedAvatarSize.small,
+            ),
+            title: Text(participant.userName, style: AppTypography.bodyMedium),
+            onTap: () => _applyMention(participant),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _sendMessage() async {
@@ -524,10 +652,447 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       case _ChatRoomMenuAction.info:
         _showRoomInfo();
         return;
+      case _ChatRoomMenuAction.search:
+        _showMessageSearch();
+        return;
+      case _ChatRoomMenuAction.files:
+        await _showFileDrawer();
+        return;
       case _ChatRoomMenuAction.delete:
         await _confirmDeleteChatRoom();
         return;
     }
+  }
+
+  // ===================== 공지 =====================
+
+  Future<void> _setAsNotice(ChatMessage message) async {
+    final chatProvider = context.read<ChatProvider>();
+    final authProvider = context.read<AuthProvider>();
+
+    final success = await chatProvider.setNotice(
+      widget.room.id,
+      message.id,
+      authProvider.currentUser?.name ?? '',
+    );
+
+    if (!mounted) return;
+    if (success) {
+      AppSnackBar.showSuccess(context, message: '공지로 등록했습니다');
+    } else {
+      AppSnackBar.showError(context, message: '공지 등록에 실패했습니다');
+    }
+  }
+
+  Future<void> _clearNotice() async {
+    final chatProvider = context.read<ChatProvider>();
+    final authProvider = context.read<AuthProvider>();
+
+    final success = await chatProvider.clearNotice(
+      widget.room.id,
+      authProvider.currentUser?.name ?? '',
+    );
+
+    if (!mounted) return;
+    if (success) {
+      AppSnackBar.showSuccess(context, message: '공지를 내렸습니다');
+    } else {
+      AppSnackBar.showError(context, message: '공지를 내리지 못했습니다');
+    }
+  }
+
+  /// 방 상단에 붙는 공지 띠. 눌러서 펼치면 전체 내용이 보인다.
+  Widget _buildNoticeBanner(ChatRoom room, bool isAdmin) {
+    if (!room.hasNotice) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: AppSpacing.space3,
+      ),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.statusInfoBackground,
+        border: Border(
+          bottom: BorderSide(
+            color: AppSemanticColors.statusInfoBorder,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.campaign_outlined,
+            size: AppSpacing.space5,
+            color: AppSemanticColors.statusInfoIcon,
+          ),
+          const SizedBox(width: AppSpacing.space2),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _showNoticeDetail(room),
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    room.noticeContent ?? '',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.statusInfoText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if ((room.noticeByName ?? '').isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        '${room.noticeByName} 등록',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppSemanticColors.statusInfoText.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (isAdmin)
+            GestureDetector(
+              onTap: _clearNotice,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.space2),
+                child: Icon(
+                  Icons.close,
+                  size: AppSpacing.space4,
+                  color: AppSemanticColors.statusInfoText,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showNoticeDetail(ChatRoom room) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.campaign_outlined,
+                    color: AppSemanticColors.statusInfoIcon,
+                  ),
+                  const SizedBox(width: AppSpacing.space2),
+                  Text(
+                    '공지',
+                    style: AppTypography.bodyLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              Text(room.noticeContent ?? '', style: AppTypography.bodyMedium),
+              if ((room.noticeByName ?? '').isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.space3),
+                Text(
+                  '${room.noticeByName} 등록',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ===================== 대화 검색 =====================
+
+  void _showMessageSearch() {
+    final searchController = TextEditingController();
+    List<ChatMessage> results = [];
+    bool isSearching = false;
+    bool hasSearched = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> runSearch() async {
+              final keyword = searchController.text.trim();
+              if (keyword.isEmpty) return;
+
+              setSheetState(() => isSearching = true);
+              final found = await _chatProvider.searchMessages(
+                widget.room.id,
+                keyword,
+              );
+              setSheetState(() {
+                results = found;
+                isSearching = false;
+                hasSearched = true;
+              });
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.75,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(AppSpacing.space4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: searchController,
+                              autofocus: true,
+                              textInputAction: TextInputAction.search,
+                              onSubmitted: (_) => runSearch(),
+                              decoration: InputDecoration(
+                                hintText: '대화 내용 검색',
+                                prefixIcon: const Icon(Icons.search),
+                                filled: true,
+                                fillColor:
+                                    AppSemanticColors.backgroundSecondary,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.lg,
+                                  ),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.space2),
+                          TextButton(
+                            onPressed: runSearch,
+                            child: const Text('검색'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: isSearching
+                          ? const Center(child: CircularProgressIndicator())
+                          : !hasSearched
+                          ? Center(
+                              child: Text(
+                                '찾을 말을 입력해주세요',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
+                            )
+                          : results.isEmpty
+                          ? Center(
+                              child: Text(
+                                '검색 결과가 없습니다',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: results.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final message = results[index];
+                                return ListTile(
+                                  title: Text(
+                                    message.senderName,
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: AppSemanticColors.textTertiary,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    message.displayContent,
+                                    style: AppTypography.bodyMedium,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing: Text(
+                                    _formatMessageTime(message.createdAt),
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: AppSemanticColors.textTertiary,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ===================== 파일함 =====================
+
+  Future<void> _showFileDrawer() async {
+    final chatProvider = context.read<ChatProvider>();
+    await chatProvider.loadSharedMedia(widget.room.id);
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Consumer<ChatProvider>(
+            builder: (context, provider, child) {
+              final files = provider.sharedMedia;
+
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.space4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.folder_outlined,
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Text(
+                          '주고받은 파일 ${files.length}건',
+                          style: AppTypography.bodyLarge.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: files.isEmpty
+                        ? Center(
+                            child: Text(
+                              '아직 주고받은 파일이 없습니다',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: files.length,
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              final file = files[index];
+                              final isImage = file.type == MessageType.image;
+
+                              return ListTile(
+                                leading: isImage && file.fileUrl != null
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(
+                                          AppBorderRadius.md,
+                                        ),
+                                        child: Image.network(
+                                          file.fileUrl!,
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              const Icon(Icons.image_outlined),
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.insert_drive_file_outlined,
+                                        color: AppSemanticColors.textSecondary,
+                                      ),
+                                title: Text(
+                                  file.fileName ?? '파일',
+                                  style: AppTypography.bodyMedium,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  '${file.senderName} · ${_formatMessageTime(file.createdAt)}',
+                                  style: AppTypography.labelSmall.copyWith(
+                                    color: AppSemanticColors.textTertiary,
+                                  ),
+                                ),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _openAttachment(file);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  /// 사진은 앱 안에서 크게 보고, 문서는 내려받아 기기 뷰어로 연다.
+  void _openAttachment(ChatMessage message) {
+    final url = message.fileUrl;
+    final name = message.fileName ?? '파일';
+
+    if (message.type == MessageType.image && url != null && url.isNotEmpty) {
+      ChatImageViewer.open(
+        context,
+        imageUrl: url,
+        fileName: name,
+        onDownload: () => _downloadAndOpenFile(url, name),
+      );
+      return;
+    }
+
+    _downloadAndOpenFile(url, name);
   }
 
   // 자주 사용하는 이모지 목록
@@ -612,6 +1177,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   _showMessageReaders(message);
                 },
               ),
+              if (message.type != MessageType.system && !message.isDeleted)
+                ListTile(
+                  leading: const Icon(Icons.campaign_outlined),
+                  title: const Text('공지로 등록'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _setAsNotice(message);
+                  },
+                ),
               if (isMyMessage && !message.isDeleted)
                 ListTile(
                   leading: Icon(
@@ -1061,6 +1635,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   value: _ChatRoomMenuAction.info,
                   child: Text('채팅방 정보'),
                 ),
+                const PopupMenuItem<_ChatRoomMenuAction>(
+                  value: _ChatRoomMenuAction.search,
+                  child: Text('대화 내용 검색'),
+                ),
+                const PopupMenuItem<_ChatRoomMenuAction>(
+                  value: _ChatRoomMenuAction.files,
+                  child: Text('주고받은 파일'),
+                ),
                 if (isAdmin)
                   PopupMenuItem<_ChatRoomMenuAction>(
                     value: _ChatRoomMenuAction.delete,
@@ -1092,6 +1674,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           },
           child: Column(
             children: [
+              // 상단 고정 공지
+              Consumer<ChatProvider>(
+                builder: (context, chatProvider, child) {
+                  final room =
+                      chatProvider.selectedRoom?.id == widget.room.id
+                      ? chatProvider.selectedRoom!
+                      : chatProvider.chatRooms.firstWhere(
+                          (r) => r.id == widget.room.id,
+                          orElse: () => widget.room,
+                        );
+                  return _buildNoticeBanner(room, isAdmin);
+                },
+              ),
+
               // 메시지 목록
               Expanded(
                 child: Consumer<ChatProvider>(
@@ -1145,6 +1741,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   },
                 ),
               ),
+
+              // @멘션 후보 (입력 중일 때만)
+              _buildMentionSuggestions(),
 
               // 메시지 입력창
               _buildMessageInput(isAdmin),
@@ -1416,10 +2015,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     switch (message.type) {
       case MessageType.image:
         return GestureDetector(
-          onTap: () => _downloadAndOpenFile(
-            message.fileUrl,
-            message.fileName ?? 'image.png',
-          ),
+          onTap: () => _openAttachment(message),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1456,8 +2052,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       case MessageType.file:
         return GestureDetector(
-          onTap: () =>
-              _downloadAndOpenFile(message.fileUrl, message.fileName ?? 'file'),
+          onTap: () => _openAttachment(message),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1478,11 +2073,58 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       case MessageType.text:
       case MessageType.system:
-        return Text(
-          message.content ?? '',
-          style: AppTypography.bodyMedium.copyWith(color: textColor),
-        );
+        return _buildTextWithMentions(message.content ?? '', textColor);
     }
+  }
+
+  /// '@이름'을 굵게 칠해 눈에 띄게 한다. 내가 불린 경우는 배경까지 넣는다.
+  Widget _buildTextWithMentions(String content, Color textColor) {
+    final myName = context.read<AuthProvider>().currentUser?.name ?? '';
+    final matches = RegExp(r'@[^\s@]+').allMatches(content).toList();
+
+    if (matches.isEmpty) {
+      return Text(
+        content,
+        style: AppTypography.bodyMedium.copyWith(color: textColor),
+      );
+    }
+
+    final spans = <TextSpan>[];
+    var cursor = 0;
+
+    for (final match in matches) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(text: content.substring(cursor, match.start)));
+      }
+
+      final mention = match.group(0)!;
+      final isMe = myName.isNotEmpty && mention == '@$myName';
+
+      spans.add(
+        TextSpan(
+          text: mention,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            backgroundColor: isMe
+                ? AppSemanticColors.statusWarningBackground
+                : null,
+            color: isMe ? AppSemanticColors.statusWarningText : textColor,
+          ),
+        ),
+      );
+      cursor = match.end;
+    }
+
+    if (cursor < content.length) {
+      spans.add(TextSpan(text: content.substring(cursor)));
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: AppTypography.bodyMedium.copyWith(color: textColor),
+        children: spans,
+      ),
+    );
   }
 
   String _formatMessageTime(DateTime time) {

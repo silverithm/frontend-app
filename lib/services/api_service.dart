@@ -2798,6 +2798,86 @@ class ApiService {
     });
   }
 
+  // 대화 내용 검색
+  Future<Map<String, dynamic>> searchChatMessages({
+    required int roomId,
+    required String keyword,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/messages/search',
+      ).replace(queryParameters: {'keyword': keyword});
+
+      print('[API] 대화 검색: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 공지 등록 — 기존 메시지를 방 상단에 고정한다
+  Future<Map<String, dynamic>> setChatRoomNotice({
+    required int roomId,
+    required int messageId,
+    required String setByName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/notice');
+
+      print('[API] 채팅 공지 등록: $uri (messageId=$messageId)');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'messageId': messageId, 'setByName': setByName}),
+      );
+    });
+  }
+
+  // 공지 내리기 — messageId 없이 보내면 서버가 해제로 처리한다
+  Future<Map<String, dynamic>> clearChatRoomNotice({
+    required int roomId,
+    required String setByName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/notice');
+
+      print('[API] 채팅 공지 해제: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'setByName': setByName}),
+      );
+    });
+  }
+
+  // 현재 접속 중인 사람 (첫 렌더용 — 이후 변화는 WebSocket으로 받는다)
+  Future<Map<String, dynamic>> getOnlineUsers({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/presence',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 접속 상태 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
   // 파일 업로드 (dio 사용 - 더 안정적인 multipart 처리)
   Future<Map<String, dynamic>> uploadChatFile({
     required int roomId,
@@ -3463,6 +3543,121 @@ class ApiService {
         }),
       );
     });
+  }
+
+  // ===== 기관 전용 자료실 =====
+  // 광장 자료실과 달리 우리 기관 사람만 보고 올린다.
+
+  Future<Map<String, dynamic>> getCompanyLibrary({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/company-library',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 기관 자료실 목록: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  /// 자료 등록 — 파일을 먼저 [uploadFileToServer]로 올리고 그 결과를 넘긴다.
+  Future<Map<String, dynamic>> createCompanyLibraryItem({
+    required String companyId,
+    required String title,
+    String? description,
+    String? category,
+    required String fileName,
+    required int fileSize,
+    required String filePath,
+    required String uploaderId,
+    required String uploaderName,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/company-library',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 기관 자료 등록: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({
+          'title': title,
+          'description': description ?? '',
+          'category': category ?? '',
+          'fileName': fileName,
+          'fileSize': fileSize,
+          'filePath': filePath,
+          'uploaderId': uploaderId,
+          'uploaderName': uploaderName,
+        }),
+      );
+    });
+  }
+
+  Future<Map<String, dynamic>> deleteCompanyLibraryItem({
+    required int itemId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/company-library/$itemId');
+
+      print('[API] 기관 자료 삭제: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
+  /// 범용 파일 업로드 — 저장 경로(filePath)만 돌려준다. 자료실처럼
+  /// 파일과 정보를 따로 저장하는 곳에서 1단계로 쓴다.
+  Future<Map<String, dynamic>> uploadFileToServer({
+    required String filePath,
+    String category = 'attachments',
+  }) async {
+    final token = StorageService().getToken();
+    final fileName = filePath.split('/').last;
+
+    final formData = dio.FormData.fromMap({
+      'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
+    });
+
+    final dioClient = dio.Dio();
+    dioClient.options.connectTimeout = const Duration(seconds: 30);
+    dioClient.options.sendTimeout = const Duration(seconds: 120);
+    dioClient.options.receiveTimeout = const Duration(seconds: 60);
+
+    final response = await dioClient.post(
+      '$_baseUrl/v1/files/upload',
+      queryParameters: {'category': category},
+      data: formData,
+      options: dio.Options(
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
+      ),
+    );
+
+    if (response.statusCode == 200 && response.data is Map) {
+      return Map<String, dynamic>.from(response.data);
+    }
+    throw ApiException('파일 업로드 실패', response.statusCode ?? 500);
+  }
+
+  /// 저장 경로로 내려받을 주소 (dio download에 그대로 넘긴다)
+  String fileDownloadUrl(String path, String fileName) {
+    final query = Uri(
+      queryParameters: {'path': path, 'fileName': fileName},
+    ).query;
+    return '$_baseUrl/v1/files/download?$query';
   }
 
   // ===== 고충·신고 / 건의함 (VoiceBox) =====

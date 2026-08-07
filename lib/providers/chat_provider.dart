@@ -25,6 +25,11 @@ class ChatProvider with ChangeNotifier {
 
   // Current user info for message handling
   String? _currentUserId;
+  String? _companyId;
+
+  // 접속 상태 — 지금 붙어 있는 사람들의 userId
+  Set<String> _onlineUserIds = {};
+  StompUnsubscribe? _presenceSubscription;
 
   // Pagination for messages
   int _currentPage = 0;
@@ -40,6 +45,13 @@ class ChatProvider with ChangeNotifier {
     _currentUserId = userId;
   }
 
+  /// 기관 ID를 알려준다. 이미 연결돼 있으면 그 자리에서 접속 등록까지 한다.
+  void setCompanyId(String companyId) {
+    if (_companyId == companyId) return;
+    _companyId = companyId;
+    if (_isConnected) _registerPresence();
+  }
+
   // Getters
   List<ChatRoom> get chatRooms => _chatRooms;
   ChatRoom? get selectedRoom => _selectedRoom;
@@ -52,6 +64,9 @@ class ChatProvider with ChangeNotifier {
   bool get isConnected => _isConnected;
   Set<String> get typingUsers => _typingUsers;
   bool get hasMoreMessages => _hasMoreMessages;
+  Set<String> get onlineUserIds => _onlineUserIds;
+
+  bool isOnline(String userId) => _onlineUserIds.contains(userId);
 
   int get totalUnreadCount =>
       _chatRooms.fold(0, (sum, room) => sum + room.unreadCount);
@@ -123,6 +138,8 @@ class ChatProvider with ChangeNotifier {
     if (_selectedRoom != null) {
       _subscribeToRoom(_selectedRoom!.id);
     }
+
+    _registerPresence();
   }
 
   void _onDisconnect(StompFrame frame) {
@@ -131,6 +148,9 @@ class ChatProvider with ChangeNotifier {
     _roomSubscriptions.clear();
     _typingUsers.clear();
     _cancelAllTypingTimers();
+    // 끊긴 동안은 남의 상태를 알 수 없으니 표시하지 않는다
+    _presenceSubscription = null;
+    _onlineUserIds = {};
     notifyListeners();
   }
 
@@ -154,6 +174,8 @@ class ChatProvider with ChangeNotifier {
       _roomSubscriptions.clear();
       _typingUsers.clear();
       _cancelAllTypingTimers();
+      _presenceSubscription = null;
+      _onlineUserIds = {};
       print('[ChatProvider] WebSocket 연결 해제');
       notifyListeners();
     }
@@ -219,6 +241,69 @@ class ChatProvider with ChangeNotifier {
     }
     _roomSubscriptions.remove(roomId);
     print('[ChatProvider] 채팅방 $roomId 구독 해제');
+  }
+
+  // ===================== 접속 상태 =====================
+
+  /// 내가 붙었음을 알리고, 같은 기관 사람들의 상태 변화를 구독한다.
+  /// 연결이 끊기면 서버가 알아서 오프라인 처리하므로 나갈 때 보낼 것은 없다.
+  void _registerPresence() {
+    final companyId = _companyId;
+    final userId = _currentUserId;
+    if (companyId == null || userId == null) return;
+    if (_stompClient == null || !_stompClient!.connected) return;
+
+    _presenceSubscription?.call();
+    _presenceSubscription = _stompClient!.subscribe(
+      destination: '/topic/presence/$companyId',
+      callback: (frame) {
+        if (frame.body != null) _handlePresenceChange(frame.body!);
+      },
+    );
+
+    _stompClient!.send(
+      destination: '/app/presence/join',
+      body: json.encode({'userId': userId, 'companyId': companyId}),
+    );
+
+    // 이미 붙어 있던 사람들은 방송을 못 받으므로 한 번 받아온다
+    loadOnlineUsers();
+    print('[ChatProvider] 접속 상태 등록: userId=$userId, companyId=$companyId');
+  }
+
+  void _handlePresenceChange(String body) {
+    try {
+      final data = json.decode(body) as Map<String, dynamic>;
+      final changedId = data['userId']?.toString();
+      final online = data['online'] as bool? ?? false;
+      if (changedId == null) return;
+
+      final next = Set<String>.from(_onlineUserIds);
+      if (online) {
+        next.add(changedId);
+      } else {
+        next.remove(changedId);
+      }
+      _onlineUserIds = next;
+      notifyListeners();
+    } catch (e) {
+      print('[ChatProvider] 접속 상태 파싱 에러: $e');
+    }
+  }
+
+  /// 현재 접속자 전체를 다시 받아온다 (화면 첫 진입·새로고침용)
+  Future<void> loadOnlineUsers() async {
+    final companyId = _companyId;
+    if (companyId == null) return;
+
+    try {
+      final response = await ApiService().getOnlineUsers(companyId: companyId);
+      final ids = response['onlineUserIds'] as List<dynamic>?;
+      _onlineUserIds = (ids ?? []).map((e) => e.toString()).toSet();
+      notifyListeners();
+    } catch (e) {
+      print('[ChatProvider] 접속 상태 조회 에러: $e');
+    }
   }
 
   void _handleIncomingMessage(String body, {String? currentUserId}) {
@@ -494,6 +579,7 @@ class ChatProvider with ChangeNotifier {
 
       // 현재 사용자 ID 저장
       _currentUserId = userId;
+      setCompanyId(companyId);
 
       final response = await ApiService().getChatRooms(
         companyId: companyId,
@@ -1046,6 +1132,71 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
+  // ===================== 공지 =====================
+
+  void _applyRoomFromResponse(Map<String, dynamic> response, int roomId) {
+    final roomData = response['room'];
+    if (roomData is! Map<String, dynamic>) return;
+
+    final updated = ChatRoom.fromJson(roomData);
+    final index = _chatRooms.indexWhere((r) => r.id == roomId);
+    if (index != -1) _chatRooms[index] = updated;
+    if (_selectedRoom?.id == roomId) _selectedRoom = updated;
+    notifyListeners();
+  }
+
+  /// 메시지 하나를 방 상단에 고정한다.
+  Future<bool> setNotice(int roomId, int messageId, String setByName) async {
+    try {
+      final response = await ApiService().setChatRoomNotice(
+        roomId: roomId,
+        messageId: messageId,
+        setByName: setByName,
+      );
+      _applyRoomFromResponse(response, roomId);
+      return true;
+    } catch (e) {
+      print('[ChatProvider] 공지 등록 에러: $e');
+      setError('공지 등록에 실패했습니다: ${e.toString()}');
+      return false;
+    }
+  }
+
+  Future<bool> clearNotice(int roomId, String setByName) async {
+    try {
+      final response = await ApiService().clearChatRoomNotice(
+        roomId: roomId,
+        setByName: setByName,
+      );
+      _applyRoomFromResponse(response, roomId);
+      return true;
+    } catch (e) {
+      print('[ChatProvider] 공지 해제 에러: $e');
+      setError('공지를 내리지 못했습니다: ${e.toString()}');
+      return false;
+    }
+  }
+
+  // ===================== 대화 검색 =====================
+
+  /// 검색 결과는 화면에서만 쓰므로 provider 상태로 들고 있지 않는다.
+  Future<List<ChatMessage>> searchMessages(int roomId, String keyword) async {
+    if (keyword.trim().isEmpty) return [];
+    try {
+      final response = await ApiService().searchChatMessages(
+        roomId: roomId,
+        keyword: keyword.trim(),
+      );
+      final list = response['messages'] as List<dynamic>?;
+      return (list ?? [])
+          .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('[ChatProvider] 대화 검색 에러: $e');
+      return [];
+    }
+  }
+
   // ===================== 읽음 처리 =====================
 
   Future<void> markAsRead(
@@ -1172,6 +1323,9 @@ class ChatProvider with ChangeNotifier {
     _errorMessage = '';
     _isConnected = false;
     _typingUsers = {};
+    _onlineUserIds = {};
+    _presenceSubscription = null;
+    _companyId = null;
     _currentPage = 0;
     _totalPages = 0;
     _hasMoreMessages = true;

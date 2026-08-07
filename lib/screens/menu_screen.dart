@@ -12,6 +12,7 @@ import 'admin_company_settings_screen.dart';
 import 'admin_notice_management_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_vacation_limits_setting_screen.dart';
+import 'company_library_screen.dart';
 import 'external_notice_list_screen.dart';
 import 'login_screen.dart';
 import 'my_vacation_screen.dart';
@@ -126,6 +127,12 @@ class MenuScreen extends StatelessWidget {
                 label: '고충·신고 · 건의함',
                 description: '익명으로 남기는 고충·신고와 건의',
                 onTap: () => _push(context, const VoiceBoxScreen()),
+              ),
+              _MenuItem(
+                icon: Icons.folder_shared_outlined,
+                label: '기관 자료실',
+                description: '우리 기관 사람만 보는 서식 · 매뉴얼',
+                onTap: () => _push(context, const CompanyLibraryScreen()),
               ),
             ],
           ),

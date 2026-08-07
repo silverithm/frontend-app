@@ -19,6 +19,12 @@ class ChatRoom {
   final ChatRoomStatus status;
   final List<ChatParticipant> participants;
 
+  // 공지 — 기존 메시지 하나를 방 상단에 고정한다 (카카오톡과 같은 방식)
+  final int? noticeMessageId;
+  final String? noticeContent;
+  final String? noticeByName;
+  final DateTime? noticeAt;
+
   ChatRoom({
     required this.id,
     required this.name,
@@ -34,7 +40,14 @@ class ChatRoom {
     this.lastMessageAt,
     this.status = ChatRoomStatus.active,
     this.participants = const [],
+    this.noticeMessageId,
+    this.noticeContent,
+    this.noticeByName,
+    this.noticeAt,
   });
+
+  bool get hasNotice =>
+      noticeMessageId != null && (noticeContent?.isNotEmpty ?? false);
 
   factory ChatRoom.fromJson(Map<String, dynamic> json) {
     return ChatRoom(
@@ -60,6 +73,12 @@ class ChatRoom {
               .map((p) => ChatParticipant.fromJson(p as Map<String, dynamic>))
               .toList()
           : [],
+      noticeMessageId: (json['noticeMessageId'] as num?)?.toInt(),
+      noticeContent: json['noticeContent']?.toString(),
+      noticeByName: json['noticeByName']?.toString(),
+      noticeAt: json['noticeAt'] != null
+          ? DateTime.tryParse(json['noticeAt'].toString())
+          : null,
     );
   }
 
@@ -79,6 +98,10 @@ class ChatRoom {
       'lastMessageAt': lastMessageAt?.toIso8601String(),
       'status': status.name.toUpperCase(),
       'participants': participants.map((p) => p.toJson()).toList(),
+      'noticeMessageId': noticeMessageId,
+      'noticeContent': noticeContent,
+      'noticeByName': noticeByName,
+      'noticeAt': noticeAt?.toIso8601String(),
     };
   }
 
@@ -109,6 +132,12 @@ class ChatRoom {
     DateTime? lastMessageAt,
     ChatRoomStatus? status,
     List<ChatParticipant>? participants,
+    int? noticeMessageId,
+    String? noticeContent,
+    String? noticeByName,
+    DateTime? noticeAt,
+    // 공지는 '없음'으로도 되돌려야 해서 ??로는 표현이 안 된다
+    bool clearNotice = false,
   }) {
     return ChatRoom(
       id: id ?? this.id,
@@ -125,6 +154,12 @@ class ChatRoom {
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       status: status ?? this.status,
       participants: participants ?? this.participants,
+      noticeMessageId: clearNotice
+          ? null
+          : (noticeMessageId ?? this.noticeMessageId),
+      noticeContent: clearNotice ? null : (noticeContent ?? this.noticeContent),
+      noticeByName: clearNotice ? null : (noticeByName ?? this.noticeByName),
+      noticeAt: clearNotice ? null : (noticeAt ?? this.noticeAt),
     );
   }
 }
