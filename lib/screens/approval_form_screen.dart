@@ -10,10 +10,12 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/approval/document_form_fields.dart';
 import '../widgets/approval/dynamic_form_fields.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
+import 'approval_template_list_screen.dart';
 import 'hwp_editor_screen.dart';
 
 class ApprovalFormScreen extends StatefulWidget {
@@ -245,6 +247,29 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     });
   }
 
+  /// 양식 목록(카드) 화면을 연다. 카드를 탭하면 미리보기로 이동하고,
+  /// 미리보기에서 "이 양식으로 작성"을 누르면 그 양식이 선택된 채 돌아온다.
+  Future<void> _openTemplatePicker(List<ApprovalTemplate> templates) async {
+    final picked = await Navigator.of(context).push<ApprovalTemplate>(
+      MaterialPageRoute(
+        builder: (_) => ApprovalTemplateListScreen(
+          templates: templates,
+          selected: _selectedTemplate,
+        ),
+      ),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedTemplate = picked;
+        _formValues.clear(); // 양식 변경 시 입력값 초기화
+        // 결재선은 양식에 정의된 기본 결재선을 그대로 따른다 (기안자가 고르지 않음).
+        _approvalLine
+          ..clear()
+          ..addAll(picked.defaultApprovalLineCandidates);
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -425,87 +450,71 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                     );
                   }
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.surfaceDefault,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      border: Border.all(
-                        color: AppSemanticColors.borderDefault,
+                  // 탭하면 양식 카드 목록 → 미리보기(문서 모양/첨부 원본) 순으로 이동한다.
+                  // 미리보기에서 내용을 직접 확인한 뒤에야 양식을 선택하게 되므로,
+                  // "눌러도 어떤 문서인지 알 수 없다"는 문제를 해소한다.
+                  return InkWell(
+                    onTap: () => _openTemplatePicker(templates),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space4,
+                        vertical: AppSpacing.space3,
                       ),
-                    ),
-                    child: DropdownButtonFormField<ApprovalTemplate>(
-                      value: _selectedTemplate,
-                      decoration: InputDecoration(
-                        hintText: '결재 양식을 선택하세요',
-                        hintStyle: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.space4,
-                          vertical: AppSpacing.space3,
+                      decoration: BoxDecoration(
+                        color: AppSemanticColors.surfaceDefault,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                        border: Border.all(
+                          color: AppSemanticColors.borderDefault,
                         ),
                       ),
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                      ),
-                      dropdownColor: AppSemanticColors.surfaceDefault,
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                      itemHeight: AppSpacing.space14,
-                      selectedItemBuilder: (context) {
-                        return templates.map((template) {
-                          return Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              template.name,
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                              ),
-                            ),
-                          );
-                        }).toList();
-                      },
-                      items: templates.map((template) {
-                        return DropdownMenuItem<ApprovalTemplate>(
-                          value: template,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                template.name,
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textPrimary,
-                                ),
-                              ),
-                              if (template.description != null &&
-                                  template.description!.isNotEmpty)
-                                Text(
-                                  template.description!,
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppSemanticColors.textTertiary,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _selectedTemplate == null
+                                ? Text(
+                                    '결재 양식을 선택하세요',
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: AppSemanticColors.textTertiary,
+                                    ),
+                                  )
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _selectedTemplate!.name,
+                                        style: AppTypography.bodyMedium.copyWith(
+                                          color: AppSemanticColors.textPrimary,
+                                        ),
+                                      ),
+                                      if (_selectedTemplate!.description != null &&
+                                          _selectedTemplate!.description!.isNotEmpty)
+                                        Text(
+                                          _selectedTemplate!.description!,
+                                          style: AppTypography.caption.copyWith(
+                                            color: AppSemanticColors.textTertiary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                    ],
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTemplate = value;
-                          _formValues.clear(); // 양식 변경 시 입력값 초기화
-                          // 결재선은 양식에 정의된 기본 결재선을 그대로 따른다 (기안자가 고르지 않음).
-                          // 양식에 없으면 빈 결재선(관리자 단일 승인) — 이전 양식 선택이 남지 않게 리셋.
-                          _approvalLine
-                            ..clear()
-                            ..addAll(value?.defaultApprovalLineCandidates ?? []);
-                        });
-                      },
+                          const SizedBox(width: AppSpacing.space2),
+                          Text(
+                            _selectedTemplate == null ? '양식 둘러보기' : '변경',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.interactivePrimaryDefault,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -596,17 +605,11 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                   isRequired: true,
                 ),
                 const SizedBox(height: AppSpacing.space3),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    border: Border.all(color: AppSemanticColors.borderDefault),
-                  ),
-                  child: DynamicFormFields(
-                    fields: _selectedTemplate!.formFields,
-                    values: _formValues,
-                  ),
+                // 공문형 입력 — formSchema의 행/열·섹션 구조를 문서 표 레이아웃 위에서
+                // 그대로 입력한다(웹 FormRenderer documentFrame과 동일 규칙, 모바일 반응형).
+                DocumentFormFields(
+                  fields: _selectedTemplate!.formFields,
+                  values: _formValues,
                 ),
               ],
 
