@@ -16,6 +16,7 @@ import 'admin_vacation_limits_setting_screen.dart';
 import 'login_screen.dart';
 import 'my_vacation_screen.dart';
 import 'notice_list_screen.dart';
+import 'notification_settings_screen.dart';
 import 'plaza_screen.dart';
 import 'profile_screen.dart';
 import 'signature_manage_screen.dart';
@@ -153,6 +154,13 @@ class MenuScreen extends StatelessWidget {
               // ProfileScreen이 유일한 설정 화면이라 역할이 겹치지만,
               // '계정' 그룹에서도 진입 지점을 남겨두기 위해 라벨을
               // 명확한 문구로 구분해 둔다(동작은 그대로 ProfileScreen).
+              _MenuItem(
+                icon: Icons.notifications_outlined,
+                label: '알림 설정',
+                description: '푸시 알림 받기 켜기·끄기',
+                onTap: () =>
+                    _push(context, const NotificationSettingsScreen()),
+              ),
               _MenuItem(
                 icon: Icons.settings_outlined,
                 label: '계정 설정',

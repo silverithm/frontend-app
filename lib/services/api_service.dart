@@ -2092,6 +2092,40 @@ class ApiService {
     });
   }
 
+  // ── 푸시 알림 수신 설정 ──
+  // 직원(Member)과 관리자 가입 계정(AppUser)이 서로 다른 테이블이라 경로가 나뉜다.
+
+  Future<Map<String, dynamic>> getPushEnabled({
+    required String userId,
+    required bool isAdmin,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = isAdmin
+          ? Uri.parse('$_baseUrl/v1/users/push-enabled')
+          : Uri.parse(
+              '$_baseUrl${Constants.fcmTokenEndpoint}/$userId/push-enabled');
+      return await http.get(uri, headers: await _getHeaders());
+    });
+  }
+
+  Future<Map<String, dynamic>> updatePushEnabled({
+    required String userId,
+    required bool isAdmin,
+    required bool enabled,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = isAdmin
+          ? Uri.parse('$_baseUrl/v1/users/push-enabled')
+          : Uri.parse(
+              '$_baseUrl${Constants.fcmTokenEndpoint}/$userId/push-enabled');
+      return await http.put(
+        uri,
+        headers: await _getHeaders(),
+        body: json.encode({'pushEnabled': enabled}),
+      );
+    });
+  }
+
   // 내 결재 서명 조회 ({signatureUrl})
   Future<Map<String, dynamic>> getMySignature() async {
     return await _makeAuthenticatedRequest(() async {
