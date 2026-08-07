@@ -638,7 +638,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       height: 1,
                                       color: AppSemanticColors.borderSubtle,
                                     ),
-                                  _SchedulePreviewTile(schedule: entry.value),
+                                  _SchedulePreviewTile(
+                                    schedule: entry.value,
+                                    onTap: _openWorkAdjustment,
+                                  ),
                                 ],
                               ],
                             ),
@@ -1046,8 +1049,9 @@ class _NoticePreviewTile extends StatelessWidget {
 
 class _SchedulePreviewTile extends StatelessWidget {
   final Schedule schedule;
+  final VoidCallback onTap;
 
-  const _SchedulePreviewTile({required this.schedule});
+  const _SchedulePreviewTile({required this.schedule, required this.onTap});
 
   String _formatDate(DateTime date) {
     return '${date.month}.${date.day}';
@@ -1056,67 +1060,80 @@ class _SchedulePreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 구분선 리스트 아이템 — 개별 보더 카드 대신 패딩만으로 아이템을 구분한다.
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: AppSpacing.space12,
-            height: AppSpacing.space12,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppSemanticColors.interactivePrimaryDefault.withValues(
-                alpha: 0.12,
-              ),
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-            ),
-            child: Text(
-              _formatDate(schedule.startDate),
-              style: AppTypography.labelMedium.copyWith(
-                color: AppSemanticColors.interactivePrimaryDefault,
-                fontWeight: AppTypography.fontWeightBold,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.space3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.title,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                    fontWeight: AppTypography.fontWeightSemibold,
+    // _NoticePreviewTile과 동일하게 InkWell로 감싸 탭 가능함을 동일하게 보여준다.
+    return Material(
+      color: AppColors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: AppSpacing.space12,
+                height: AppSpacing.space12,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.interactivePrimaryDefault
+                      .withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                ),
+                child: Text(
+                  _formatDate(schedule.startDate),
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppSemanticColors.interactivePrimaryDefault,
+                    fontWeight: AppTypography.fontWeightBold,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.space1),
-                Text(
-                  schedule.categoryText,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-                if (schedule.timeText.isNotEmpty ||
-                    (schedule.location?.isNotEmpty ?? false))
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.space1),
-                    child: Text(
-                      [
-                        if (schedule.timeText.isNotEmpty) schedule.timeText,
-                        if (schedule.location?.isNotEmpty ?? false)
-                          schedule.location!,
-                      ].join(' · '),
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppSemanticColors.textTertiary,
+              ),
+              const SizedBox(width: AppSpacing.space3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      schedule.title,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                        fontWeight: AppTypography.fontWeightSemibold,
                       ),
                     ),
-                  ),
-              ],
-            ),
+                    const SizedBox(height: AppSpacing.space1),
+                    Text(
+                      schedule.categoryText,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                    ),
+                    if (schedule.timeText.isNotEmpty ||
+                        (schedule.location?.isNotEmpty ?? false))
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.space1),
+                        child: Text(
+                          [
+                            if (schedule.timeText.isNotEmpty)
+                              schedule.timeText,
+                            if (schedule.location?.isNotEmpty ?? false)
+                              schedule.location!,
+                          ].join(' · '),
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // 탭 가능함을 알리는 chevron — _NoticePreviewTile과 동일한 신호.
+              Icon(
+                Icons.chevron_right,
+                size: AppSpacing.space4,
+                color: AppSemanticColors.textTertiary,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1170,9 +1187,8 @@ class _EmptySectionState extends StatelessWidget {
   }
 }
 
-/// 빠른 작업 버튼 — 홈 상단에서 자주 쓰는 액션으로 바로 이동
-/// 스타일 규칙: docs/seed-component-specs.md §1 Action Button
-/// (radius r2, pressed 시 배경 전환 + scale 0.97)
+/// 빠른 작업 버튼 — _SectionCard 안에 놓이므로 라운드를 카드와 동일한
+/// xl2(16)로 맞춘다(§1 기본 r2 대신). pressed 시 배경 전환 + scale 0.97.
 class _QuickActionButton extends StatefulWidget {
   final IconData icon;
   final String label;
@@ -1209,7 +1225,7 @@ class _QuickActionButtonState extends State<_QuickActionButton> {
                 ? AppSemanticColors.surfaceActive
                 : AppSemanticColors.surfaceDefault,
             border: Border.all(color: AppSemanticColors.borderSubtle),
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg), // r2
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
           ),
           child: Column(
             children: [
