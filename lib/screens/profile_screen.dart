@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
@@ -7,6 +10,7 @@ import '../providers/app_version_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../models/user.dart';
 import '../services/analytics_service.dart';
+import '../services/api_service.dart';
 import '../services/in_app_review_service.dart';
 import '../utils/admin_utils.dart';
 import '../utils/role_utils.dart';
@@ -34,6 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   bool _notificationsEnabled = true;
+  bool _isUploadingPhoto = false;
 
   @override
   void initState() {
@@ -149,6 +154,222 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ),
     );
+  }
+
+  /// 프로필 사진 업로드/삭제는 Member(직원) 계정만 가능하다 — 백엔드
+  /// MemberController.uploadProfileImage가 members 테이블 id로 조회하는데,
+  /// 기관 대표 로그인(AppUser, 회사 코드 보유)은 대응하는 Member 행이 없다.
+  bool _canEditProfileImage(User user) {
+    final isCompanyOwnerLogin = AdminUtils.canAccessAdminPages(user) &&
+        (user.company?.companyCode?.isNotEmpty ?? false);
+    return !isCompanyOwnerLogin;
+  }
+
+  User _withProfileImageUrl(User user, String? url) {
+    return User(
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      profileImage: user.profileImage,
+      profileImageUrl: url,
+      createdAt: user.createdAt,
+      isActive: user.isActive,
+      username: user.username,
+      status: user.status,
+      department: user.department,
+      position: user.position,
+      company: user.company,
+      lastLoginAt: user.lastLoginAt,
+      tokenInfo: user.tokenInfo,
+    );
+  }
+
+  void _showProfileImageOptions(BuildContext context, User user) {
+    final hasImage = (user.profileImageUrl ?? '').isNotEmpty;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(AppSpacing.space2),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.statusInfoBackground,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    ),
+                    child: Icon(
+                      Icons.photo_library_outlined,
+                      color: AppSemanticColors.statusInfoIcon,
+                    ),
+                  ),
+                  title: Text(
+                    '앨범에서 선택',
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _pickAndUploadProfileImage(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(AppSpacing.space2),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.statusSuccessBackground,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    ),
+                    child: Icon(
+                      Icons.photo_camera_outlined,
+                      color: AppSemanticColors.statusSuccessIcon,
+                    ),
+                  ),
+                  title: Text(
+                    '사진 촬영',
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _pickAndUploadProfileImage(ImageSource.camera);
+                  },
+                ),
+                if (hasImage)
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(AppSpacing.space2),
+                      decoration: BoxDecoration(
+                        color: AppSemanticColors.statusErrorBackground,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                      ),
+                      child: Icon(
+                        Icons.delete_outline,
+                        color: AppSemanticColors.statusErrorIcon,
+                      ),
+                    ),
+                    title: Text(
+                      '사진 삭제',
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: AppSemanticColors.statusErrorText,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _confirmDeleteProfileImage();
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUploadProfileImage(ImageSource source) async {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null || _isUploadingPhoto) return;
+
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1280,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+
+      final extension = picked.path.split('.').last.toLowerCase();
+      if (!['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
+        if (mounted) {
+          AppSnackBar.showError(
+            context,
+            message: '허용되지 않는 파일 형식입니다. (jpg, png, webp만 가능)',
+          );
+        }
+        return;
+      }
+
+      final size = await File(picked.path).length();
+      if (size > 5 * 1024 * 1024) {
+        if (mounted) {
+          AppSnackBar.showError(context, message: '파일 크기는 5MB를 초과할 수 없습니다');
+        }
+        return;
+      }
+
+      setState(() => _isUploadingPhoto = true);
+
+      final response = await ApiService().uploadMemberProfileImage(
+        memberId: user.id,
+        filePath: picked.path,
+      );
+
+      final newUrl = response['profileImageUrl']?.toString();
+      if (mounted) {
+        context
+            .read<AuthProvider>()
+            .updateUser(_withProfileImageUrl(user, newUrl));
+        AppSnackBar.showSuccess(context, message: '프로필 사진이 업로드되었습니다');
+      }
+    } catch (e) {
+      if (mounted) {
+        final message = e
+            .toString()
+            .replaceAll('Exception: ', '')
+            .replaceAll('ApiException: ', '');
+        AppSnackBar.showError(
+          context,
+          message: message.isNotEmpty ? message : '프로필 사진 업로드에 실패했습니다',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  Future<void> _confirmDeleteProfileImage() async {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null || _isUploadingPhoto) return;
+
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '프로필 사진 삭제',
+      message: '프로필 사진을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      confirmVariant: SeedButtonVariant.critical,
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isUploadingPhoto = true);
+    try {
+      await ApiService().deleteMemberProfileImage(memberId: user.id);
+      if (mounted) {
+        context
+            .read<AuthProvider>()
+            .updateUser(_withProfileImageUrl(user, null));
+        AppSnackBar.showSuccess(context, message: '프로필 사진이 삭제되었습니다');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.showError(context, message: '프로필 사진 삭제에 실패했습니다');
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
   }
 
   void _showPasswordChangeDialog(BuildContext dialogContext) {
@@ -846,35 +1067,88 @@ class _ProfileScreenState extends State<ProfileScreen>
                           padding: const EdgeInsets.all(AppSpacing.space6),
                           child: Column(
                             children: [
-                              // 프로필 이미지
-                              Hero(
-                                tag: 'profile-image',
-                                child: Container(
-                                  width: 120,
-                                  height: 120,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppSemanticColors.backgroundTertiary,
-                                    border: Border.all(
-                                      color: AppSemanticColors.borderDefault,
-                                      width: 2,
+                              // 프로필 이미지 — 우측 하단 카메라 버튼으로 업로드/삭제
+                              // (Member 계정만; AppUser 대표 로그인은 대응 회원 행이 없어 비활성)
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Hero(
+                                    tag: 'profile-image',
+                                    child: Container(
+                                      width: 120,
+                                      height: 120,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppSemanticColors.backgroundTertiary,
+                                        border: Border.all(
+                                          color: AppSemanticColors.borderDefault,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: (user.profileImageUrl ?? '').isNotEmpty
+                                          ? ClipOval(
+                                              child: Image.network(
+                                                user.profileImageUrl!,
+                                                fit: BoxFit.cover,
+                                                errorBuilder:
+                                                    (context, error, stackTrace) {
+                                                      return _buildDefaultAvatar(
+                                                        user,
+                                                      );
+                                                    },
+                                              ),
+                                            )
+                                          : _buildDefaultAvatar(user),
                                     ),
                                   ),
-                                  child: user.profileImage != null
-                                      ? ClipOval(
-                                          child: Image.network(
-                                            user.profileImage!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                                  return _buildDefaultAvatar(
-                                                    user,
-                                                  );
-                                                },
+                                  if (_isUploadingPhoto)
+                                    Positioned.fill(
+                                      child: ClipOval(
+                                        child: Container(
+                                          color: AppColors.black.withValues(alpha: 0.4),
+                                          alignment: Alignment.center,
+                                          child: const SizedBox(
+                                            width: 28,
+                                            height: 28,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                AppColors.white,
+                                              ),
+                                            ),
                                           ),
-                                        )
-                                      : _buildDefaultAvatar(user),
-                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  if (_canEditProfileImage(user))
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 0,
+                                      child: GestureDetector(
+                                        onTap: _isUploadingPhoto
+                                            ? null
+                                            : () =>
+                                                _showProfileImageOptions(context, user),
+                                        child: Container(
+                                          width: 36,
+                                          height: 36,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: AppSemanticColors.brandDefault,
+                                            border: Border.all(
+                                              color: AppSemanticColors.surfaceDefault,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.photo_camera,
+                                            size: 18,
+                                            color: AppSemanticColors.textInverse,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
 
                               const SizedBox(height: AppSpacing.space6),

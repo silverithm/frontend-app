@@ -12,6 +12,7 @@ import 'admin_company_settings_screen.dart';
 import 'admin_notice_management_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_vacation_limits_setting_screen.dart';
+import 'external_notice_list_screen.dart';
 import 'login_screen.dart';
 import 'my_vacation_screen.dart';
 import 'notice_list_screen.dart';
@@ -19,6 +20,7 @@ import 'notification_settings_screen.dart';
 import 'plaza_screen.dart';
 import 'profile_screen.dart';
 import 'signature_manage_screen.dart';
+import 'voice_box_screen.dart';
 
 /// 전체 메뉴 탭 — 흩어져 있던 기능들을 역할별 그룹으로 모은 허브.
 /// 상단 프로필 카드 + (내 업무 / 소통 / 기관 관리(관리자) / 계정) 그룹.
@@ -112,6 +114,18 @@ class MenuScreen extends StatelessWidget {
                 label: '케어브이 커뮤니티',
                 description: '요양 소식 · 게시판 · 자료실',
                 onTap: () => _push(context, const PlazaScreen()),
+              ),
+              _MenuItem(
+                icon: Icons.newspaper_outlined,
+                label: '장기요양 소식',
+                description: '노인장기요양보험 공지 · 법령 · 평가 · 교육 자료',
+                onTap: () => _push(context, const ExternalNoticeListScreen()),
+              ),
+              _MenuItem(
+                icon: Icons.record_voice_over_outlined,
+                label: '고충·신고 · 건의함',
+                description: '익명으로 남기는 고충·신고와 건의',
+                onTap: () => _push(context, const VoiceBoxScreen()),
               ),
             ],
           ),
