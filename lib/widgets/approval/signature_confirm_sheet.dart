@@ -30,7 +30,7 @@ Future<SignatureConfirmResult?> showSignatureConfirmSheet(
     isScrollControlled: true,
     backgroundColor: AppSemanticColors.surfaceDefault,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
     ),
     builder: (context) => _SignatureConfirmSheet(title: title),
   );
@@ -131,7 +131,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
           const SizedBox(height: AppSpacing.space4),
           if (_isLoading)
             const Center(child: Padding(
-              padding: EdgeInsets.all(24),
+              padding: EdgeInsets.all(AppSpacing.space6),
               child: CircularProgressIndicator(),
             ))
           else ...[
@@ -158,7 +158,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 padding: const EdgeInsets.all(AppSpacing.space3),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.statusInfoBackground,
-                  borderRadius: BorderRadius.circular(AppSpacing.space3),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                 ),
                 child: Text(
                   '등록된 서명이 없습니다. 이번에는 직접 그려 승인하세요.\n프로필 > 결재 서명 관리에서 등록하면 다음부터 바로 승인할 수 있습니다.',
@@ -175,9 +175,9 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                   height: 110,
                   width: 220,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppSemanticColors.surfaceDefault,
                     border: Border.all(color: AppSemanticColors.borderDefault),
-                    borderRadius: BorderRadius.circular(AppSpacing.space3),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                   ),
                   child: Image.network(
                     _registeredUrl!,
@@ -214,25 +214,33 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
     );
   }
 
+  /// 서명 방식 세그먼트 토글 항목 — Material+InkWell로 눌림 피드백(잉크 스플래시)을 준다.
   Widget _buildModeButton(String text, bool selected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppSemanticColors.interactivePrimaryDefault
-              : AppSemanticColors.backgroundTertiary,
-          borderRadius: BorderRadius.circular(AppSpacing.space3),
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: AppTypography.bodySmall.copyWith(
-              color: selected
-                  ? AppSemanticColors.textInverse
-                  : AppSemanticColors.textSecondary,
-              fontWeight: FontWeight.w600,
+    return Material(
+      color: selected
+          ? AppSemanticColors.interactivePrimaryDefault
+          : AppSemanticColors.backgroundTertiary,
+      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        splashColor: selected
+            ? AppSemanticColors.textInverse.withValues(alpha: 0.15)
+            : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+        highlightColor: selected
+            ? AppSemanticColors.textInverse.withValues(alpha: 0.08)
+            : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.06),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+          child: Center(
+            child: Text(
+              text,
+              style: AppTypography.bodySmall.copyWith(
+                color: selected
+                    ? AppSemanticColors.textInverse
+                    : AppSemanticColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),

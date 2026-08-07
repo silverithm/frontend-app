@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../seed/seed_chip.dart';
 
 /// 결재 양식(formSchema)의 필드를 "공문 표" 레이아웃(라벨 셀 + 입력 셀, 섹션 구획)으로
 /// 렌더링한다.
@@ -27,6 +28,27 @@ class DocumentFormFields extends StatefulWidget {
     this.readOnly = false,
     this.onChanged,
   });
+
+  /// 필수 필드 검증 — 누락된 첫 필드 라벨 반환 (모두 채워지면 null)
+  static String? validateRequired(
+      List<Map<String, dynamic>> fields, Map<String, dynamic> values) {
+    for (final field in fields) {
+      final type = field['type']?.toString();
+      if (type == 'section' || type == 'file') continue;
+      if (field['required'] != true) continue;
+      final id = field['id']?.toString() ?? '';
+      final value = type == 'dateRange'
+          ? (values['${id}_start'] ?? values['${id}_end'])
+          : values[id];
+      final isEmpty = value == null ||
+          (value is String && value.trim().isEmpty) ||
+          (value is List && value.isEmpty);
+      if (isEmpty) {
+        return field['label']?.toString() ?? id;
+      }
+    }
+    return null;
+  }
 
   /// width 메타데이터를 기준으로 필드를 행 단위로 묶는다.
   /// - section은 항상 단독 행.
@@ -259,6 +281,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
         );
 
       case 'radio':
+        // 단일 선택 — 탭하면 해당 옵션 값으로 교체
         final options = _options(field);
         return Wrap(
           spacing: AppSpacing.space1_5,
@@ -266,12 +289,11 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           children: options.map((option) {
             final value = option['value']?.toString();
             final selected = widget.values[id]?.toString() == value;
-            return ChoiceChip(
-              label: Text(option['label']?.toString() ?? '',
-                  style: const TextStyle(fontSize: 12)),
+            return SeedChip(
+              label: option['label']?.toString() ?? '',
               selected: selected,
-              visualDensity: VisualDensity.compact,
-              onSelected: (_) {
+              size: SeedChipSize.small,
+              onTap: () {
                 setState(() => widget.values[id] = value);
                 widget.onChanged?.call();
               },
@@ -280,6 +302,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
         );
 
       case 'checkbox':
+        // 다중 선택 — 탭할 때마다 선택 목록에 추가/제거 토글
         final options = _options(field);
         final selectedValues = (widget.values[id] is List)
             ? List<String>.from(
@@ -291,18 +314,17 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           children: options.map((option) {
             final value = option['value']?.toString() ?? '';
             final selected = selectedValues.contains(value);
-            return FilterChip(
-              label: Text(option['label']?.toString() ?? '',
-                  style: const TextStyle(fontSize: 12)),
+            return SeedChip(
+              label: option['label']?.toString() ?? '',
               selected: selected,
-              visualDensity: VisualDensity.compact,
-              onSelected: (checked) {
+              size: SeedChipSize.small,
+              onTap: () {
                 setState(() {
                   final next = List<String>.from(selectedValues);
-                  if (checked) {
-                    next.add(value);
-                  } else {
+                  if (selected) {
                     next.remove(value);
+                  } else {
+                    next.add(value);
                   }
                   widget.values[id] = next;
                 });

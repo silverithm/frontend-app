@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/approval.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 
 /// 표준 기안문(공문) 형태의 결재 문서 뷰 (모바일 축약판).
 /// 웹 관리자와 동일한 구성: 기관명 레터헤드 → 문서번호/일자 + 결재란 → 제목 → 본문 → 발신명의(직인) → 붙임
@@ -17,6 +20,9 @@ class OfficialDocumentView extends StatelessWidget {
     required this.companyName,
   });
 
+  // 문서 팩시밀리 전용 잉크/보조/선 색상 — Tailwind gray-900/500/400 값이며
+  // 앱 Seed 팔레트(AppColors.gray*)와 스케일이 달라 대응하는 동일값 토큰이 없다.
+  // 실제 결재 출력물과 동일하게 보여야 하므로 값은 그대로 유지한다.
   static const _ink = Color(0xFF111827);
   static const _muted = Color(0xFF6B7280);
   static const _line = Color(0xFF9CA3AF);
@@ -36,10 +42,11 @@ class OfficialDocumentView extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        // Tailwind gray-200(#E5E7EB) — 대응하는 앱 토큰 없음, 문서 팩시밀리용 값 유지
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Column(
@@ -50,25 +57,25 @@ class OfficialDocumentView extends StatelessWidget {
             child: Text(
               companyName,
               style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 6,
+                fontSize: AppTypography.fontSize2xl,
+                fontWeight: AppTypography.fontWeightExtrabold,
+                letterSpacing: 6, // 문서 팩시밀리용 자간 — 대응 토큰 없음(앱 letterSpacing 토큰은 다른 스케일)
                 color: _ink,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.space2),
           Container(height: 2, color: _ink),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.space3),
 
           // 문서정보
           Text('문서번호 : ${approval.docNumberDisplay ?? approval.docNumber ?? '-'}',
-              style: const TextStyle(fontSize: 11, color: _muted)),
+              style: const TextStyle(fontSize: AppTypography.fontSizeXs, color: _muted)),
           Text('기안일자 : ${_formatDate(approval.createdAt)}',
-              style: const TextStyle(fontSize: 11, color: _muted)),
+              style: const TextStyle(fontSize: AppTypography.fontSizeXs, color: _muted)),
           Text('시행일자 : ${isApproved ? _formatDate(approval.processedAt) : '-'}',
-              style: const TextStyle(fontSize: 11, color: _muted)),
-          const SizedBox(height: 12),
+              style: const TextStyle(fontSize: AppTypography.fontSizeXs, color: _muted)),
+          const SizedBox(height: AppSpacing.space3),
 
           // 결재란
           Align(
@@ -78,7 +85,7 @@ class OfficialDocumentView extends StatelessWidget {
               child: _buildApprovalTable(),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
 
           // 제목
           Center(
@@ -86,31 +93,32 @@ class OfficialDocumentView extends StatelessWidget {
               approval.title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
+                fontSize: 17, // 대응 토큰 없음(Lg=16/Xl=18 사이) — 유지
+                fontWeight: AppTypography.fontWeightBold,
                 color: _ink,
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space4),
 
           // 반려 사유
           if (approval.status == ApprovalStatus.rejected &&
               (approval.rejectReason?.isNotEmpty ?? false)) ...[
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(AppSpacing.space2_5),
               decoration: BoxDecoration(
+                // Tailwind red-50/red-300/red-700 — 대응 토큰 없음, 문서 팩시밀리용 값 유지
                 color: const Color(0xFFFEF2F2),
                 border: Border.all(color: const Color(0xFFFCA5A5)),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(AppBorderRadius.md),
               ),
               child: Text(
                 '반려 사유: ${approval.rejectReason}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFFB91C1C)),
+                style: const TextStyle(fontSize: AppTypography.fontSizeSm, color: Color(0xFFB91C1C)),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space3),
           ],
 
           // 본문
@@ -119,9 +127,9 @@ class OfficialDocumentView extends StatelessWidget {
           else
             const Text(
               '위 건에 대하여 붙임과 같이 기안하오니 결재하여 주시기 바랍니다.\n(본문: 별첨 문서 참조)',
-              style: TextStyle(fontSize: 13, height: 1.7, color: _muted),
+              style: TextStyle(fontSize: 13, height: 1.7, color: _muted), // 13/1.7 대응 토큰 없음 — 유지
             ),
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.space7),
 
           // 발신명의 + 직인
           Center(
@@ -131,9 +139,9 @@ class OfficialDocumentView extends StatelessWidget {
                 Text(
                   companyName,
                   style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 4,
+                    fontSize: 17, // 대응 토큰 없음 — 유지
+                    fontWeight: AppTypography.fontWeightExtrabold,
+                    letterSpacing: 4, // 문서 팩시밀리용 자간 — 대응 토큰 없음
                     color: _ink,
                   ),
                 ),
@@ -158,12 +166,12 @@ class OfficialDocumentView extends StatelessWidget {
 
           // 붙임
           if (approval.attachmentFileName != null) ...[
-            const SizedBox(height: 20),
-            Container(height: 1, color: const Color(0xFFD1D5DB)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space5),
+            Container(height: 1, color: const Color(0xFFD1D5DB)), // Tailwind gray-300 — 대응 토큰 없음
+            const SizedBox(height: AppSpacing.space2),
             Text(
               '붙임 : ${approval.attachmentFileName} 1부. 끝.',
-              style: const TextStyle(fontSize: 12, color: _muted),
+              style: const TextStyle(fontSize: AppTypography.fontSizeSm, color: _muted),
             ),
           ],
 
@@ -230,12 +238,12 @@ class OfficialDocumentView extends StatelessWidget {
     if (rows.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(top: 20),
+      padding: const EdgeInsets.only(top: AppSpacing.space5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(height: 1, color: const Color(0xFFD1D5DB)),
-          const SizedBox(height: 8),
+          Container(height: 1, color: const Color(0xFFD1D5DB)), // Tailwind gray-300 — 대응 토큰 없음
+          const SizedBox(height: AppSpacing.space2),
           ...rows,
         ],
       ),
@@ -244,10 +252,10 @@ class OfficialDocumentView extends StatelessWidget {
 
   Widget _footerRow(List<Widget> children) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: AppSpacing.space1),
       child: Wrap(
-        spacing: 6,
-        runSpacing: 2,
+        spacing: AppSpacing.space1_5,
+        runSpacing: AppSpacing.space0_5,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: children,
       ),
@@ -256,7 +264,7 @@ class OfficialDocumentView extends StatelessWidget {
 
   Widget _footerTerm(String text) => Text(
         text,
-        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _ink),
+        style: const TextStyle(fontSize: 10, fontWeight: AppTypography.fontWeightBold, color: _ink), // fontSize 10 대응 토큰 없음
       );
 
   Widget _footerVal(String text) => Text(
@@ -309,14 +317,14 @@ class OfficialDocumentView extends StatelessWidget {
       border: TableBorder.all(color: _ink, width: 0.8),
       children: [
         TableRow(
-          decoration: const BoxDecoration(color: Color(0xFFF3F4F6)),
+          decoration: const BoxDecoration(color: Color(0xFFF3F4F6)), // Tailwind gray-100 — 대응 토큰 없음
           children: boxes
               .map((b) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    padding: const EdgeInsets.symmetric(vertical: 3), // 대응 토큰 없음
                     child: Text(b.label,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                            fontSize: 10, fontWeight: FontWeight.w700, color: _ink)),
+                            fontSize: 10, fontWeight: AppTypography.fontWeightBold, color: _ink)),
                   ))
               .toList(),
         ),
@@ -354,7 +362,9 @@ class OfficialDocumentView extends StatelessWidget {
       case _BoxState.rejected:
         child = const Text('반려',
             style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFB91C1C)));
+                fontSize: AppTypography.fontSizeXs,
+                fontWeight: AppTypography.fontWeightBold,
+                color: Color(0xFFB91C1C))); // Tailwind red-700 — 대응 토큰 없음
         break;
       case _BoxState.approved:
         if (box.signatureUrl != null) {
@@ -401,14 +411,16 @@ class OfficialDocumentView extends StatelessWidget {
     void addRow(String label, String value, {bool isSection = false}) {
       if (isSection) {
         rows.add(TableRow(
-          decoration: const BoxDecoration(color: Color(0xFFE5E7EB)),
+          decoration: const BoxDecoration(color: Color(0xFFE5E7EB)), // Tailwind gray-200 — 대응 토큰 없음
           children: [
             Padding(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(AppSpacing.space1_5),
               child: Text(label,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w700, color: _ink)),
+                      fontSize: AppTypography.fontSizeXs,
+                      fontWeight: AppTypography.fontWeightBold,
+                      color: _ink)),
             ),
             const SizedBox.shrink(),
           ],
@@ -418,15 +430,17 @@ class OfficialDocumentView extends StatelessWidget {
       rows.add(TableRow(
         children: [
           Container(
-            color: const Color(0xFFF3F4F6),
-            padding: const EdgeInsets.all(7),
+            color: const Color(0xFFF3F4F6), // Tailwind gray-100 — 대응 토큰 없음
+            padding: const EdgeInsets.all(7), // 대응 토큰 없음
             child: Text(label,
                 style: const TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w600, color: _ink)),
+                    fontSize: AppTypography.fontSizeXs,
+                    fontWeight: AppTypography.fontWeightSemibold,
+                    color: _ink)),
           ),
           Padding(
-            padding: const EdgeInsets.all(7),
-            child: Text(value, style: const TextStyle(fontSize: 11, color: _ink)),
+            padding: const EdgeInsets.all(7), // 대응 토큰 없음
+            child: Text(value, style: const TextStyle(fontSize: AppTypography.fontSizeXs, color: _ink)),
           ),
         ],
       ));

@@ -85,10 +85,10 @@ class _SignaturePadState extends State<SignaturePad> {
           width: double.infinity,
           decoration: BoxDecoration(
             border: Border.all(color: AppSemanticColors.borderDefault),
-            borderRadius: BorderRadius.circular(AppSpacing.space3),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppSpacing.space3),
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             child: RepaintBoundary(
               key: _boundaryKey,
               child: GestureDetector(

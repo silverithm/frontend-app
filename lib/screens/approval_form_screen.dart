@@ -11,7 +11,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/document_form_fields.dart';
-import '../widgets/approval/dynamic_form_fields.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -289,7 +288,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
     // 온라인 양식 필수 필드 확인
     if (templateType != 'file' && _selectedTemplate!.formFields.isNotEmpty) {
-      final missingLabel = DynamicFormFields.validateRequired(
+      final missingLabel = DocumentFormFields.validateRequired(
           _selectedTemplate!.formFields, _formValues);
       if (missingLabel != null) {
         AppSnackBar.showError(context, message: '\'$missingLabel\' 항목을 입력해주세요');
