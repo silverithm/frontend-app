@@ -6,7 +6,7 @@ import '../models/vacation_limit.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/app_theme.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 
@@ -14,15 +14,16 @@ class AdminVacationLimitsSettingScreen extends StatefulWidget {
   const AdminVacationLimitsSettingScreen({super.key});
 
   @override
-  State<AdminVacationLimitsSettingScreen> createState() => 
+  State<AdminVacationLimitsSettingScreen> createState() =>
       _AdminVacationLimitsSettingScreenState();
 }
 
-class _AdminVacationLimitsSettingScreenState 
+class _AdminVacationLimitsSettingScreenState
     extends State<AdminVacationLimitsSettingScreen> {
   DateTime _selectedDate = DateTime.now();
   String _selectedRole = 'CAREGIVER'; // 'CAREGIVER', 'OFFICE', 'all'
-  Map<String, Map<String, VacationLimit>> _limitsData = {}; // date -> role -> limit
+  Map<String, Map<String, VacationLimit>> _limitsData =
+      {}; // date -> role -> limit
   bool _isLoading = false;
   bool _isSaving = false;
   final Map<String, TextEditingController> _controllers = {};
@@ -37,14 +38,18 @@ class _AdminVacationLimitsSettingScreenState
   void _initializeControllersForCurrentMonth() {
     final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
     final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-    
-    for (var date = firstDay; !date.isAfter(lastDay); date = date.add(const Duration(days: 1))) {
+
+    for (
+      var date = firstDay;
+      !date.isAfter(lastDay);
+      date = date.add(const Duration(days: 1))
+    ) {
       final dateKey = _formatDate(date);
-      
+
       // CAREGIVER 컨트롤러 - 기본값 3으로 설정 (API에서 로드될 때까지)
       final caregiverKey = '${dateKey}_CAREGIVER';
       _controllers[caregiverKey] = TextEditingController(text: '3');
-      
+
       // OFFICE 컨트롤러 - 기본값 3으로 설정 (API에서 로드될 때까지)
       final officeKey = '${dateKey}_OFFICE';
       _controllers[officeKey] = TextEditingController(text: '3');
@@ -62,37 +67,37 @@ class _AdminVacationLimitsSettingScreenState
 
   Future<void> _loadVacationLimits() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authProvider = context.read<AuthProvider>();
       final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
-      
+
       // 선택된 달의 첫째 날과 마지막 날 계산
       final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
       final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-      
+
       final result = await ApiService().getVacationLimits(
         start: _formatDate(firstDay),
         end: _formatDate(lastDay),
         companyId: companyId,
       );
-      
+
       print('[VacationLimits] API 응답: $result');
-      
+
       if (result['limits'] != null) {
         final limitsData = <String, Map<String, VacationLimit>>{};
         final limitsList = result['limits'] as List<dynamic>;
-        
+
         // 응답 데이터 파싱 - 배열 형태의 데이터를 날짜별로 그룹화
         for (final limitItem in limitsList) {
           final limitMap = limitItem as Map<String, dynamic>;
           final date = limitMap['date'] as String;
           final role = (limitMap['role'] as String).toUpperCase();
-          
+
           if (limitsData[date] == null) {
             limitsData[date] = {};
           }
-          
+
           limitsData[date]![role] = VacationLimit.fromJson({
             'id': limitMap['id'],
             'date': date,
@@ -100,7 +105,7 @@ class _AdminVacationLimitsSettingScreenState
             'maxPeople': limitMap['maxPeople'],
           });
         }
-        
+
         setState(() {
           _limitsData = limitsData;
           _initializeControllers();
@@ -109,9 +114,7 @@ class _AdminVacationLimitsSettingScreenState
     } catch (e) {
       print('[VacationLimits] 로드 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('휴무 제한 데이터 로드 실패: $e')),
-        );
+        AppSnackBar.showError(context, message: '휴무 제한 데이터 로드 실패: $e');
       }
     } finally {
       setState(() => _isLoading = false);
@@ -124,66 +127,65 @@ class _AdminVacationLimitsSettingScreenState
       controller.dispose();
     }
     _controllers.clear();
-    
+
     // 새 컨트롤러들 생성
     final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
     final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-    
-    for (var date = firstDay; !date.isAfter(lastDay); date = date.add(const Duration(days: 1))) {
+
+    for (
+      var date = firstDay;
+      !date.isAfter(lastDay);
+      date = date.add(const Duration(days: 1))
+    ) {
       final dateKey = _formatDate(date);
-      
+
       // CAREGIVER 컨트롤러
       final caregiverKey = '${dateKey}_CAREGIVER';
       final caregiverLimit = _limitsData[dateKey]?['CAREGIVER']?.maxPeople ?? 3;
-      _controllers[caregiverKey] = TextEditingController(text: caregiverLimit.toString());
-      
+      _controllers[caregiverKey] = TextEditingController(
+        text: caregiverLimit.toString(),
+      );
+
       // OFFICE 컨트롤러
       final officeKey = '${dateKey}_OFFICE';
       final officeLimit = _limitsData[dateKey]?['OFFICE']?.maxPeople ?? 3;
-      _controllers[officeKey] = TextEditingController(text: officeLimit.toString());
+      _controllers[officeKey] = TextEditingController(
+        text: officeLimit.toString(),
+      );
     }
   }
 
   Future<void> _saveVacationLimits() async {
     setState(() => _isSaving = true);
-    
+
     try {
       final authProvider = context.read<AuthProvider>();
       final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
-      
+
       // 변경된 데이터 수집
       final limitsToSave = <Map<String, dynamic>>[];
-      
+
       for (final entry in _controllers.entries) {
         final parts = entry.key.split('_');
         if (parts.length != 2) continue;
-        
+
         final date = parts[0];
         final role = parts[1];
         final maxPeople = int.tryParse(entry.value.text) ?? 0;
-        
-        limitsToSave.add({
-          'date': date,
-          'maxPeople': maxPeople,
-          'role': role,
-        });
+
+        limitsToSave.add({'date': date, 'maxPeople': maxPeople, 'role': role});
       }
-      
+
       print('[VacationLimits] 저장할 데이터: $limitsToSave');
-      
+
       final result = await ApiService().saveVacationLimits(
         companyId: companyId,
         limits: limitsToSave,
       );
-      
+
       if (result['success'] == true) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('휴무 제한이 성공적으로 저장되었습니다'),
-              backgroundColor: AppSemanticColors.statusSuccessIcon,
-            ),
-          );
+          AppSnackBar.showSuccess(context, message: '휴무 제한이 성공적으로 저장되었습니다');
         }
         // 데이터 다시 로드
         await _loadVacationLimits();
@@ -193,12 +195,7 @@ class _AdminVacationLimitsSettingScreenState
     } catch (e) {
       print('[VacationLimits] 저장 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('휴무 제한 저장 실패: $e'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '휴무 제한 저장 실패: $e');
       }
     } finally {
       setState(() => _isSaving = false);
@@ -219,7 +216,7 @@ class _AdminVacationLimitsSettingScreenState
       controller.dispose();
     }
     _controllers.clear();
-    
+
     setState(() {
       _selectedDate = DateTime(_selectedDate.year, _selectedDate.month - 1);
     });
@@ -233,7 +230,7 @@ class _AdminVacationLimitsSettingScreenState
       controller.dispose();
     }
     _controllers.clear();
-    
+
     setState(() {
       _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + 1);
     });
@@ -245,61 +242,18 @@ class _AdminVacationLimitsSettingScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
+      // 슬림 타이틀 — 형제 화면(admin_unified_approval/admin_user_management)과 동일하게
+      // 아이콘뱃지+서브텍스트+"ADMIN"배지로 제목을 세 번 반복하지 않는다 (중복 강조 정리)
       appBar: AppBar(
-        title: Text('휴무 제한 설정', style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse)),
+        title: Text(
+          '휴무 제한 설정',
+          style: AppTypography.heading6.copyWith(
+            color: AppSemanticColors.textInverse,
+          ),
+        ),
         backgroundColor: AppSemanticColors.interactivePrimaryDefault,
         foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(80),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space3),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  ),
-                  child: Icon(
-                    Icons.settings,
-                    color: AppSemanticColors.textInverse,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.space4),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '날짜별 최대 휴무 인원 설정',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2, vertical: AppSpacing.space1),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  ),
-                  child: Text(
-                    'ADMIN',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -352,9 +306,7 @@ class _AdminVacationLimitsSettingScreenState
                 ),
 
                 // 제한 설정 테이블
-                Expanded(
-                  child: _buildLimitsTable(),
-                ),
+                Expanded(child: _buildLimitsTable()),
 
                 // 저장 버튼을 아래로 이동 — 정적 표면은 그림자 대신 보더만 (Seed 레이아웃 원칙)
                 Container(
@@ -397,8 +349,12 @@ class _AdminVacationLimitsSettingScreenState
     final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
     final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
     final days = <DateTime>[];
-    
-    for (var date = firstDay; !date.isAfter(lastDay); date = date.add(const Duration(days: 1))) {
+
+    for (
+      var date = firstDay;
+      !date.isAfter(lastDay);
+      date = date.add(const Duration(days: 1))
+    ) {
       days.add(date);
     }
 
@@ -418,7 +374,11 @@ class _AdminVacationLimitsSettingScreenState
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: AppSemanticColors.statusInfoIcon, size: 20),
+                Icon(
+                  Icons.info_outline,
+                  color: AppSemanticColors.statusInfoIcon,
+                  size: 20,
+                ),
                 const SizedBox(width: AppSpacing.space3),
                 Expanded(
                   child: Text(
@@ -446,17 +406,17 @@ class _AdminVacationLimitsSettingScreenState
     final isWeekend = isSunday || isSaturday;
     final weekdayNames = ['', '월', '화', '수', '목', '금', '토', '일'];
     final weekdayName = weekdayNames[date.weekday];
-    
+
     print('[_buildDateCard] dateKey: $dateKey, selectedRole: $_selectedRole');
     print('[_buildDateCard] controllers: ${_controllers.keys.toList()}');
-    
+
     // 색상 결정
     Color borderColor;
     Color headerColor;
     Color headerTextColor;
     Color weekdayBgColor;
     Color weekdayTextColor;
-    
+
     if (isSunday) {
       // 일요일 - 빨간색
       borderColor = AppSemanticColors.statusErrorBorder;
@@ -479,17 +439,14 @@ class _AdminVacationLimitsSettingScreenState
       weekdayBgColor = AppSemanticColors.backgroundSecondary;
       weekdayTextColor = AppSemanticColors.textSecondary;
     }
-    
+
     // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.space3),
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: borderColor,
-          width: isWeekend ? 2 : 1,
-        ),
+        border: Border.all(color: borderColor, width: isWeekend ? 2 : 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.space4),
@@ -500,7 +457,10 @@ class _AdminVacationLimitsSettingScreenState
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3, vertical: AppSpacing.space1_5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space3,
+                    vertical: AppSpacing.space1_5,
+                  ),
                   decoration: BoxDecoration(
                     color: headerColor,
                     borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -515,7 +475,10 @@ class _AdminVacationLimitsSettingScreenState
                 ),
                 const SizedBox(width: AppSpacing.space2),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2, vertical: AppSpacing.space1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space2,
+                    vertical: AppSpacing.space1,
+                  ),
                   decoration: BoxDecoration(
                     color: weekdayBgColor,
                     borderRadius: BorderRadius.circular(AppBorderRadius.md),
@@ -537,7 +500,11 @@ class _AdminVacationLimitsSettingScreenState
             // 인원 수 설정 — 카드중첩 없이 구분선 아래 평면 레이아웃 (Seed 레이아웃 원칙)
             if (_selectedRole == 'CAREGIVER') ...[
               // 요양보호사 모드
-              _buildLimitInputCard('요양보호사', '${dateKey}_CAREGIVER', Icons.favorite),
+              _buildLimitInputCard(
+                '요양보호사',
+                '${dateKey}_CAREGIVER',
+                Icons.favorite,
+              ),
             ] else if (_selectedRole == 'OFFICE') ...[
               // 사무실 모드
               _buildLimitInputCard('사무실', '${dateKey}_OFFICE', Icons.business),
@@ -582,7 +549,7 @@ class _AdminVacationLimitsSettingScreenState
             ),
             const SizedBox(width: AppSpacing.space2),
             SizedBox(
-              width: 60,
+              width: AppSpacing.space14,
               height: AppSpacing.space9,
               child: TextFormField(
                 controller: controller,
@@ -594,11 +561,16 @@ class _AdminVacationLimitsSettingScreenState
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    borderSide: BorderSide(color: AppSemanticColors.borderSubtle),
+                    borderSide: BorderSide(
+                      color: AppSemanticColors.borderSubtle,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
+                    borderSide: BorderSide(
+                      color: AppSemanticColors.borderFocus,
+                      width: 2,
+                    ),
                   ),
                   contentPadding: EdgeInsets.zero,
                   filled: true,

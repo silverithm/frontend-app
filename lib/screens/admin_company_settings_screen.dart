@@ -17,10 +17,12 @@ class AdminCompanySettingsScreen extends StatefulWidget {
   const AdminCompanySettingsScreen({super.key});
 
   @override
-  State<AdminCompanySettingsScreen> createState() => _AdminCompanySettingsScreenState();
+  State<AdminCompanySettingsScreen> createState() =>
+      _AdminCompanySettingsScreenState();
 }
 
-class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen> {
+class _AdminCompanySettingsScreenState
+    extends State<AdminCompanySettingsScreen> {
   bool _isPaymentFailuresExpanded = false;
   @override
   void initState() {
@@ -53,9 +55,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               backgroundColor: AppSemanticColors.interactivePrimaryDefault,
               foregroundColor: AppSemanticColors.textInverse,
             ),
-            body: const Center(
-              child: Text('회사 정보를 불러올 수 없습니다.'),
-            ),
+            body: const Center(child: Text('회사 정보를 불러올 수 없습니다.')),
           );
         }
 
@@ -94,16 +94,20 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                   child: Column(
                     children: [
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: AppSpacing.space20,
+                        height: AppSpacing.space20,
                         decoration: BoxDecoration(
-                          color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                          color: AppSemanticColors.textInverse.withValues(
+                            alpha: 0.2,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.xl2,
+                          ),
                         ),
                         child: Icon(
                           Icons.business,
                           color: AppSemanticColors.textInverse,
-                          size: 40,
+                          size: AppSpacing.space10,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.space4),
@@ -119,7 +123,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       Text(
                         '관리자 계정으로 로그인됨',
                         style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
+                          color: AppSemanticColors.textInverse.withValues(
+                            alpha: 0.9,
+                          ),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -230,7 +236,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       padding: const EdgeInsets.all(AppSpacing.space6),
                       decoration: BoxDecoration(
                         color: AppSemanticColors.surfaceDefault,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.xl2,
+                        ),
                         border: Border.all(
                           color: AppSemanticColors.borderDefault,
                           width: 1,
@@ -258,7 +266,6 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
 
                 // 로그아웃 버튼 (제일 하단)
                 _buildLogoutSection(authProvider),
-
               ],
             ),
           ),
@@ -276,17 +283,13 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     return Row(
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: AppSpacing.space10,
+          height: AppSpacing.space10,
           decoration: BoxDecoration(
             color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           ),
-          child: Icon(
-            icon,
-            color: iconColor,
-            size: 20,
-          ),
+          child: Icon(icon, color: iconColor, size: 20),
         ),
         const SizedBox(width: AppSpacing.space4),
         Expanded(
@@ -317,9 +320,15 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
 
   Widget _buildSubscriptionStatus(SubscriptionProvider subscriptionProvider) {
     print('[AdminCompanySettings] _buildSubscriptionStatus 호출');
-    print('[AdminCompanySettings] isLoading: ${subscriptionProvider.isLoading}');
-    print('[AdminCompanySettings] subscription: ${subscriptionProvider.subscription}');
-    print('[AdminCompanySettings] errorMessage: ${subscriptionProvider.errorMessage}');
+    print(
+      '[AdminCompanySettings] isLoading: ${subscriptionProvider.isLoading}',
+    );
+    print(
+      '[AdminCompanySettings] subscription: ${subscriptionProvider.subscription}',
+    );
+    print(
+      '[AdminCompanySettings] errorMessage: ${subscriptionProvider.errorMessage}',
+    );
 
     // 구독 정보 로딩 중
     if (subscriptionProvider.isLoading) {
@@ -392,8 +401,8 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     final statusColor = subscription.isActive
         ? AppSemanticColors.statusSuccessIcon
         : subscription.isExpired
-            ? AppSemanticColors.statusErrorIcon
-            : AppSemanticColors.statusWarningIcon;
+        ? AppSemanticColors.statusErrorIcon
+        : AppSemanticColors.statusWarningIcon;
 
     return Column(
       children: [
@@ -478,11 +487,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
   }
 
   void _navigateToPayment() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const AdminPaymentScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const AdminPaymentScreen()));
   }
 
   Widget _buildLogoutSection(AuthProvider authProvider) {
@@ -491,10 +498,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(
-          color: AppSemanticColors.borderDefault,
-          width: 1,
-        ),
+        border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -560,11 +564,10 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('로그아웃 중 오류가 발생했습니다: ${e.toString()}'),
-            backgroundColor: AppSemanticColors.statusWarningIcon,
-          ),
+        // 실제 오류 상황이므로 Warning이 아니라 Error 톤이 맞다 (기존은 시맨틱 오용)
+        AppSnackBar.showError(
+          context,
+          message: '로그아웃 중 오류가 발생했습니다: ${e.toString()}',
         );
       }
     }
@@ -574,7 +577,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     return '${date.year}년 ${date.month}월 ${date.day}일';
   }
 
-  Widget _buildPaymentFailuresSection(SubscriptionProvider subscriptionProvider) {
+  Widget _buildPaymentFailuresSection(
+    SubscriptionProvider subscriptionProvider,
+  ) {
     // 결제 실패 정보 로딩 중
     if (subscriptionProvider.isLoadingFailures) {
       return Container(
@@ -591,7 +596,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.statusWarningIcon),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppSemanticColors.statusWarningIcon,
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.space3),
@@ -728,7 +735,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(color: AppSemanticColors.statusErrorBackground),
+        border: Border.all(color: AppSemanticColors.statusErrorBorder),
       ),
       child: Row(
         children: [
@@ -758,7 +765,10 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     );
   }
 
-  Widget _buildSubscriptionControlButtons(Subscription subscription, SubscriptionProvider subscriptionProvider) {
+  Widget _buildSubscriptionControlButtons(
+    Subscription subscription,
+    SubscriptionProvider subscriptionProvider,
+  ) {
     return Row(
       children: [
         // 구독 취소/활성화 버튼
@@ -771,7 +781,8 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                   isLoading: subscriptionProvider.isLoading,
                   onPressed: subscriptionProvider.isLoading
                       ? null
-                      : () => _showCancelSubscriptionDialog(subscriptionProvider),
+                      : () =>
+                            _showCancelSubscriptionDialog(subscriptionProvider),
                 )
               : SeedButton(
                   label: '구독 재개',
@@ -779,14 +790,18 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                   isLoading: subscriptionProvider.isLoading,
                   onPressed: subscriptionProvider.isLoading
                       ? null
-                      : () => _showActivateSubscriptionDialog(subscriptionProvider),
+                      : () => _showActivateSubscriptionDialog(
+                          subscriptionProvider,
+                        ),
                 ),
         ),
       ],
     );
   }
 
-  Future<void> _showCancelSubscriptionDialog(SubscriptionProvider subscriptionProvider) async {
+  Future<void> _showCancelSubscriptionDialog(
+    SubscriptionProvider subscriptionProvider,
+  ) async {
     final confirmed = await AppDialog.showConfirm(
       context,
       title: '구독 일시정지',
@@ -796,17 +811,14 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     if (confirmed == true) {
       final success = await subscriptionProvider.cancelSubscription();
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('구독이 일시정지되었습니다'),
-            backgroundColor: AppSemanticColors.statusWarningIcon,
-          ),
-        );
+        AppSnackBar.showWarning(context, message: '구독이 일시정지되었습니다');
       }
     }
   }
 
-  Future<void> _showActivateSubscriptionDialog(SubscriptionProvider subscriptionProvider) async {
+  Future<void> _showActivateSubscriptionDialog(
+    SubscriptionProvider subscriptionProvider,
+  ) async {
     final confirmed = await AppDialog.showConfirm(
       context,
       title: '구독 재개',
@@ -816,12 +828,7 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
     if (confirmed == true) {
       final success = await subscriptionProvider.activateSubscription();
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('구독이 재개되었습니다'),
-            backgroundColor: AppSemanticColors.statusSuccessIcon,
-          ),
-        );
+        AppSnackBar.showSuccess(context, message: '구독이 재개되었습니다');
       }
     }
   }
@@ -846,13 +853,19 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       color: AppSemanticColors.statusErrorBackground,
                       borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                     ),
-                    child: Icon(Icons.person_remove, color: AppSemanticColors.statusErrorIcon, size: 24),
+                    child: Icon(
+                      Icons.person_remove,
+                      color: AppSemanticColors.statusErrorIcon,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.space3),
                   Expanded(
                     child: Text(
                       '관리자 회원탈퇴',
-                      style: AppTypography.heading6.copyWith(fontWeight: FontWeight.bold),
+                      style: AppTypography.heading6.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -863,17 +876,29 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                 decoration: BoxDecoration(
                   color: AppSemanticColors.statusErrorBackground,
                   borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(color: AppSemanticColors.statusErrorBorder),
+                  border: Border.all(
+                    color: AppSemanticColors.statusErrorBorder,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '⚠️ 주의사항',
-                      style: AppTypography.bodyLarge.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppSemanticColors.statusErrorText,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 18,
+                          color: AppSemanticColors.statusErrorIcon,
+                        ),
+                        const SizedBox(width: AppSpacing.space1_5),
+                        Text(
+                          '주의사항',
+                          style: AppTypography.bodyLarge.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppSemanticColors.statusErrorText,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.space2),
                     Text(
@@ -902,7 +927,9 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                       label: '취소',
                       variant: SeedButtonVariant.neutralOutline,
                       isDisabled: isWithdrawing,
-                      onPressed: isWithdrawing ? null : () => Navigator.pop(context),
+                      onPressed: isWithdrawing
+                          ? null
+                          : () => Navigator.pop(context),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.space3),
@@ -916,47 +943,38 @@ class _AdminCompanySettingsScreenState extends State<AdminCompanySettingsScreen>
                           : () async {
                               setState(() => isWithdrawing = true);
 
-                              final success = await authProvider.deleteAdminAccount();
+                              final success = await authProvider
+                                  .deleteAdminAccount();
 
                               if (success && context.mounted) {
                                 Navigator.pop(context);
 
-                                await Future.delayed(const Duration(milliseconds: 100));
+                                await Future.delayed(
+                                  const Duration(milliseconds: 100),
+                                );
 
                                 if (context.mounted) {
                                   Navigator.of(context).pushAndRemoveUntil(
-                                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginScreen(),
+                                    ),
                                     (route) => false,
                                   );
 
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text('관리자 회원탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사했습니다.'),
-                                      backgroundColor: AppSemanticColors.statusSuccessIcon,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                                      ),
-                                      duration: const Duration(seconds: 4),
-                                    ),
+                                  AppSnackBar.showSuccess(
+                                    context,
+                                    message:
+                                        '관리자 회원탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사했습니다.',
                                   );
                                 }
                               } else if (context.mounted) {
                                 setState(() => isWithdrawing = false);
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      authProvider.errorMessage.isNotEmpty
-                                          ? authProvider.errorMessage
-                                          : '관리자 회원탈퇴에 실패했습니다',
-                                    ),
-                                    backgroundColor: AppSemanticColors.statusErrorIcon,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                                    ),
-                                  ),
+                                AppSnackBar.showError(
+                                  context,
+                                  message: authProvider.errorMessage.isNotEmpty
+                                      ? authProvider.errorMessage
+                                      : '관리자 회원탈퇴에 실패했습니다',
                                 );
                               }
                             },

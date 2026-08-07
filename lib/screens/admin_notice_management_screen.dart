@@ -69,10 +69,7 @@ class _AdminNoticeManagementScreenState
       search: _searchController.text.isNotEmpty ? _searchController.text : null,
     );
 
-    await noticeProvider.loadNotices(
-      companyId: companyId,
-      refresh: refresh,
-    );
+    await noticeProvider.loadNotices(companyId: companyId, refresh: refresh);
   }
 
   @override
@@ -110,7 +107,10 @@ class _AdminNoticeManagementScreenState
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: Icon(Icons.filter_list, color: AppSemanticColors.textSecondary),
+                  icon: Icon(
+                    Icons.filter_list,
+                    color: AppSemanticColors.textSecondary,
+                  ),
                   onPressed: _showFilterBottomSheet,
                 ),
               ],
@@ -119,7 +119,8 @@ class _AdminNoticeManagementScreenState
           Expanded(
             child: Consumer<NoticeProvider>(
               builder: (context, noticeProvider, child) {
-                if (noticeProvider.isLoading && noticeProvider.notices.isEmpty) {
+                if (noticeProvider.isLoading &&
+                    noticeProvider.notices.isEmpty) {
                   return const Center(child: AppLoading());
                 }
 
@@ -137,8 +138,11 @@ class _AdminNoticeManagementScreenState
                   color: AppSemanticColors.interactivePrimaryDefault,
                   child: ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-                    itemCount: noticeProvider.notices.length +
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.space2,
+                    ),
+                    itemCount:
+                        noticeProvider.notices.length +
                         (noticeProvider.hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == noticeProvider.notices.length) {
@@ -186,24 +190,14 @@ class _AdminNoticeManagementScreenState
       ),
       child: TextField(
         controller: _searchController,
-        style: AppTypography.bodyMedium.copyWith(
-          color: textColor,
-        ),
+        style: AppTypography.bodyMedium.copyWith(color: textColor),
         decoration: InputDecoration(
           hintText: '공지사항 검색...',
-          hintStyle: AppTypography.bodyMedium.copyWith(
-            color: hintColor,
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: hintColor,
-          ),
+          hintStyle: AppTypography.bodyMedium.copyWith(color: hintColor),
+          prefixIcon: Icon(Icons.search, color: hintColor),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: hintColor,
-                  ),
+                  icon: Icon(Icons.clear, color: hintColor),
                   onPressed: () {
                     _searchController.clear();
                     _loadNotices(refresh: true);
@@ -230,14 +224,13 @@ class _AdminNoticeManagementScreenState
     return Dismissible(
       key: Key('notice_${notice.id}'),
       direction: DismissDirection.endToStart,
+      // 스와이프 삭제 배경 — 파괴적 행위라 대면적 빨강 자체는 관례상 정당하지만(iOS/Android 공통 패턴),
+      // 진한 solid red600 대신 옅은 배경톤(red50)+아이콘 색으로 절제해 화면이 과하게 촌스러워지지 않게 한다.
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: AppSpacing.space4),
-        color: AppSemanticColors.statusErrorIcon,
-        child: const Icon(
-          Icons.delete,
-          color: AppSemanticColors.textInverse,
-        ),
+        color: AppSemanticColors.statusErrorBackground,
+        child: Icon(Icons.delete, color: AppSemanticColors.statusErrorIcon),
       ),
       confirmDismiss: (direction) async {
         return await _showDeleteConfirmDialog(notice);
@@ -274,15 +267,9 @@ class _AdminNoticeManagementScreenState
                       ),
                       const SizedBox(width: AppSpacing.space1),
                     ],
-                    NoticePriorityBadge(
-                      priority: notice.priority,
-                      small: true,
-                    ),
+                    NoticePriorityBadge(priority: notice.priority, small: true),
                     const SizedBox(width: AppSpacing.space2),
-                    NoticeStatusBadge(
-                      status: notice.status,
-                      small: true,
-                    ),
+                    NoticeStatusBadge(status: notice.status, small: true),
                     const Spacer(),
                     PopupMenuButton<String>(
                       icon: Icon(
@@ -529,7 +516,8 @@ class _AdminNoticeManagementScreenState
                       ...NoticeStatus.values.map((status) {
                         return _buildFilterChip(
                           label: _getStatusText(status),
-                          selected: _selectedStatus == status.name.toUpperCase(),
+                          selected:
+                              _selectedStatus == status.name.toUpperCase(),
                           onSelected: () {
                             setModalState(() {
                               _selectedStatus = status.name.toUpperCase();
@@ -562,7 +550,8 @@ class _AdminNoticeManagementScreenState
                       ...NoticePriority.values.map((priority) {
                         return _buildFilterChip(
                           label: _getPriorityText(priority),
-                          selected: _selectedPriority == priority.name.toUpperCase(),
+                          selected:
+                              _selectedPriority == priority.name.toUpperCase(),
                           onSelected: () {
                             setModalState(() {
                               _selectedPriority = priority.name.toUpperCase();
@@ -602,11 +591,7 @@ class _AdminNoticeManagementScreenState
     required bool selected,
     required VoidCallback onSelected,
   }) {
-    return SeedChip(
-      label: label,
-      selected: selected,
-      onTap: onSelected,
-    );
+    return SeedChip(label: label, selected: selected, onTap: onSelected);
   }
 
   String _getStatusText(NoticeStatus status) {
@@ -670,9 +655,7 @@ class _AdminNoticeManagementScreenState
 
   void _navigateToCreateNotice() async {
     final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => const AdminNoticeFormScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AdminNoticeFormScreen()),
     );
 
     if (result == true) {
@@ -682,9 +665,7 @@ class _AdminNoticeManagementScreenState
 
   void _navigateToEditNotice(Notice notice) async {
     final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => AdminNoticeFormScreen(notice: notice),
-      ),
+      MaterialPageRoute(builder: (_) => AdminNoticeFormScreen(notice: notice)),
     );
 
     if (result == true) {

@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
 import 'seed/seed_chip.dart';
 
@@ -76,11 +77,9 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
     } catch (e) {
       print('[AdminVacationAddDialog] 직원 목록 로드 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('직원 목록을 불러올 수 없습니다: ${e.toString()}'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
+        AppSnackBar.showError(
+          context,
+          message: '직원 목록을 불러올 수 없습니다: ${e.toString()}',
         );
       }
     } finally {
@@ -119,21 +118,11 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
   Future<void> _submitVacation() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('휴무 날짜를 선택해주세요'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-        ),
-      );
+      AppSnackBar.showError(context, message: '휴무 날짜를 선택해주세요');
       return;
     }
     if (_selectedMemberId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('직원을 선택해주세요'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-        ),
-      );
+      AppSnackBar.showError(context, message: '직원을 선택해주세요');
       return;
     }
 
@@ -155,24 +144,14 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
       if (mounted) {
         if (result['success'] == true || result['data'] != null) {
           Navigator.of(context).pop(true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('휴무가 성공적으로 등록되었습니다'),
-              backgroundColor: AppSemanticColors.statusSuccessIcon,
-            ),
-          );
+          AppSnackBar.showSuccess(context, message: '휴무가 성공적으로 등록되었습니다');
         } else {
           throw Exception(result['error'] ?? '휴무 등록 실패');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('휴무 등록 실패: ${e.toString()}'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '휴무 등록 실패: ${e.toString()}');
       }
     } finally {
       if (mounted) {

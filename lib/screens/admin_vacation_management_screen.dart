@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/in_app_review_service.dart';
-import '../utils/constants.dart';
 import '../utils/role_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/app_theme.dart';
+import '../widgets/common/app_card.dart' show AppStatusType;
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 
@@ -18,24 +18,27 @@ class AdminVacationManagementScreen extends StatefulWidget {
   const AdminVacationManagementScreen({super.key, this.showAppBar = true});
 
   @override
-  State<AdminVacationManagementScreen> createState() => _AdminVacationManagementScreenState();
+  State<AdminVacationManagementScreen> createState() =>
+      _AdminVacationManagementScreenState();
 }
 
-class _AdminVacationManagementScreenState extends State<AdminVacationManagementScreen> {
+class _AdminVacationManagementScreenState
+    extends State<AdminVacationManagementScreen> {
   List<Map<String, dynamic>> _vacationRequests = [];
   List<String> _positions = [];
   Map<String, dynamic> _vacationLimits = {};
   bool _isLoading = false;
-  String _statusFilter = 'pending'; // all, pending, approved, rejected - 초기값을 승인 대기로 설정
+  String _statusFilter =
+      'pending'; // all, pending, approved, rejected - 초기값을 승인 대기로 설정
   String _roleFilter = 'all'; // all, caregiver, office
   String _sortBy = 'application'; // application, latest, name, role
   String _searchQuery = ''; // 검색어
   final TextEditingController _searchController = TextEditingController();
-  
+
   // 개별 요청의 처리 상태 추적 (승인과 거절을 구분)
   Set<String> _approvingRequests = {};
   Set<String> _rejectingRequests = {};
-  
+
   // 체크박스 선택 관리
   Set<String> _selectedRequests = {};
   bool _isSelectMode = false;
@@ -55,21 +58,25 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authProvider = context.read<AuthProvider>();
       final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
-      
+
       // 휴무 요청 목록 로드
       print('[AdminVacationManagement] API 호출 시작 - companyId: $companyId');
       final vacationResult = await ApiService().getVacationRequests(
         companyId: companyId,
       );
       print('[AdminVacationManagement] API 응답 키들: ${vacationResult.keys}');
-      print('[AdminVacationManagement] containsKey requests: ${vacationResult.containsKey('requests')}');
-      
+      print(
+        '[AdminVacationManagement] containsKey requests: ${vacationResult.containsKey('requests')}',
+      );
+
       if (vacationResult.containsKey('requests')) {
-        final requestsList = List<Map<String, dynamic>>.from(vacationResult['requests'] ?? []);
+        final requestsList = List<Map<String, dynamic>>.from(
+          vacationResult['requests'] ?? [],
+        );
         print('[AdminVacationManagement] 로드된 휴무 요청 수: ${requestsList.length}');
         if (requestsList.isNotEmpty) {
           print('[AdminVacationManagement] 첫 번째 요청 샘플: ${requestsList.first}');
@@ -77,9 +84,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
         setState(() {
           _vacationRequests = requestsList;
         });
-        print('[AdminVacationManagement] setState 완료, _vacationRequests.length: ${_vacationRequests.length}');
+        print(
+          '[AdminVacationManagement] setState 완료, _vacationRequests.length: ${_vacationRequests.length}',
+        );
       } else {
-        print('[AdminVacationManagement] API 응답에 requests 키가 없음: ${vacationResult.keys}');
+        print(
+          '[AdminVacationManagement] API 응답에 requests 키가 없음: ${vacationResult.keys}',
+        );
       }
 
       // 등록된 역할 목록 로드 (필터에 그대로 노출)
@@ -103,13 +114,13 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       final now = DateTime.now();
       final start = DateTime(now.year, now.month, 1);
       final end = DateTime(now.year, now.month + 1, 0);
-      
+
       final limitsResult = await ApiService().getVacationLimits(
         start: start.toIso8601String().split('T')[0],
         end: end.toIso8601String().split('T')[0],
         companyId: companyId,
       );
-      
+
       if (limitsResult['success'] == true) {
         setState(() {
           _vacationLimits = limitsResult['data'] ?? {};
@@ -117,9 +128,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('데이터 로드 실패: $e')),
-        );
+        AppSnackBar.showError(context, message: '데이터 로드 실패: $e');
       }
     } finally {
       setState(() => _isLoading = false);
@@ -192,265 +201,309 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
 
   Widget _buildVacationListWithFilters() {
     print('[AdminVacationManagement] _buildVacationListWithFilters 호출');
-    print('[AdminVacationManagement] _vacationRequests.length: ${_vacationRequests.length}');
+    print(
+      '[AdminVacationManagement] _vacationRequests.length: ${_vacationRequests.length}',
+    );
     print('[AdminVacationManagement] _statusFilter: $_statusFilter');
-    
+
     final filteredRequests = _getFilteredRequests();
-    print('[AdminVacationManagement] filteredRequests.length: ${filteredRequests.length}');
+    print(
+      '[AdminVacationManagement] filteredRequests.length: ${filteredRequests.length}',
+    );
 
     return RefreshIndicator(
       onRefresh: _loadData,
       child: CustomScrollView(
         slivers: [
-        // 필터 섹션
-        SliverToBoxAdapter(
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
-              border: Border(
-                bottom: BorderSide(
-                  color: AppSemanticColors.borderSubtle,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 상태 필터
-                Text('상태', style: AppTypography.labelMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                )),
-                const SizedBox(height: AppSpacing.space2),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildStatusFilterChip('전체', 'all'),
-                      const SizedBox(width: AppSpacing.space2),
-                      _buildStatusFilterChip('승인 대기', 'pending'),
-                      const SizedBox(width: AppSpacing.space2),
-                      _buildStatusFilterChip('승인됨', 'approved'),
-                      const SizedBox(width: AppSpacing.space2),
-                      _buildStatusFilterChip('거절됨', 'rejected'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                
-                // 직무 필터
-                Text('직무', style: AppTypography.labelMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                )),
-                const SizedBox(height: AppSpacing.space2),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildRoleFilterChip('전체', RoleUtils.allRole),
-                      for (final role in _roleFilterOptions) ...[
-                        const SizedBox(width: AppSpacing.space2),
-                        _buildRoleFilterChip(RoleUtils.displayName(role), role),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                
-                // 정렬 옵션
-                Text('정렬', style: AppTypography.labelMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                )),
-                const SizedBox(height: AppSpacing.space2),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildSortFilterChip('신청순', 'application'),
-                      const SizedBox(width: AppSpacing.space2),
-                      _buildSortFilterChip('최신순', 'latest'),
-                      const SizedBox(width: AppSpacing.space2),
-                      _buildSortFilterChip('오래된순', 'oldest'),
-                      const SizedBox(width: AppSpacing.space2),
-                      _buildSortFilterChip('이름순', 'name'),
-                      const SizedBox(width: AppSpacing.space2),
-                      _buildSortFilterChip('직무순', 'role'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                
-                // 검색 필드
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: '이름, 직무로 검색...',
-                    hintStyle: TextStyle(color: AppSemanticColors.textSecondary),
-                    prefixIcon: Icon(Icons.search, color: AppSemanticColors.textSecondary),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                              });
-                            },
-                            icon: Icon(Icons.clear, color: AppSemanticColors.textSecondary),
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: AppSemanticColors.backgroundSecondary,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      borderSide: BorderSide(
-                        color: AppSemanticColors.borderFocus,
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space4,
-                      vertical: AppSpacing.space3,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        // 일괄 처리 버튼 (승인 대기 상태일 때만 표시)
-        if (_statusFilter == 'pending' && filteredRequests.isNotEmpty)
+          // 필터 섹션
           SliverToBoxAdapter(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4, vertical: AppSpacing.space2),
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              decoration: BoxDecoration(
+                color: AppSemanticColors.surfaceDefault,
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppSemanticColors.borderSubtle,
+                    width: 1,
+                  ),
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 전체 선택 체크박스
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _selectedRequests.length == filteredRequests.length && 
-                               filteredRequests.isNotEmpty,
-                        onChanged: (value) {
-                          setState(() {
-                            if (value == true) {
-                              // 전체 선택
-                              _selectedRequests = filteredRequests
-                                  .map((r) => r['id'].toString())
-                                  .toSet();
-                            } else {
-                              // 전체 해제
-                              _selectedRequests.clear();
-                            }
-                            _isSelectMode = _selectedRequests.isNotEmpty;
-                          });
-                        },
-                        activeColor: AppSemanticColors.interactivePrimaryDefault,
-                      ),
-                      Text(
-                        '전체 선택',
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space2),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2, vertical: AppSpacing.space0_5),
-                        decoration: BoxDecoration(
-                          color: _selectedRequests.isNotEmpty
-                              ? AppSemanticColors.interactiveSecondaryDefault.withValues(alpha: 0.1)
-                              : AppSemanticColors.backgroundSecondary,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                        ),
-                        child: Text(
-                          '${_selectedRequests.length}/${filteredRequests.length}',
-                          style: AppTypography.labelSmall.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: _selectedRequests.isNotEmpty
-                                ? AppSemanticColors.textPrimary
-                                : AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
+                  // 상태 필터
+                  Text(
+                    '상태',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
                   ),
-                  // 일괄 처리 버튼들
-                  if (_selectedRequests.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.space3),
+                  const SizedBox(height: AppSpacing.space2),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildStatusFilterChip('전체', 'all'),
+                        const SizedBox(width: AppSpacing.space2),
+                        _buildStatusFilterChip('승인 대기', 'pending'),
+                        const SizedBox(width: AppSpacing.space2),
+                        _buildStatusFilterChip('승인됨', 'approved'),
+                        const SizedBox(width: AppSpacing.space2),
+                        _buildStatusFilterChip('거절됨', 'rejected'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+
+                  // 직무 필터
+                  Text(
+                    '직무',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space2),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildRoleFilterChip('전체', RoleUtils.allRole),
+                        for (final role in _roleFilterOptions) ...[
+                          const SizedBox(width: AppSpacing.space2),
+                          _buildRoleFilterChip(
+                            RoleUtils.displayName(role),
+                            role,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+
+                  // 정렬 옵션
+                  Text(
+                    '정렬',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space2),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildSortFilterChip('신청순', 'application'),
+                        const SizedBox(width: AppSpacing.space2),
+                        _buildSortFilterChip('최신순', 'latest'),
+                        const SizedBox(width: AppSpacing.space2),
+                        _buildSortFilterChip('오래된순', 'oldest'),
+                        const SizedBox(width: AppSpacing.space2),
+                        _buildSortFilterChip('이름순', 'name'),
+                        const SizedBox(width: AppSpacing.space2),
+                        _buildSortFilterChip('직무순', 'role'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+
+                  // 검색 필드
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: '이름, 직무로 검색...',
+                      hintStyle: TextStyle(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                              icon: Icon(
+                                Icons.clear,
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AppSemanticColors.backgroundSecondary,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                        borderSide: BorderSide(
+                          color: AppSemanticColors.borderFocus,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space4,
+                        vertical: AppSpacing.space3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 일괄 처리 버튼 (승인 대기 상태일 때만 표시)
+          if (_statusFilter == 'pending' && filteredRequests.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space4,
+                  vertical: AppSpacing.space2,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 전체 선택 체크박스
                     Row(
                       children: [
-                        Expanded(
-                          child: SeedButton(
-                            label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
-                            variant: SeedButtonVariant.neutralOutline,
-                            isLoading: _isBulkProcessing,
-                            prefixIcon: Icons.close,
-                            onPressed: _isBulkProcessing ? null : _bulkReject,
+                        Checkbox(
+                          value:
+                              _selectedRequests.length ==
+                                  filteredRequests.length &&
+                              filteredRequests.isNotEmpty,
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                // 전체 선택
+                                _selectedRequests = filteredRequests
+                                    .map((r) => r['id'].toString())
+                                    .toSet();
+                              } else {
+                                // 전체 해제
+                                _selectedRequests.clear();
+                              }
+                              _isSelectMode = _selectedRequests.isNotEmpty;
+                            });
+                          },
+                          activeColor:
+                              AppSemanticColors.interactivePrimaryDefault,
+                        ),
+                        Text(
+                          '전체 선택',
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Expanded(
-                          child: SeedButton(
-                            label: _isBulkProcessing ? '처리중...' : '선택 항목 승인',
-                            variant: SeedButtonVariant.brandSolid,
-                            isLoading: _isBulkProcessing,
-                            prefixIcon: Icons.check,
-                            onPressed: _isBulkProcessing ? null : _bulkApprove,
+                        const SizedBox(width: AppSpacing.space2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.space2,
+                            vertical: AppSpacing.space0_5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _selectedRequests.isNotEmpty
+                                ? AppSemanticColors.interactiveSecondaryDefault
+                                      .withValues(alpha: 0.1)
+                                : AppSemanticColors.backgroundSecondary,
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.xl,
+                            ),
+                          ),
+                          child: Text(
+                            '${_selectedRequests.length}/${filteredRequests.length}',
+                            style: AppTypography.labelSmall.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: _selectedRequests.isNotEmpty
+                                  ? AppSemanticColors.textPrimary
+                                  : AppSemanticColors.textSecondary,
+                            ),
                           ),
                         ),
                       ],
                     ),
+                    // 일괄 처리 버튼들
+                    if (_selectedRequests.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.space3),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SeedButton(
+                              label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
+                              variant: SeedButtonVariant.neutralOutline,
+                              isLoading: _isBulkProcessing,
+                              prefixIcon: Icons.close,
+                              onPressed: _isBulkProcessing ? null : _bulkReject,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.space3),
+                          Expanded(
+                            child: SeedButton(
+                              label: _isBulkProcessing ? '처리중...' : '선택 항목 승인',
+                              variant: SeedButtonVariant.brandSolid,
+                              isLoading: _isBulkProcessing,
+                              prefixIcon: Icons.check,
+                              onPressed: _isBulkProcessing
+                                  ? null
+                                  : _bulkApprove,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.space2),
+                    const Divider(),
                   ],
-                  const SizedBox(height: AppSpacing.space2),
-                  const Divider(),
-                ],
+                ),
               ),
             ),
-          ),
-        
-        // 휴무 목록
-        if (filteredRequests.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.event_available, size: 64, color: AppSemanticColors.textTertiary),
-                  const SizedBox(height: AppSpacing.space4),
-                  Text(
-                    '휴무 요청이 없습니다',
-                    style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
-                  ),
-                ],
+
+          // 휴무 목록
+          if (filteredRequests.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.event_available,
+                      size: 64,
+                      color: AppSemanticColors.textTertiary,
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    Text(
+                      '휴무 요청이 없습니다',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4, vertical: AppSpacing.space2),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space4,
+                vertical: AppSpacing.space2,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
                   final request = filteredRequests[index];
                   return _buildVacationCardWithCheckbox(request);
-                },
-                childCount: filteredRequests.length,
+                }, childCount: filteredRequests.length),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -495,7 +548,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
 
   String _formatDate(String? dateString) {
     if (dateString == null || dateString.isEmpty) return '알 수 없음';
-    
+
     try {
       final date = DateTime.parse(dateString);
       return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -537,18 +590,22 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     // 정렬
     switch (_sortBy) {
       case 'name':
-        filteredRequests.sort((a, b) => 
-          (a['userName'] ?? '').compareTo(b['userName'] ?? ''));
+        filteredRequests.sort(
+          (a, b) => (a['userName'] ?? '').compareTo(b['userName'] ?? ''),
+        );
         break;
       case 'role':
-        filteredRequests.sort((a, b) => 
-          (a['role'] ?? '').compareTo(b['role'] ?? ''));
+        filteredRequests.sort(
+          (a, b) => (a['role'] ?? '').compareTo(b['role'] ?? ''),
+        );
         break;
       case 'application':
         // 신청순: 생성일(createdAt)이 늦은 순 (내림차순) - 최근 신청부터
         filteredRequests.sort((a, b) {
-          final dateA = DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
-          final dateB = DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
+          final dateA =
+              DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
+          final dateB =
+              DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
           return dateB.compareTo(dateA); // 생성일 늦은 순 (최근 신청부터)
         });
         break;
@@ -571,8 +628,10 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       default:
         // 기본값은 신청순
         filteredRequests.sort((a, b) {
-          final dateA = DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
-          final dateB = DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
+          final dateA =
+              DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
+          final dateB =
+              DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
           return dateA.compareTo(dateB);
         });
         break;
@@ -591,7 +650,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.space2),
       decoration: BoxDecoration(
-        color: isSelected ? AppSemanticColors.brandWeak : AppSemanticColors.surfaceDefault,
+        color: isSelected
+            ? AppSemanticColors.brandWeak
+            : AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         border: Border.all(
           color: isSelected
@@ -602,16 +663,18 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: isPending ? () {
-          setState(() {
-            if (_selectedRequests.contains(requestId)) {
-              _selectedRequests.remove(requestId);
-            } else {
-              _selectedRequests.add(requestId);
-            }
-            _isSelectMode = _selectedRequests.isNotEmpty;
-          });
-        } : null,
+        onTap: isPending
+            ? () {
+                setState(() {
+                  if (_selectedRequests.contains(requestId)) {
+                    _selectedRequests.remove(requestId);
+                  } else {
+                    _selectedRequests.add(requestId);
+                  }
+                  _isSelectMode = _selectedRequests.isNotEmpty;
+                });
+              }
+            : null,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space3),
           child: Column(
@@ -635,17 +698,17 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                             _isSelectMode = _selectedRequests.isNotEmpty;
                           });
                         },
-                        activeColor: AppSemanticColors.interactivePrimaryDefault,
+                        activeColor:
+                            AppSemanticColors.interactivePrimaryDefault,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
                   if (isPending) const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: _buildVacationCardHeader(request),
-                  ),
+                  Expanded(child: _buildVacationCardHeader(request)),
                 ],
               ),
-              if (request['reason'] != null && request['reason'].toString().isNotEmpty) ...[
+              if (request['reason'] != null &&
+                  request['reason'].toString().isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.space3),
                 _buildReasonSection(request['reason']),
               ],
@@ -707,10 +770,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                   Expanded(
                     child: Text(
                       request['userName'] ?? '알 수 없음',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                      style: AppTypography.heading6,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
@@ -727,9 +787,8 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
                     ),
                     child: Text(
                       statusText,
-                      style: TextStyle(
+                      style: AppTypography.labelMedium.copyWith(
                         color: statusColor,
-                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -776,7 +835,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           Expanded(
             child: Text(
               reason,
-              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -801,12 +862,16 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           const SizedBox(width: AppSpacing.space2),
           Expanded(
             child: SeedButton(
-              label: _rejectingRequests.contains(request['id'].toString()) ? '처리중...' : '거절',
+              label: _rejectingRequests.contains(request['id'].toString())
+                  ? '처리중...'
+                  : '거절',
               variant: SeedButtonVariant.neutralOutline,
               size: SeedButtonSize.small,
               isLoading: _rejectingRequests.contains(request['id'].toString()),
               prefixIcon: Icons.close,
-              onPressed: _rejectingRequests.contains(request['id'].toString()) || _approvingRequests.contains(request['id'].toString())
+              onPressed:
+                  _rejectingRequests.contains(request['id'].toString()) ||
+                      _approvingRequests.contains(request['id'].toString())
                   ? null
                   : () => _rejectRequest(request['id'].toString()),
             ),
@@ -814,12 +879,16 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
           const SizedBox(width: AppSpacing.space2),
           Expanded(
             child: SeedButton(
-              label: _approvingRequests.contains(request['id'].toString()) ? '처리중...' : '승인',
+              label: _approvingRequests.contains(request['id'].toString())
+                  ? '처리중...'
+                  : '승인',
               variant: SeedButtonVariant.brandSolid,
               size: SeedButtonSize.small,
               isLoading: _approvingRequests.contains(request['id'].toString()),
               prefixIcon: Icons.check,
-              onPressed: _approvingRequests.contains(request['id'].toString()) || _rejectingRequests.contains(request['id'].toString())
+              onPressed:
+                  _approvingRequests.contains(request['id'].toString()) ||
+                      _rejectingRequests.contains(request['id'].toString())
                   ? null
                   : () => _approveRequest(request['id'].toString()),
             ),
@@ -833,30 +902,28 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     setState(() {
       _approvingRequests.add(requestId);
     });
-    
+
     try {
       print('[AdminVacation] 승인 요청 시작 - requestId: $requestId');
-      final result = await ApiService().approveVacationRequest(vacationId: requestId);
+      final result = await ApiService().approveVacationRequest(
+        vacationId: requestId,
+      );
       print('[AdminVacation] 승인 API 응답: $result');
-      
+
       // 성공 판단: success가 true이거나, message가 있고 에러가 없으면 성공으로 처리
-      bool isSuccess = result['success'] == true || 
-                      (result['message'] != null && result['error'] == null) ||
-                      (result.isNotEmpty && result['error'] == null);
-      
+      bool isSuccess =
+          result['success'] == true ||
+          (result['message'] != null && result['error'] == null) ||
+          (result.isNotEmpty && result['error'] == null);
+
       if (isSuccess) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('휴무 요청이 승인되었습니다'),
-              backgroundColor: AppSemanticColors.statusSuccessIcon,
-            ),
-          );
+          AppSnackBar.showSuccess(context, message: '휴무 요청이 승인되었습니다');
           print('[AdminVacation] 승인 성공 - 데이터 새로고침 시작');
-          
+
           // 휴무 승인 카운트 증가 (인앱 리뷰 트리거)
           await InAppReviewService().incrementVacationApprovalCount();
-          
+
           await _loadData(); // 목록 새로고침
           print('[AdminVacation] 데이터 새로고침 완료');
         }
@@ -867,15 +934,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       print('[AdminVacation] 승인 중 오류: $e');
       if (mounted) {
         // Exception: 접두사 제거
-        String errorMessage = e.toString()
+        String errorMessage = e
+            .toString()
             .replaceAll('Exception: ', '')
             .replaceAll('ApiException: ', '');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('승인 실패: $errorMessage'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '승인 실패: $errorMessage');
       }
     } finally {
       if (mounted) {
@@ -890,25 +953,24 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     setState(() {
       _rejectingRequests.add(requestId);
     });
-    
+
     try {
       print('[AdminVacation] 거절 요청 시작 - requestId: $requestId');
-      final result = await ApiService().rejectVacationRequest(vacationId: requestId);
+      final result = await ApiService().rejectVacationRequest(
+        vacationId: requestId,
+      );
       print('[AdminVacation] 거절 API 응답: $result');
-      
+
       // 성공 판단: success가 true이거나, message가 있고 에러가 없으면 성공으로 처리
-      bool isSuccess = result['success'] == true || 
-                      (result['message'] != null && result['error'] == null) ||
-                      (result.isNotEmpty && result['error'] == null);
-      
+      bool isSuccess =
+          result['success'] == true ||
+          (result['message'] != null && result['error'] == null) ||
+          (result.isNotEmpty && result['error'] == null);
+
       if (isSuccess) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('휴무 요청이 거절되었습니다'),
-              backgroundColor: AppSemanticColors.statusWarningIcon,
-            ),
-          );
+          // 거절은 실패가 아니라 정상 처리 결과다 — 회원관리 화면과 같은 톤(warning)으로 통일
+          AppSnackBar.showWarning(context, message: '휴무 요청이 거절되었습니다');
           print('[AdminVacation] 거절 성공 - 데이터 새로고침 시작');
           await _loadData(); // 목록 새로고침
           print('[AdminVacation] 데이터 새로고침 완료');
@@ -920,15 +982,11 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       print('[AdminVacation] 거절 중 오류: $e');
       if (mounted) {
         // Exception: 접두사 제거
-        String errorMessage = e.toString()
+        String errorMessage = e
+            .toString()
             .replaceAll('Exception: ', '')
             .replaceAll('ApiException: ', '');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('거절 실패: $errorMessage'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '거절 실패: $errorMessage');
       }
     } finally {
       if (mounted) {
@@ -957,47 +1015,38 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
   Future<void> _deleteVacation(String vacationId) async {
     try {
       print('[AdminVacationManagement] 휴무 삭제 요청 시작 - vacationId: $vacationId');
-      
+
       final result = await ApiService().deleteVacationByAdmin(
         vacationId: vacationId,
       );
-      
+
       print('[AdminVacationManagement] 휴무 삭제 API 응답: $result');
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('휴무가 성공적으로 삭제되었습니다'),
-            backgroundColor: AppSemanticColors.statusSuccessIcon,
-          ),
-        );
-        
+        AppSnackBar.showSuccess(context, message: '휴무가 성공적으로 삭제되었습니다');
+
         // 목록 새로고침
         await _loadData();
       }
     } catch (e) {
       print('[AdminVacationManagement] 휴무 삭제 실패: $e');
-      
+
       if (mounted) {
-        String errorMessage = e.toString()
+        String errorMessage = e
+            .toString()
             .replaceAll('Exception: ', '')
             .replaceAll('ApiException: ', '');
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('휴무 삭제 실패: $errorMessage'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+
+        AppSnackBar.showError(context, message: '휴무 삭제 실패: $errorMessage');
       }
     }
   }
 
   Future<void> _bulkApprove() async {
     if (_selectedRequests.isEmpty) return;
-    
+
     final selectedList = _selectedRequests.toList();
-    
+
     // 확인 다이얼로그 표시
     final confirmed = await AppDialog.showConfirm(
       context,
@@ -1006,43 +1055,40 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       confirmText: '승인',
       cancelText: '취소',
     );
-    
+
     if (confirmed != true) return;
-    
+
     setState(() {
       _isBulkProcessing = true;
     });
-    
+
     try {
       print('[AdminVacation] 일괄 승인 요청 시작 - ${selectedList.length}개');
-      final result = await ApiService().bulkApproveVacations(vacationIds: selectedList);
+      final result = await ApiService().bulkApproveVacations(
+        vacationIds: selectedList,
+      );
       print('[AdminVacation] 일괄 승인 API 응답: $result');
-      
+
       final successCount = result['successCount'] ?? 0;
       final failureCount = result['failureCount'] ?? 0;
-      
+
       if (mounted) {
         String message;
-        Color bgColor;
-        
+        AppStatusType type;
+
         if (failureCount == 0) {
           message = '$successCount개의 휴무가 승인되었습니다';
-          bgColor = AppSemanticColors.statusSuccessIcon;
+          type = AppStatusType.success;
         } else if (successCount == 0) {
           message = '일괄 승인에 실패했습니다';
-          bgColor = AppSemanticColors.statusErrorIcon;
+          type = AppStatusType.error;
         } else {
           message = '$successCount개 승인 성공, $failureCount개 실패';
-          bgColor = AppSemanticColors.statusWarningIcon;
+          type = AppStatusType.warning;
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: bgColor,
-          ),
-        );
-        
+
+        AppSnackBar.show(context, message: message, type: type);
+
         // 선택 초기화 및 목록 새로고침
         setState(() {
           _selectedRequests.clear();
@@ -1053,12 +1099,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     } catch (e) {
       print('[AdminVacation] 일괄 승인 중 오류: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('일괄 승인 실패: ${e.toString()}'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '일괄 승인 실패: ${e.toString()}');
       }
     } finally {
       if (mounted) {
@@ -1071,9 +1112,9 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
 
   Future<void> _bulkReject() async {
     if (_selectedRequests.isEmpty) return;
-    
+
     final selectedList = _selectedRequests.toList();
-    
+
     // 확인 다이얼로그 표시
     final confirmed = await AppDialog.showConfirm(
       context,
@@ -1082,43 +1123,41 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
       confirmText: '거절',
       cancelText: '취소',
     );
-    
+
     if (confirmed != true) return;
-    
+
     setState(() {
       _isBulkProcessing = true;
     });
-    
+
     try {
       print('[AdminVacation] 일괄 거절 요청 시작 - ${selectedList.length}개');
-      final result = await ApiService().bulkRejectVacations(vacationIds: selectedList);
+      final result = await ApiService().bulkRejectVacations(
+        vacationIds: selectedList,
+      );
       print('[AdminVacation] 일괄 거절 API 응답: $result');
-      
+
       final successCount = result['successCount'] ?? 0;
       final failureCount = result['failureCount'] ?? 0;
-      
+
       if (mounted) {
         String message;
-        Color bgColor;
-        
+        AppStatusType type;
+
         if (failureCount == 0) {
+          // 거절은 실패가 아니라 정상 처리 결과다 — warning 톤 유지(빨강 아님)
           message = '$successCount개의 휴무가 거절되었습니다';
-          bgColor = AppSemanticColors.statusWarningIcon;
+          type = AppStatusType.warning;
         } else if (successCount == 0) {
           message = '일괄 거절에 실패했습니다';
-          bgColor = AppSemanticColors.statusErrorIcon;
+          type = AppStatusType.error;
         } else {
           message = '$successCount개 거절 성공, $failureCount개 실패';
-          bgColor = AppSemanticColors.statusWarningIcon;
+          type = AppStatusType.warning;
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: bgColor,
-          ),
-        );
-        
+
+        AppSnackBar.show(context, message: message, type: type);
+
         // 선택 초기화 및 목록 새로고침
         setState(() {
           _selectedRequests.clear();
@@ -1129,12 +1168,7 @@ class _AdminVacationManagementScreenState extends State<AdminVacationManagementS
     } catch (e) {
       print('[AdminVacation] 일괄 거절 중 오류: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('일괄 거절 실패: ${e.toString()}'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        AppSnackBar.showError(context, message: '일괄 거절 실패: ${e.toString()}');
       }
     } finally {
       if (mounted) {

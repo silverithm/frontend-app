@@ -4,11 +4,11 @@ import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
 import '../utils/admin_utils.dart';
-import '../utils/constants.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
@@ -91,9 +91,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 preferredSize: const Size.fromHeight(48),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppSemanticColors.textInverse.withValues(
-                      alpha: 0.1,
-                    ),
+                    color: AppSemanticColors.textInverse.withValues(alpha: 0.1),
                   ),
                   child: TabBar(
                     labelColor: AppSemanticColors.textInverse,
@@ -110,10 +108,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         icon: Icon(Icons.pending_actions, size: 20),
                         text: '승인 대기',
                       ),
-                      Tab(
-                        icon: Icon(Icons.people, size: 20),
-                        text: '전체 회원',
-                      ),
+                      Tab(icon: Icon(Icons.people, size: 20), text: '전체 회원'),
                     ],
                   ),
                 ),
@@ -194,7 +189,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 ),
                 const SizedBox(height: AppSpacing.space2),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space8,
+                  ),
                   child: Text(
                     adminProvider.errorMessage,
                     style: AppTypography.bodyMedium.copyWith(
@@ -207,7 +204,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 SeedButton(
                   label: '다시 시도',
                   onPressed: _loadData,
-                  variant: SeedButtonVariant.brandSolid,
+                  variant: SeedButtonVariant.neutralWeak,
                 ),
               ],
             ),
@@ -239,7 +236,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         return RefreshIndicator(
           onRefresh: () async => _loadData(),
           child: ListView.builder(
-            padding: const EdgeInsets.all(Constants.defaultPadding),
+            padding: const EdgeInsets.all(AppSpacing.space4),
             itemCount: adminProvider.companyMembers.length,
             itemBuilder: (context, index) {
               final user = adminProvider.companyMembers[index];
@@ -253,10 +250,12 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
   Widget _buildMemberCard(User user) {
     final isActive = user.status == 'active';
-    final isStatusProcessing =
-        _processingStatusUsers.contains(user.id.toString());
-    final isDeleteProcessing =
-        _processingDeleteUsers.contains(user.id.toString());
+    final isStatusProcessing = _processingStatusUsers.contains(
+      user.id.toString(),
+    );
+    final isDeleteProcessing = _processingDeleteUsers.contains(
+      user.id.toString(),
+    );
 
     // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
     return Container(
@@ -355,8 +354,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     label: isStatusProcessing
                         ? '처리중...'
                         : (isActive ? '비활성화' : '활성화'),
-                    onPressed:
-                        isStatusProcessing ? null : () => _toggleMemberStatus(user),
+                    onPressed: isStatusProcessing
+                        ? null
+                        : () => _toggleMemberStatus(user),
                     variant: SeedButtonVariant.brandSolid,
                     size: SeedButtonSize.small,
                     isLoading: isStatusProcessing,
@@ -367,8 +367,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Expanded(
                   child: SeedButton(
                     label: isDeleteProcessing ? '처리중...' : '삭제',
-                    onPressed:
-                        isDeleteProcessing ? null : () => _showDeleteDialog(user),
+                    onPressed: isDeleteProcessing
+                        ? null
+                        : () => _showDeleteDialog(user),
                     variant: SeedButtonVariant.critical,
                     size: SeedButtonSize.small,
                     isLoading: isDeleteProcessing,
@@ -407,14 +408,18 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         newStatus,
       );
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${user.name}님을 $actionText했습니다.'),
-            backgroundColor: newStatus == 'active'
-                ? AppSemanticColors.statusSuccessIcon
-                : AppSemanticColors.statusWarningIcon,
-          ),
-        );
+        // 활성화=긍정 결과, 비활성화=주의가 필요한 정상 처리 결과 — 둘 다 실패가 아니므로 빨강은 쓰지 않는다
+        if (newStatus == 'active') {
+          AppSnackBar.showSuccess(
+            context,
+            message: '${user.name}님을 $actionText했습니다.',
+          );
+        } else {
+          AppSnackBar.showWarning(
+            context,
+            message: '${user.name}님을 $actionText했습니다.',
+          );
+        }
       }
     } finally {
       if (mounted) {
@@ -444,12 +449,8 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       final adminProvider = context.read<AdminProvider>();
       final success = await adminProvider.deleteMember(user.id);
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${user.name}님을 삭제했습니다.'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-          ),
-        );
+        // 삭제는 되돌릴 수 없는 행위지만, 이 알림은 "정상적으로 완료됐다"는 결과 통보이지 오류가 아니다 — 빨강 금지
+        AppSnackBar.showInfo(context, message: '${user.name}님을 삭제했습니다.');
       }
     } finally {
       if (mounted) {
@@ -525,7 +526,9 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                 ),
                 const SizedBox(height: AppSpacing.space2),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space8,
+                  ),
                   child: Text(
                     adminProvider.errorMessage,
                     style: AppTypography.bodyMedium.copyWith(
@@ -538,7 +541,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                 SeedButton(
                   label: '다시 시도',
                   onPressed: _loadData,
-                  variant: SeedButtonVariant.brandSolid,
+                  variant: SeedButtonVariant.neutralWeak,
                 ),
               ],
             ),
@@ -658,8 +661,9 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                     Expanded(
                       child: SeedButton(
                         label: isProcessing ? '처리중...' : '승인',
-                        onPressed:
-                            isProcessing ? null : () => _showApprovalDialog(user),
+                        onPressed: isProcessing
+                            ? null
+                            : () => _showApprovalDialog(user),
                         variant: SeedButtonVariant.brandSolid,
                         isLoading: isProcessing,
                         prefixIcon: Icons.check,
@@ -669,8 +673,9 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                     Expanded(
                       child: SeedButton(
                         label: isProcessing ? '처리중...' : '거부',
-                        onPressed:
-                            isProcessing ? null : () => _showRejectDialog(user),
+                        onPressed: isProcessing
+                            ? null
+                            : () => _showRejectDialog(user),
                         variant: SeedButtonVariant.neutralOutline,
                         isLoading: isProcessing,
                         prefixIcon: Icons.close,
@@ -697,7 +702,6 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
 
     if (confirmed != true || !mounted) return;
 
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final authProvider = context.read<AuthProvider>();
     final adminProvider = context.read<AdminProvider>();
     final success = await adminProvider.approveJoinRequest(
@@ -705,12 +709,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
       authProvider.currentUser?.id ?? '',
     );
     if (mounted && success) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text('${user.name}님의 가입을 승인했습니다.'),
-          backgroundColor: AppSemanticColors.statusSuccessIcon,
-        ),
-      );
+      AppSnackBar.showSuccess(context, message: '${user.name}님의 가입을 승인했습니다.');
     }
   }
 
@@ -729,7 +728,6 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
 
     if (reason == null || !mounted) return;
 
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final authProvider = context.read<AuthProvider>();
     final adminProvider = context.read<AdminProvider>();
     final success = await adminProvider.rejectJoinRequest(
@@ -738,12 +736,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
       reason.trim(),
     );
     if (mounted && success) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text('${user.name}님의 가입을 거부했습니다.'),
-          backgroundColor: AppSemanticColors.statusErrorIcon,
-        ),
-      );
+      // 거부는 실패가 아니라 정상 처리 결과다 — 비활성화 완료와 같은 톤(warning)으로 통일
+      AppSnackBar.showWarning(context, message: '${user.name}님의 가입을 거부했습니다.');
     }
   }
 }
