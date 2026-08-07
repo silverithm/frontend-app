@@ -8,6 +8,7 @@ class ChatParticipant {
   final String userId;
   final String userName;
   final String? position;
+  final String? profileImageUrl;
   final ParticipantRole role;
   final String? memberRole;
   final DateTime joinedAt;
@@ -23,6 +24,7 @@ class ChatParticipant {
     required this.userId,
     required this.userName,
     this.position,
+    this.profileImageUrl,
     this.role = ParticipantRole.member,
     this.memberRole,
     required this.joinedAt,
@@ -40,6 +42,7 @@ class ChatParticipant {
       userId: json['userId']?.toString() ?? '',
       userName: json['userName']?.toString() ?? '',
       position: json['position']?.toString(),
+      profileImageUrl: json['profileImageUrl']?.toString(),
       role: _parseRole(json['role']?.toString()),
       memberRole: json['memberRole']?.toString(),
       joinedAt:
@@ -66,6 +69,7 @@ class ChatParticipant {
       'userId': userId,
       'userName': userName,
       'position': position,
+      'profileImageUrl': profileImageUrl,
       'role': role.name.toUpperCase(),
       'memberRole': memberRole,
       'joinedAt': joinedAt.toIso8601String(),
@@ -132,6 +136,7 @@ class ChatParticipant {
     String? userId,
     String? userName,
     String? position,
+    String? profileImageUrl,
     ParticipantRole? role,
     String? memberRole,
     DateTime? joinedAt,
@@ -147,6 +152,7 @@ class ChatParticipant {
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
       position: position ?? this.position,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       role: role ?? this.role,
       memberRole: memberRole ?? this.memberRole,
       joinedAt: joinedAt ?? this.joinedAt,

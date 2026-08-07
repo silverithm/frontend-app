@@ -6,6 +6,7 @@ class User {
   final String name;
   final String role; // 'CAREGIVER', 'OFFICE', 'admin'
   final String? profileImage;
+  final String? profileImageUrl;
   final DateTime createdAt;
   final bool isActive;
 
@@ -24,6 +25,7 @@ class User {
     required this.name,
     required this.role,
     this.profileImage,
+    this.profileImageUrl,
     required this.createdAt,
     this.isActive = true,
     required this.username,
@@ -46,6 +48,7 @@ class User {
       department: json['department'],
       position: json['position'],
       profileImage: json['profileImage'],
+      profileImageUrl: json['profileImageUrl']?.toString(),
       company: json['company'] != null
           ? Company.fromJson(json['company'])
           : null,
@@ -73,6 +76,7 @@ class User {
       'department': department,
       'position': position,
       'profileImage': profileImage,
+      'profileImageUrl': profileImageUrl,
       'company': company?.toJson(),
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt?.toIso8601String(),
@@ -91,6 +95,7 @@ class User {
     String? department,
     String? position,
     String? profileImage,
+    String? profileImageUrl,
     Company? company,
     DateTime? createdAt,
     DateTime? lastLoginAt,
@@ -107,6 +112,7 @@ class User {
       department: department ?? this.department,
       position: position ?? this.position,
       profileImage: profileImage ?? this.profileImage,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       company: company ?? this.company,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,

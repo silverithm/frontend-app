@@ -10,6 +10,7 @@ class MemberSigninResponse {
   final String status;
   final String? department;
   final String? position;
+  final String? profileImageUrl;
   final CompanyListDTO company;
   final String? lastLoginAt;
   final TokenInfo tokenInfo;
@@ -23,6 +24,7 @@ class MemberSigninResponse {
     required this.status,
     this.department,
     this.position,
+    this.profileImageUrl,
     required this.company,
     this.lastLoginAt,
     required this.tokenInfo,
@@ -38,6 +40,7 @@ class MemberSigninResponse {
       status: json['status'] ?? 'active',
       department: json['department'],
       position: json['position'],
+      profileImageUrl: json['profileImageUrl']?.toString(),
       company: CompanyListDTO.fromJson(json['company']),
       lastLoginAt: json['lastLoginAt'],
       tokenInfo: TokenInfo.fromJson(json['tokenInfo']),
@@ -57,6 +60,7 @@ class MemberSigninResponse {
       createdAt: DateTime.now(),
       department: department,
       position: position,
+      profileImageUrl: profileImageUrl,
       company: Company(
         id: company.id,
         name: company.name,

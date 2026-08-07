@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import 'chat_room_screen.dart';
 import 'create_chat_room_screen.dart';
@@ -205,31 +206,11 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
         ),
         child: Row(
           children: [
-            // 채팅방 아이콘/썸네일
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: isAdmin
-                    ? AppSemanticColors.interactiveSecondaryDefault.withValues(
-                        alpha: 0.1,
-                      )
-                    : AppSemanticColors.interactivePrimaryDefault.withValues(
-                        alpha: 0.1,
-                      ),
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              ),
-              child: room.thumbnailUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      child: Image.network(
-                        room.thumbnailUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            _buildDefaultIcon(isAdmin),
-                      ),
-                    )
-                  : _buildDefaultIcon(isAdmin),
+            // 채팅방 아바타/썸네일
+            SeedAvatar(
+              name: room.name,
+              imageUrl: room.thumbnailUrl,
+              size: SeedAvatarSize.large,
             ),
             const SizedBox(width: AppSpacing.space3),
 
@@ -329,16 +310,6 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDefaultIcon(bool isAdmin) {
-    return Center(
-      child: Icon(
-        Icons.chat_bubble_rounded,
-        color: AppSemanticColors.interactivePrimaryDefault,
-        size: 24,
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 
 class ChatRoomInfoScreen extends StatefulWidget {
@@ -278,21 +279,10 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                         ];
 
                         return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isAdmin
-                                ? AppSemanticColors.interactiveSecondaryDefault
-                                      .withValues(alpha: 0.1)
-                                : AppSemanticColors.interactivePrimaryDefault
-                                      .withValues(alpha: 0.1),
-                            child: Text(
-                              participant.userName.isNotEmpty
-                                  ? participant.userName[0]
-                                  : '?',
-                              style: AppTypography.bodyLarge.copyWith(
-                                color:
-                                    AppSemanticColors.interactivePrimaryDefault,
-                              ),
-                            ),
+                          leading: SeedAvatar(
+                            name: participant.userName,
+                            imageUrl: participant.profileImageUrl,
+                            size: SeedAvatarSize.medium,
                           ),
                           title: Row(
                             children: [

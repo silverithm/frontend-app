@@ -13,6 +13,7 @@ import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../models/chat_room.dart';
 import '../models/chat_message.dart';
+import '../models/chat_participant.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -20,6 +21,7 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import 'chat_room_info_screen.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 
 enum _ChatRoomMenuAction { info, delete }
@@ -53,6 +55,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadMessages();
       _markAsRead();
+      // 메시지 발신자 아바타 표시용 참가자 정보 로드
+      _chatProvider.loadParticipants(widget.room.id);
     });
 
     _scrollController.addListener(_onScroll);
@@ -1109,6 +1113,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           isMyMessage,
                           showSenderName,
                           isAdmin,
+                          chatProvider.participants,
                         );
                       },
                     );
@@ -1150,11 +1155,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
+  /// senderId로 참가자 목록에서 프로필 사진 URL을 찾는다 (없으면 null → 이니셜 표시).
+  String? _findSenderProfileImageUrl(
+    String senderId,
+    List<ChatParticipant> participants,
+  ) {
+    for (final participant in participants) {
+      if (participant.userId == senderId) {
+        return participant.profileImageUrl;
+      }
+    }
+    return null;
+  }
+
   Widget _buildMessageBubble(
     ChatMessage message,
     bool isMyMessage,
     bool showSenderName,
     bool isAdmin,
+    List<ChatParticipant> participants,
   ) {
     final bubbleColor = isMyMessage
         ? AppSemanticColors.interactivePrimaryDefault
@@ -1179,7 +1198,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (!isMyMessage) const SizedBox(width: AppSpacing.space1),
+            if (!isMyMessage) ...[
+              const SizedBox(width: AppSpacing.space1),
+              // 상대방 아바타 — 연속 메시지 그룹의 이름 표시 시점(showSenderName)에만 노출
+              showSenderName
+                  ? SeedAvatar(
+                      name: message.senderName,
+                      imageUrl: _findSenderProfileImageUrl(
+                        message.senderId,
+                        participants,
+                      ),
+                      size: SeedAvatarSize.small,
+                    )
+                  : const SizedBox(width: 32),
+              const SizedBox(width: AppSpacing.space2),
+            ],
 
             // 내 메시지: 전송 상태 + 안읽은 수 + 시간
             if (isMyMessage) ...[
