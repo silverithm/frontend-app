@@ -20,7 +20,7 @@ class NotificationBell extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool onDark = iconColor != null;
     return Padding(
-      padding: const EdgeInsets.only(top: 4, right: 4),
+      padding: const EdgeInsets.only(top: AppSpacing.space1, right: AppSpacing.space1),
       child: SizedBox(
         width: AppSpacing.space10,
         height: AppSpacing.space10,
@@ -61,17 +61,11 @@ class NotificationBell extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppSemanticColors.statusErrorIcon,
                     borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                    // 화면에 고정 부착된 장식 뱃지(FAB/다이얼로그/시트가 아님) — 그림자 대신 보더로만 구분
                     border: Border.all(
                       color: AppSemanticColors.textInverse,
                       width: 1.5,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppSemanticColors.statusErrorBorder.withValues(alpha: 0.5),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   constraints: const BoxConstraints(
                     minWidth: 18,
@@ -81,7 +75,9 @@ class NotificationBell extends StatelessWidget {
                     unreadCount > 99 ? '99+' : unreadCount.toString(),
                     style: AppTypography.overline.copyWith(
                       color: AppSemanticColors.textInverse,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: AppTypography.fontWeightBold,
+                      // 18px 원형 뱃지 안에 "99+"까지 들어가야 해서 overline 기본(11)보다
+                      // 작은 10이 필요 — 대응 토큰 없음, 의도된 값이라 유지
                       fontSize: 10,
                     ),
                     textAlign: TextAlign.center,
@@ -214,7 +210,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                           size: 48,
                           color: AppSemanticColors.statusErrorBorder,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.space4),
                         Text(
                           notificationProvider.errorMessage,
                           textAlign: TextAlign.center,
@@ -237,7 +233,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                           size: 48,
                           color: AppSemanticColors.textDisabled,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.space4),
                         Text(
                           '알림이 없습니다',
                           style: AppTypography.bodySmall.copyWith(
@@ -250,7 +246,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.space4),
                   itemCount: notificationProvider.notifications.length,
                   itemBuilder: (context, index) {
                     final notification =
@@ -315,13 +311,13 @@ class _NotificationBottomSheet extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: AppSpacing.space3),
+        padding: const EdgeInsets.all(AppSpacing.space4),
         decoration: BoxDecoration(
           color: isUnread
               ? color.withValues(alpha: 0.05)
               : AppSemanticColors.backgroundSecondary,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
           border: Border.all(
             color: isUnread
                 ? color.withValues(alpha: 0.2)
@@ -333,14 +329,15 @@ class _NotificationBottomSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.space2),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
+                // 대응 토큰 없음(lg=8/xl=12 사이) — 유지
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 20),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.space3),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,8 +354,8 @@ class _NotificationBottomSheet extends StatelessWidget {
                       ),
                       if (isUnread)
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: AppSpacing.space2,
+                          height: AppSpacing.space2,
                           decoration: BoxDecoration(
                             color: color,
                             shape: BoxShape.circle,
@@ -366,7 +363,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.space1),
                   Text(
                     message,
                     style: AppTypography.bodySmall.copyWith(
@@ -374,7 +371,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.space2),
                   Text(
                     time,
                     style: AppTypography.labelSmall.copyWith(

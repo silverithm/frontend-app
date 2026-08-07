@@ -40,7 +40,7 @@ class AppCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(effectiveRadius),
       borderColor: hasBorder
           ? (borderColor ?? AppSemanticColors.borderDefault)
-          : Colors.transparent,
+          : AppColors.transparent,
       borderWidth: hasBorder ? 1 : 0,
       boxShadow: elevation != null && elevation! > 0
           ? [
@@ -77,7 +77,7 @@ class AppCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(effectiveRadius),
               borderColor: hasBorder
                   ? (borderColor ?? AppSemanticColors.borderDefault)
-                  : Colors.transparent,
+                  : AppColors.transparent,
               borderWidth: hasBorder ? 1 : 0,
               boxShadow: elevation != null && elevation! > 0
                   ? [

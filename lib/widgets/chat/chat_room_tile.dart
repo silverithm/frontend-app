@@ -52,7 +52,7 @@ class ChatRoomTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // 채팅방 아이콘/썸네일
+            // 채팅방 아이콘/썸네일 — 52는 AppSpacing 스케일(48/56)에 없는 값, 대응 토큰 없어 유지
             Container(
               width: 52,
               height: 52,

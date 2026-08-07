@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/signature_pad.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 
 /// 결재 서명 관리 화면.
@@ -44,22 +45,10 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
     }
   }
 
-  void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError
-            ? AppSemanticColors.statusErrorIcon
-            : AppSemanticColors.statusSuccessIcon,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   Future<void> _register() async {
     final dataUrl = await _padController.exportPngDataUrl();
     if (dataUrl == null) {
-      _showSnack('서명을 먼저 그려주세요', isError: true);
+      AppSnackBar.showError(context, message: '서명을 먼저 그려주세요');
       return;
     }
 
@@ -71,10 +60,11 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
           _signatureUrl = response['signatureUrl']?.toString();
         });
         _padController.clear();
-        _showSnack('서명이 등록되었습니다. 결재 승인 시 자동으로 날인됩니다.');
+        AppSnackBar.showSuccess(context,
+            message: '서명이 등록되었습니다. 결재 승인 시 자동으로 날인됩니다.');
       }
     } catch (e) {
-      _showSnack('서명 등록에 실패했습니다', isError: true);
+      if (mounted) AppSnackBar.showError(context, message: '서명 등록에 실패했습니다');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -86,10 +76,10 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
       await ApiService().deleteMySignature();
       if (mounted) {
         setState(() => _signatureUrl = null);
-        _showSnack('서명이 삭제되었습니다');
+        AppSnackBar.showSuccess(context, message: '서명이 삭제되었습니다');
       }
     } catch (e) {
-      _showSnack('서명 삭제에 실패했습니다', isError: true);
+      if (mounted) AppSnackBar.showError(context, message: '서명 삭제에 실패했습니다');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -122,12 +112,12 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                         )),
                     const SizedBox(height: AppSpacing.space2),
                     Container(
-                      height: 130,
+                      height: 130, // 스케일 밖 값 — 대응 토큰 없음, 유지
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: AppColors.white,
                         border: Border.all(color: AppSemanticColors.borderDefault),
-                        borderRadius: BorderRadius.circular(AppSpacing.space3),
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       ),
                       child: Image.network(
                         _signatureUrl!,
@@ -142,14 +132,14 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                     const SizedBox(height: AppSpacing.space2),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: TextButton.icon(
+                      // 서명 삭제는 되돌릴 수 없는 파괴적 행위 — critical SeedButton으로 표준화
+                      child: SeedButton(
+                        label: '서명 삭제',
+                        variant: SeedButtonVariant.critical,
+                        size: SeedButtonSize.small,
+                        prefixIcon: Icons.delete_outline,
+                        isDisabled: _isSaving,
                         onPressed: _isSaving ? null : _delete,
-                        icon: Icon(Icons.delete_outline,
-                            size: 16, color: AppSemanticColors.statusErrorIcon),
-                        label: Text('서명 삭제',
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: AppSemanticColors.statusErrorIcon)),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.space4),
@@ -159,7 +149,7 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                       padding: const EdgeInsets.all(AppSpacing.space3),
                       decoration: BoxDecoration(
                         color: AppSemanticColors.statusInfoBackground,
-                        borderRadius: BorderRadius.circular(AppSpacing.space3),
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       ),
                       child: Text(
                         '등록된 서명이 없습니다.\n서명을 등록하면 결재 승인 시 결재란에 자동으로 날인됩니다.',

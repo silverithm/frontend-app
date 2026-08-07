@@ -113,12 +113,12 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
         title: Text(
           '채팅방 정보',
           style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
+            color: AppSemanticColors.textPrimary,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
+        backgroundColor: AppSemanticColors.surfaceDefault,
+        foregroundColor: AppSemanticColors.textPrimary,
+        iconTheme: IconThemeData(color: AppSemanticColors.textPrimary),
         elevation: 0,
       ),
       body: Column(
@@ -171,6 +171,8 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             ),
           ),
 
+          Divider(height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
+
           // 탭바
           Container(
             color: AppSemanticColors.surfaceDefault,
@@ -208,9 +210,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceDefault,
               border: Border(
-                top: BorderSide(
-                  color: AppSemanticColors.borderDefault.withValues(alpha: 0.1),
-                ),
+                top: BorderSide(color: AppSemanticColors.borderSubtle),
               ),
             ),
             child: SizedBox(

@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/vacation_planning_banner.dart';
 import 'dart:math' as math;
@@ -247,19 +248,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           Navigator.pop(context);
                           // 삭제 성공 후 데이터 새로고침
                           await _refreshData();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('휴무 신청이 삭제되었습니다'),
-                              backgroundColor:
-                                  AppSemanticColors.statusSuccessIcon,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
-                              ),
-                            ),
-                          );
+                          if (mounted) {
+                            AppSnackBar.showSuccess(context,
+                                message: '휴무 신청이 삭제되었습니다');
+                          }
                         } else if (mounted) {
                           Navigator.pop(context);
                           // 에러 메시지는 VacationProvider에서 처리됨
@@ -778,36 +770,25 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     );
   }
 
+  // one-surface 원칙: 섹션헤더는 독립된 흰 카드가 아니라 목록 안의 플랫한 라벨이어야 한다
+  // (신청현황 요약 카드·신청 카드들과 나란히 흰 박스가 반복되던 것을 정리).
   Widget _buildSectionHeader(
     String title,
     int count,
     Color color,
     IconData icon,
   ) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
         AppSpacing.space4,
-        0,
+        AppSpacing.space2,
         AppSpacing.space4,
         AppSpacing.space2,
       ),
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
-      ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.space2),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-            ),
-            child: Icon(icon, color: AppSemanticColors.textInverse, size: 20),
-          ),
-          const SizedBox(width: AppSpacing.space3),
+          Icon(icon, color: color, size: AppSpacing.space5),
+          const SizedBox(width: AppSpacing.space2),
           Text(
             '$title ($count)',
             style: AppTypography.heading6.copyWith(
@@ -885,9 +866,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                         vertical: AppSpacing.space1_5,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: _getStatusTextColor(
-                                          request.status,
-                                        ),
+                                        // 배경은 전용 배경 토큰, 텍스트는 전용 텍스트 토큰으로 역할 분리
+                                        // (이전엔 텍스트전용 토큰을 배경 채우기로 잘못 사용했음)
+                                        color: _getStatusColor(request.status),
                                         borderRadius: BorderRadius.circular(
                                           AppBorderRadius.full,
                                         ),
@@ -896,8 +877,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                         request.statusText,
                                         style: AppTypography.labelSmall
                                             .copyWith(
-                                              color:
-                                                  AppSemanticColors.textInverse,
+                                              color: _getStatusTextColor(
+                                                request.status,
+                                              ),
                                               fontWeight: FontWeight.bold,
                                             ),
                                       ),
@@ -936,8 +918,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                           vertical: AppSpacing.space1_5,
                                         ),
                                         decoration: BoxDecoration(
+                                          // 아이콘전용 토큰을 배경 채우기로 쓰던 오용을 정정 —
+                                          // 배경은 statusWarningBackground, 텍스트/아이콘은 statusWarningText
                                           color: AppSemanticColors
-                                              .statusWarningIcon,
+                                              .statusWarningBackground,
                                           borderRadius: BorderRadius.circular(
                                             AppBorderRadius.full,
                                           ),
@@ -946,14 +930,17 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             SizedBox(
-                                              width: 14,
-                                              height: 14,
+                                              width: AppSpacing.space3_5,
+                                              height: AppSpacing.space3_5,
                                               child: CustomPaint(
                                                 painter: StarPainter(
                                                   color: AppSemanticColors
-                                                      .textInverse,
+                                                      .statusWarningText,
                                                 ),
-                                                size: const Size(14, 14),
+                                                size: Size(
+                                                  AppSpacing.space3_5,
+                                                  AppSpacing.space3_5,
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(
@@ -964,7 +951,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                               style: AppTypography.labelSmall
                                                   .copyWith(
                                                     color: AppSemanticColors
-                                                        .textInverse,
+                                                        .statusWarningText,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                             ),

@@ -181,13 +181,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: AppSpacing.space4),
 
-              // 이메일 입력
-              AppInput(
+              // 이메일 입력 — 본문 폼(SeedTextField)과 동일 컴포넌트로 통일
+              SeedTextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
                 label: '이메일',
-                hintText: 'example@email.com',
-                prefixIcon: const Icon(Icons.email),
+                placeholder: 'example@email.com',
+                prefixIcon: Icons.email_outlined,
               ),
               const SizedBox(height: AppSpacing.space6),
               Row(
@@ -211,19 +211,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             : () async {
                                 final email = emailController.text.trim();
                                 if (email.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '이메일을 입력해주세요',
-                                        style: AppTypography.bodyMedium
-                                            .copyWith(
-                                              color: AppSemanticColors
-                                                  .textInverse,
-                                            ),
-                                      ),
-                                      backgroundColor:
-                                          AppSemanticColors.statusErrorIcon,
-                                    ),
+                                  AppSnackBar.showError(
+                                    context,
+                                    message: '이메일을 입력해주세요',
                                   );
                                   return;
                                 }
@@ -492,7 +482,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: !_isAdminLogin
                           ? AppSemanticColors.textInverse
                           : AppSemanticColors.textTertiary,
-                      size: 20,
+                      size: AppSpacing.space5,
                     ),
                     const SizedBox(width: AppSpacing.space2),
                     Text(
@@ -536,7 +526,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: _isAdminLogin
                           ? AppSemanticColors.textInverse
                           : AppSemanticColors.textTertiary,
-                      size: 20,
+                      size: AppSpacing.space5,
                     ),
                     const SizedBox(width: AppSpacing.space2),
                     Text(
@@ -618,7 +608,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           Container(
             width: 1,
-            height: 12,
+            height: AppSpacing.space3,
             color: AppSemanticColors.borderDefault,
             margin: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
           ),

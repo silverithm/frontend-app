@@ -10,6 +10,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 
 class NoticeDetailScreen extends StatefulWidget {
@@ -311,8 +312,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: AppSpacing.space7,
+            height: AppSpacing.space7,
             decoration: BoxDecoration(
               color: AppSemanticColors.backgroundTertiary,
               borderRadius: BorderRadius.circular(AppBorderRadius.full),
@@ -412,8 +413,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
           Row(
             children: [
               Container(
-                width: 24,
-                height: 24,
+                width: AppSpacing.space6,
+                height: AppSpacing.space6,
                 decoration: BoxDecoration(
                   color: AppSemanticColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(AppBorderRadius.full),
@@ -529,8 +530,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
           GestureDetector(
             onTap: _isSubmittingComment ? null : _submitComment,
             child: Container(
-              width: 36,
-              height: 36,
+              width: AppSpacing.space9,
+              height: AppSpacing.space9,
               decoration: BoxDecoration(
                 color: AppSemanticColors.interactivePrimaryDefault,
                 borderRadius: BorderRadius.circular(AppBorderRadius.full),
@@ -538,8 +539,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
               child: Center(
                 child: _isSubmittingComment
                     ? SizedBox(
-                        width: 16,
-                        height: 16,
+                        width: AppSpacing.space4,
+                        height: AppSpacing.space4,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
@@ -549,7 +550,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                       )
                     : Icon(
                         Icons.send,
-                        size: 16,
+                        size: AppSpacing.space4,
                         color: AppSemanticColors.textInverse,
                       ),
               ),
@@ -605,8 +606,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: AppSpacing.space10,
+                height: AppSpacing.space10,
                 decoration: BoxDecoration(
                   color: _getFileBackgroundColor(attachment),
                   borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -657,16 +658,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   Future<void> _downloadFile(NoticeAttachment attachment) async {
     if (attachment.fileUrl.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('파일 URL이 없습니다'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            ),
-          ),
-        );
+        AppSnackBar.showError(context, message: '파일 URL이 없습니다');
       }
       return;
     }
@@ -677,30 +669,12 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('파일을 열 수 없습니다'),
-              backgroundColor: AppSemanticColors.statusErrorIcon,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              ),
-            ),
-          );
+          AppSnackBar.showError(context, message: '파일을 열 수 없습니다');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('파일 다운로드 오류: $e'),
-            backgroundColor: AppSemanticColors.statusErrorIcon,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            ),
-          ),
-        );
+        AppSnackBar.showError(context, message: '파일 다운로드 오류: $e');
       }
     }
   }
@@ -765,7 +739,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         children: [
           Icon(
             Icons.error_outline,
-            size: 64,
+            size: AppSpacing.space16,
             color: AppSemanticColors.statusErrorIcon,
           ),
           const SizedBox(height: AppSpacing.space4),

@@ -139,7 +139,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
         children: [
           Icon(
             Icons.chat_bubble_outline,
-            size: 64,
+            size: AppSpacing.space16,
             color: AppSemanticColors.textDisabled,
           ),
           const SizedBox(height: AppSpacing.space4),
@@ -169,7 +169,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen> {
         children: [
           Icon(
             Icons.error_outline,
-            size: 48,
+            size: AppSpacing.space12,
             color: AppSemanticColors.statusErrorIcon,
           ),
           const SizedBox(height: AppSpacing.space3),

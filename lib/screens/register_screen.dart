@@ -8,9 +8,9 @@ import '../providers/auth_provider.dart';
 import '../providers/company_provider.dart';
 import '../models/company.dart';
 import '../services/api_service.dart';
-import '../utils/constants.dart';
 import '../widgets/common/index.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_section_header.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../theme/app_colors.dart';
@@ -251,9 +251,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space3),
-              AppStatusCard(
-                status: AppStatusType.info,
+              Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.space4),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.statusInfoBackground,
+                  border: Border.all(color: AppSemanticColors.statusInfoBorder),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -287,9 +292,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space3),
-              AppStatusCard(
-                status: AppStatusType.warning,
+              Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.space4),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.statusWarningBackground,
+                  border: Border.all(color: AppSemanticColors.statusWarningBorder),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -569,34 +579,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Text(
                 '회원가입',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: AppTypography.heading5.copyWith(
                   color: AppSemanticColors.interactivePrimaryDefault,
                 ),
               ),
-              const SizedBox(height: Constants.smallPadding),
+              const SizedBox(height: AppSpacing.space2),
 
               Text(
                 '새 계정을 만들어 시작하세요',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: AppSemanticColors.textSecondary,
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
 
               // 승인 프로세스 안내
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
                 child: Column(
                   children: [
                     // 가입 프로세스 카드
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(AppSpacing.space5),
                       decoration: BoxDecoration(
                         color: AppColors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
                         border: Border.all(
                           color: AppSemanticColors.borderSubtle,
                         ),
@@ -606,20 +615,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Text(
                             '회원가입 절차 안내',
                             style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontSize: AppTypography.fontSizeXl,
+                              fontWeight: AppTypography.fontWeightBold,
                               color: AppSemanticColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: AppSpacing.space5),
                           // 프로세스 그리드
                           GridView.count(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             crossAxisCount: 2,
                             childAspectRatio: 0.8,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
+                            crossAxisSpacing: AppSpacing.space4,
+                            mainAxisSpacing: AppSpacing.space4,
                             children: [
                               _buildProcessCard(
                                 '1',
@@ -658,7 +667,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.space4),
                     // 사용방법 버튼
                     SizedBox(
                       width: double.infinity,
@@ -675,7 +684,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.space6),
 
               // 회원가입 폼 — 흰 화면과 같은 표면에 평평하게(카드 래핑 제거)
               Padding(
@@ -689,10 +698,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       // 사용자 유형 선택
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.space4),
                         decoration: BoxDecoration(
                           color: AppSemanticColors.backgroundSecondary,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                           border: Border.all(
                             color: AppSemanticColors.borderDefault,
                             width: 1,
@@ -702,7 +711,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SeedSectionHeader(title: '가입 유형 선택'),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.space4),
                             Row(
                               children: [
                                 Expanded(
@@ -716,14 +725,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       });
                                       _clearPositionState();
                                     },
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                     child: Container(
-                                      padding: const EdgeInsets.all(16),
+                                      padding: const EdgeInsets.all(AppSpacing.space4),
                                       decoration: BoxDecoration(
                                         color: _userType == 'admin'
                                             ? AppSemanticColors.statusInfoIcon
                                             : AppColors.white,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                         border: Border.all(
                                           color: _userType == 'admin'
                                               ? AppSemanticColors.statusInfoIcon
@@ -741,7 +750,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                       .statusInfoIcon,
                                             size: 32,
                                           ),
-                                          const SizedBox(height: 8),
+                                          const SizedBox(height: AppSpacing.space2),
                                           Text(
                                             '관리자',
                                             style: TextStyle(
@@ -749,11 +758,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                   ? AppColors.white
                                                   : AppSemanticColors
                                                         .statusInfoIcon,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
+                                              fontWeight: AppTypography.fontWeightBold,
+                                              fontSize: AppTypography.fontSizeBase,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(height: AppSpacing.space1),
                                           Text(
                                             '근무표 관리',
                                             style: TextStyle(
@@ -763,7 +772,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                         .withValues(alpha: 0.7)
                                                   : AppSemanticColors
                                                         .textSecondary,
-                                              fontSize: 12,
+                                              fontSize: AppTypography.fontSizeSm,
                                             ),
                                           ),
                                         ],
@@ -771,7 +780,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: AppSpacing.space3),
                                 Expanded(
                                   child: InkWell(
                                     onTap: () {
@@ -791,15 +800,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         );
                                       }
                                     },
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                     child: Container(
-                                      padding: const EdgeInsets.all(16),
+                                      padding: const EdgeInsets.all(AppSpacing.space4),
                                       decoration: BoxDecoration(
                                         color: _userType == 'employee'
                                             ? AppSemanticColors
                                                   .statusSuccessIcon
                                             : AppColors.white,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                         border: Border.all(
                                           color: _userType == 'employee'
                                               ? AppSemanticColors
@@ -818,7 +827,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                       .statusSuccessIcon,
                                             size: 32,
                                           ),
-                                          const SizedBox(height: 8),
+                                          const SizedBox(height: AppSpacing.space2),
                                           Text(
                                             '직원',
                                             style: TextStyle(
@@ -826,11 +835,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                   ? AppColors.white
                                                   : AppSemanticColors
                                                         .statusSuccessIcon,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
+                                              fontWeight: AppTypography.fontWeightBold,
+                                              fontSize: AppTypography.fontSizeBase,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(height: AppSpacing.space1),
                                           Text(
                                             '근무표 작성',
                                             style: TextStyle(
@@ -840,7 +849,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                         .withValues(alpha: 0.7)
                                                   : AppSemanticColors
                                                         .textSecondary,
-                                              fontSize: 12,
+                                              fontSize: AppTypography.fontSizeSm,
                                             ),
                                           ),
                                         ],
@@ -899,10 +908,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (_userType == 'employee' &&
                           _hasEmployeeCompanyContext) ...[
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.space4),
                           decoration: BoxDecoration(
                             color: AppSemanticColors.backgroundSecondary,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                             border: Border.all(
                               color: AppSemanticColors.borderDefault,
                               width: 1,
@@ -916,7 +925,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 subtitle:
                                     '관리자가 프로필에서 복사한 회사 코드로 가입하면 더 빠르게 연결할 수 있습니다.',
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: AppSpacing.space4),
                               Row(
                                 children: [
                                   Expanded(
@@ -932,16 +941,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           _companyCodeController.text,
                                         );
                                       },
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                       child: Container(
-                                        padding: const EdgeInsets.all(14),
+                                        padding: const EdgeInsets.all(AppSpacing.space3_5),
                                         decoration: BoxDecoration(
                                           color: _employeeJoinMethod == 'code'
                                               ? AppSemanticColors
                                                     .statusWarningIcon
                                               : AppColors.white,
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            AppBorderRadius.xl,
                                           ),
                                           border: Border.all(
                                             color: _employeeJoinMethod == 'code'
@@ -962,7 +971,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                         .statusWarningIcon,
                                               size: 28,
                                             ),
-                                            const SizedBox(height: 8),
+                                            const SizedBox(height: AppSpacing.space2),
                                             Text(
                                               '회사 코드',
                                               style: TextStyle(
@@ -972,8 +981,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                     ? AppColors.white
                                                     : AppSemanticColors
                                                           .statusWarningIcon,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
+                                                fontWeight: AppTypography.fontWeightBold,
+                                                fontSize: AppTypography.fontSizeBase,
                                               ),
                                             ),
                                           ],
@@ -981,7 +990,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.space3),
                                   Expanded(
                                     child: InkWell(
                                       onTap: () {
@@ -998,16 +1007,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           _clearPositionState();
                                         }
                                       },
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                       child: Container(
-                                        padding: const EdgeInsets.all(14),
+                                        padding: const EdgeInsets.all(AppSpacing.space3_5),
                                         decoration: BoxDecoration(
                                           color:
                                               _employeeJoinMethod == 'company'
                                               ? AppSemanticColors.statusInfoIcon
                                               : AppColors.white,
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            AppBorderRadius.xl,
                                           ),
                                           border: Border.all(
                                             color:
@@ -1030,7 +1039,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                         .statusInfoIcon,
                                               size: 28,
                                             ),
-                                            const SizedBox(height: 8),
+                                            const SizedBox(height: AppSpacing.space2),
                                             Text(
                                               '회사 선택',
                                               style: TextStyle(
@@ -1040,8 +1049,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                     ? AppColors.white
                                                     : AppSemanticColors
                                                           .statusInfoIcon,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
+                                                fontWeight: AppTypography.fontWeightBold,
+                                                fontSize: AppTypography.fontSizeBase,
                                               ),
                                             ),
                                           ],
@@ -1093,10 +1102,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 labelText: '회사 *',
                                 prefixIcon: const Icon(Icons.business_outlined),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                   borderSide: BorderSide(
                                     color: _companyErrorMessage != null
                                         ? AppSemanticColors.statusErrorBorder
@@ -1104,7 +1113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                   borderSide: BorderSide(
                                     color: _companyErrorMessage != null
                                         ? AppSemanticColors.statusErrorIcon
@@ -1123,8 +1132,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         child: Text(
                                           company.name,
                                           style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
+                                            fontSize: AppTypography.fontSizeBase,
+                                            fontWeight: AppTypography.fontWeightMedium,
                                           ),
                                         ),
                                       ),
@@ -1145,15 +1154,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           Text(
                                             company.name,
                                             style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
+                                              fontSize: AppTypography.fontSizeBase,
+                                              fontWeight: AppTypography.fontWeightMedium,
                                             ),
                                           ),
                                           if (company.userEmails.isNotEmpty)
                                             Text(
                                               company.userEmails.first,
                                               style: TextStyle(
-                                                fontSize: 12,
+                                                fontSize: AppTypography.fontSizeSm,
                                                 color: AppSemanticColors
                                                     .textSecondary,
                                               ),
@@ -1179,14 +1188,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             if (_companyErrorMessage != null)
                               Padding(
                                 padding: const EdgeInsets.only(
-                                  top: 8,
-                                  left: 12,
+                                  top: AppSpacing.space2,
+                                  left: AppSpacing.space3,
                                 ),
                                 child: Text(
                                   _companyErrorMessage!,
                                   style: TextStyle(
                                     color: AppSemanticColors.statusErrorIcon,
-                                    fontSize: 12,
+                                    fontSize: AppTypography.fontSizeSm,
                                   ),
                                 ),
                               ),
@@ -1198,10 +1207,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (_userType == 'employee') ...[
                         if (_isLoadingPositions)
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(AppSpacing.space4),
                             decoration: BoxDecoration(
                               color: AppSemanticColors.backgroundSecondary,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                               border: Border.all(
                                 color: AppSemanticColors.borderDefault,
                               ),
@@ -1209,13 +1218,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Row(
                               children: [
                                 const SizedBox(
-                                  width: 18,
+                                  width: 18, // 스케일 밖 값 — 대응 토큰 없음
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: AppSpacing.space3),
                                 Text(
                                   '등록된 역할을 불러오는 중입니다...',
                                   style: AppTypography.bodyMedium.copyWith(
@@ -1235,10 +1244,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   : '가입할 역할을 선택해주세요',
                               prefixIcon: const Icon(Icons.badge_outlined),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                 borderSide: BorderSide(
                                   color: _positionErrorMessage != null
                                       ? AppSemanticColors.statusErrorBorder
@@ -1246,7 +1255,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                                 borderSide: BorderSide(
                                   color: _positionErrorMessage != null
                                       ? AppSemanticColors.statusErrorIcon
@@ -1279,24 +1288,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           if (_positionErrorMessage != null)
                             Padding(
-                              padding: const EdgeInsets.only(top: 8, left: 12),
+                              padding: const EdgeInsets.only(top: AppSpacing.space2, left: AppSpacing.space3),
                               child: Text(
                                 _positionErrorMessage!,
                                 style: TextStyle(
                                   color: AppSemanticColors.statusErrorIcon,
-                                  fontSize: 12,
+                                  fontSize: AppTypography.fontSizeSm,
                                 ),
                               ),
                             ),
                           if (_selectedPosition?.description?.isNotEmpty ??
                               false)
                             Padding(
-                              padding: const EdgeInsets.only(top: 8, left: 12),
+                              padding: const EdgeInsets.only(top: AppSpacing.space2, left: AppSpacing.space3),
                               child: Text(
                                 _selectedPosition!.description!,
                                 style: TextStyle(
                                   color: AppSemanticColors.textSecondary,
-                                  fontSize: 12,
+                                  fontSize: AppTypography.fontSizeSm,
                                 ),
                               ),
                             ),
@@ -1312,16 +1321,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             helperText: '휴무/근태 계산에 사용하는 내부 기준입니다.',
                             prefixIcon: const Icon(Icons.work_outline),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                             ),
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                               borderSide: BorderSide(
                                 color: AppSemanticColors.borderHover,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                               borderSide: BorderSide(
                                 color: AppSemanticColors.borderFocus,
                               ),
@@ -1427,14 +1436,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: Constants.largePadding),
+                      const SizedBox(height: AppSpacing.space6),
 
                       // 약관 동의 섹션
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.space4),
                         decoration: BoxDecoration(
                           color: AppSemanticColors.backgroundSecondary,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                           border: Border.all(
                             color: _agreementErrorMessage != null
                                 ? AppSemanticColors.statusErrorBorder
@@ -1446,7 +1455,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SeedSectionHeader(title: '약관 동의 (필수)'),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.space4),
 
                             // 개인정보 처리방침 동의
                             InkWell(
@@ -1460,16 +1469,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   }
                                 });
                               },
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
+                                  vertical: AppSpacing.space2,
                                 ),
                                 child: Row(
                                   children: [
                                     Container(
-                                      width: 20,
-                                      height: 20,
+                                      width: AppSpacing.space5,
+                                      height: AppSpacing.space5,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
@@ -1486,11 +1495,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           ? const Icon(
                                               Icons.check,
                                               color: AppColors.white,
-                                              size: 14,
+                                              size: AppSpacing.space3_5,
                                             )
                                           : null,
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.space3),
                                     Expanded(
                                       child: RichText(
                                         text: TextSpan(
@@ -1500,7 +1509,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               style: TextStyle(
                                                 color: AppSemanticColors
                                                     .textPrimary,
-                                                fontSize: 14,
+                                                fontSize: AppTypography.fontSizeBase,
                                               ),
                                             ),
                                             TextSpan(
@@ -1508,29 +1517,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               style: TextStyle(
                                                 color: AppSemanticColors
                                                     .textSecondary,
-                                                fontSize: 14,
+                                                fontSize: AppTypography.fontSizeBase,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: AppSpacing.space2),
                                     InkWell(
                                       onTap: () => _launchURL(
                                         'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
                                       ),
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
+                                          horizontal: AppSpacing.space2,
+                                          vertical: AppSpacing.space1,
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppSemanticColors
                                               .backgroundSecondary,
                                           borderRadius: BorderRadius.circular(
-                                            6,
+                                            AppBorderRadius.md,
                                           ),
                                           border: Border.all(
                                             color:
@@ -1543,8 +1552,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           style: TextStyle(
                                             color:
                                                 AppSemanticColors.textSecondary,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
+                                            fontSize: AppTypography.fontSizeSm,
+                                            fontWeight: AppTypography.fontWeightMedium,
                                           ),
                                         ),
                                       ),
@@ -1566,16 +1575,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   }
                                 });
                               },
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
+                                  vertical: AppSpacing.space2,
                                 ),
                                 child: Row(
                                   children: [
                                     Container(
-                                      width: 20,
-                                      height: 20,
+                                      width: AppSpacing.space5,
+                                      height: AppSpacing.space5,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
@@ -1592,11 +1601,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           ? const Icon(
                                               Icons.check,
                                               color: AppColors.white,
-                                              size: 14,
+                                              size: AppSpacing.space3_5,
                                             )
                                           : null,
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.space3),
                                     Expanded(
                                       child: RichText(
                                         text: TextSpan(
@@ -1606,7 +1615,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               style: TextStyle(
                                                 color: AppSemanticColors
                                                     .textPrimary,
-                                                fontSize: 14,
+                                                fontSize: AppTypography.fontSizeBase,
                                               ),
                                             ),
                                             TextSpan(
@@ -1614,29 +1623,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               style: TextStyle(
                                                 color: AppSemanticColors
                                                     .textSecondary,
-                                                fontSize: 14,
+                                                fontSize: AppTypography.fontSizeBase,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: AppSpacing.space2),
                                     InkWell(
                                       onTap: () => _launchURL(
                                         'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
                                       ),
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
+                                          horizontal: AppSpacing.space2,
+                                          vertical: AppSpacing.space1,
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppSemanticColors
                                               .backgroundSecondary,
                                           borderRadius: BorderRadius.circular(
-                                            6,
+                                            AppBorderRadius.md,
                                           ),
                                           border: Border.all(
                                             color:
@@ -1649,8 +1658,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           style: TextStyle(
                                             color:
                                                 AppSemanticColors.textSecondary,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
+                                            fontSize: AppTypography.fontSizeSm,
+                                            fontWeight: AppTypography.fontWeightMedium,
                                           ),
                                         ),
                                       ),
@@ -1661,12 +1670,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
 
                             // 전체 동의 체크박스
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.space3),
                             Container(
                               height: 1,
                               color: AppSemanticColors.borderHover,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.space3),
                             InkWell(
                               onTap: () {
                                 final newValue =
@@ -1680,16 +1689,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   }
                                 });
                               },
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
+                                  vertical: AppSpacing.space2,
                                 ),
                                 child: Row(
                                   children: [
                                     Container(
-                                      width: 20,
-                                      height: 20,
+                                      width: AppSpacing.space5,
+                                      height: AppSpacing.space5,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
@@ -1714,17 +1723,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           ? const Icon(
                                               Icons.check,
                                               color: AppColors.white,
-                                              size: 14,
+                                              size: AppSpacing.space3_5,
                                             )
                                           : null,
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.space3),
                                     Text(
                                       '위 약관에 모두 동의합니다',
                                       style: TextStyle(
                                         color: AppSemanticColors.textPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: AppTypography.fontSizeBase,
+                                        fontWeight: AppTypography.fontWeightSemibold,
                                       ),
                                     ),
                                   ],
@@ -1734,22 +1743,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             // 에러 메시지
                             if (_agreementErrorMessage != null) ...[
-                              const SizedBox(height: 8),
+                              const SizedBox(height: AppSpacing.space2),
                               Row(
                                 children: [
                                   Icon(
                                     Icons.error_outline,
                                     color: AppSemanticColors.statusErrorIcon,
-                                    size: 16,
+                                    size: AppSpacing.space4,
                                   ),
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: AppSpacing.space1_5),
                                   Expanded(
                                     child: Text(
                                       _agreementErrorMessage!,
                                       style: TextStyle(
                                         color:
                                             AppSemanticColors.statusErrorIcon,
-                                        fontSize: 12,
+                                        fontSize: AppTypography.fontSizeSm,
                                       ),
                                     ),
                                   ),
@@ -1759,7 +1768,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: Constants.largePadding),
+                      const SizedBox(height: AppSpacing.space6),
 
                       // 회원가입 버튼
                       Consumer<AuthProvider>(
@@ -1780,7 +1789,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         },
                       ),
 
-                      // 에러 메시지
+                      // 에러 메시지 — login_screen.dart와 동일하게 SeedCallout(danger)로 통일
                       Consumer<AuthProvider>(
                         builder: (context, authProvider, child) {
                           if (authProvider.errorMessage.isNotEmpty) {
@@ -1788,36 +1797,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               padding: const EdgeInsets.only(
                                 top: AppSpacing.space4,
                               ),
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color:
-                                      AppSemanticColors.statusErrorBackground,
-                                  border: Border.all(
-                                    color: AppSemanticColors.statusErrorBorder,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      color: AppSemanticColors.statusErrorIcon,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        authProvider.errorMessage,
-                                        style: TextStyle(
-                                          color:
-                                              AppSemanticColors.statusErrorText,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              child: SeedCallout(
+                                variant: SeedCalloutVariant.danger,
+                                title: authProvider.errorMessage,
                               ),
                             );
                           }
@@ -1835,54 +1817,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildProcessStep(
-    String step,
-    String description,
-    Color color,
-    bool isActive,
-  ) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isActive ? color : AppColors.white,
-              border: Border.all(
-                color: isActive ? color : AppSemanticColors.borderHover,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                step,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isActive
-                      ? AppColors.white
-                      : AppSemanticColors.textSecondary,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: TextStyle(
-              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-              color: isActive ? color : AppSemanticColors.textSecondary,
-              fontSize: 11,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildProcessCard(
     String step,
     String role,
@@ -1893,10 +1827,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   ) {
     final colors = _getGradientColors(gradientColors);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.space4),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
         border: Border.all(color: AppSemanticColors.borderDefault),
       ),
       child: Column(
@@ -1905,55 +1839,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: AppSpacing.space9,
+                height: AppSpacing.space9,
                 decoration: BoxDecoration(
                   color: colors[0],
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(10), // 스케일 밖 값 — 대응 토큰 없음
                 ),
                 child: Center(
                   child: Text(
                     step,
                     style: const TextStyle(
                       color: AppColors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontWeight: AppTypography.fontWeightBold,
+                      fontSize: AppTypography.fontSizeXl,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.space2),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space2,
+                  vertical: AppSpacing.space1,
+                ),
                 decoration: BoxDecoration(
                   color: colors[0].withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
                 ),
                 child: Text(
                   role,
                   style: TextStyle(
                     color: colors[1],
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                    fontSize: AppTypography.fontSizeXs,
+                    fontWeight: AppTypography.fontWeightBold,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.space3),
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            style: const TextStyle(
+              fontWeight: AppTypography.fontWeightBold,
+              fontSize: AppTypography.fontSizeBase,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.space2),
           Expanded(
             child: SingleChildScrollView(
               child: Text(
                 description,
                 style: TextStyle(
                   color: AppSemanticColors.textSecondary,
-                  fontSize: 11,
-                  height: 1.3,
+                  fontSize: AppTypography.fontSizeXs,
+                  height: 1.3, // 스케일 밖 값 — 대응 lineHeight 토큰 없음
                 ),
               ),
             ),
@@ -2286,10 +2226,9 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
     return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '주소 검색',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+          style: AppTypography.heading6.copyWith(
             color: AppSemanticColors.textInverse,
           ),
         ),

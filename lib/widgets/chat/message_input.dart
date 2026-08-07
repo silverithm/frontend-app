@@ -83,8 +83,8 @@ class MessageInput extends StatelessWidget {
           GestureDetector(
             onTap: onSend,
             child: Container(
-              width: 40,
-              height: 40,
+              width: AppSpacing.space10,
+              height: AppSpacing.space10,
               decoration: BoxDecoration(
                 color: AppSemanticColors.interactivePrimaryDefault,
                 shape: BoxShape.circle,
@@ -92,7 +92,7 @@ class MessageInput extends StatelessWidget {
               child: Icon(
                 Icons.send_rounded,
                 color: AppSemanticColors.textInverse,
-                size: 20,
+                size: AppSpacing.space5,
               ),
             ),
           ),

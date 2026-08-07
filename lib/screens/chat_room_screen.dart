@@ -547,6 +547,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -746,8 +752,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(reaction.emoji, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(width: 4),
+                  Text(
+                    reaction.emoji,
+                    style: const TextStyle(fontSize: AppTypography.fontSizeBase),
+                  ),
+                  const SizedBox(width: AppSpacing.space1),
                   Text(
                     '${reaction.count}',
                     style: AppTypography.labelSmall.copyWith(
@@ -780,7 +789,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           children: [
             Row(
               children: [
-                Text(reaction.emoji, style: const TextStyle(fontSize: 24)),
+                Text(
+                  reaction.emoji,
+                  style: const TextStyle(fontSize: AppTypography.fontSize3xl),
+                ),
                 const SizedBox(width: AppSpacing.space2),
                 Text('${reaction.count}명', style: AppTypography.heading5),
               ],
@@ -807,7 +819,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               width: double.infinity,
               child: SeedButton(
                 label: '닫기',
-                variant: SeedButtonVariant.brandSolid,
+                variant: SeedButtonVariant.neutralOutline,
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -904,6 +916,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
       builder: (context) {
         return Consumer<ChatProvider>(
           builder: (context, chatProvider, child) {
@@ -938,12 +956,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       itemBuilder: (context, index) {
                         final reader = readers[index];
                         return ListTile(
-                          leading: CircleAvatar(
-                            child: Text(
-                              reader.userName.isNotEmpty
-                                  ? reader.userName[0]
-                                  : '?',
-                            ),
+                          leading: SeedAvatar(
+                            name: reader.userName,
+                            size: SeedAvatarSize.small,
                           ),
                           title: Text(reader.userName),
                           trailing: Text(
@@ -1054,9 +1069,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   child: Text('채팅방 정보'),
                 ),
                 if (isAdmin)
-                  const PopupMenuItem<_ChatRoomMenuAction>(
+                  PopupMenuItem<_ChatRoomMenuAction>(
                     value: _ChatRoomMenuAction.delete,
-                    child: Text('채팅 삭제'),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          size: AppSpacing.space4,
+                          color: AppSemanticColors.statusErrorIcon,
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Text(
+                          '채팅 삭제',
+                          style: TextStyle(
+                            color: AppSemanticColors.statusErrorIcon,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
               ],
             ),
@@ -1212,7 +1242,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       ),
                       size: SeedAvatarSize.small,
                     )
-                  : const SizedBox(width: 32),
+                  : const SizedBox(width: AppSpacing.space8),
               const SizedBox(width: AppSpacing.space2),
             ],
 
@@ -1355,8 +1385,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     switch (status) {
       case MessageSendingStatus.sending:
         return SizedBox(
-          width: 12,
-          height: 12,
+          width: AppSpacing.space3,
+          height: AppSpacing.space3,
           child: CircularProgressIndicator(
             strokeWidth: 1.5,
             valueColor: AlwaysStoppedAnimation<Color>(
@@ -1367,13 +1397,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       case MessageSendingStatus.sent:
         return Icon(
           Icons.check,
-          size: 12,
+          size: AppSpacing.space3,
           color: AppSemanticColors.textTertiary,
         );
       case MessageSendingStatus.failed:
         return Icon(
           Icons.error_outline,
-          size: 12,
+          size: AppSpacing.space3,
           color: AppSemanticColors.statusErrorIcon,
         );
     }
@@ -1528,20 +1558,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
           const SizedBox(width: AppSpacing.space2),
 
-          // 전송 버튼
-          GestureDetector(
-            onTap: _sendMessage,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppSemanticColors.interactivePrimaryDefault,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.send_rounded,
-                color: AppSemanticColors.textInverse,
-                size: 20,
+          // 전송 버튼 — Material+InkWell로 눌림 피드백 부여
+          Material(
+            color: AppSemanticColors.interactivePrimaryDefault,
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: _sendMessage,
+              customBorder: const CircleBorder(),
+              child: SizedBox(
+                width: AppSpacing.space10,
+                height: AppSpacing.space10,
+                child: Center(
+                  child: Icon(
+                    Icons.send_rounded,
+                    color: AppSemanticColors.textInverse,
+                    size: AppSpacing.space5,
+                  ),
+                ),
               ),
             ),
           ),
