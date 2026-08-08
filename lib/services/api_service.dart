@@ -628,23 +628,28 @@ class ApiService {
     }
   }
 
-  // FCM 토큰 삭제 (로그아웃 시 — 관리자)
-  Future<void> deleteAdminFcmToken({required String userId}) async {
-    final response = await http.delete(
-      Uri.parse(
-        '$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token',
-      ),
-      headers: await _getHeaders(),
-    );
+  // FCM 토큰 삭제 (로그아웃 시 — 관리자).
+  // fcmToken을 함께 보내면 이 기기만 해제된다. 안 보내면 서버가 모든 기기를 해제한다.
+  Future<void> deleteAdminFcmToken({
+    required String userId,
+    String? fcmToken,
+  }) async {
+    final uri = Uri.parse(
+      '$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token',
+    ).replace(queryParameters: fcmToken != null ? {'fcmToken': fcmToken} : null);
+    final response = await http.delete(uri, headers: await _getHeaders());
     _handleResponse(response);
   }
 
   // FCM 토큰 삭제 (로그아웃 시 — 직원)
-  Future<void> deleteFcmToken({required String memberId}) async {
-    final response = await http.delete(
-      Uri.parse('$_baseUrl${Constants.fcmTokenEndpoint}/$memberId/fcm-token'),
-      headers: await _getHeaders(),
-    );
+  Future<void> deleteFcmToken({
+    required String memberId,
+    String? fcmToken,
+  }) async {
+    final uri = Uri.parse(
+      '$_baseUrl${Constants.fcmTokenEndpoint}/$memberId/fcm-token',
+    ).replace(queryParameters: fcmToken != null ? {'fcmToken': fcmToken} : null);
+    final response = await http.delete(uri, headers: await _getHeaders());
     _handleResponse(response);
   }
 

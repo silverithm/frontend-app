@@ -567,15 +567,24 @@ class FCMService {
   Future<void> revokeToken() async {
     final userId = _currentUserId;
     final isAdmin = _isAdmin;
+    // 이 기기 토큰을 함께 보내야 서버가 이 기기만 해제한다.
+    // 안 보내면 같은 계정으로 쓰던 다른 기기까지 알림이 멈춘다.
+    final deviceToken = _currentToken;
     clearUserInfo();
 
     // 서버에서 토큰 제거 (실패해도 로그아웃 흐름은 계속)
     if (userId != null) {
       try {
         if (isAdmin) {
-          await ApiService().deleteAdminFcmToken(userId: userId);
+          await ApiService().deleteAdminFcmToken(
+            userId: userId,
+            fcmToken: deviceToken,
+          );
         } else {
-          await ApiService().deleteFcmToken(memberId: userId);
+          await ApiService().deleteFcmToken(
+            memberId: userId,
+            fcmToken: deviceToken,
+          );
         }
         log('[FCM] 서버 토큰 삭제 완료 (userId: $userId, admin: $isAdmin)');
       } catch (e) {
