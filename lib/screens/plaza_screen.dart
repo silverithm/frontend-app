@@ -7,6 +7,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/external_notice.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
@@ -210,7 +211,7 @@ Future<bool?> showPlazaPostEditor(
   return saved;
 }
 
-/// 케어브이 커뮤니티: 요양 소식(뉴스) · 게시판 · 자료실
+/// 케어브이 커뮤니티: 요양 소식(언론 보도 + 장기요양보험공단 자료) · 게시판 · 자료실
 class PlazaScreen extends StatefulWidget {
   const PlazaScreen({super.key});
 
@@ -306,7 +307,26 @@ class _PlazaErrorState extends StatelessWidget {
   }
 }
 
-// ─── 요양 소식 ───
+// ─── 요양 소식: 언론 보도(뉴스 크롤링) + 장기요양보험공단 자료(공지·법령·평가·교육) 병합 ───
+
+/// 요양 소식에 올라오는 항목 — 언론 기사([ApiService.getCareNews], GET /api/v1/news)와
+/// 장기요양보험공단 자료([ApiService.getExternalNotices], GET /api/v1/external-notices)를
+/// 같은 모양으로 맞춰 날짜순으로 함께 보여주기 위한 화면 전용 모델.
+class _FeedItem {
+  final String title;
+  final String url;
+  final String badgeLabel;
+  final String filterKey; // '' 사용 안 함. 'PRESS' | notice.source(LTC_*)
+  final DateTime? date;
+
+  const _FeedItem({
+    required this.title,
+    required this.url,
+    required this.badgeLabel,
+    required this.filterKey,
+    required this.date,
+  });
+}
 
 class _NewsTab extends StatefulWidget {
   const _NewsTab();
@@ -316,144 +336,331 @@ class _NewsTab extends StatefulWidget {
 }
 
 class _NewsTabState extends State<_NewsTab> {
-  static const _categories = [
+  static const _filters = [
     {'key': '', 'label': '전체'},
-    {'key': 'policy', 'label': '정책'},
-    {'key': 'abuse', 'label': '학대예방'},
-    {'key': 'eval', 'label': '평가'},
-    {'key': 'field', 'label': '현장'},
+    {'key': 'LTC_NOTICE', 'label': '공단 공지'},
+    {'key': 'LTC_LAW', 'label': '법령'},
+    {'key': 'LTC_EVAL', 'label': '평가'},
+    {'key': 'LTC_EDU', 'label': '교육'},
+    {'key': 'PRESS', 'label': '언론 보도'},
   ];
 
-  String _category = '';
-  List<Map<String, dynamic>> _articles = [];
-  bool _isLoading = true;
-  bool _hasError = false;
+  static const int _noticePageSize = 50;
+
+  String _filter = '';
+  final ScrollController _scrollController = ScrollController();
+
+  // 언론 보도 — 한 번에 불러온다(기존 동작 유지, 페이지네이션 없음).
+  List<Map<String, dynamic>> _newsArticles = [];
+  bool _newsLoading = true;
+  bool _newsError = false;
+
+  // 장기요양보험공단 자료 — 무한스크롤로 점진 로드.
+  final List<ExternalNotice> _notices = [];
+  int _noticePage = 0;
+  bool _noticeHasMore = true;
+  bool _noticeLoadingMore = false;
+  bool _noticeInitialLoading = true;
+  bool _noticeError = false;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _scrollController.addListener(_onScroll);
+    _loadNews();
+    _loadNotices(refresh: true);
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-    });
-    try {
-      final response = await ApiService()
-          .getCareNews(category: _category.isEmpty ? null : _category, size: 30);
-      final content = (response['content'] as List?) ?? [];
-      if (mounted) {
-        setState(() {
-          _articles = content
-              .whereType<Map>()
-              .map((a) => Map<String, dynamic>.from(a))
-              .toList();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('뉴스 로드 실패: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-        });
-      }
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_noticeHasMore || _noticeLoadingMore) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadNotices();
     }
   }
 
-  Future<void> _openArticle(String? url) async {
-    if (url == null || url.isEmpty) return;
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _loadNews() async {
+    setState(() {
+      _newsLoading = true;
+      _newsError = false;
+    });
+    try {
+      final response = await ApiService().getCareNews(size: 30);
+      final content = (response['content'] as List?) ?? [];
+      if (!mounted) return;
+      setState(() {
+        _newsArticles = content
+            .whereType<Map>()
+            .map((a) => Map<String, dynamic>.from(a))
+            .toList();
+        _newsLoading = false;
+      });
+    } catch (e) {
+      debugPrint('언론 보도 로드 실패: $e');
+      if (!mounted) return;
+      setState(() {
+        _newsLoading = false;
+        _newsError = true;
+      });
+    }
+  }
+
+  Future<void> _loadNotices({bool refresh = false}) async {
+    if (_noticeLoadingMore) return;
+    setState(() {
+      _noticeLoadingMore = true;
+      if (refresh) {
+        _noticePage = 0;
+        _noticeHasMore = true;
+        _noticeError = false;
+        _noticeInitialLoading = true;
+      }
+    });
+    try {
+      final response = await ApiService().getExternalNotices(
+        page: refresh ? 0 : _noticePage,
+        size: _noticePageSize,
+      );
+      final content = response['content'];
+      final list = content is List ? content : <dynamic>[];
+      final notices = list
+          .whereType<Map<String, dynamic>>()
+          .map(ExternalNotice.fromJson)
+          .toList();
+
+      final last = response['last'] == true;
+      final totalPages = response['totalPages'];
+      final nextPage = (refresh ? 0 : _noticePage) + 1;
+      final hasMore = !last && (totalPages is! int || nextPage < totalPages);
+
+      if (!mounted) return;
+      setState(() {
+        if (refresh) _notices.clear();
+        _notices.addAll(notices);
+        _noticePage = nextPage;
+        _noticeHasMore = hasMore;
+        _noticeLoadingMore = false;
+        _noticeInitialLoading = false;
+      });
+    } catch (e) {
+      debugPrint('장기요양보험공단 자료 로드 실패: $e');
+      if (!mounted) return;
+      setState(() {
+        _noticeLoadingMore = false;
+        _noticeInitialLoading = false;
+        if (refresh || _notices.isEmpty) _noticeError = true;
+      });
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([_loadNews(), _loadNotices(refresh: true)]);
+  }
+
+  List<_FeedItem> get _mergedItems {
+    final items = <_FeedItem>[
+      for (final article in _newsArticles)
+        _FeedItem(
+          title: article['title']?.toString() ?? '',
+          url: article['url']?.toString() ?? '',
+          badgeLabel: article['source']?.toString() ?? '언론',
+          filterKey: 'PRESS',
+          date: DateTime.tryParse(article['publishedAt']?.toString() ?? ''),
+        ),
+      for (final notice in _notices)
+        _FeedItem(
+          title: notice.title,
+          url: notice.url,
+          badgeLabel: notice.sourceLabel,
+          filterKey: notice.source,
+          date: notice.postedDate,
+        ),
+    ];
+    items.sort((a, b) {
+      if (a.date == null && b.date == null) return 0;
+      if (a.date == null) return 1;
+      if (b.date == null) return -1;
+      return b.date!.compareTo(a.date!);
+    });
+    if (_filter.isEmpty) return items;
+    return items.where((item) => item.filterKey == _filter).toList();
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    return DateFormat('yyyy.MM.dd').format(date);
+  }
+
+  Future<void> _openUrl(String url) async {
+    if (url.isEmpty) return;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('링크를 열 수 없습니다')));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('링크를 여는 중 오류가 발생했습니다')));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasAnyData = _newsArticles.isNotEmpty || _notices.isNotEmpty;
+    final isInitialLoading =
+        (_newsLoading || _noticeInitialLoading) && !hasAnyData;
+    final bothFailed = _newsError && _noticeError && !hasAnyData;
+    // 한쪽만 실패했을 때는 목록은 정상 표시하고, 상단에 짧은 안내만 덧붙인다.
+    final onlyOneFailed = !bothFailed &&
+        ((_newsError && _newsArticles.isEmpty) ||
+            (_noticeError && _notices.isEmpty));
+
     return Column(
       children: [
+        if (onlyOneFailed)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space3, AppSpacing.space3, AppSpacing.space3, 0),
+            child: SeedCallout(
+              variant: SeedCalloutVariant.warning,
+              icon: Icons.warning_amber_outlined,
+              title: _newsError
+                  ? '언론 보도를 불러오지 못했어요'
+                  : '장기요양보험공단 자료를 불러오지 못했어요',
+              description: '나머지 소식은 정상적으로 표시하고 있어요.',
+            ),
+          ),
         SizedBox(
           height: 48,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.space3, vertical: AppSpacing.space2),
-            children: _categories.map((c) {
-              final selected = _category == c['key'];
+            children: _filters.map((f) {
+              final selected = _filter == f['key'];
               return Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.space2),
                 child: SeedChip(
-                  label: c['label']!,
+                  label: f['label']!,
                   selected: selected,
                   size: SeedChipSize.small,
-                  onTap: () {
-                    setState(() => _category = c['key']!);
-                    _load();
-                  },
+                  onTap: () => setState(() => _filter = f['key']!),
                 ),
               );
             }).toList(),
           ),
         ),
         Expanded(
-          child: _isLoading
+          child: isInitialLoading
               ? const Center(child: CircularProgressIndicator())
-              : (_hasError && _articles.isEmpty)
-                  ? _PlazaErrorState(onRetry: _load)
-                  : _articles.isEmpty
-                  ? Center(
-                      child: Text('아직 소식이 없어요',
-                          style: AppTypography.bodyMedium
-                              .copyWith(color: AppSemanticColors.textTertiary)))
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(AppSpacing.space3),
-                        itemCount: _articles.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: AppSpacing.space2),
-                        itemBuilder: (context, index) {
-                          final article = _articles[index];
-                          final publishedAt = DateTime.tryParse(
-                              article['publishedAt']?.toString() ?? '');
-                          return GestureDetector(
-                            onTap: () => _openArticle(article['url']?.toString()),
-                            child: Container(
-                              padding: const EdgeInsets.all(AppSpacing.space3),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.surfaceDefault,
-                                borderRadius:
-                                    BorderRadius.circular(AppSpacing.space3),
-                                border: Border.all(
-                                    color: AppSemanticColors.borderDefault),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    article['title']?.toString() ?? '',
-                                    style: AppTypography.bodyMedium.copyWith(
-                                      color: AppSemanticColors.textPrimary,
-                                      fontWeight: FontWeight.w600,
+              : bothFailed
+                  ? _PlazaErrorState(onRetry: _refreshAll)
+                  : Builder(builder: (context) {
+                      final items = _mergedItems;
+                      if (items.isEmpty) {
+                        return Center(
+                          child: Text('아직 소식이 없어요',
+                              style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textTertiary)),
+                        );
+                      }
+                      return RefreshIndicator(
+                        onRefresh: _refreshAll,
+                        child: ListView.separated(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(AppSpacing.space3),
+                          itemCount: items.length + (_noticeHasMore ? 1 : 0),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: AppSpacing.space2),
+                          itemBuilder: (context, index) {
+                            if (index == items.length) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: AppSpacing.space4),
+                                child: Center(
+                                    child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2))),
+                              );
+                            }
+                            final item = items[index];
+                            return GestureDetector(
+                              onTap: () => _openUrl(item.url),
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.all(AppSpacing.space3),
+                                decoration: BoxDecoration(
+                                  color: AppSemanticColors.surfaceDefault,
+                                  borderRadius:
+                                      BorderRadius.circular(AppSpacing.space3),
+                                  border: Border.all(
+                                      color: AppSemanticColors.borderDefault),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.space2,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppSemanticColors.brandWeak,
+                                            borderRadius: BorderRadius.circular(
+                                                AppBorderRadius.full),
+                                          ),
+                                          child: Text(
+                                            item.badgeLabel,
+                                            style: AppTypography.labelSmall
+                                                .copyWith(
+                                                    color: AppSemanticColors
+                                                        .brandPressed),
+                                          ),
+                                        ),
+                                        if (item.date != null) ...[
+                                          const SizedBox(
+                                              width: AppSpacing.space2),
+                                          Text(
+                                            _formatDate(item.date),
+                                            style: AppTypography.caption
+                                                .copyWith(
+                                                    color: AppSemanticColors
+                                                        .textTertiary),
+                                          ),
+                                        ],
+                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.space1),
-                                  Text(
-                                    '${article['source'] ?? ''}${publishedAt != null ? ' · ${DateFormat('MM.dd HH:mm').format(publishedAt)}' : ''}',
-                                    style: AppTypography.caption.copyWith(
-                                        color: AppSemanticColors.textTertiary),
-                                  ),
-                                ],
+                                    const SizedBox(height: AppSpacing.space1),
+                                    Text(
+                                      item.title,
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        color: AppSemanticColors.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                            );
+                          },
+                        ),
+                      );
+                    }),
         ),
       ],
     );

@@ -11,16 +11,17 @@ import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 
-/// 장기요양 소식 — 노인장기요양보험(longtermcare.or.kr) 공지·법령·평가·교육 자료.
+/// 장기요양 소식 목록 본문 — 노인장기요양보험(longtermcare.or.kr) 공지·법령·평가·교육 자료.
 /// GET /api/v1/external-notices (전 기관 공용, 인증 필요) — ExternalNoticeController.
-class ExternalNoticeListScreen extends StatefulWidget {
-  const ExternalNoticeListScreen({super.key});
+/// Scaffold/AppBar 없는 본문 위젯 — 케어브이 커뮤니티(PlazaScreen) 탭 안에 얹어 쓴다.
+class ExternalNoticeListBody extends StatefulWidget {
+  const ExternalNoticeListBody({super.key});
 
   @override
-  State<ExternalNoticeListScreen> createState() => _ExternalNoticeListScreenState();
+  State<ExternalNoticeListBody> createState() => _ExternalNoticeListBodyState();
 }
 
-class _ExternalNoticeListScreenState extends State<ExternalNoticeListScreen> {
+class _ExternalNoticeListBodyState extends State<ExternalNoticeListBody> {
   static const int _pageSize = 20;
 
   final ScrollController _scrollController = ScrollController();
@@ -136,14 +137,9 @@ class _ExternalNoticeListScreenState extends State<ExternalNoticeListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
-      appBar: AppBar(
-        title: Text('장기요양 소식', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
-        elevation: 0,
-      ),
-      body: Column(
+    return Container(
+      color: AppSemanticColors.backgroundSecondary,
+      child: Column(
         children: [
           Container(
             width: double.infinity,

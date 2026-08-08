@@ -13,7 +13,6 @@ import 'admin_notice_management_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 import 'company_library_screen.dart';
-import 'external_notice_list_screen.dart';
 import 'login_screen.dart';
 import 'my_vacation_screen.dart';
 import 'notice_list_screen.dart';
@@ -115,12 +114,6 @@ class MenuScreen extends StatelessWidget {
                 label: '케어브이 커뮤니티',
                 description: '요양 소식 · 게시판 · 자료실',
                 onTap: () => _push(context, const PlazaScreen()),
-              ),
-              _MenuItem(
-                icon: Icons.newspaper_outlined,
-                label: '장기요양 소식',
-                description: '노인장기요양보험 공지 · 법령 · 평가 · 교육 자료',
-                onTap: () => _push(context, const ExternalNoticeListScreen()),
               ),
               _MenuItem(
                 icon: Icons.record_voice_over_outlined,
