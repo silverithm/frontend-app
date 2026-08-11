@@ -1853,10 +1853,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         ? AppSemanticColors.textInverse
         : AppSemanticColors.textPrimary;
 
-    // 안 읽은 사람 수 계산 (전체 참가자 - 읽은 사람 수)
-    // 백엔드에서 발신자도 readCount에 포함됨
-    final participantCount = widget.room.participantCount;
-    final unreadCount = participantCount - message.readCount;
+    // 안 읽은 사람 수 — 참가자마다 '어디까지 읽었는지'를 보고 센다.
+    // 보낸 사람 자신은 언제나 읽은 것으로 친다(서버는 전송 시 읽음 행만 남기고
+    // 참가자 포인터는 옮기지 않는다).
+    // 참가자를 아직 못 받았을 때만 서버가 준 readCount로 대신 센다.
+    final unreadCount = participants.isEmpty
+        ? widget.room.participantCount - message.readCount
+        : participants
+              .where(
+                (p) =>
+                    p.userId != message.senderId &&
+                    (p.lastReadMessageId ?? 0) < message.id,
+              )
+              .length;
 
     return GestureDetector(
       onLongPress: () => _showMessageOptions(message),

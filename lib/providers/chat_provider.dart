@@ -471,8 +471,8 @@ class ChatProvider with ChangeNotifier {
         '[ChatProvider] 읽음 상태 수신: messageId=$messageId, userId=$userId, userName=$userName',
       );
 
-      // 읽음 카운트가 있으면 업데이트
-      if (messageId != null && readCount != null) {
+      // 서버가 특정 메시지의 정확한 읽은 수를 준 경우엔 그 값을 그대로 쓴다
+      if (data['messageId'] != null && readCount != null) {
         final messageIndex = _messages.indexWhere((m) => m.id == messageId);
         if (messageIndex != -1) {
           _messages[messageIndex] = _messages[messageIndex].copyWith(
@@ -480,18 +480,23 @@ class ChatProvider with ChangeNotifier {
           );
           notifyListeners();
         }
-      } else if (lastReadMessageId != null) {
-        // lastReadMessageId까지의 모든 메시지에 대해 읽음 카운트 +1
-        bool updated = false;
-        for (int i = 0; i < _messages.length; i++) {
-          if (_messages[i].id <= lastReadMessageId) {
-            _messages[i] = _messages[i].copyWith(
-              readCount: (_messages[i].readCount ?? 0) + 1,
+        return;
+      }
+
+      // 그 외에는 '그 사람이 어디까지 읽었는지'만 옮긴다.
+      // 메시지마다 readCount를 +1 하던 이전 방식은 같은 사람이 두 번 읽을 때
+      // 이전 메시지가 또 올라가, 안 읽은 수가 실제보다 빨리 사라졌다.
+      if (lastReadMessageId != null && userId != null) {
+        final index = _participants.indexWhere((p) => p.userId == userId);
+        if (index != -1) {
+          final current = _participants[index].lastReadMessageId ?? 0;
+          if (lastReadMessageId > current) {
+            _participants[index] = _participants[index].copyWith(
+              lastReadMessageId: lastReadMessageId,
             );
-            updated = true;
+            notifyListeners();
           }
         }
-        if (updated) notifyListeners();
       }
     } catch (e) {
       print('[ChatProvider] 읽음 상태 파싱 에러: $e');
