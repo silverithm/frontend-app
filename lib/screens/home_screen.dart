@@ -677,7 +677,6 @@ class _HomeScreenState extends State<HomeScreen> {
           label: '전자결재',
           caption: '승인 대기',
           count: approvalProvider.pendingCount,
-          color: AppSemanticColors.interactivePrimaryDefault,
           onTap: _openApproval,
         ),
         _DashboardMetric(
@@ -685,7 +684,6 @@ class _HomeScreenState extends State<HomeScreen> {
           label: '회원관리',
           caption: '승인 요청',
           count: adminProvider.pendingUsers.length,
-          color: AppSemanticColors.statusSuccessIcon,
           onTap: _openMemberManagement,
         ),
         _DashboardMetric(
@@ -693,7 +691,6 @@ class _HomeScreenState extends State<HomeScreen> {
           label: '공지사항',
           caption: '등록 공지',
           count: noticeProvider.notices.length,
-          color: AppSemanticColors.statusWarningIcon,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => const AdminNoticeManagementScreen(),
@@ -705,7 +702,6 @@ class _HomeScreenState extends State<HomeScreen> {
           label: '근무조정',
           caption: '이번 달 일정',
           count: currentMonthSchedules.length,
-          color: AppSemanticColors.textSecondary,
           onTap: _openWorkAdjustment,
         ),
       ];
@@ -717,7 +713,6 @@ class _HomeScreenState extends State<HomeScreen> {
         label: '전자결재',
         caption: '진행 중',
         count: approvalProvider.myPendingCount,
-        color: AppSemanticColors.interactivePrimaryDefault,
         onTap: _openApproval,
       ),
       _DashboardMetric(
@@ -725,7 +720,6 @@ class _HomeScreenState extends State<HomeScreen> {
         label: '공지사항',
         caption: '읽지 않음',
         count: noticeProvider.unreadNoticeCount,
-        color: AppSemanticColors.statusWarningIcon,
         onTap: () => Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const NoticeListScreen())),
@@ -735,7 +729,6 @@ class _HomeScreenState extends State<HomeScreen> {
         label: '내 휴무',
         caption: '승인 대기',
         count: pendingVacationCount,
-        color: AppSemanticColors.statusSuccessIcon,
         onTap: () => Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const MyVacationScreen())),
@@ -745,7 +738,6 @@ class _HomeScreenState extends State<HomeScreen> {
         label: '근무조정',
         caption: '이번 달 일정',
         count: currentMonthSchedules.length,
-        color: AppSemanticColors.textSecondary,
         onTap: _openWorkAdjustment,
       ),
     ];
@@ -792,15 +784,15 @@ class _DashboardMetric {
   final String label;
   final String caption;
   final int count;
-  final Color color;
   final VoidCallback onTap;
 
+  // 아이콘 색은 항목마다 두지 않는다. 여기 색은 상태를 뜻하는 것이 아니라
+  // 그냥 메뉴 구분이었는데, 초록·노랑·회색이 섞이니 경고처럼 읽혔다.
   const _DashboardMetric({
     required this.icon,
     required this.label,
     required this.caption,
     required this.count,
-    required this.color,
     required this.onTap,
   });
 }
@@ -899,23 +891,34 @@ class _DashboardMetricCard extends StatelessWidget {
         onTap: metric.onTap,
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.space1,
+            horizontal: AppSpacing.space2,
+          ),
+          // 칸은 화면 절반인데 내용이 왼쪽에 붙어 있어 오른쪽이 통째로 비어 보였다.
+          // 가로·세로 모두 칸 한가운데에 둔다.
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 width: AppSpacing.space9,
                 height: AppSpacing.space9,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: metric.color.withValues(alpha: 0.12),
+                  color: AppSemanticColors.brandWeak,
                   borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                 ),
-                child: Icon(metric.icon, color: metric.color, size: 20),
+                child: Icon(
+                  metric.icon,
+                  color: AppSemanticColors.brandDefault,
+                  size: 20,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(height: AppSpacing.space3),
               Text(
                 metric.count.toString(),
+                textAlign: TextAlign.center,
                 style: AppTypography.heading5.copyWith(
                   color: AppSemanticColors.textPrimary,
                   fontWeight: AppTypography.fontWeightBold,
@@ -926,6 +929,7 @@ class _DashboardMetricCard extends StatelessWidget {
                 metric.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppSemanticColors.textPrimary,
                   fontWeight: AppTypography.fontWeightSemibold,
@@ -936,6 +940,7 @@ class _DashboardMetricCard extends StatelessWidget {
                 metric.caption,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textTertiary,
                 ),
