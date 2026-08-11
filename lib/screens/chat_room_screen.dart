@@ -2012,14 +2012,31 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
             ),
 
-            // 상대 메시지: 시간
+            // 상대 메시지: 안읽은 수 + 시간
+            // 읽음 표시는 누가 보냈든 똑같이 뜬다 — 내 메시지에만 두면
+            // 상대 메시지를 아직 누가 안 봤는지 알 수 없다
             if (!isMyMessage) ...[
               const SizedBox(width: AppSpacing.space1),
-              Text(
-                _formatMessageTime(message.createdAt),
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (unreadCount > 0)
+                    Text(
+                      '$unreadCount',
+                      style: AppTypography.labelSmall.copyWith(
+                        color: isAdmin
+                            ? AppSemanticColors.textSecondary
+                            : AppSemanticColors.interactivePrimaryDefault,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  Text(
+                    _formatMessageTime(message.createdAt),
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ],
