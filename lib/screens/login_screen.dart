@@ -293,19 +293,12 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: AppSpacing.space8),
-
-                // 브랜드 영역 — 로고(틸)만 포인트로 사용, 화면 배경은 흰색
-                Center(
-                  child: Image.asset(
-                    'assets/images/app_icon_with_text_3.png',
-                    width: 72,
-                    height: 72,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space10),
-
-                // 헤더
+                // 헤더.
+                //
+                // 로고 그림과 앱 이름 줄은 뺐다. 쓰던 'app_icon_with_text_3.png'는 813x366 캔버스에
+                // 마크만 얹혀 있고 이름 글자가 없어 정사각형 상자에 넣으면 쪼그라들기만 했고,
+                // 바로 아래 '로그인' 제목과 말이 겹쳐 답답했다. 그만큼 화면을 위로 끌어올린다.
+                const SizedBox(height: AppSpacing.space4),
                 Text(
                   '로그인',
                   style: AppTypography.heading4,

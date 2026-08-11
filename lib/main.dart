@@ -185,12 +185,24 @@ class _AuthWrapperState extends State<AuthWrapper> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // 이름은 글자로 쓴다 — 'app_icon_with_text_3.png'에는 이름이 들어있지 않고
+                  // 넓은 빈 캔버스에 마크만 얹혀 있어, 정사각형 상자에 맞추면 작게 쪼그라든다.
                   Image.asset(
-                    'assets/images/app_icon_with_text_3.png',
-                    width: 200,
-                    height: 200,
+                    'assets/images/app_icon.png',
+                    width: 120,
+                    height: 120,
+                    semanticLabel: '케어브이',
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '케어브이',
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   const CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
