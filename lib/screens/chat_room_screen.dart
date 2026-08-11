@@ -20,6 +20,8 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import 'chat_room_info_screen.dart';
+import 'document_viewer_screen.dart';
+import 'hwp_editor_screen.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
@@ -1077,7 +1079,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  /// 사진은 앱 안에서 크게 보고, 문서는 내려받아 기기 뷰어로 연다.
+  /// 웹 뷰어(carev.kr/doc-view)가 앱 안에서 그려줄 수 있는 형식.
+  /// 웹의 chatAttachments.ts 목록과 맞춰둔다 — 한쪽만 고치면 "열었는데 못 읽는 창"이 뜬다.
+  static const Set<String> _inAppViewableExtensions = {
+    'docx',
+    'xlsx', 'xlsm',
+    'pptx',
+    'txt', 'csv', 'md', 'json', 'log', 'xml', 'yaml', 'yml',
+  };
+  static const Set<String> _hwpExtensions = {'hwp', 'hwpx'};
+
+  static String _extensionOf(String fileName) {
+    final idx = fileName.lastIndexOf('.');
+    return idx >= 0 ? fileName.substring(idx + 1).toLowerCase() : '';
+  }
+
+  /// 사진·문서는 앱 안에서 바로 보고, 나머지(pdf·옛 오피스 등)는 기기 뷰어에 맡긴다.
   void _openAttachment(ChatMessage message) {
     final url = message.fileUrl;
     final name = message.fileName ?? '파일';
@@ -1092,6 +1109,35 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return;
     }
 
+    if (url != null && url.isNotEmpty) {
+      final ext = _extensionOf(name);
+
+      // 한글 문서는 이미 앱에 있는 뷰어(결재 첨부와 같은 것)로
+      if (_hwpExtensions.contains(ext)) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => HwpEditorScreen(filePath: url, fileName: name),
+          ),
+        );
+        return;
+      }
+
+      // 워드·엑셀·슬라이드·텍스트는 관리자 웹과 같은 뷰어를 앱 안에서
+      if (_inAppViewableExtensions.contains(ext)) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => DocumentViewerScreen(
+              filePath: url,
+              fileName: name,
+              onDownload: () => _downloadAndOpenFile(url, name),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    // pdf는 기기 기본 뷰어가 더 잘 보여주고, 그 밖의 형식은 열 방법이 없다
     _downloadAndOpenFile(url, name);
   }
 
