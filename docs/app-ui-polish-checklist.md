@@ -1,8 +1,8 @@
 # 앱(frontend-app) UI Seed 폴리시 전수조사 체크리스트
 
-> **조사 완료.** 5개 병렬 조사 에이전트(홈 대시보드 / 관리자 화면 / 직원·채팅·캘린더 / 공지·플라자·인증 / 공용 위젯) + 리더·조사자 직접 검증(critical 버튼 12건 라인 단위, 홈 대시보드 구조·레이아웃 재확인)을 종합했다. `SeedButtonVariant.critical` 부당 사용 6건은 조사 중 리더가 커밋 `3d775cb`로 이미 직접 수정 완료 — 본 문서는 그 결과를 반영한 최종본이다.
+> **조사 완료.** 6개 병렬 조사 에이전트(홈 대시보드 / 관리자 화면 / 직원·채팅·캘린더 / 공지·플라자·인증 / 공용 위젯 / 전자결재 신규기능) + 리더·조사자 직접 검증(critical 버튼 12건 라인 단위, 홈 대시보드 구조·레이아웃·탭어포던스 심화 재검토)을 종합했다. `SeedButtonVariant.critical` 부당 사용 6건은 조사 중 리더가 커밋 `3d775cb`로 이미 직접 수정 완료 — 본 문서는 그 결과를 반영한 최종본이다. 사용자는 App Store 정식 출시된 최신 빌드(1.4.0/28)를 이미 쓰고 있었으므로, 홈 대시보드 지적은 구버전 착시가 아니라 현재 코드 상태에 대한 실제 지적으로 취급해 재조사했다.
 > 갱신: 2026-08-07
-> 조사 범위: `lib/` 전체 UI(115 dart 파일 중 screens 30 + widgets 실질 29 = 59개 파일 실사, approval 계열 8개+screens 3개는 조사만 하고 표에 "양식작업중"으로 별도 표시)
+> 조사 범위: `lib/` 전체 UI — screens 33 + widgets 실질 37(전자결재 12개 포함) = **70개 파일 실사**. `approval_detail_screen.dart`/`hwp_editor_screen.dart`/`models/approval.dart` 3개는 다른 작업자가 계속 편집 중이라 조사만 하고 표에서 "양식작업중"으로 제외.
 > **lib/ 코드는 이 조사 문서 작성 과정에서 (critical 버튼 6건을 리더가 직접 수정한 것을 제외하고는) 일절 수정하지 않았다.**
 
 ---
@@ -26,14 +26,16 @@
 | `SeedButtonVariant.critical` 전체 사용 건수 | **12건** (검증 완료) |
 | → 정당 (삭제/탈퇴 등 파괴적 행위) | **6건** — 수정 불필요 |
 | → **부당 (반려/거절/나가기 등 비파괴적 행위에 critical 오용)** | **6건 — 전부 커밋 `3d775cb`로 수정 완료(neutralOutline 전환), 그룹B가 재검증함** |
-| 조사 대상 파일 수 | 스크린 30(제외 3개 포함 33) + 위젯 실질 파일 29(approval 8개 제외) = **59개 파일 실사** |
-| 5개 그룹 조사 진행 상태 | **전부 완료** (홈 대시보드 / 관리자화면 / 직원·채팅·캘린더 / 공지·플라자·인증 / 공용위젯) |
-| 파일별 표 총 발견 항목 수 | **175건** (A40+B23+C53+D33+E26, "준수확인/정정/info" 표시 항목 13건 포함) |
-| → high 우선순위 | **약 29건** |
-| → medium 우선순위 | **약 72건** |
-| → low 우선순위 | **약 61건** |
-| → 준수확인/정정/참고(조치 불필요) | **13건** |
+| 조사 대상 파일 수 | 스크린 33 + 위젯 실질 파일 37(전자결재 12개 포함) = **70개 파일 실사** (approval_detail_screen.dart·hwp_editor_screen.dart·models/approval.dart 3개는 여전히 제외) |
+| 6개 그룹 조사 진행 상태 | **전부 완료** (홈 대시보드 / 관리자화면 / 직원·채팅·캘린더 / 공지·플라자·인증 / 공용위젯 / 전자결재 신규기능) |
+| 파일별 표 총 발견 항목 수 | **204건** (A50+B23+C53+D33+E26+F19, "준수확인/정정/info" 표시 항목 15건 포함) |
+| → high 우선순위 | **약 33건** |
+| → medium 우선순위 | **약 78건** |
+| → low 우선순위 | **약 70건** |
+| → 준수확인/정정/참고(조치 불필요) | **15건** |
 | 후속 발견 — critical 해소 후에도 남은 "빨강/상태색 대면적 오용" 계열 | 5건(A21/A33, B9, B15, C4/C29, E1/E2 등 — 상세는 각 그룹 요약 참고) |
+| 홈 대시보드 심화 재검토(레이아웃·기능) 핵심 3건 | A41(헤더 각진 브랜드 색면, high) · A44(일정 미리보기 행 onTap 자체 없음, high — 기능 결함) · A42/A43(빠른작업 라운드·리듬 불일치, medium) |
+| 전자결재 신규기능(그룹F) 핵심 | 버튼정책 위반 0건(가장 우수) · F7/F8(raw ChoiceChip/FilterChip이 chipTheme 부재로 탈브랜드색, high) · F16(official_document_view.dart, 토큰 전무, high) · F18(서명 모드토글 raw GestureDetector, high) |
 
 ---
 
@@ -319,9 +321,35 @@
 
 **참고**: `AppButton(`/`AppCard(` 직접 인스턴스화는 전체 코드베이스에서 0건(죽은 코드)이지만, `AppStatusCard`(AppCard 서브클래스)는 3곳에서 살아있어 배치 제안에 반영 필요(profile_screen.dart, register_screen.dart).
 
-### 그룹 F — 전자결재 양식·미리보기 기능 (커밋 9628417로 완료, 신규 해제) 🔄 조사 중
-- 대상: `screens/approval_form_screen.dart`, `screens/approval_template_list_screen.dart`(신규), `screens/approval_template_preview_screen.dart`(신규), `widgets/approval/approval_card.dart`, `widgets/approval/approval_status_badge.dart`, `widgets/approval/document_form_fields.dart`(신규), `widgets/approval/dynamic_form_fields.dart`, `widgets/approval/hwp_editor_view.dart`, `widgets/approval/official_document_view.dart`, `widgets/approval/signature_confirm_sheet.dart`, `widgets/approval/signature_pad.dart`, `widgets/approval/template_card.dart`
-- 상태: 🔄 조사 에이전트 실행 중 — 결과 도착 시 갱신
+### 그룹 F — 전자결재 양식·미리보기 기능 (커밋 9628417로 완료, 신규 해제) ✅ 조사 완료
+
+**버튼 색상 정책**: 이 범위 전체에서 `SeedButtonVariant.critical` 사용 **0건** — 제출/승인/채택은 `brandSolid`, 문서보기/다운로드는 `neutralOutline`만 사용, 반려·거절류 액션 자체가 이 파일들엔 없음(반려 처리는 범위 밖 `approval_detail_screen.dart`). **정책 위반 없음, 색상·버튼 측면은 이 기능의 가장 강한 부분.** 대신 **신규 폼 렌더러의 라디오/체크박스가 앱 전역 `chipTheme` 부재로 브랜드와 무관한 색으로 렌더링**되는 것이 이 그룹의 핵심 발견.
+
+| # | 파일 | 라인 | 종류 | 발견 내용과 권장 수정 | 우선순위 |
+|---|---|---|---|---|---|
+| F1 | approval_form_screen.dart | 92-150 | 구컴포넌트 | 파일첨부 바텀시트가 raw `ListTile` — `SeedListCell` 존재하는데 미사용 | medium |
+| F2 | approval_form_screen.dart | 754-787 | 구컴포넌트 | `_buildSectionHeader()` 직접 재구현(아이콘뱃지+타이틀+필수마커) — `SeedSectionHeader`는 아이콘/필수마커 미지원이라 컴포넌트 확장 필요 | low-medium |
+| F3 | approval_form_screen.dart | 406-519,562-594,626-728 | one-surface 위반 | 템플릿선택/결재선/첨부파일 섹션이 각각 독립 흰 보더박스로 나열 — "카드 조각"처럼 보임(같은 화면의 `DocumentFormFields`는 반대로 단일표면+내부구분선으로 올바르게 구현돼 대비됨) | medium |
+| F4 | approval_template_preview_screen.dart | 227-307 | one-surface(경미) | "첨부 원본" 섹션 독립 보더박스 — F3과 동일 패턴, 단일 인스턴스라 낮은 심각도 | low |
+| F5 | approval_card.dart | 184-226 | **카드중첩/구컴포넌트** | 반려사유 박스를 statusError 배경+보더+라운드로 수작업 재구현 — `SeedCallout(danger)`가 이미 존재하고 `approval_template_preview_screen.dart`에서 결재선에 올바르게 쓰이는 중 → 그걸로 대체 | medium |
+| F6 | document_form_fields.dart | 241-259 | 컴포넌트갭(정보) | select 필드 raw `DropdownButtonFormField` — Seed select 컴포넌트 부재로 불가피, 갭으로만 기록 | low |
+| F7 | document_form_fields.dart | 269-279 | **구컴포넌트/하드코딩색(high)** | radio 필드가 raw `ChoiceChip` — 앱 전역 `chipTheme` 미설정이라 **Material3 기본색으로 렌더링, 브랜드 틸과 무관한 색 노출**. `SeedChip`으로 교체 필요 | high |
+| F8 | document_form_fields.dart | 294-312 | **구컴포넌트/하드코딩색(high)** | checkbox 필드가 raw `FilterChip` — F7과 동일 결함 | high |
+| F9 | document_form_fields.dart | 271,296 | 타이포미적용 | ChoiceChip/FilterChip 라벨 `TextStyle(fontSize:12)` 하드코딩 | low |
+| F10 | document_form_fields.dart | 209-214,217-222,322-327 | **구컴포넌트(medium-high)** | textarea/number/text 컨트롤이 raw `TextField` — 바로 위 결재제목 입력은 `SeedTextField` 사용, 같은 화면 내 불일치 → 통일 필요 | medium-high |
+| F11 | dynamic_form_fields.dart | 전체 | **죽은 코드** | 위젯 `build()`가 어디서도 호출 안 됨(정적 `validateRequired`만 재사용) — `DocumentFormFields`로 대체된 잔재, 삭제 또는 정적메서드만 분리이관 권장 | low |
+| F12 | dynamic_form_fields.dart | 74-76,128,161,180,226(signature_confirm_sheet도 동일),88,91(signature_pad도 동일) | **토큰오용(spacing→radius, 반복패턴)** | `BorderRadius.circular(AppSpacing.space3)` 등 — dynamic_form_fields/signature_confirm_sheet/signature_pad **3개 파일에 반복**되는 공통 실수. `AppBorderRadius.xl`로 통일 | low |
+| F13 | dynamic_form_fields.dart | 119-131,205-273,123,212,232,257,195,301 | 구컴포넌트/타이포/리터럴 | raw Dropdown/ChoiceChip/FilterChip/OutlinedButton, TextStyle 하드코딩 다수(죽은 코드라 우선순위 낮춤) | low |
+| F14 | hwp_editor_view.dart | 18 | 하드코딩색 | WebView 배경 `Color(0xFFF3F4F6)` 하드코딩(컨트롤러가 BuildContext 밖 생성이라 불가피한 면 있음) | medium |
+| F15 | hwp_editor_view.dart | — | 정보 | `waitReady()` 최대 15초 폴링 중 자체 로딩UI 없음 — 호출부(범위밖 hwp_editor_screen.dart)에서 처리하는지 교차확인 필요 | low |
+| F16 | official_document_view.dart | 전체(색상 12곳/여백 18곳/타이포 20곳+) | **하드코딩색/리터럴/타이포미적용(high)** | 감사대상 12개 파일 중 **유일하게 AppColors/AppSpacing/AppTypography import가 전혀 없는 파일** — 전부 raw `Color(0xFF...)`/리터럴 숫자/raw TextStyle. 공문 팩시밀리 느낌 의도는 이해되나 최소 전용 토큰(`documentInk`/`documentMuted`/`documentLine`) 도입 권장 | high |
+| F17 | signature_confirm_sheet.dart | 33,134,178 | 리터럴/하드코딩색 | `Radius.circular(16)`→xl2, `EdgeInsets.all(24)`→space6, `color: Colors.white`→surfaceDefault | low-medium |
+| F18 | signature_confirm_sheet.dart | 217-241 | **구컴포넌트/탭어포던스(high)** | "등록된 서명 사용"/"직접 그리기" 토글이 raw `GestureDetector`로 눌림 피드백 전무 — 결재승인 직전 첫 상호작용이라 체감영향 큼 → `SeedButton`/`SeedChip` 기반 세그먼트로 교체 | high |
+| F19 | signature_pad.dart | 109-113,121-124,138 | 구컴포넌트/타이포미적용/하드코딩색 | placeholder raw TextStyle(app_typography import 자체 없음), "지우기" raw TextButton, CustomPainter 잉크색 하드코딩(Context 부재로 다소 불가피) | medium |
+
+**파일별 요약**: `approval_form_screen.dart`류(F1-F4)는 색상·타이포·버튼정책 전부 토큰 기반이나 "카드 조각" 레이아웃과 기존 Seed컴포넌트(SeedListCell/SeedSectionHeader) 미활용이 눈에 띔. AppBar 스타일은 다른 push형 화면들과 일치해 문제 없음 확인. `approval_card.dart` 등은 깔끔하나 반려사유 박스 재구현(F5)이 유일한 흠. **`document_form_fields.dart`(신규 공문형 입력 렌더러)의 raw ChoiceChip/FilterChip(F7/F8, high)이 이 그룹의 가장 심각한 문제** — 브랜드와 무관한 색 노출. `official_document_view.dart`(F16, high)는 토큰을 아예 안 쓰는 유일한 파일. `signature_confirm_sheet.dart`의 모드토글(F18, high)이 서명·승인 플로우 첫 상호작용인데 raw GestureDetector라 가장 "미완성"처럼 보이는 지점.
+
+**종합**: 색상·버튼 정책 측면은 이 기능이 가장 우수(critical 오용 0, 그림자·그라디언트 위반 0). 다만 앱 전반의 Seed 성숙도에는 아직 못 미침 — (1) chipTheme 부재로 인한 라디오/체크박스 탈브랜드색(F7/F8), (2) 기존 Seed 컴포넌트를 두고 raw Material/수작업 재구현을 택한 곳 다수, (3) spacing→radius 토큰 오용이 3개 파일에 반복(F12, 공통 실수 패턴). 죽은 코드 정리(F11)와 위 컴포넌트 치환만 마치면 나머지 화면과 동급에 도달 가능.
 
 ### 조사 제외(여전히 양식작업중, 이번에도 미해제) — 표 대상에서만 제외, 배치 제안에서도 제외
 - `lib/screens/approval_detail_screen.dart`
@@ -332,11 +360,11 @@
 
 ## 수정 배치 제안 (최종 — 파일 겹침 없음, 홈 대시보드 최우선)
 
-`SeedButtonVariant.critical` 부당 사용 6건은 이미 수정 완료(3d775cb)라 별도 배치가 필요 없다. 아래 4묶음은 그 후속 발견 사항을 정리한 것이며, 서로 파일이 겹치지 않는다. `approval_form_screen.dart`/`approval_detail_screen.dart`/`widgets/approval/*`/`hwp_editor_screen.dart`/`models/approval.dart`는 모든 배치에서 계속 제외.
+`SeedButtonVariant.critical` 부당 사용 6건은 이미 수정 완료(3d775cb)라 별도 배치가 필요 없다. 아래 5묶음은 그 후속 발견 사항을 정리한 것이며, 서로 파일이 겹치지 않는다. `approval_detail_screen.dart`/`hwp_editor_screen.dart`/`models/approval.dart`는 여전히 다른 작업자 영역이라 모든 배치에서 계속 제외(전자결재의 나머지 12개 파일은 이번에 해제되어 배치5로 편입).
 
 ### 배치 1 — 홈 대시보드 (최우선, 사용자가 직접 지적한 영역)
 `home_screen.dart`, `main_screen.dart`, `widgets/common/app_dialog.dart`, `widgets/common/notification_bell.dart`, `widgets/today_schedule_dialog.dart`, `widgets/vacation_request_dialog.dart`
-- 핵심: 헤더 대면적 브랜드블록 재검토(A39), "빠른작업" 섹션 리듬 통일(A40), **`app_dialog.dart` shadcn 완전 제거 + `confirmVariant`를 실제 SeedButton에 반영**(A33-A38, 공용 컴포넌트라 파급 큼 — 이 파일을 먼저 고쳐야 배치2의 D1/D2가 자연히 해소됨), notification_bell/vacation_request_dialog 리터럴·raw TextStyle 정리(A7-A32)
+- 핵심: **헤더의 각진 브랜드 색면 재검토**(A41, high — 라운드/톤다운으로 아래 카드와 이어지게), **일정 미리보기 행에 onTap 추가**(A44, high — 스타일이 아닌 기능 결함, 지금은 아예 안 눌림), "빠른작업" 라운드값 통일·카드/헤더 래핑 추가(A42/A43), **`app_dialog.dart` shadcn 완전 제거 + `confirmVariant`를 실제 SeedButton에 반영**(A33-A38, 공용 컴포넌트라 파급 큼 — 이 파일을 먼저 고쳐야 배치2의 D1/D2가 자연히 해소됨), notification_bell/vacation_request_dialog 리터럴·raw TextStyle 정리(A7-A32), 헤더 텍스트 위계 단순화(A46, 판단사항)
 
 ### 배치 2 — "빨강/상태색 대면적 오용" 후속 정리 (critical 정책과 같은 뿌리, 사용자 원 지적과 직결)
 `profile_screen.dart`, `menu_screen.dart`, `admin_user_management_screen.dart`, `admin_notice_management_screen.dart`, `widgets/admin_vacation_add_dialog.dart`, `signature_manage_screen.dart`, `chat_room_screen.dart`, `chat_room_info_screen.dart`, `notice_detail_screen.dart`, `plaza_post_detail_screen.dart`
@@ -350,4 +378,9 @@
 `calendar_screen.dart`, `my_vacation_screen.dart`, `approval_list_screen.dart`, `chat_room_list_screen.dart`, `create_chat_room_screen.dart`, `plaza_screen.dart`, `payment_screen.dart`, `subscription_check_screen.dart`, `register_screen.dart`, `login_screen.dart`, `widgets/chat/chat_room_tile.dart`, `widgets/chat/message_bubble.dart`, `widgets/chat/message_input.dart`, `widgets/common/app_card.dart`, `widgets/common/app_button.dart`, `widgets/common/app_input.dart`, `widgets/notice/notice_card.dart`, `widgets/notice/notice_priority_badge.dart`, `widgets/seed/seed_avatar.dart`, `widgets/seed/seed_callout.dart`, `widgets/seed/seed_chip.dart`, `widgets/seed/seed_list_cell.dart`, `widgets/seed/seed_text_field.dart`, `widgets/seed/seed_section_header.dart`, `widgets/vacation_calendar_widget.dart`
 - 핵심: `calendar_screen.dart` 카드중첩 2곳(C14/C15, high) + raw Material 폼필드 다수, `create_chat_room_screen.dart` AppBar 풀칼라+positive액션 정책위반(C6/C12, high), `my_vacation_screen.dart` one-surface 위반(C16, high), `register_screen.dart` 약관동의 섹션 사실상 미이관(D27, high) — 9개 파일 중 잔재 최다, `AppStatusCard`(구 app_card.dart 서브클래스) 잔존 2곳(register_screen.dart:254·290, E10) 정리
 - 이미 완료 확인(수정 불필요): `notice_list_screen.dart`, `admin_approval_template_screen.dart`, `admin_notice_form_screen.dart`, `widgets/update_dialog.dart`, `widgets/common/app_loading.dart`, `widgets/common/app_snackbar.dart`(모범사례)
+
+### 배치 5 — 전자결재 신규기능 (그룹F, 이번에 해제된 12개 파일)
+`screens/approval_form_screen.dart`, `screens/approval_template_list_screen.dart`, `screens/approval_template_preview_screen.dart`, `widgets/approval/approval_card.dart`, `widgets/approval/approval_status_badge.dart`, `widgets/approval/document_form_fields.dart`, `widgets/approval/dynamic_form_fields.dart`, `widgets/approval/hwp_editor_view.dart`, `widgets/approval/official_document_view.dart`, `widgets/approval/signature_confirm_sheet.dart`, `widgets/approval/signature_pad.dart`, `widgets/approval/template_card.dart`
+- 핵심: **`document_form_fields.dart`의 라디오/체크박스가 raw ChoiceChip/FilterChip라 chipTheme 부재로 탈브랜드색 렌더링**(F7/F8, high — 이 배치 최우선 항목, `SeedChip`으로 교체), **`official_document_view.dart`가 토큰을 전혀 안 쓰는 유일한 파일**(F16, high — 전용 문서 톤 토큰 신설 검토), **서명 모드토글이 raw GestureDetector라 눌림 피드백 전무**(F18, high — 결재 승인 직전 상호작용이라 체감 영향 큼), 죽은 코드 `dynamic_form_fields.dart` 정리(F11), spacing→radius 토큰오용 반복패턴 일괄 수정(F12, 3개 파일 공통)
+- 참고: 이 기능은 **버튼 색상 정책 위반이 0건**으로 6개 그룹 중 가장 우수함 — critical 오용도 그림자·그라디언트 위반도 없어 다른 배치와 성격이 다름(색상 정책보다 컴포넌트 일관성/신규 컴포넌트 갭이 핵심 이슈)
 

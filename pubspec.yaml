@@ -62,9 +62,11 @@ dependencies:
   
   # 앱 버전 정보를 위한 패키지
   package_info_plus: ^8.0.0
-  firebase_core: ^3.14.0
-  firebase_analytics: ^11.5.0
-  firebase_messaging: ^15.1.4
+  # firebase_messaging 16.5.0+: 새 Flutter UIScene 템플릿에서 APNs 등록이
+  # 아예 시작되지 않던 버그(flutterfire#17859)의 완전 수정 포함 — 내리지 말 것
+  firebase_core: ^4.13.0
+  firebase_analytics: ^12.4.6
+  firebase_messaging: ^16.5.0
   flutter_local_notifications: ^18.0.1
   
   # 웹뷰를 위한 패키지

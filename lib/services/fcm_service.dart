@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -183,57 +184,31 @@ class FCMService {
   /// FCM 토큰만 획득 (서버 전송 없이)
   Future<void> _getTokenOnly() async {
     try {
-      // iOS에서 APNS 토큰 없이 FCM 토큰 시도 (새로운 방식)
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        log('[FCM] iOS에서 FCM 토큰 직접 획득 시도');
-        
-        // 방법 1: APNS 토큰 없이 직접 시도
+        // iOS는 APNs 디바이스 토큰이 먼저 도착해야 FCM 토큰이 발급된다.
+        // 첫 설치 직후에는 권한 팝업 → APNs 등록까지 수십 초가 걸릴 수 있어,
+        // 짧게 몇 번 찔러보고 포기하면 토큰이 영영 등록되지 않는다 (실제 발생한 버그).
+        log('[FCM] iOS FCM 토큰 획득 — APNS 토큰 대기 시작');
+        await _waitForAPNSToken();
+
         try {
           final token = await _firebaseMessaging.getToken();
           if (token != null && token.isNotEmpty) {
             _currentToken = token;
-            log('[FCM] FCM 토큰 획득 성공 (APNS 우회): ${token.substring(0, 20)}...');
+            log('[FCM] FCM 토큰 획득 성공: ${token.substring(0, 20)}...');
             return;
           }
-        } catch (directError) {
-          log('[FCM] FCM 토큰 직접 획득 실패: $directError');
+        } catch (e) {
+          log('[FCM] FCM 토큰 획득 실패: $e');
         }
-        
-        // 방법 2: 알림 권한 재요청 후 시도
-        log('[FCM] 알림 권한 재요청 후 FCM 토큰 재시도');
-        await _requestPermissions();
-        await Future.delayed(Duration(seconds: 3));
-        
-        try {
-          final token = await _firebaseMessaging.getToken();
-          if (token != null && token.isNotEmpty) {
-            _currentToken = token;
-            log('[FCM] FCM 토큰 재획득 성공: ${token.substring(0, 20)}...');
-            return;
-          }
-        } catch (retryError) {
-          log('[FCM] FCM 토큰 재획득 실패: $retryError');
-        }
-        
-        // 방법 3: Firebase 다시 초기화 후 시도
-        log('[FCM] Firebase 재초기화 후 FCM 토큰 시도');
-        await Future.delayed(Duration(seconds: 2));
-        
-        try {
-          final token = await _firebaseMessaging.getToken();
-          if (token != null && token.isNotEmpty) {
-            _currentToken = token;
-            log('[FCM] FCM 토큰 최종 획득 성공: ${token.substring(0, 20)}...');
-            return;
-          }
-        } catch (finalError) {
-          log('[FCM] FCM 토큰 최종 획득 실패: $finalError');
-        }
-        
-        log('[FCM] iOS에서 FCM 토큰 획득 실패 - 프로비저닝 프로파일과 인증서를 확인해주세요');
+
+        // 아직 실패 — APNs 등록이 늦는 것뿐일 수 있으니 백그라운드에서 계속 재시도.
+        // 성공하면 저장된 사용자 정보로 서버 업로드까지 이어진다.
+        log('[FCM] FCM 토큰 미획득 — 백그라운드 재시도 예약');
+        _scheduleTokenRetry();
         return;
       }
-      
+
       // Android는 기존 로직
       final token = await _firebaseMessaging.getToken();
       if (token != null) {
@@ -257,11 +232,48 @@ class FCMService {
     return false;
   }
   
-  /// iOS에서 APNS 토큰이 설정될 때까지 대기
+  /// FCM 토큰 획득 실패 시 백그라운드 재시도 (15초 간격, 최대 20회 = 5분).
+  /// 성공하면 로그인돼 있는 경우 서버 업로드까지 수행한다.
+  Timer? _tokenRetryTimer;
+  int _tokenRetryCount = 0;
+
+  void _scheduleTokenRetry() {
+    _tokenRetryTimer?.cancel();
+    _tokenRetryCount = 0;
+    _tokenRetryTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
+      _tokenRetryCount++;
+      if (_currentToken != null || _tokenRetryCount > 20) {
+        timer.cancel();
+        return;
+      }
+      try {
+        final token = await _firebaseMessaging.getToken();
+        if (token != null && token.isNotEmpty) {
+          timer.cancel();
+          _currentToken = token;
+          log('[FCM] 재시도 ${_tokenRetryCount}회차에 FCM 토큰 획득: ${token.substring(0, 20)}...');
+          if (_currentUserId != null && _currentUserId!.isNotEmpty) {
+            if (_isAdmin) {
+              await ApiService().updateAdminFcmToken(
+                  userId: _currentUserId!, fcmToken: token);
+            } else {
+              await ApiService().updateFcmToken(
+                  memberId: _currentUserId!, fcmToken: token);
+            }
+            log('[FCM] 재시도 획득 토큰 서버 전송 완료');
+          }
+        }
+      } catch (e) {
+        log('[FCM] 토큰 재시도 ${_tokenRetryCount}/20 실패: $e');
+      }
+    });
+  }
+
+  /// iOS에서 APNS 토큰이 설정될 때까지 대기 (최대 30초)
   Future<void> _waitForAPNSToken() async {
-    const maxAttempts = 10;
-    const delay = Duration(milliseconds: 500);
-    
+    const maxAttempts = 30;
+    const delay = Duration(seconds: 1);
+
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         final apnsToken = await _firebaseMessaging.getAPNSToken();
@@ -331,7 +343,12 @@ class FCMService {
     log('[FCM] 메시지 내용: ${message.notification?.body}');
     log('[FCM] 메시지 데이터: ${message.data}');
 
-    _showLocalNotification(message);
+    // iOS는 setForegroundNotificationPresentationOptions(alert: true)로 시스템이
+    // 원본 푸시를 이미 배너로 띄운다 — 여기서 로컬 알림까지 만들면 같은 알림이 2개 뜬다.
+    // Android는 포그라운드 자동 표시가 없으므로 로컬 알림이 필요하다.
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      _showLocalNotification(message);
+    }
 
     // 포그라운드 콜백 호출
     onForegroundMessage?.call(message);

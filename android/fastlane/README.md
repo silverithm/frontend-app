@@ -13,23 +13,31 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 # Available Actions
 
-## iOS
+## Android
 
-### ios beta
-
-```sh
-[bundle exec] fastlane ios beta
-```
-
-TestFlight 업로드 (빌드된 IPA)
-
-### ios release
+### android internal
 
 ```sh
-[bundle exec] fastlane ios release
+[bundle exec] fastlane android internal
 ```
 
-App Store 정식 심사 제출 (이미 업로드된 빌드 사용)
+내부 테스트 트랙 업로드
+
+### android release
+
+```sh
+[bundle exec] fastlane android release
+```
+
+프로덕션 20% 단계적 출시
+
+### android complete_rollout
+
+```sh
+[bundle exec] fastlane android complete_rollout
+```
+
+단계적 출시 100% 완료
 
 ----
 
