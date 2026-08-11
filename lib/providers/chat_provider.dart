@@ -40,6 +40,12 @@ class ChatProvider with ChangeNotifier {
   StompClient? _stompClient;
   final Map<int, List<StompUnsubscribe>> _roomSubscriptions = {};
 
+  // 채팅방 목록 화면에서 전체 방을 실시간 갱신하기 위한 경량 구독
+  // (메시지 토픽만 — 상세 화면의 타이핑/읽음 구독과 달리 방마다 전부 걸어도 부담 없다)
+  final Map<int, StompUnsubscribe> _roomListSubscriptions = {};
+  bool _isWatchingRoomList = false;
+  Timer? _roomListRefreshDebounce;
+
   // Set current user ID for message handling
   void setCurrentUserId(String userId) {
     _currentUserId = userId;
@@ -139,6 +145,9 @@ class ChatProvider with ChangeNotifier {
       _subscribeToRoom(_selectedRoom!.id);
     }
 
+    // 목록 화면을 보고 있었다면 재연결 시 전체 방 구독을 복원한다
+    _syncRoomListSubscriptions();
+
     _registerPresence();
   }
 
@@ -146,6 +155,7 @@ class ChatProvider with ChangeNotifier {
     print('[ChatProvider] WebSocket 연결 해제');
     _isConnected = false;
     _roomSubscriptions.clear();
+    _roomListSubscriptions.clear();
     _typingUsers.clear();
     _cancelAllTypingTimers();
     // 끊긴 동안은 남의 상태를 알 수 없으니 표시하지 않는다
@@ -172,6 +182,7 @@ class ChatProvider with ChangeNotifier {
       _stompClient = null;
       _isConnected = false;
       _roomSubscriptions.clear();
+      _roomListSubscriptions.clear();
       _typingUsers.clear();
       _cancelAllTypingTimers();
       _presenceSubscription = null;
@@ -186,6 +197,9 @@ class ChatProvider with ChangeNotifier {
       print('[ChatProvider] WebSocket 미연결 - 구독 불가');
       return;
     }
+
+    // 목록용 경량 구독이 있었다면 상세 구독으로 승격 (중복 수신 방지)
+    _roomListSubscriptions.remove(roomId)?.call();
 
     // 기존 구독이 있으면 해제
     _unsubscribeFromRoom(roomId);
@@ -241,6 +255,67 @@ class ChatProvider with ChangeNotifier {
     }
     _roomSubscriptions.remove(roomId);
     print('[ChatProvider] 채팅방 $roomId 구독 해제');
+  }
+
+  // ===================== 채팅방 목록 실시간 구독 =====================
+
+  /// 채팅방 목록 화면이 떠 있는 동안 참여 중인 모든 방의 메시지 토픽을 구독한다.
+  /// 상세 화면과 달리 방이 열려 있지 않아도 새 메시지의 미리보기/정렬이 즉시 반영되도록 한다.
+  void subscribeToRoomList() {
+    _isWatchingRoomList = true;
+    _syncRoomListSubscriptions();
+  }
+
+  /// 목록 화면을 벗어날 때 호출 — 더 이상 필요 없는 구독을 전부 해제한다.
+  void unsubscribeFromRoomList() {
+    _isWatchingRoomList = false;
+    for (final unsubscribe in _roomListSubscriptions.values) {
+      unsubscribe();
+    }
+    _roomListSubscriptions.clear();
+  }
+
+  /// 현재 채팅방 목록과 구독 상태를 맞춘다: 새로 생긴 방은 구독을 걸고,
+  /// 목록에서 사라진 방은 구독을 해제하며, 상세 화면이 이미 구독 중인 방은 건너뛴다.
+  void _syncRoomListSubscriptions() {
+    if (!_isWatchingRoomList) return;
+    if (_stompClient == null || !_stompClient!.connected) return;
+
+    final currentIds = _chatRooms.map((r) => r.id).toSet();
+
+    final staleIds = _roomListSubscriptions.keys
+        .where((id) => !currentIds.contains(id))
+        .toList();
+    for (final id in staleIds) {
+      _roomListSubscriptions.remove(id)?.call();
+    }
+
+    for (final roomId in currentIds) {
+      if (_roomSubscriptions.containsKey(roomId)) continue;
+      if (_roomListSubscriptions.containsKey(roomId)) continue;
+
+      _roomListSubscriptions[roomId] = _stompClient!.subscribe(
+        destination: '/topic/chat/$roomId',
+        callback: (frame) {
+          if (frame.body != null) {
+            _handleIncomingMessage(frame.body!, currentUserId: _currentUserId);
+          }
+        },
+      );
+    }
+  }
+
+  /// FCM 포그라운드 수신 등 외부 트리거로 목록을 새로고침한다.
+  /// 짧은 시간에 여러 번 호출돼도 마지막 한 번만 API를 호출하도록 디바운스한다.
+  void refreshRoomListDebounced({
+    required String companyId,
+    required String userId,
+    Duration delay = const Duration(milliseconds: 800),
+  }) {
+    _roomListRefreshDebounce?.cancel();
+    _roomListRefreshDebounce = Timer(delay, () {
+      loadChatRooms(companyId: companyId, userId: userId);
+    });
   }
 
   // ===================== 접속 상태 =====================
@@ -624,6 +699,7 @@ class ChatProvider with ChangeNotifier {
       });
 
       print('[ChatProvider] 로드된 채팅방 수: ${_chatRooms.length}');
+      _syncRoomListSubscriptions();
       notifyListeners();
     } catch (e) {
       print('[ChatProvider] 채팅방 목록 로드 에러: $e');
@@ -660,6 +736,7 @@ class ChatProvider with ChangeNotifier {
       final newRoom = ChatRoom.fromJson(roomData as Map<String, dynamic>);
 
       _chatRooms.insert(0, newRoom);
+      _syncRoomListSubscriptions();
       notifyListeners();
 
       return newRoom;
@@ -733,6 +810,7 @@ class ChatProvider with ChangeNotifier {
         _messages.clear();
         _participants.clear();
       }
+      _syncRoomListSubscriptions();
       notifyListeners();
 
       return true;
@@ -761,6 +839,7 @@ class ChatProvider with ChangeNotifier {
         _messages.clear();
         _participants.clear();
       }
+      _syncRoomListSubscriptions();
       notifyListeners();
 
       return true;
@@ -808,6 +887,8 @@ class ChatProvider with ChangeNotifier {
     _messages.clear();
     _participants.clear();
     _typingUsers.clear();
+    // 방을 나간 자리를 목록용 경량 구독으로 다시 채운다 (목록 화면을 보고 있을 때만)
+    _syncRoomListSubscriptions();
     notifyListeners();
   }
 
@@ -1318,6 +1399,8 @@ class ChatProvider with ChangeNotifier {
   void reset() {
     disconnectWebSocket();
     _cancelAllTypingTimers();
+    _roomListRefreshDebounce?.cancel();
+    _isWatchingRoomList = false;
     _chatRooms = [];
     _selectedRoom = null;
     _messages = [];
@@ -1335,5 +1418,11 @@ class ChatProvider with ChangeNotifier {
     _totalPages = 0;
     _hasMoreMessages = true;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _roomListRefreshDebounce?.cancel();
+    super.dispose();
   }
 }

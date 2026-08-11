@@ -24,18 +24,26 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
+  // dispose 안전을 위해 provider 캐시
+  late final ChatProvider _chatProvider;
+
   @override
   void initState() {
     super.initState();
+    _chatProvider = context.read<ChatProvider>();
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadChatRooms();
       _connectWebSocket();
+      // 이 화면이 떠 있는 동안 참여 중인 모든 방의 메시지를 실시간으로 받아
+      // 목록의 미리보기/정렬이 수동 새로고침 없이 갱신되도록 한다.
+      _chatProvider.subscribeToRoomList();
     });
   }
 
   @override
   void dispose() {
+    _chatProvider.unsubscribeFromRoomList();
     _tabController.dispose();
     super.dispose();
   }

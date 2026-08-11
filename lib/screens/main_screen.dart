@@ -130,6 +130,15 @@ class _MainScreenState extends State<MainScreen>
             context.read<NotificationProvider>().loadNotifications(
               authProvider.currentUser!.id.toString(),
             );
+
+            // 채팅 푸시면 목록도 갱신 — 소켓 구독이 이미 대부분 처리하지만,
+            // 아직 참여자로 반영 안 된 새 방 등을 위한 안전망. 디바운스로 과호출 방지.
+            if (message.data['type'] == 'chat') {
+              context.read<ChatProvider>().refreshRoomListDebounced(
+                companyId: companyId,
+                userId: userId,
+              );
+            }
           }
         };
       } else {
@@ -145,6 +154,13 @@ class _MainScreenState extends State<MainScreen>
       if (authProvider.currentUser != null) {
         context.read<NotificationProvider>().loadNotifications(
           authProvider.currentUser!.id.toString(),
+        );
+
+        // 백그라운드에 있는 동안 놓친 채팅 메시지(소켓 미연결 구간)를 위한 안전망
+        final companyId = authProvider.currentUser!.company?.id ?? '1';
+        context.read<ChatProvider>().loadChatRooms(
+          companyId: companyId,
+          userId: authProvider.currentUser!.id,
         );
       }
     }
