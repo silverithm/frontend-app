@@ -635,6 +635,33 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
+  /**
+   * 일정을 수행완료로 바꾼다.
+   *
+   * 서버가 담당자·관리자만 허용하므로 화면에서 미리 막지 않고 거절 사유를 그대로 보여준다 —
+   * 담당자 판별에 필요한 memberId를 화면이 정확히 알기 어렵고, 잘못 막으면 할 수 있는 사람이
+   * 못 하게 된다.
+   */
+  Future<void> _toggleScheduleCompletion(Schedule schedule) async {
+    final scheduleProvider = context.read<ScheduleProvider>();
+    final ok = await scheduleProvider.toggleCompletion(
+      scheduleId: schedule.id,
+      completed: !schedule.isCompleted,
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? (schedule.isCompleted ? '수행완료를 해제했습니다' : '수행완료로 표시했습니다')
+              : (scheduleProvider.error ?? '수행완료 상태를 바꾸지 못했습니다'),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   Widget _buildScheduleItem(Schedule schedule) {
     final categoryColor = _getCategoryColor(schedule.category);
     final authProvider = context.read<AuthProvider>();
@@ -670,6 +697,24 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
             ),
             const SizedBox(width: AppSpacing.space3),
+            // 수행완료 체크 — 웹 월간일정과 같은 동작. 누르면 바로 서버에 반영된다
+            IconButton(
+              onPressed: () => _toggleScheduleCompletion(schedule),
+              icon: Icon(
+                schedule.isCompleted
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked,
+                size: 22,
+                color: schedule.isCompleted
+                    ? AppSemanticColors.statusSuccessIcon
+                    : AppSemanticColors.textTertiary,
+              ),
+              tooltip: schedule.isCompleted ? '수행완료 해제' : '수행완료',
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              padding: EdgeInsets.zero,
+            ),
+            const SizedBox(width: AppSpacing.space2),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -680,8 +725,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                         child: Text(
                           schedule.title,
                           style: AppTypography.bodyLarge.copyWith(
-                            color: AppSemanticColors.textPrimary,
+                            color: schedule.isCompleted
+                                ? AppSemanticColors.textTertiary
+                                : AppSemanticColors.textPrimary,
                             fontWeight: AppTypography.fontWeightSemibold,
+                            // 끝난 일과 남은 일이 한눈에 갈리도록 완료는 줄을 긋는다 (웹과 같은 표시)
+                            decoration: schedule.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                       ),

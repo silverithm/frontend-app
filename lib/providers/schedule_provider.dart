@@ -170,6 +170,53 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
+  /// 일정 수행완료 토글.
+  ///
+  /// 서버가 바뀐 일정을 그대로 돌려주므로 그 값으로 갈아끼운다 — 월 전체를 다시 받으면
+  /// 체크 한 번에 목록이 통째로 깜빡이고, 로컬에서 지어내면 서버 판단(담당자 권한·할 일
+  /// 연동)과 어긋날 수 있다.
+  ///
+  /// 담당자나 관리자가 아니면 서버가 거절한다. 그 이유를 [error]에 담아 화면이 알릴 수 있게 한다.
+  Future<bool> toggleCompletion({
+    required int scheduleId,
+    required bool completed,
+  }) async {
+    try {
+      _error = null;
+      final response = await _apiService.updateScheduleCompletion(
+        scheduleId: scheduleId,
+        completed: completed,
+      );
+
+      final updatedJson = response['schedule'];
+      if (updatedJson is Map<String, dynamic>) {
+        final updated = Schedule.fromJson(updatedJson);
+        final index = _schedules.indexWhere((s) => s.id == updated.id);
+        if (index >= 0) {
+          _schedules[index] = updated;
+          _groupSchedulesByDate();
+        }
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('[ScheduleProvider] 수행완료 변경 에러: $e');
+      _error = _completionErrorMessage(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// 서버가 준 거절 사유를 그대로 보여준다 ("담당자 또는 관리자만 ...").
+  /// 사유를 못 읽으면 일반 문구로 대신한다.
+  String _completionErrorMessage(Object error) {
+    final raw = error.toString();
+    final match = RegExp(r'(담당자[^"\n}]*|본인이 등록한 일정[^"\n}]*)').firstMatch(raw);
+    if (match != null) return match.group(0)!.trim();
+    return '수행완료 상태를 바꾸지 못했습니다';
+  }
+
   /// 에러 초기화
   void clearError() {
     _error = null;
