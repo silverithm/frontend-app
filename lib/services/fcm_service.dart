@@ -12,6 +12,7 @@ import '../screens/my_vacation_screen.dart';
 import '../screens/approval_list_screen.dart';
 import '../screens/notice_detail_screen.dart';
 import '../screens/chat_room_list_screen.dart';
+import '../screens/calendar_screen.dart';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -456,7 +457,7 @@ class FCMService {
 
     final type = data['type']?.toString() ?? '';
 
-    // 백엔드 타입: vacation_approved, vacation_rejected, vacation_submitted, chat, notice, approval
+    // 백엔드 타입: vacation_*, chat, schedule, notice, approval
     if (type.startsWith('vacation')) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const MyVacationScreen()),
@@ -475,8 +476,20 @@ class FCMService {
         );
       }
     } else if (type == 'chat') {
+      // 백엔드가 roomId를 함께 보내므로 목록에서 멈추지 않고 그 대화까지 연다
+      final roomId = int.tryParse(data['roomId']?.toString() ?? '');
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ChatRoomListScreen()),
+        MaterialPageRoute(
+          builder: (_) => ChatRoomListScreen(initialRoomId: roomId),
+        ),
+      );
+    } else if (type == 'schedule') {
+      // 일정은 별도 상세 화면이 없어 그 날짜의 일정 달력을 펴 준다
+      final date = DateTime.tryParse(data['scheduleDate']?.toString() ?? '');
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CalendarScreen(initialScheduleDate: date),
+        ),
       );
     }
   }

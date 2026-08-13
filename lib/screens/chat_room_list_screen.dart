@@ -14,7 +14,11 @@ import 'chat_room_screen.dart';
 import 'create_chat_room_screen.dart';
 
 class ChatRoomListScreen extends StatefulWidget {
-  const ChatRoomListScreen({super.key});
+  /// 알림을 눌러 들어온 경우 그 방까지 바로 연다.
+  /// 목록만 띄우면 "알림 → 그 대화"가 되지 않아 사용자가 방을 다시 찾아야 한다.
+  final int? initialRoomId;
+
+  const ChatRoomListScreen({super.key, this.initialRoomId});
 
   @override
   State<ChatRoomListScreen> createState() => _ChatRoomListScreenState();
@@ -32,13 +36,32 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     super.initState();
     _chatProvider = context.read<ChatProvider>();
     _tabController = TabController(length: 2, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadChatRooms();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadChatRooms();
       _connectWebSocket();
       // 이 화면이 떠 있는 동안 참여 중인 모든 방의 메시지를 실시간으로 받아
       // 목록의 미리보기/정렬이 수동 새로고침 없이 갱신되도록 한다.
       _chatProvider.subscribeToRoomList();
+      _openInitialRoomIfAny();
     });
+  }
+
+  /// 알림으로 지목된 방을 목록을 받은 뒤에 연다.
+  /// 방 정보(이름·참여 인원)가 있어야 대화 화면을 열 수 있어 목록 로드를 기다린다.
+  void _openInitialRoomIfAny() {
+    final roomId = widget.initialRoomId;
+    if (roomId == null || !mounted) return;
+
+    ChatRoom? target;
+    for (final room in _chatProvider.chatRooms) {
+      if (room.id == roomId) {
+        target = room;
+        break;
+      }
+    }
+
+    // 못 찾으면(나간 방·삭제된 방) 목록만 보여준다 — 빈 화면으로 보내지 않는다
+    if (target != null) _navigateToChatRoom(target);
   }
 
   @override

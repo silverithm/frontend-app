@@ -25,7 +25,11 @@ import '../providers/notice_provider.dart';
 import 'dart:math' as math;
 
 class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key});
+  /// 일정 알림을 눌러 들어온 경우 그 일정이 있는 날로 바로 연다.
+  /// 일정은 별도 상세 화면이 없고 날짜를 고르면 아래에 펼쳐지는 구조라, 날짜가 곧 목적지다.
+  final DateTime? initialScheduleDate;
+
+  const CalendarScreen({super.key, this.initialScheduleDate});
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
@@ -48,6 +52,14 @@ class _CalendarScreenState extends State<CalendarScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    // 알림으로 들어왔으면 일정 달력을 그 날짜에 펴 둔다
+    final target = widget.initialScheduleDate;
+    if (target != null) {
+      _scheduleCurrentDate = DateTime(target.year, target.month);
+      _scheduleSelectedDate = DateTime(target.year, target.month, target.day);
+      _tabController.index = 1; // 0=휴무 달력, 1=일정 달력
+    }
     _fabAnimationController = AnimationController(
       duration: AppTransitions.slow,
       vsync: this,

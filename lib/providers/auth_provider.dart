@@ -470,6 +470,25 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  /// 저장해둔 로그인 응답에서 사용자를 되살린다.
+  ///
+  /// 관리자·직원·옛 구조 세 가지가 섞여 있어 판별이 필요하다. 토큰 검증을 마친 뒤와
+  /// 네트워크가 불안해 검증을 건너뛴 경우 둘 다 같은 규칙으로 복원해야 한다.
+  User? _restoreUserFromSaved(Map<String, dynamic> savedUserData) {
+    try {
+      if (savedUserData['userId'] != null) {
+        return AdminSigninResponse.fromJson(savedUserData).toUser();
+      }
+      if (savedUserData['memberId'] != null) {
+        return MemberSigninResponse.fromJson(savedUserData).toUser();
+      }
+      return User.fromJson(savedUserData);
+    } catch (e) {
+      print('[AuthProvider] 저장된 사용자 정보 해석 실패: $e');
+      return null;
+    }
+  }
+
   Future<void> checkAuthStatus() async {
     try {
       setLoading(true);
@@ -514,8 +533,18 @@ class AuthProvider with ChangeNotifier {
           await _performLogout();
           return;
         } else {
-          print('[AuthProvider] 토큰 갱신 일시적 실패 - 로그아웃');
-          await _performLogout();
+          // 네트워크 오류 등 일시적 실패. 여기서 로그아웃시키면 알림을 눌러 앱을 켠 순간
+          // 신호가 잠깐 안 좋았다는 이유만으로 로그인 화면을 만난다.
+          // 저장된 정보로 그대로 들어가고, 토큰은 다음 요청이 다시 갱신한다.
+          print('[AuthProvider] 토큰 갱신 일시적 실패 - 저장된 로그인 유지');
+          final restored = _restoreUserFromSaved(savedUserData);
+          if (restored == null) {
+            await _performLogout();
+            return;
+          }
+          _currentUser = restored;
+          _isInitialized = true;
+          notifyListeners();
           return;
         }
       }
@@ -551,21 +580,9 @@ class AuthProvider with ChangeNotifier {
       try {
         print('[AuthProvider] 저장된 데이터 키들: ${savedUserData.keys.toList()}');
 
-        // 저장된 데이터의 구조를 판단해서 올바른 방식으로 복원
-        if (savedUserData['userId'] != null) {
-          // 관리자 응답 구조
-          print('[AuthProvider] 관리자 응답 구조 감지');
-          final adminResponse = AdminSigninResponse.fromJson(savedUserData);
-          _currentUser = adminResponse.toUser();
-        } else if (savedUserData['memberId'] != null) {
-          // 일반 직원 응답 구조
-          print('[AuthProvider] 직원 응답 구조 감지');
-          final memberResponse = MemberSigninResponse.fromJson(savedUserData);
-          _currentUser = memberResponse.toUser();
-        } else {
-          // 기존 User 구조 (하위 호환성)
-          print('[AuthProvider] 기존 User 구조 감지');
-          _currentUser = User.fromJson(savedUserData);
+        _currentUser = _restoreUserFromSaved(savedUserData);
+        if (_currentUser == null) {
+          throw StateError('저장된 사용자 정보를 해석할 수 없습니다');
         }
 
         print('[AuthProvider] 사용자 정보 복원 성공: ${_currentUser!.name}');
