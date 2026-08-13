@@ -237,7 +237,20 @@ class DispatchSettings {
   }
 
   Map<String, dynamic> toJson() => {
-    'routes': routes.map((r) => r.toJson()).toList(),
+    // 아직 사람을 고르지 않은 빈 자리는 서버로 보내지 않는다.
+    // 이름 없는 운전자가 주운전자 자리에 저장되면 그 노선은 "이름 없는 사람이
+    // 정상 운행"으로 계산돼 버린다. 웹도 저장 시 같은 기준으로 걸러낸다.
+    'routes': routes
+        .map(
+          (r) => r
+              .copyWith(
+                routeDrivers: r.routeDrivers
+                    .where((d) => d.driverName.trim().isNotEmpty)
+                    .toList(),
+              )
+              .toJson(),
+        )
+        .toList(),
     'seniors': seniors.map((s) => s.toJson()).toList(),
     'seniorAbsences': seniorAbsences.map((a) => a.toJson()).toList(),
   };

@@ -32,10 +32,20 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
   List<_ElderOption> _elders = [];
   bool _loadingElders = false;
 
+  /// dispose에서는 context로 provider를 찾을 수 없다(위젯이 이미 트리에서 빠진 뒤다).
+  /// 화면을 떠날 때 남은 변경분을 저장해야 하므로 미리 붙잡아 둔다.
+  DispatchProvider? _dispatchProvider;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadReferenceData());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _dispatchProvider = context.read<DispatchProvider>();
   }
 
   Future<void> _loadReferenceData() async {
@@ -66,7 +76,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
   @override
   void dispose() {
     // 화면을 떠날 때 모아둔 변경분이 남아 있으면 마저 저장한다
-    context.read<DispatchProvider>().flushSave();
+    _dispatchProvider?.flushSave();
     super.dispose();
   }
 
