@@ -1116,6 +1116,9 @@ class ApiService {
     required String duration,
     String? reason,
     String? type,
+    /// false면 서버가 duration을 UNUSED로 고정한다 (일반·필수·대체휴무)
+    bool useAnnualLeave = true,
+    bool reasonRequired = false,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse(
@@ -1127,7 +1130,15 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      final body = {'memberId': memberId, 'date': date, 'duration': duration};
+      // duration은 서버에서 @NotNull이라 미사용이어도 값을 채워 보낸다
+      // (useAnnualLeave=false면 서버가 UNUSED로 바꾼다)
+      final body = {
+        'memberId': memberId,
+        'date': date,
+        'duration': duration == 'UNUSED' ? 'FULL_DAY' : duration,
+        'useAnnualLeave': useAnnualLeave,
+        'reasonRequired': reasonRequired,
+      };
 
       if (reason != null && reason.isNotEmpty) {
         body['reason'] = reason;

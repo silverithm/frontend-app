@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../models/vacation_kind.dart';
 import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
 import 'seed/seed_chip.dart';
@@ -26,8 +27,8 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
   final _reasonController = TextEditingController();
   
   DateTime? _selectedDate;
-  String _selectedDuration = 'FULL_DAY';
-  String _selectedType = 'personal'; // 'personal' = 일반, 'mandatory' = 필수
+  /// 웹 관리자와 같은 6가지 종류에서 하나를 고른다 (유형과 기간이 여기서 함께 정해진다)
+  VacationKind _selectedKind = VacationKind.regular;
   int? _selectedMemberId;
   List<Map<String, dynamic>> _members = [];
   bool _isLoading = false;
@@ -125,6 +126,11 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
       AppSnackBar.showError(context, message: '직원을 선택해주세요');
       return;
     }
+    // 필수휴무는 웹과 같이 사유를 반드시 받는다
+    if (_selectedKind.reasonRequired && _reasonController.text.trim().isEmpty) {
+      AppSnackBar.showError(context, message: '필수휴무는 사유를 입력해주세요');
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
@@ -136,9 +142,12 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         companyId: companyId,
         memberId: _selectedMemberId!,
         date: '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
-        duration: _selectedDuration,
+        duration: _selectedKind.serverDuration,
         reason: _reasonController.text.isNotEmpty ? _reasonController.text : null,
-        type: _selectedType,
+        type: _selectedKind.serverType,
+        // 연차로 기록하지 않는 종류(일반·필수·대체)는 서버가 duration을 UNUSED로 고정한다
+        useAnnualLeave: _selectedKind.useAnnualLeave,
+        reasonRequired: _selectedKind.reasonRequired,
       );
 
       if (mounted) {
@@ -320,74 +329,32 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               ),
               const SizedBox(height: AppSpacing.space4),
 
-              // 휴무 타입 선택
+              // 휴무 종류 — 웹 관리자와 같은 6가지. 유형(일반·필수·대체)과
+              // 기간(연차·반차)이 한 목록에 들어 있어 고르는 순간 둘 다 정해진다.
               Text(
-                '휴무 타입',
+                '휴무 종류',
                 style: AppTypography.labelMedium.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: AppSpacing.space2),
-              Row(
-                children: [
-                  // 일반 휴무
-                  SeedChip(
-                    label: '일반',
-                    selected: _selectedType == 'personal',
-                    onTap: () => setState(() => _selectedType = 'personal'),
-                  ),
-                  const SizedBox(width: AppSpacing.space2),
-                  // 필수 휴무
-                  SeedChip(
-                    label: '필수',
-                    selected: _selectedType == 'mandatory',
-                    onTap: () => setState(() => _selectedType = 'mandatory'),
-                  ),
-                ],
+              Wrap(
+                spacing: AppSpacing.space2,
+                runSpacing: AppSpacing.space2,
+                children: VacationKind.values.map((kind) {
+                  return SeedChip(
+                    label: kind.label,
+                    selected: _selectedKind == kind,
+                    onTap: () => setState(() => _selectedKind = kind),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: AppSpacing.space4),
-
-              // 휴무 기간
+              const SizedBox(height: AppSpacing.space1),
               Text(
-                '휴무 기간',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
+                _selectedKind.description,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppSemanticColors.textSecondary,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.space2),
-              DropdownButtonFormField<String>(
-                value: _selectedDuration,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: AppSemanticColors.backgroundSecondary,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space4,
-                    vertical: AppSpacing.space3,
-                  ),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'FULL_DAY',
-                    child: Text('하루 종일 (연차)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'HALF_DAY_AM',
-                    child: Text('오전 반차'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'HALF_DAY_PM',
-                    child: Text('오후 반차'),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedDuration = value!;
-                  });
-                },
               ),
               const SizedBox(height: AppSpacing.space4),
               
