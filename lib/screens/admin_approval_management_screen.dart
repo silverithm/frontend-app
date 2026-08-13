@@ -16,6 +16,7 @@ import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../utils/document_open.dart';
 import '../widgets/seed/seed_chip.dart';
 
 class AdminApprovalManagementScreen extends StatefulWidget {
@@ -51,6 +52,17 @@ class _AdminApprovalManagementScreenState
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// 첨부를 누르면 앱 안에서 바로 보여준다.
+  /// 한글·워드·엑셀·슬라이드·글자 파일은 뷰어로, 그 밖(pdf 등)만 기기 앱에 넘긴다.
+  Future<void> _openAttachment(String? url, String fileName) async {
+    await openServerDocument(
+      context,
+      filePath: url,
+      fileName: fileName,
+      onDownloadFallback: () => _downloadAndOpenFile(url, fileName),
+    );
   }
 
   // 파일 다운로드 및 열기
@@ -777,7 +789,7 @@ class _AdminApprovalManagementScreenState
               if (request.attachmentFileName != null) ...[
                 const SizedBox(height: AppSpacing.space2),
                 GestureDetector(
-                  onTap: () => _downloadAndOpenFile(
+                  onTap: () => _openAttachment(
                     request.attachmentUrl,
                     request.attachmentFileName!,
                   ),

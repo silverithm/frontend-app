@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+import '../utils/document_open.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -110,6 +111,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
 
   // ===================== 열기 · 삭제 =====================
 
+  /// 앱 안에서 볼 수 있는 문서는 뷰어로 열고, 나머지만 내려받아 기기 앱에 넘긴다
   Future<void> _openItem(Map<String, dynamic> item) async {
     final filePath = item['filePath']?.toString();
     final fileName = item['fileName']?.toString() ?? '파일';
@@ -118,6 +120,15 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
       return;
     }
 
+    await openServerDocument(
+      context,
+      filePath: filePath,
+      fileName: fileName,
+      onDownloadFallback: () => _downloadItem(filePath, fileName),
+    );
+  }
+
+  Future<void> _downloadItem(String filePath, String fileName) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final savePath = '${directory.path}/$fileName';

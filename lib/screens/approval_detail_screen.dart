@@ -16,6 +16,7 @@ import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/approval/official_document_view.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../utils/document_open.dart';
 import '../widgets/seed/seed_button.dart';
 import 'hwp_editor_screen.dart';
 
@@ -135,7 +136,21 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
     );
   }
 
+  /// 첨부를 누르면 앱 안에서 바로 보여준다.
+  /// 한글·워드·엑셀·슬라이드·글자 파일은 뷰어로 열고, 그 밖(pdf 등)만 기기 앱에 넘긴다.
+  /// 예전에는 무조건 내려받아 기기 앱에 넘겨서, 한글 업무일지 같은 건 아무것도 열리지 않았다.
   Future<void> _openAttachment() async {
+    if (_approval.attachmentUrl == null || _isDownloading) return;
+
+    await openServerDocument(
+      context,
+      filePath: _approval.attachmentUrl,
+      fileName: _approval.attachmentFileName ?? 'attachment',
+      onDownloadFallback: _downloadAndOpenWithSystemApp,
+    );
+  }
+
+  Future<void> _downloadAndOpenWithSystemApp() async {
     if (_approval.attachmentUrl == null || _isDownloading) return;
 
     setState(() {
