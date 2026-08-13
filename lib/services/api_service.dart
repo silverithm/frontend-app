@@ -934,6 +934,64 @@ class ApiService {
     });
   }
 
+  // ================== 배차 설정 ==================
+
+  /// 회사의 배차 설정 한 벌을 통째로 받는다.
+  /// 서버가 원본이고 관리자 웹과 같은 JSON을 본다 — 한쪽에서 고치면 다른 쪽에도 보인다.
+  Future<Map<String, dynamic>> getDispatchSettings({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/dispatch-settings',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 배차 설정 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  /// 배차 설정 전체 저장. 서버가 회사당 한 벌로 덮어쓴다.
+  Future<Map<String, dynamic>> saveDispatchSettings({
+    required String companyId,
+    required Map<String, dynamic> settings,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/dispatch-settings',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 배차 설정 저장: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers, body: json.encode(settings));
+    });
+  }
+
+  /// 기관에 등록된 어르신 목록 (배차에 태울 대상 고르기용)
+  Future<Map<String, dynamic>> getCompanyElders({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/elders/company',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      print('[API] 어르신 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
   // 가입 요청 승인
   Future<Map<String, dynamic>> approveJoinRequest({
     required String userId,

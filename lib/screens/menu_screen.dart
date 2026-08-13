@@ -13,6 +13,7 @@ import 'admin_notice_management_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 import 'company_library_screen.dart';
+import 'dispatch_screen.dart';
 import 'login_screen.dart';
 import 'my_vacation_screen.dart';
 import 'notice_list_screen.dart';
@@ -147,6 +148,12 @@ class MenuScreen extends StatelessWidget {
                   label: '휴무 한도 설정',
                   onTap: () =>
                       _push(context, const AdminVacationLimitsSettingScreen()),
+                ),
+                _MenuItem(
+                  icon: Icons.directions_bus_outlined,
+                  label: '배차관리',
+                  description: '노선 · 운전자 · 어르신 탑승',
+                  onTap: () => _push(context, const DispatchScreen()),
                 ),
                 _MenuItem(
                   icon: Icons.business_outlined,
