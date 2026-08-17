@@ -759,6 +759,36 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         ),
                       ),
                     ),
+                  if ((room.noticeFileUrl ?? '').isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: GestureDetector(
+                        onTap: () => _openNoticeFile(room),
+                        behavior: HitTestBehavior.opaque,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.attach_file,
+                              size: AppSpacing.space4,
+                              color: AppSemanticColors.statusInfoText,
+                            ),
+                            const SizedBox(width: 2),
+                            Flexible(
+                              child: Text(
+                                room.noticeFileName ?? '파일',
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: AppSemanticColors.statusInfoText,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -820,6 +850,38 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   '${room.noticeByName} 등록',
                   style: AppTypography.labelSmall.copyWith(
                     color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+              ],
+              if ((room.noticeFileUrl ?? '').isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.space3),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _openNoticeFile(room);
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.attach_file,
+                        size: AppSpacing.space4,
+                        color: AppSemanticColors.textLink,
+                      ),
+                      const SizedBox(width: 2),
+                      Flexible(
+                        child: Text(
+                          room.noticeFileName ?? '파일',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textLink,
+                            decoration: TextDecoration.underline,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1096,10 +1158,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   /// 사진·문서는 앱 안에서 바로 보고, 나머지(pdf·옛 오피스 등)는 기기 뷰어에 맡긴다.
   void _openAttachment(ChatMessage message) {
-    final url = message.fileUrl;
-    final name = message.fileName ?? '파일';
+    _openFile(
+      url: message.fileUrl,
+      name: message.fileName ?? '파일',
+      isImage: message.type == MessageType.image,
+    );
+  }
 
-    if (message.type == MessageType.image && url != null && url.isNotEmpty) {
+  /// 공지에 첨부된 파일도 채팅 파일 메시지와 같은 방식으로 연다.
+  void _openNoticeFile(ChatRoom room) {
+    _openFile(url: room.noticeFileUrl, name: room.noticeFileName ?? '파일');
+  }
+
+  void _openFile({required String? url, required String name, bool isImage = false}) {
+    if (isImage && url != null && url.isNotEmpty) {
       ChatImageViewer.open(
         context,
         imageUrl: url,

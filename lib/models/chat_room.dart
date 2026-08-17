@@ -24,6 +24,9 @@ class ChatRoom {
   final String? noticeContent;
   final String? noticeByName;
   final DateTime? noticeAt;
+  // 공지로 고정된 메시지가 파일이었을 때의 스냅샷
+  final String? noticeFileName;
+  final String? noticeFileUrl;
 
   ChatRoom({
     required this.id,
@@ -44,6 +47,8 @@ class ChatRoom {
     this.noticeContent,
     this.noticeByName,
     this.noticeAt,
+    this.noticeFileName,
+    this.noticeFileUrl,
   });
 
   bool get hasNotice =>
@@ -79,6 +84,8 @@ class ChatRoom {
       noticeAt: json['noticeAt'] != null
           ? DateTime.tryParse(json['noticeAt'].toString())
           : null,
+      noticeFileName: json['noticeFileName']?.toString(),
+      noticeFileUrl: json['noticeFileUrl']?.toString(),
     );
   }
 
@@ -102,6 +109,8 @@ class ChatRoom {
       'noticeContent': noticeContent,
       'noticeByName': noticeByName,
       'noticeAt': noticeAt?.toIso8601String(),
+      'noticeFileName': noticeFileName,
+      'noticeFileUrl': noticeFileUrl,
     };
   }
 
@@ -136,6 +145,8 @@ class ChatRoom {
     String? noticeContent,
     String? noticeByName,
     DateTime? noticeAt,
+    String? noticeFileName,
+    String? noticeFileUrl,
     // 공지는 '없음'으로도 되돌려야 해서 ??로는 표현이 안 된다
     bool clearNotice = false,
   }) {
@@ -160,6 +171,8 @@ class ChatRoom {
       noticeContent: clearNotice ? null : (noticeContent ?? this.noticeContent),
       noticeByName: clearNotice ? null : (noticeByName ?? this.noticeByName),
       noticeAt: clearNotice ? null : (noticeAt ?? this.noticeAt),
+      noticeFileName: clearNotice ? null : (noticeFileName ?? this.noticeFileName),
+      noticeFileUrl: clearNotice ? null : (noticeFileUrl ?? this.noticeFileUrl),
     );
   }
 }
