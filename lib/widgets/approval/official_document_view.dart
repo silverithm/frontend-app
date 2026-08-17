@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/approval.dart';
+import '../../utils/form_field_width.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
@@ -402,62 +403,29 @@ class OfficialDocumentView extends StatelessWidget {
   }
 
   /// 폼 데이터 본문 표 (템플릿 스키마로 라벨/순서 해석, 없으면 키 그대로)
+  /// 폼 데이터 본문 표 (템플릿 스키마로 라벨/순서 해석, 없으면 키 그대로).
+  ///
+  /// Table을 쓰지 않는다 — Table은 열 폭을 모든 행이 공유해서 "이 줄은 1/3+2/3,
+  /// 저 줄은 반반"처럼 행마다 다른 비율을 표현할 수 없다. 웹 공문(OfficialDocument)도
+  /// 같은 이유로 행 단위 레이아웃을 쓴다. 양식 관리에서 정해둔 비율을 그대로 보여주려면
+  /// 행마다 따로 나눠야 한다.
   Widget _buildFieldsTable() {
     final formData = approval.formData!;
     final fields = template?.formFields ?? const [];
 
-    final rows = <TableRow>[];
-
-    void addRow(String label, String value, {bool isSection = false}) {
-      if (isSection) {
-        rows.add(TableRow(
-          decoration: const BoxDecoration(color: Color(0xFFE5E7EB)), // Tailwind gray-200 — 대응 토큰 없음
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.space1_5),
-              child: Text(label,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: AppTypography.fontSizeXs,
-                      fontWeight: AppTypography.fontWeightBold,
-                      color: _ink)),
-            ),
-            const SizedBox.shrink(),
-          ],
-        ));
-        return;
-      }
-      rows.add(TableRow(
-        children: [
-          Container(
-            color: const Color(0xFFF3F4F6), // Tailwind gray-100 — 대응 토큰 없음
-            padding: const EdgeInsets.all(7), // 대응 토큰 없음
-            child: Text(label,
-                style: const TextStyle(
-                    fontSize: AppTypography.fontSizeXs,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                    color: _ink)),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(7), // 대응 토큰 없음
-            child: Text(value, style: const TextStyle(fontSize: AppTypography.fontSizeXs, color: _ink)),
-          ),
-        ],
-      ));
-    }
-
     String formatValue(Map<String, dynamic>? field, dynamic value) {
       if (value == null || (value is String && value.isEmpty)) return '-';
-      if (value is List) return value.map((v) => v.toString()).join(', ');
-      if (value is Map) {
-        final start = value['start'] ?? value['startDate'];
-        final end = value['end'] ?? value['endDate'];
-        if (start != null || end != null) {
-          return '${start ?? '-'} ~ ${end ?? '-'}';
-        }
-        return value.toString();
+
+      final type = field?['type']?.toString();
+      if (type == 'dateRange' && value is Map) {
+        final start = value['start']?.toString() ?? '';
+        final end = value['end']?.toString() ?? '';
+        if (start.isEmpty && end.isEmpty) return '-';
+        return '$start ~ $end';
       }
-      // select/radio 옵션 라벨 치환
+      if (value is bool) return value ? 'O' : 'X';
+      if (value is List) return value.map((e) => e.toString()).join(', ');
+
       final options = field?['options'];
       if (options is List) {
         for (final option in options.whereType<Map>()) {
@@ -469,6 +437,8 @@ class OfficialDocumentView extends StatelessWidget {
       return value.toString();
     }
 
+    // 그릴 항목을 먼저 모은다 (라벨 · 값 · 폭 · 구분선 여부)
+    final entries = <_DocFieldEntry>[];
     if (fields.isNotEmpty) {
       final usedKeys = <String>{};
       for (final field in fields) {
@@ -476,11 +446,10 @@ class OfficialDocumentView extends StatelessWidget {
         final id = field['id']?.toString() ?? '';
         final label = field['label']?.toString() ?? id;
         if (type == 'section') {
-          addRow(label, '', isSection: true);
+          entries.add(_DocFieldEntry(label, '', 12, isSection: true));
           continue;
         }
         dynamic value = formData[id];
-        // dateRange는 {id}_start/{id}_end로 평탄화 저장될 수 있음
         if (value == null && type == 'dateRange') {
           final start = formData['${id}_start'];
           final end = formData['${id}_end'];
@@ -488,26 +457,127 @@ class OfficialDocumentView extends StatelessWidget {
           usedKeys.addAll(['${id}_start', '${id}_end']);
         }
         usedKeys.add(id);
-        addRow(label, formatValue(field, value));
+        entries.add(_DocFieldEntry(
+            label, formatValue(field, value), fieldWidthSpan(field['width'])));
       }
-      // 스키마에 없는 잔여 키
       for (final entry in formData.entries) {
         if (!usedKeys.contains(entry.key)) {
-          addRow(entry.key, formatValue(null, entry.value));
+          entries.add(_DocFieldEntry(entry.key, formatValue(null, entry.value), 12));
         }
       }
     } else {
       for (final entry in formData.entries) {
-        addRow(entry.key, formatValue(null, entry.value));
+        entries.add(_DocFieldEntry(entry.key, formatValue(null, entry.value), 12));
       }
     }
 
-    return Table(
-      columnWidths: const {0: FlexColumnWidth(1), 1: FlexColumnWidth(2.2)},
-      border: TableBorder.all(color: _line, width: 0.6),
-      children: rows,
+    // 12칼럼이 찰 때까지 한 줄에 묶는다 — 웹 공문과 같은 규칙이라
+    // 1/3 셋, 1/4 넷도 한 줄에 들어간다 (예전에는 둘까지만 묶어 나머지가 밀려 내려갔다)
+    final rows = groupIntoRowsBySpan<_DocFieldEntry>(
+      entries,
+      spanOf: (entry) => entry.span,
+      isBlock: (entry) => entry.isSection,
+      maxPerRow: 4,
+    );
+
+    return Container(
+      decoration: BoxDecoration(border: Border.all(color: _line, width: 0.6)),
+      child: Column(
+        children: [
+          for (var r = 0; r < rows.length; r++)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _rowCells(rows[r], isLastRow: r == rows.length - 1),
+              ),
+            ),
+        ],
+      ),
     );
   }
+
+  /// 한 줄을 라벨/값 칸들로 편다. 값 칸의 폭은 그 줄 안에서 각 필드의 비율대로 나눈다.
+  List<Widget> _rowCells(List<_DocFieldEntry> row, {required bool isLastRow}) {
+    final bottom = isLastRow ? BorderSide.none : const BorderSide(color: _line, width: 0.6);
+
+    if (row.length == 1 && row[0].isSection) {
+      return [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFE5E7EB), // Tailwind gray-200 — 대응 토큰 없음
+              border: Border(bottom: bottom),
+            ),
+            padding: const EdgeInsets.all(AppSpacing.space1_5),
+            child: Text(row[0].label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: AppTypography.fontSizeXs,
+                    fontWeight: AppTypography.fontWeightBold,
+                    color: _ink)),
+          ),
+        ),
+      ];
+    }
+
+    final cells = <Widget>[];
+    // 웹의 docRowColumnTemplate과 같은 배분 — 라벨은 개수가 늘수록 좁히고(2개면 18%씩),
+    // 남는 자리를 각 필드의 폭 비율대로 나눈다
+    final labelPercent = (44 / row.length).clamp(0, 18).toDouble();
+    final labelFlex = (labelPercent * 100).round();
+    final valueFlexTotal = ((100 - labelPercent * row.length) * 100).round();
+    final spanTotal = row.fold<int>(0, (sum, e) => sum + e.span);
+
+    for (var c = 0; c < row.length; c++) {
+      final entry = row[c];
+      final isLastCell = c == row.length - 1;
+      final valueFlex = (valueFlexTotal * entry.span / (spanTotal == 0 ? 1 : spanTotal))
+          .round()
+          .clamp(1, 100000);
+
+      cells.add(Expanded(
+        flex: labelFlex,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F4F6), // Tailwind gray-100 — 대응 토큰 없음
+            border: Border(bottom: bottom, right: const BorderSide(color: _line, width: 0.6)),
+          ),
+          padding: const EdgeInsets.all(7), // 대응 토큰 없음
+          child: Text(entry.label,
+              style: const TextStyle(
+                  fontSize: AppTypography.fontSizeXs,
+                  fontWeight: AppTypography.fontWeightSemibold,
+                  color: _ink)),
+        ),
+      ));
+      cells.add(Expanded(
+        flex: valueFlex,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: bottom,
+              right: isLastCell ? BorderSide.none : const BorderSide(color: _line, width: 0.6),
+            ),
+          ),
+          padding: const EdgeInsets.all(7), // 대응 토큰 없음
+          child: Text(entry.value,
+              style: const TextStyle(fontSize: AppTypography.fontSizeXs, color: _ink)),
+        ),
+      ));
+    }
+    return cells;
+  }
+}
+
+/// 공문 본문 한 칸 — 라벨과 값, 그리고 한 줄에서 차지할 폭
+class _DocFieldEntry {
+  const _DocFieldEntry(this.label, this.value, this.span, {this.isSection = false});
+
+  final String label;
+  final String value;
+  final int span;
+  final bool isSection;
+
 }
 
 enum _BoxState { approved, rejected, inProgress, waiting }

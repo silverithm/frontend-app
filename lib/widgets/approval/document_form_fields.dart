@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../utils/form_field_width.dart';
 import 'package:intl/intl.dart';
 
 import '../../theme/app_colors.dart';
@@ -55,35 +57,20 @@ class DocumentFormFields extends StatefulWidget {
   /// - half/third/quarter처럼 폭이 좁은 필드는 연속 2개까지 한 행에 묶는다.
   /// - full/twoThirds 등 넓은 필드(또는 width 정보가 없는 구형 필드)는 모바일 화면폭 상
   ///   단독 행으로 접는다.
+  /// width 메타데이터를 기준으로 필드를 행 단위로 묶는다.
+  ///
+  /// 웹(formValueFormat.ts의 groupFieldsIntoRows)과 같은 규칙 — 12칼럼이 찰 때까지 묶는다.
+  /// 그래서 1/3 + 2/3처럼 서로 다른 폭도 한 줄에 선다.
+  /// 다만 작성 화면은 손가락으로 입력하는 곳이라 한 줄에 둘까지만 둔다
+  /// (공문 보기는 넷까지 — official_document_view 참고).
   static List<List<Map<String, dynamic>>> groupRows(
       List<Map<String, dynamic>> fields) {
-    const narrowWidths = {'half', 'third', 'quarter'};
-    final rows = <List<Map<String, dynamic>>>[];
-    var i = 0;
-    while (i < fields.length) {
-      final field = fields[i];
-      final type = field['type']?.toString();
-      if (type == 'section') {
-        rows.add([field]);
-        i++;
-        continue;
-      }
-      final width = field['width']?.toString() ?? 'full';
-      final isNarrow = narrowWidths.contains(width);
-      if (isNarrow && i + 1 < fields.length) {
-        final next = fields[i + 1];
-        final nextType = next['type']?.toString();
-        final nextWidth = next['width']?.toString() ?? 'full';
-        if (nextType != 'section' && narrowWidths.contains(nextWidth)) {
-          rows.add([field, next]);
-          i += 2;
-          continue;
-        }
-      }
-      rows.add([field]);
-      i++;
-    }
-    return rows;
+    return groupIntoRowsBySpan<Map<String, dynamic>>(
+      fields,
+      spanOf: (field) => fieldWidthSpan(field['width']),
+      isBlock: (field) => field['type']?.toString() == 'section',
+      maxPerRow: 2,
+    );
   }
 
   @override
@@ -467,8 +454,16 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: _fieldCell(rows[i][0])),
-                    Expanded(child: _fieldCell(rows[i][1], bordered: true)),
+                    // 양식에 정해둔 비율대로 나눈다 — 예전엔 무조건 반씩 나눠서
+                    // 1/3+2/3으로 만든 양식이 앱에서는 반반으로 보였다
+                    Expanded(
+                      flex: fieldWidthSpan(rows[i][0]['width']),
+                      child: _fieldCell(rows[i][0]),
+                    ),
+                    Expanded(
+                      flex: fieldWidthSpan(rows[i][1]['width']),
+                      child: _fieldCell(rows[i][1], bordered: true),
+                    ),
                   ],
                 ),
               )
