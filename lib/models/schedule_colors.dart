@@ -40,8 +40,12 @@ class ScheduleColorOption {
   final String name;
 }
 
-/// 일정 색상 팔레트 — 웹(`SCHEDULE_COLORS`)과 동일한 8색.
+/// 일정 색상 팔레트 — 웹(`SCHEDULE_COLORS`)과 동일한 12색, 같은 순서.
 /// 일정 등록/수정 폼의 색 선택 UI에서 그대로 노출한다.
+///
+/// 색상환 순서(빨강 → 보라 → 분홍)로 늘어놓고 무채색을 끝에 둔다. 기존 8색의 값은
+/// 그대로 두고 사이를 메웠으므로 이미 저장된 일정의 색이 목록 밖으로 밀리지 않는다.
+/// 웹과 값·순서가 어긋나면 같은 일정이 두 화면에서 다른 자리에 놓이므로 함께 고쳐야 한다.
 class ScheduleColorPalette {
   const ScheduleColorPalette._();
 
@@ -49,8 +53,12 @@ class ScheduleColorPalette {
     ScheduleColorOption('#EF4444', Color(0xFFEF4444), '빨강'),
     ScheduleColorOption('#F97316', Color(0xFFF97316), '주황'),
     ScheduleColorOption('#EAB308', Color(0xFFEAB308), '노랑'),
+    ScheduleColorOption('#84CC16', Color(0xFF84CC16), '연두'),
     ScheduleColorOption('#22C55E', Color(0xFF22C55E), '초록'),
+    ScheduleColorOption('#14B8A6', Color(0xFF14B8A6), '청록'),
+    ScheduleColorOption('#0EA5E9', Color(0xFF0EA5E9), '하늘'),
     ScheduleColorOption('#3B82F6', Color(0xFF3B82F6), '파랑'),
+    ScheduleColorOption('#6366F1', Color(0xFF6366F1), '남보라'),
     ScheduleColorOption('#8B5CF6', Color(0xFF8B5CF6), '보라'),
     ScheduleColorOption('#EC4899', Color(0xFFEC4899), '분홍'),
     ScheduleColorOption('#6B7280', Color(0xFF6B7280), '회색'),
