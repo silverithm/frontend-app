@@ -388,6 +388,24 @@ class ChatProvider with ChangeNotifier {
       // WebSocket 메시지 타입 확인
       final messageType = data['type']?.toString();
 
+      // 누가 메시지를 지웠을 때 — 그 자리를 '삭제된 메시지입니다'로 갈아끼운다.
+      // 목록에서 빼지 않는 건 답장이 걸린 대화가 끊기지 않게 하려는 것이다.
+      if (messageType == 'DELETE' && data['message'] != null) {
+        final deleted = ChatMessage.fromJson(
+          data['message'] as Map<String, dynamic>,
+        );
+        final deletedRoomId =
+            (data['roomId'] as num?)?.toInt() ?? deleted.chatRoomId;
+        if (_selectedRoom != null && deletedRoomId == _selectedRoom!.id) {
+          final index = _messages.indexWhere((m) => m.id == deleted.id);
+          if (index != -1) {
+            _messages[index] = deleted;
+            notifyListeners();
+          }
+        }
+        return;
+      }
+
       ChatMessage? message;
       int? roomId;
 
