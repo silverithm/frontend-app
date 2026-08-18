@@ -663,15 +663,27 @@ class _AdminVacationManagementScreenState
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: isPending
+        // 기본 탭은 상세 시트를 연다. 일괄 선택은 길게 눌러 시작하고,
+        // 선택 모드에서는 탭이 선택 토글이 된다 (대기 건만 선택 대상).
+        onTap: () {
+          if (_isSelectMode && isPending) {
+            setState(() {
+              if (_selectedRequests.contains(requestId)) {
+                _selectedRequests.remove(requestId);
+              } else {
+                _selectedRequests.add(requestId);
+              }
+              _isSelectMode = _selectedRequests.isNotEmpty;
+            });
+            return;
+          }
+          _showVacationDetail(request);
+        },
+        onLongPress: isPending
             ? () {
                 setState(() {
-                  if (_selectedRequests.contains(requestId)) {
-                    _selectedRequests.remove(requestId);
-                  } else {
-                    _selectedRequests.add(requestId);
-                  }
-                  _isSelectMode = _selectedRequests.isNotEmpty;
+                  _selectedRequests.add(requestId);
+                  _isSelectMode = true;
                 });
               }
             : null,
@@ -835,6 +847,171 @@ class _AdminVacationManagementScreenState
           Expanded(
             child: Text(
               reason,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 휴무 신청 상세 — 카드에서 줄여 보여주던 사유 전문과 신청 정보를 한 시트로.
+  void _showVacationDetail(Map<String, dynamic> request) {
+    final status = request['status'] ?? '';
+    final isPending = status == 'pending';
+    final bool isApproved = status == 'approved';
+    final Color statusColor = isApproved
+        ? AppSemanticColors.statusSuccessText
+        : isPending
+            ? AppSemanticColors.statusWarningText
+            : AppSemanticColors.statusErrorText;
+    final Color statusBackground = isApproved
+        ? AppSemanticColors.statusSuccessBackground
+        : isPending
+            ? AppSemanticColors.statusWarningBackground
+            : AppSemanticColors.statusErrorBackground;
+    final String statusText = isApproved
+        ? '승인됨'
+        : isPending
+            ? '대기중'
+            : '거절됨';
+    final String reason = (request['reason'] ?? '').toString();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      request['userName'] ?? '알 수 없음',
+                      style: AppTypography.heading5.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space2,
+                      vertical: AppSpacing.space1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBackground,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: AppTypography.labelMedium.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              _detailRow('역할', _getRoleDisplayName(request['role'] ?? '')),
+              _detailRow('휴무일', (request['date'] ?? '').toString()),
+              _detailRow('신청일', _formatDate(request['createdAt'])),
+              if (reason.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.space3),
+                Text(
+                  '사유',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space1),
+                Flexible(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.space3),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.backgroundSecondary,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        reason,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (isPending) ...[
+                const SizedBox(height: AppSpacing.space5),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SeedButton(
+                        label: '거절',
+                        variant: SeedButtonVariant.neutralOutline,
+                        onPressed: () {
+                          Navigator.of(sheetContext).pop();
+                          _rejectRequest(request['id'].toString());
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.space3),
+                    Expanded(
+                      child: SeedButton(
+                        label: '승인',
+                        variant: SeedButtonVariant.brandSolid,
+                        onPressed: () {
+                          Navigator.of(sheetContext).pop();
+                          _approveRequest(request['id'].toString());
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 64,
+            child: Text(
+              label,
+              style: AppTypography.labelMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value.isEmpty ? '-' : value,
               style: AppTypography.bodyMedium.copyWith(
                 color: AppSemanticColors.textPrimary,
               ),

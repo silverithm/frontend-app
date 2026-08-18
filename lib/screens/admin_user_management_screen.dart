@@ -601,7 +601,10 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
             borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
           ),
-          child: Padding(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _showPendingUserDetail(user),
+            child: Padding(
             padding: const EdgeInsets.all(AppSpacing.space4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -686,8 +689,125 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
               ],
             ),
           ),
+          ),
         );
       },
+    );
+  }
+
+  /// 가입 신청 상세 — 카드에 없는 아이디·부서·직책·신청일까지 한 시트로.
+  void _showPendingUserDetail(User user) {
+    String formatDate(DateTime d) =>
+        '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
+
+    Widget row(String label, String value) => Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 64,
+                child: Text(
+                  label,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  value.isEmpty ? '-' : value,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      user.name,
+                      style: AppTypography.heading5.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space2,
+                      vertical: AppSpacing.space1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.statusWarningBackground,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    ),
+                    child: Text(
+                      AdminUtils.getRoleDisplayName(user.role),
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppSemanticColors.statusWarningText,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              row('이메일', user.email),
+              row('아이디', user.username),
+              row('부서', user.department ?? ''),
+              row('직책', user.position ?? ''),
+              row('신청일', formatDate(user.createdAt)),
+              const SizedBox(height: AppSpacing.space5),
+              Row(
+                children: [
+                  Expanded(
+                    child: SeedButton(
+                      label: '거부',
+                      variant: SeedButtonVariant.neutralOutline,
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _showRejectDialog(user);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: SeedButton(
+                      label: '승인',
+                      variant: SeedButtonVariant.brandSolid,
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _showApprovalDialog(user);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
