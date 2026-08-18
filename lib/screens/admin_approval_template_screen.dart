@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/template_card.dart';
+import 'approval_template_preview_screen.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -525,6 +526,15 @@ class _AdminApprovalTemplateScreenState
               final template = templates[index];
               return TemplateCard(
                 template: template,
+                // 카드를 누르면 양식을 바로 열람한다 (웹의 양식 미리보기와 같은 동작)
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ApprovalTemplatePreviewScreen(
+                      template: template,
+                      showUseButton: false,
+                    ),
+                  ),
+                ),
                 onEdit: () => _showEditDialog(template),
                 onDelete: () => _deleteTemplate(template),
                 onToggleActive: () => _toggleActive(template),

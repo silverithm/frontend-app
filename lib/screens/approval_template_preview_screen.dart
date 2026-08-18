@@ -23,7 +23,14 @@ import 'hwp_editor_screen.dart';
 class ApprovalTemplatePreviewScreen extends StatefulWidget {
   final ApprovalTemplate template;
 
-  const ApprovalTemplatePreviewScreen({super.key, required this.template});
+  /// 양식 관리(관리자)에서 열람만 할 때는 작성 버튼을 숨긴다
+  final bool showUseButton;
+
+  const ApprovalTemplatePreviewScreen({
+    super.key,
+    required this.template,
+    this.showUseButton = true,
+  });
 
   @override
   State<ApprovalTemplatePreviewScreen> createState() =>
@@ -329,23 +336,24 @@ class _ApprovalTemplatePreviewScreenState
                 ),
               ),
             ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.surfaceDefault,
-                border: Border(top: BorderSide(color: AppSemanticColors.borderDefault)),
-              ),
-              child: SizedBox(
+            if (widget.showUseButton)
+              Container(
                 width: double.infinity,
-                child: SeedButton(
-                  label: '이 양식으로 작성',
-                  variant: SeedButtonVariant.brandSolid,
-                  size: SeedButtonSize.large,
-                  onPressed: () => Navigator.of(context).pop(t),
+                padding: const EdgeInsets.all(AppSpacing.space4),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.surfaceDefault,
+                  border: Border(top: BorderSide(color: AppSemanticColors.borderDefault)),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: SeedButton(
+                    label: '이 양식으로 작성',
+                    variant: SeedButtonVariant.brandSolid,
+                    size: SeedButtonSize.large,
+                    onPressed: () => Navigator.of(context).pop(t),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

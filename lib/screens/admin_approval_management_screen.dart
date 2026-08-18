@@ -17,6 +17,7 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../utils/document_open.dart';
+import 'approval_detail_screen.dart';
 import '../widgets/seed/seed_chip.dart';
 
 class AdminApprovalManagementScreen extends StatefulWidget {
@@ -703,15 +704,31 @@ class _AdminApprovalManagementScreenState
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: isPending
+        // 기본 탭은 문서 상세(공문 미리보기)로 간다. 일괄 선택은 길게 눌러 시작하고,
+        // 선택 모드에서는 탭이 선택 토글이 된다 (대기 문서만 선택 대상).
+        onTap: () {
+          if (_isSelectMode && isPending) {
+            setState(() {
+              if (isSelected) {
+                _selectedRequests.remove(request.id);
+              } else {
+                _selectedRequests.add(request.id);
+              }
+              _isSelectMode = _selectedRequests.isNotEmpty;
+            });
+            return;
+          }
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ApprovalDetailScreen(approval: request),
+            ),
+          );
+        },
+        onLongPress: isPending
             ? () {
                 setState(() {
-                  if (isSelected) {
-                    _selectedRequests.remove(request.id);
-                  } else {
-                    _selectedRequests.add(request.id);
-                  }
-                  _isSelectMode = _selectedRequests.isNotEmpty;
+                  _selectedRequests.add(request.id);
+                  _isSelectMode = true;
                 });
               }
             : null,
