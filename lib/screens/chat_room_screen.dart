@@ -78,7 +78,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       _chatProvider.sendTypingStatus(
         widget.room.id,
         false,
-        userId: _authProvider.currentUser?.id ?? '',
+        userId: _authProvider.currentUser?.chatUserId ?? '',
         userName: _authProvider.currentUser?.name ?? '',
       );
     }
@@ -102,7 +102,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       chatProvider.markAsRead(
         widget.room.id,
         messages.first.id,
-        userId: authProvider.currentUser?.id ?? '',
+        userId: authProvider.currentUser?.chatUserId ?? '',
         userName: authProvider.currentUser?.name ?? '',
       );
     }
@@ -124,7 +124,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final chatProvider = context.read<ChatProvider>();
     final authProvider = context.read<AuthProvider>();
     final hasText = _messageController.text.trim().isNotEmpty;
-    final userId = authProvider.currentUser?.id ?? '';
+    final userId = authProvider.currentUser?.chatUserId ?? '';
     final userName = authProvider.currentUser?.name ?? '';
 
     if (hasText && !_isTyping) {
@@ -197,7 +197,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return;
     }
 
-    final myId = context.read<AuthProvider>().currentUser?.id;
+    final myId = context.read<AuthProvider>().currentUser?.chatUserId;
     final participants = context.read<ChatProvider>().participants;
     final lower = query.toLowerCase();
 
@@ -278,7 +278,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final chatProvider = context.read<ChatProvider>();
     final authProvider = context.read<AuthProvider>();
-    final userId = authProvider.currentUser?.id ?? '';
+    final userId = authProvider.currentUser?.chatUserId ?? '';
     final userName = authProvider.currentUser?.name ?? '';
     _messageController.clear();
 
@@ -457,7 +457,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         await chatProvider.sendFileMessage(
           widget.room.id,
           file,
-          senderId: authProvider.currentUser?.id ?? '',
+          senderId: authProvider.currentUser?.chatUserId ?? '',
           senderName: authProvider.currentUser?.name ?? '',
         );
       }
@@ -599,7 +599,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         await chatProvider.sendFileMessage(
           widget.room.id,
           file,
-          senderId: authProvider.currentUser?.id ?? '',
+          senderId: authProvider.currentUser?.chatUserId ?? '',
           senderName: authProvider.currentUser?.name ?? '',
         );
       }
@@ -1218,7 +1218,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   void _showMessageOptions(ChatMessage message) {
     final authProvider = context.read<AuthProvider>();
-    final isMyMessage = message.senderId == authProvider.currentUser?.id;
+    final isMyMessage = message.senderId == authProvider.currentUser?.chatUserId;
     final rootContext = context;
 
     showModalBottomSheet(
@@ -1330,7 +1330,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Future<void> _toggleReaction(ChatMessage message, String emoji) async {
     final authProvider = context.read<AuthProvider>();
     final chatProvider = context.read<ChatProvider>();
-    final userId = authProvider.currentUser?.id ?? '';
+    final userId = authProvider.currentUser?.chatUserId ?? '';
     final userName = authProvider.currentUser?.name ?? '';
 
     try {
@@ -1696,7 +1696,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
-    final currentUserId = authProvider.currentUser?.id ?? '';
+    final currentUserId = authProvider.currentUser?.chatUserId ?? '';
 
     return PopScope(
       canPop: true,

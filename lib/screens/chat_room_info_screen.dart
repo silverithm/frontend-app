@@ -64,7 +64,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
     if (confirmed == true && mounted) {
       final authProvider = context.read<AuthProvider>();
       final chatProvider = context.read<ChatProvider>();
-      final userId = authProvider.currentUser?.id ?? '';
+      final userId = authProvider.currentUser?.chatUserId ?? '';
 
       final success = await chatProvider.leaveRoom(widget.room.id, userId);
       if (success && mounted) {
@@ -105,7 +105,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
-    final currentUserId = authProvider.currentUser?.id ?? '';
+    final currentUserId = authProvider.currentUser?.chatUserId ?? '';
 
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,

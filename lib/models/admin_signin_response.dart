@@ -59,6 +59,7 @@ class AdminSigninResponse {
       role: 'ADMIN', // 관리자로 명시적 설정
       status: 'active',
       isActive: true,
+      isAdminAccount: true, // app_user 로그인 — 채팅 식별자에 admin_ 접두사가 붙는다
       createdAt: DateTime.now(),
       company: Company(
         id: companyId,

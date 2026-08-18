@@ -77,7 +77,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
 
     if (authProvider.currentUser != null) {
       final companyId = authProvider.currentUser!.company?.id ?? '1';
-      final userId = authProvider.currentUser!.id;
+      final userId = authProvider.currentUser!.chatUserId;
 
       await chatProvider.loadChatRooms(companyId: companyId, userId: userId);
     }

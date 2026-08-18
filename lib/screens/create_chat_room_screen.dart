@@ -98,7 +98,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
       final authProvider = context.read<AuthProvider>();
       final chatProvider = context.read<ChatProvider>();
       final companyId = authProvider.currentUser?.company?.id ?? '1';
-      final userId = authProvider.currentUser?.id ?? '';
+      final userId = authProvider.currentUser?.chatUserId ?? '';
       final userName = authProvider.currentUser?.name ?? '';
 
       // 자신도 참가자에 포함
@@ -143,7 +143,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final currentUserId = authProvider.currentUser?.id ?? '';
+    final currentUserId = authProvider.currentUser?.chatUserId ?? '';
 
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,

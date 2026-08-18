@@ -5,6 +5,12 @@ class User {
   final String email;
   final String name;
   final String role; // 'CAREGIVER', 'OFFICE', 'admin'
+
+  /// 관리자 계정(app_user) 로그인인지.
+  ///
+  /// role만으로는 판별할 수 없다 — 직원(members) 중에도 role이 ADMIN인 사람이 있고,
+  /// 그 사람의 id는 직원 id다. 채팅 식별자 규약(관리자만 admin_ 접두사)에 이 구분이 필요하다.
+  final bool isAdminAccount;
   final String? profileImage;
   final String? profileImageUrl;
   final DateTime createdAt;
@@ -35,7 +41,16 @@ class User {
     this.company,
     this.lastLoginAt,
     this.tokenInfo,
+    this.isAdminAccount = false,
   });
+
+  /// 채팅에서 나를 가리키는 값.
+  ///
+  /// 관리자 계정과 직원은 다른 표라 id가 겹치므로, 서버·웹과 같은 규약으로 관리자 계정에만
+  /// 'admin_' 접두사를 붙인다. 서버가 내려주는 senderId/userId와 이 값을 비교해야
+  /// 내 메시지·내 참가자 행을 제대로 알아본다 — 원시 id로 비교하면 관리자의 메시지가
+  /// 남의 것처럼 보인다(실제 사고).
+  String get chatUserId => isAdminAccount ? 'admin_$id' : id;
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -62,6 +77,7 @@ class User {
       tokenInfo: json['tokenInfo'] != null
           ? TokenInfo.fromJson(json['tokenInfo'])
           : null,
+      isAdminAccount: json['isAdminAccount'] ?? false,
     );
   }
 
@@ -82,6 +98,7 @@ class User {
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'isActive': isActive,
       'tokenInfo': tokenInfo?.toJson(),
+      'isAdminAccount': isAdminAccount,
     };
   }
 
@@ -101,6 +118,7 @@ class User {
     DateTime? lastLoginAt,
     bool? isActive,
     TokenInfo? tokenInfo,
+    bool? isAdminAccount,
   }) {
     return User(
       id: id ?? this.id,
@@ -118,6 +136,7 @@ class User {
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       isActive: isActive ?? this.isActive,
       tokenInfo: tokenInfo ?? this.tokenInfo,
+      isAdminAccount: isAdminAccount ?? this.isAdminAccount,
     );
   }
 }
