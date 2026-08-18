@@ -4,6 +4,7 @@ import '../../models/approval.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/app_spacing.dart';
+import '../common/app_action_sheet.dart';
 
 class TemplateCard extends StatelessWidget {
   final ApprovalTemplate template;
@@ -42,7 +43,7 @@ class TemplateCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
+              _buildHeader(context),
               if (template.description != null &&
                   template.description!.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.space2),
@@ -57,7 +58,7 @@ class TemplateCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
         Container(
@@ -95,7 +96,7 @@ class TemplateCard extends StatelessWidget {
           ),
         ),
         if (onEdit != null || onDelete != null || onToggleActive != null)
-          _buildActionMenu(),
+          _buildActionMenu(context),
       ],
     );
   }
@@ -168,90 +169,44 @@ class TemplateCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionMenu() {
-    return PopupMenuButton<String>(
+  Widget _buildActionMenu(BuildContext context) {
+    // 기본 Material 팝업 메뉴 대신 앱 공통 문법(둥근 상단 바텀시트 + 틴트 아이콘)을 쓴다
+    return IconButton(
       icon: Icon(
         Icons.more_vert,
         color: AppSemanticColors.textSecondary,
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-      ),
-      onSelected: (value) {
-        switch (value) {
-          case 'edit':
-            onEdit?.call();
-            break;
-          case 'toggle':
-            onToggleActive?.call();
-            break;
-          case 'delete':
-            onDelete?.call();
-            break;
-        }
-      },
-      itemBuilder: (context) => [
+      visualDensity: VisualDensity.compact,
+      tooltip: '더보기',
+      onPressed: () => _showActionSheet(context),
+    );
+  }
+
+  void _showActionSheet(BuildContext context) {
+    showAppActionSheet(
+      context,
+      title: template.name,
+      actions: [
         if (onEdit != null)
-          PopupMenuItem<String>(
-            value: 'edit',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.edit_outlined,
-                  size: 18,
-                  color: AppSemanticColors.textSecondary,
-                ),
-                const SizedBox(width: AppSpacing.space2),
-                Text(
-                  '수정',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
+          AppSheetAction(
+            icon: Icons.edit_outlined,
+            label: '수정',
+            onSelected: onEdit!,
           ),
         if (onToggleActive != null)
-          PopupMenuItem<String>(
-            value: 'toggle',
-            child: Row(
-              children: [
-                Icon(
-                  template.isActive
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  size: 18,
-                  color: AppSemanticColors.textSecondary,
-                ),
-                const SizedBox(width: AppSpacing.space2),
-                Text(
-                  template.isActive ? '비활성화' : '활성화',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
+          AppSheetAction(
+            icon: template.isActive
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            label: template.isActive ? '비활성화' : '활성화',
+            onSelected: onToggleActive!,
           ),
         if (onDelete != null)
-          PopupMenuItem<String>(
-            value: 'delete',
-            child: Row(
-              children: [
-                Icon(
-                  Icons.delete_outline,
-                  size: 18,
-                  color: AppSemanticColors.statusErrorIcon,
-                ),
-                const SizedBox(width: AppSpacing.space2),
-                Text(
-                  '삭제',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.statusErrorText,
-                  ),
-                ),
-              ],
-            ),
+          AppSheetAction(
+            icon: Icons.delete_outline,
+            label: '삭제',
+            isDestructive: true,
+            onSelected: onDelete!,
           ),
       ],
     );

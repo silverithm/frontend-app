@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/html_utils.dart';
+import '../widgets/plaza_html_body.dart';
 import '../providers/notice_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/notice.dart';
@@ -206,14 +208,18 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                       ),
                       const SizedBox(height: AppSpacing.space4),
 
-                      // 내용
-                      Text(
-                        notice.content,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                          height: 1.6,
+                      // 내용 — 웹에서 서식을 넣어 쓴 공지는 HTML로 그린다.
+                      // 평문으로 쌓여 온 옛 공지는 그대로 둬야 줄바꿈이 살아 있다.
+                      if (containsHtmlTags(notice.content))
+                        PlazaHtmlBody(html: notice.content)
+                      else
+                        Text(
+                          notice.content,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            height: 1.6,
+                          ),
                         ),
-                      ),
 
                       // 첨부파일 섹션
                       if (notice.attachments.isNotEmpty) ...[

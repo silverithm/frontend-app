@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../widgets/common/app_action_sheet.dart';
 import '../providers/auth_provider.dart';
 import '../providers/notice_provider.dart';
 import '../models/notice.dart';
@@ -271,65 +272,36 @@ class _AdminNoticeManagementScreenState
                     const SizedBox(width: AppSpacing.space2),
                     NoticeStatusBadge(status: notice.status, small: true),
                     const Spacer(),
-                    PopupMenuButton<String>(
+                    IconButton(
                       icon: Icon(
                         Icons.more_vert,
                         color: AppSemanticColors.textTertiary,
                       ),
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'edit':
-                            _navigateToEditNotice(notice);
-                            break;
-                          case 'delete':
-                            _showDeleteConfirmDialog(notice).then((confirmed) {
-                              if (confirmed == true) {
-                                _deleteNotice(notice);
-                              }
-                            });
-                            break;
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.edit,
-                                size: 20,
-                                color: AppSemanticColors.textSecondary,
-                              ),
-                              const SizedBox(width: AppSpacing.space3),
-                              Text(
-                                '수정',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textPrimary,
-                                ),
-                              ),
-                            ],
+                      visualDensity: VisualDensity.compact,
+                      tooltip: '더보기',
+                      onPressed: () => showAppActionSheet(
+                        context,
+                        title: notice.title,
+                        actions: [
+                          AppSheetAction(
+                            icon: Icons.edit_outlined,
+                            label: '수정',
+                            onSelected: () => _navigateToEditNotice(notice),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.delete,
-                                size: 20,
-                                color: AppSemanticColors.statusErrorIcon,
-                              ),
-                              const SizedBox(width: AppSpacing.space3),
-                              Text(
-                                '삭제',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.statusErrorIcon,
-                                ),
-                              ),
-                            ],
+                          AppSheetAction(
+                            icon: Icons.delete_outline,
+                            label: '삭제',
+                            isDestructive: true,
+                            onSelected: () {
+                              _showDeleteConfirmDialog(notice).then((confirmed) {
+                                if (confirmed == true) {
+                                  _deleteNotice(notice);
+                                }
+                              });
+                            },
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

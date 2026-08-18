@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/html_utils.dart';
 import '../models/notice.dart';
 import '../models/schedule.dart';
 import '../models/schedule_colors.dart';
@@ -965,7 +966,9 @@ class _NoticePreviewTile extends StatelessWidget {
   }
 
   String _previewText(String content) {
-    final normalized = content.replaceAll('\n', ' ').trim();
+    // 서식 공지는 태그를 걷어낸 평문으로 미리 보여준다
+    final normalized =
+        stripHtmlToPlainText(content).replaceAll('\n', ' ').trim();
     if (normalized.isEmpty) {
       return '본문 미리보기가 없습니다.';
     }

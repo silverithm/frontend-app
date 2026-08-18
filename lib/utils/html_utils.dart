@@ -3,6 +3,14 @@
 /// (본문 전체 렌더링은 `PlazaHtmlBody`(flutter_html)를 쓴다 — 이 파일은 순수 텍스트 변환만 담당)
 library;
 
+/// 서식(HTML) 본문인지 — 공지는 오랫동안 평문으로 쌓여 와서, 태그가 있는 글만
+/// HTML로 렌더링하고 나머지는 평문 그대로 둔다 (웹 isRichText와 같은 판정).
+final RegExp _richTextTag = RegExp(
+    r'<(p|div|br|span|font|b|strong|i|em|u|s|ul|ol|li|a|blockquote)\b',
+    caseSensitive: false);
+
+bool containsHtmlTags(String content) => _richTextTag.hasMatch(content);
+
 final RegExp _blockBreakTag =
     RegExp(r'<(br|/p|/div|/li|/h[1-6])\s*/?>', caseSensitive: false);
 final RegExp _anyTag = RegExp(r'<[^>]*>');

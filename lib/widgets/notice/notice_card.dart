@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../utils/html_utils.dart';
 import '../../models/notice.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -116,9 +117,9 @@ class NoticeCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.space2),
 
-              // Content preview
+              // Content preview — 서식 공지는 태그 없는 평문으로 줄인다
               Text(
-                notice.content,
+                stripHtmlToPlainText(notice.content),
                 style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textSecondary,
                 ),
