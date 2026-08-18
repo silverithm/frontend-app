@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notice.dart';
 import '../models/schedule.dart';
+import '../models/schedule_colors.dart';
 import '../models/vacation_request.dart';
 import '../providers/admin_provider.dart';
 import '../providers/approval_provider.dart';
@@ -191,8 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       width: AppSpacing.space1_5,
                       height: AppSpacing.space1_5,
-                      decoration: const BoxDecoration(
-                        color: AppSemanticColors.brandDefault,
+                      decoration: BoxDecoration(
+                        color: scheduleDisplayColor(schedule),
                         shape: BoxShape.circle,
                       ),
                     ),

@@ -6,6 +6,9 @@ class Schedule {
   final String category;
   final String? categoryDisplayName;
   final ScheduleLabel? label;
+  // 일정 자체 색상 (V2 색상 전환). "#RRGGBB" 또는 null(색 미지정 → 카테고리 기본색으로 폴백).
+  // 색을 실제로 그릴 땐 이 필드를 직접 읽지 말고 schedule_colors.dart의 scheduleDisplayColor()를 쓴다.
+  final String? color;
   final String? location;
   final DateTime startDate;
   final String? startTime;
@@ -38,6 +41,7 @@ class Schedule {
     required this.category,
     this.categoryDisplayName,
     this.label,
+    this.color,
     this.location,
     required this.startDate,
     this.startTime,
@@ -79,6 +83,13 @@ class Schedule {
       label: json['label'] != null
           ? ScheduleLabel.fromJson(json['label'])
           : null,
+      // 신 필드(color) 우선, 없으면 구 응답의 label.color로 폴백.
+      // 신 백엔드는 label을 항상 effectiveColor로 채운 shim으로 내려주므로 이 폴백이
+      // 결과적으로 카테고리 기본색까지 이어진다 — 별개로 화면단에서도 한 번 더 폴백한다.
+      color: json['color']?.toString() ??
+          (json['label'] is Map
+              ? (json['label'] as Map)['color']?.toString()
+              : null),
       location: json['location']?.toString(),
       startDate: parseDate(json['startDate']?.toString()),
       startTime: json['startTime']?.toString(),

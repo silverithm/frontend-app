@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/admin_provider.dart' hide VacationRequest;
 import '../models/vacation_request.dart';
 import '../models/schedule.dart';
+import '../models/schedule_colors.dart';
 import '../models/user.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/vacation_calendar_widget.dart';
@@ -663,7 +664,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildScheduleItem(Schedule schedule) {
-    final categoryColor = _getCategoryColor(schedule.category);
+    final scheduleColor = scheduleDisplayColor(schedule);
     final authProvider = context.read<AuthProvider>();
     final currentUserEmail = authProvider.currentUser?.email;
     final isMySchedule =
@@ -682,7 +683,7 @@ class _CalendarScreenState extends State<CalendarScreen>
           color: AppSemanticColors.surfaceDefault,
           borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
           border: Border.all(
-            color: categoryColor.withValues(alpha: 0.2),
+            color: scheduleColor.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -692,7 +693,7 @@ class _CalendarScreenState extends State<CalendarScreen>
               width: 4,
               height: 40,
               decoration: BoxDecoration(
-                color: categoryColor,
+                color: scheduleColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -803,7 +804,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 vertical: AppSpacing.space1,
               ),
               decoration: BoxDecoration(
-                color: categoryColor,
+                color: scheduleColor,
                 borderRadius: BorderRadius.circular(AppBorderRadius.lg),
               ),
               child: Text(
@@ -850,20 +851,6 @@ class _CalendarScreenState extends State<CalendarScreen>
               : AppSemanticColors.statusErrorIcon,
         ),
       );
-    }
-  }
-
-  Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'MEETING':
-        return AppSemanticColors.interactivePrimaryDefault;
-      case 'EVENT':
-        return AppSemanticColors.statusSuccessIcon;
-      case 'TRAINING':
-        return AppSemanticColors.statusWarningIcon;
-      case 'OTHER':
-      default:
-        return AppSemanticColors.textSecondary;
     }
   }
 
@@ -1478,6 +1465,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     final contentController = TextEditingController();
     final locationController = TextEditingController();
     String selectedCategory = 'MEETING';
+    // 색상 없음(빈 문자열)이 기본값 — 카테고리 기본색으로 자동 폴백된다.
+    String selectedColorHex = '';
     DateTime startDate = _scheduleSelectedDate ?? DateTime.now();
     DateTime endDate = _scheduleSelectedDate ?? DateTime.now();
     bool isAllDay = true;
@@ -1595,6 +1584,44 @@ class _CalendarScreenState extends State<CalendarScreen>
                           selectedCategory = value ?? 'MEETING';
                         });
                       },
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 색상 — 팔레트 8색 + 색상 없음(카테고리 기본색으로 자동 폴백)
+                    Text(
+                      '색상',
+                      style: AppTypography.labelLarge.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                    Wrap(
+                      spacing: AppSpacing.space2,
+                      runSpacing: AppSpacing.space2,
+                      children: [
+                        _buildScheduleColorSwatch(
+                          color: null,
+                          isSelected: selectedColorHex.isEmpty,
+                          tooltip: '색상 없음',
+                          onTap: () {
+                            setModalState(() {
+                              selectedColorHex = '';
+                            });
+                          },
+                        ),
+                        for (final option in ScheduleColorPalette.values)
+                          _buildScheduleColorSwatch(
+                            color: option.color,
+                            isSelected: selectedColorHex == option.hex,
+                            tooltip: option.name,
+                            onTap: () {
+                              setModalState(() {
+                                selectedColorHex = option.hex;
+                              });
+                            },
+                          ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.space3),
 
@@ -1924,6 +1951,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 ? null
                                 : contentController.text.trim(),
                             'category': selectedCategory,
+                            'color': selectedColorHex,
                             'location': locationController.text.trim().isEmpty
                                 ? null
                                 : locationController.text.trim(),
@@ -1974,6 +2002,50 @@ class _CalendarScreenState extends State<CalendarScreen>
           },
         );
       },
+    );
+  }
+
+  /// 일정 색상 선택 스와치. [color]가 null이면 "색상 없음" 옵션(카테고리 기본색 폴백)이다.
+  Widget _buildScheduleColorSwatch({
+    required Color? color,
+    required bool isSelected,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: color ?? AppSemanticColors.surfaceDefault,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSelected
+                  ? AppSemanticColors.interactivePrimaryDefault
+                  : AppSemanticColors.borderDefault,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: color == null
+              ? Icon(
+                  Icons.block,
+                  size: 16,
+                  color: AppSemanticColors.textTertiary,
+                )
+              : (isSelected
+                    ? Icon(
+                        Icons.check,
+                        size: 16,
+                        color: AppSemanticColors.textInverse,
+                      )
+                    : null),
+        ),
+      ),
     );
   }
 

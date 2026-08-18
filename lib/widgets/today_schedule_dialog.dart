@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/schedule.dart';
+import '../models/schedule_colors.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -17,17 +18,6 @@ class TodayScheduleDialog extends StatelessWidget {
     required this.schedules,
     this.onViewSchedule,
   });
-
-  Color _labelColor(Schedule schedule) {
-    final hex = schedule.label?.color;
-    if (hex == null || hex.isEmpty) {
-      return AppSemanticColors.interactivePrimaryDefault;
-    }
-    final cleaned = hex.replaceFirst('#', '');
-    final value = int.tryParse(cleaned, radix: 16);
-    if (value == null) return AppSemanticColors.interactivePrimaryDefault;
-    return Color(cleaned.length == 8 ? value : 0xFF000000 | value);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +51,7 @@ class TodayScheduleDialog extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: _labelColor(schedule),
+                      color: scheduleDisplayColor(schedule),
                       shape: BoxShape.circle,
                     ),
                   ),
