@@ -41,6 +41,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   bool _isVacationUsed = false; // 연차 사용 여부
   bool _isSubmitting = false;
 
+  // 선택 날짜의 휴무 현황 — 제한 인원이 보여야 겹치기 전에 조정할 수 있다
+  int? _dayVacationCount;
+  int? _dayMaxPeople;
+  bool _hasExplicitLimit = false;
+
   late AnimationController _animationController;
   late AnimationController _submitAnimationController;
   late Animation<double> _fadeAnimation;
@@ -78,6 +83,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         curve: Curves.easeInOut,
       ),
     );
+
+    // 이 날짜에 몇 명이 쉬는지·제한이 몇 명인지 불러온다 (실패해도 신청은 막지 않는다)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDateStatus());
 
     _animationController.forward();
   }
@@ -160,6 +168,41 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         ],
       ),
     );
+  }
+
+  Future<void> _loadDateStatus() async {
+    final auth = context.read<AuthProvider>();
+    final user = auth.currentUser;
+    if (user == null) return;
+    final companyId = user.company?.id ?? '';
+    if (companyId.isEmpty) return;
+    final role = RoleUtils.normalize(
+      user.position?.isNotEmpty == true ? user.position : user.role,
+    );
+    final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+    try {
+      final day = await ApiService().getVacationForDate(
+        date: dateStr,
+        companyId: companyId,
+        role: role,
+      );
+      final limits = await ApiService().getVacationLimits(
+        start: dateStr,
+        end: dateStr,
+        companyId: companyId,
+        role: role,
+      );
+      final limitsList = limits['limits'];
+      if (!mounted) return;
+      setState(() {
+        _dayVacationCount = (day['totalVacationers'] as num?)?.toInt();
+        _dayMaxPeople = (day['maxPeople'] as num?)?.toInt();
+        // 표시용 기본값(3명)과 달리, 실제 차단은 관리자가 명시한 제한이 있을 때만 한다
+        _hasExplicitLimit = limitsList is List && limitsList.isNotEmpty;
+      });
+    } catch (e) {
+      print('[휴무] 날짜 현황 조회 실패: $e');
+    }
   }
 
   Future<String?> _findDriverConflict(
@@ -259,6 +302,22 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       return;
     }
 
+    // 관리자가 이 날짜에 제한을 걸어뒀고 이미 가득 찼으면 바로 알린다 (서버도 같은 규칙으로 거절한다)
+    if (_hasExplicitLimit &&
+        _dayVacationCount != null &&
+        _dayMaxPeople != null &&
+        _dayVacationCount! >= _dayMaxPeople!) {
+      AppDialog.showAlert(
+        context,
+        title: '휴무 인원이 가득 찼습니다',
+        message:
+            '${widget.selectedDate.month}월 ${widget.selectedDate.day}일은 '
+            '휴무 가능 인원($_dayMaxPeople명)이 이미 채워졌습니다.\n'
+            '다른 날짜를 선택하시거나 관리자에게 문의해주세요.',
+      );
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
     });
@@ -320,6 +379,16 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
               : '미사용 휴무 신청이 완료되었습니다',
         );
         widget.onRequestSubmitted?.call();
+      } else if (mounted) {
+        // 서버가 거절한 사유(제한 인원 초과 등)를 알림창으로 — 조용히 실패하면 몇 번이고 다시 누르게 된다
+        final reason = vacationProvider.errorMessage.trim();
+        AppDialog.showAlert(
+          context,
+          title: '신청이 접수되지 않았어요',
+          message: reason.isNotEmpty
+              ? reason
+              : '휴무 신청에 실패했습니다. 잠시 후 다시 시도해주세요.',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -557,6 +626,23 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       letterSpacing: -0.025,
                                     ),
                                   ),
+                                  // 같은 직종이 이 날 몇 명 쉬는지 — 웹 근무조정과 같은 정보
+                                  if (_dayVacationCount != null &&
+                                      _dayMaxPeople != null) ...[
+                                    const SizedBox(height: AppSpacing.space1),
+                                    Text(
+                                      _dayVacationCount! >= _dayMaxPeople!
+                                          ? '휴무 인원 $_dayVacationCount/$_dayMaxPeople명 · 마감'
+                                          : '휴무 인원 $_dayVacationCount/$_dayMaxPeople명',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: _dayVacationCount! >= _dayMaxPeople!
+                                            ? AppSemanticColors.statusErrorText
+                                            : AppSemanticColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
