@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../models/chat_room.dart';
@@ -12,6 +13,9 @@ import '../utils/admin_utils.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../utils/document_open.dart';
+import '../widgets/chat/chat_image_viewer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatRoomInfoScreen extends StatefulWidget {
   final ChatRoom room;
@@ -94,11 +98,42 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
     }
   }
 
+  /// 사진·파일을 채팅 말풍선과 같은 방식으로 연다 (이미지는 전체화면, 문서는 앱 내 뷰어).
+  void _openMedia(ChatMessage media) {
+    final url = media.fileUrl;
+    final name = media.fileName ?? '파일';
+    if (media.type == MessageType.image) {
+      if (url == null || url.isEmpty) return;
+      ChatImageViewer.open(
+        context,
+        imageUrl: url,
+        fileName: name,
+        onDownload: () => _openExternally(url),
+      );
+      return;
+    }
+    openServerDocument(
+      context,
+      filePath: url,
+      fileName: name,
+      onDownloadFallback: () => _openExternally(url),
+    );
+  }
+
+  Future<void> _openExternally(String? url) async {
+    if (url == null || url.isEmpty) {
+      AppSnackBar.showError(context, message: '파일 URL이 없습니다');
+      return;
+    }
+    final uri = Uri.tryParse(url);
+    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) AppSnackBar.showError(context, message: '파일을 열 수 없습니다');
+    }
+  }
+
   Future<void> _inviteParticipants() async {
     // TODO: 참가자 초대 화면으로 이동
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('참가자 초대 기능은 추후 구현됩니다')));
+    AppSnackBar.showInfo(context, message: '참가자 초대 기능은 추후 구현됩니다');
   }
 
   @override
@@ -414,7 +449,10 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                   itemCount: images.length,
                   itemBuilder: (context, index) {
                     final image = images[index];
-                    return ClipRRect(
+                    // 썸네일을 누르면 말풍선과 같은 전체화면 원본 보기
+                    return GestureDetector(
+                      onTap: () => _openMedia(image),
+                      child: ClipRRect(
                       borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                       child: Image.network(
                         image.fileUrl ?? '',
@@ -426,6 +464,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                             color: AppSemanticColors.textTertiary,
                           ),
                         ),
+                      ),
                       ),
                     );
                   },
@@ -477,9 +516,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                           color: AppSemanticColors.textTertiary,
                         ),
                       ),
-                      onTap: () {
-                        // TODO: 파일 다운로드
-                      },
+                      onTap: () => _openMedia(file),
                     );
                   },
                 ),

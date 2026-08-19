@@ -72,9 +72,7 @@ class _AdminApprovalManagementScreenState
     print('[Download] 파일명: $fileName');
 
     if (url == null || url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('파일 URL이 없습니다')),
-      );
+      AppSnackBar.showError(context, message: '파일 URL이 없습니다');
       return;
     }
 
@@ -129,18 +127,14 @@ class _AdminApprovalManagementScreenState
       final result = await OpenFilex.open(filePath);
 
       if (result.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('파일을 열 수 없습니다: ${result.message}')),
-        );
+        AppSnackBar.showError(context, message: '파일을 열 수 없습니다: ${result.message}');
       }
     } catch (e) {
       // 다이얼로그 닫기
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('다운로드 실패: $e')),
-        );
+        AppSnackBar.showError(context, message: '다운로드 실패: $e');
       }
     }
   }
@@ -156,9 +150,7 @@ class _AdminApprovalManagementScreenState
       await approvalProvider.loadApprovalRequests(companyId: companyId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('데이터 로드 실패: $e')),
-        );
+        AppSnackBar.showError(context, message: '데이터 로드 실패: $e');
       }
     } finally {
       setState(() => _isLoading = false);

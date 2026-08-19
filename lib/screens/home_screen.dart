@@ -966,9 +966,10 @@ class _NoticePreviewTile extends StatelessWidget {
   }
 
   String _previewText(String content) {
-    // 서식 공지는 태그를 걷어낸 평문으로 미리 보여준다
-    final normalized =
-        stripHtmlToPlainText(content).replaceAll('\n', ' ').trim();
+    // 서식 공지만 태그를 걷어낸다 — 평문 공지의 '<중요>' 같은 표기는 그대로 둔다
+    final plain =
+        containsHtmlTags(content) ? stripHtmlToPlainText(content) : content;
+    final normalized = plain.replaceAll('\n', ' ').trim();
     if (normalized.isEmpty) {
       return '본문 미리보기가 없습니다.';
     }

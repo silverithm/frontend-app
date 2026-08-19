@@ -24,6 +24,7 @@ import '../widgets/seed/seed_text_field.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 import '../providers/notice_provider.dart';
 import 'dart:math' as math;
+import '../widgets/common/app_snackbar.dart';
 
 class CalendarScreen extends StatefulWidget {
   /// 일정 알림을 눌러 들어온 경우 그 일정이 있는 날로 바로 연다.
@@ -651,16 +652,13 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? (schedule.isCompleted ? '수행완료를 해제했습니다' : '수행완료로 표시했습니다')
-              : (scheduleProvider.error ?? '수행완료 상태를 바꾸지 못했습니다'),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    if (ok) {
+      AppSnackBar.showSuccess(context,
+          message: schedule.isCompleted ? '수행완료를 해제했습니다' : '수행완료로 표시했습니다');
+    } else {
+      AppSnackBar.showError(context,
+          message: scheduleProvider.error ?? '수행완료 상태를 바꾸지 못했습니다');
+    }
   }
 
   Widget _buildScheduleItem(Schedule schedule) {
@@ -843,14 +841,11 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? '일정이 삭제되었습니다' : '일정 삭제에 실패했습니다'),
-          backgroundColor: success
-              ? AppSemanticColors.statusSuccessIcon
-              : AppSemanticColors.statusErrorIcon,
-        ),
-      );
+      if (success) {
+        AppSnackBar.showSuccess(context, message: '일정이 삭제되었습니다');
+      } else {
+        AppSnackBar.showError(context, message: '일정 삭제에 실패했습니다');
+      }
     }
   }
 
@@ -1928,9 +1923,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                         size: SeedButtonSize.large,
                         onPressed: () async {
                           if (titleController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('제목을 입력해주세요')),
-                            );
+                            AppSnackBar.showWarning(context,
+                                message: '제목을 입력해주세요');
                             return;
                           }
 
@@ -1980,16 +1974,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                           );
 
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  success ? '일정이 등록되었습니다' : '일정 등록에 실패했습니다',
-                                ),
-                                backgroundColor: success
-                                    ? AppSemanticColors.statusSuccessIcon
-                                    : AppSemanticColors.statusErrorIcon,
-                              ),
-                            );
+                            if (success) {
+                              AppSnackBar.showSuccess(context,
+                                  message: '일정이 등록되었습니다');
+                            } else {
+                              AppSnackBar.showError(context,
+                                  message: '일정 등록에 실패했습니다');
+                            }
                           }
                         },
                       ),

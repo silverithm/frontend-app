@@ -27,6 +27,7 @@ import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/chat/chat_image_viewer.dart';
+import '../widgets/common/app_action_sheet.dart';
 
 enum _ChatRoomMenuAction { info, search, files, delete }
 
@@ -414,14 +415,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         // 10MB 초과시 압축
         if (fileSize > _maxFileSize) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '파일 크기가 ${_formatFileSize(fileSize)}입니다. 자동으로 압축 중...',
-                ),
-                duration: const Duration(seconds: 2),
-              ),
-            );
+            AppSnackBar.showInfo(context,
+                message: '파일 크기가 ${_formatFileSize(fileSize)}입니다. 자동으로 압축 중...');
           }
 
           final compressedFile = await _compressImage(file, fileSize);
@@ -464,9 +459,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       print('[ChatRoomScreen] 사진 선택 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('사진 선택에 실패했습니다: $e')));
+        AppSnackBar.showError(context, message: '사진 선택에 실패했습니다: $e');
       }
     }
   }
@@ -606,9 +599,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       print('[ChatRoomScreen] 파일 선택 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('파일 선택에 실패했습니다: $e')));
+        AppSnackBar.showError(context, message: '파일 선택에 실패했습니다: $e');
       }
     }
   }
@@ -644,9 +635,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final errorMessage = chatProvider.errorMessage.isNotEmpty
         ? chatProvider.errorMessage
         : '채팅방 삭제에 실패했습니다.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(errorMessage)));
+    AppSnackBar.showError(context, message: errorMessage);
   }
 
   Future<void> _handleRoomMenuAction(_ChatRoomMenuAction action) async {
@@ -962,9 +951,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             ),
                           ),
                           const SizedBox(width: AppSpacing.space2),
-                          TextButton(
+                          SeedButton(
+                            label: '검색',
+                            variant: SeedButtonVariant.brandSolid,
+                            size: SeedButtonSize.small,
                             onPressed: runSearch,
-                            child: const Text('검색'),
                           ),
                         ],
                       ),
@@ -1281,9 +1272,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   Navigator.pop(context);
                   Clipboard.setData(ClipboardData(text: message.content ?? ''));
                   if (rootContext.mounted) {
-                    ScaffoldMessenger.of(rootContext).showSnackBar(
-                      const SnackBar(content: Text('복사되었습니다')),
-                    );
+                    AppSnackBar.showSuccess(rootContext, message: '복사되었습니다');
                   }
                 },
               ),
@@ -1396,9 +1385,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('리액션 처리 실패: $e')));
+        AppSnackBar.showError(context, message: '리액션 처리 실패: $e');
       }
     }
   }
@@ -1517,9 +1504,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // 파일 다운로드 및 열기
   Future<void> _downloadAndOpenFile(String? url, String fileName) async {
     if (url == null || url.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('파일 URL이 없습니다')));
+      AppSnackBar.showError(context, message: '파일 URL이 없습니다');
       return;
     }
 
@@ -1575,9 +1560,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (result.type != ResultType.done) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('파일을 열 수 없습니다: ${result.message}')),
-          );
+          AppSnackBar.showError(context,
+              message: '파일을 열 수 없습니다: ${result.message}');
         }
       }
     } catch (e) {
@@ -1586,9 +1570,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       print('[Download] 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('다운로드 실패: $e')));
+        AppSnackBar.showError(context, message: '다운로드 실패: $e');
       }
     }
   }
@@ -1745,43 +1727,42 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           foregroundColor: AppSemanticColors.textPrimary,
           elevation: 0,
           actions: [
-            PopupMenuButton<_ChatRoomMenuAction>(
+            IconButton(
               icon: const Icon(Icons.more_vert),
-              onSelected: _handleRoomMenuAction,
-              itemBuilder: (context) => [
-                const PopupMenuItem<_ChatRoomMenuAction>(
-                  value: _ChatRoomMenuAction.info,
-                  child: Text('채팅방 정보'),
-                ),
-                const PopupMenuItem<_ChatRoomMenuAction>(
-                  value: _ChatRoomMenuAction.search,
-                  child: Text('대화 내용 검색'),
-                ),
-                const PopupMenuItem<_ChatRoomMenuAction>(
-                  value: _ChatRoomMenuAction.files,
-                  child: Text('주고받은 파일'),
-                ),
-                if (isAdmin)
-                  PopupMenuItem<_ChatRoomMenuAction>(
-                    value: _ChatRoomMenuAction.delete,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline,
-                          size: AppSpacing.space4,
-                          color: AppSemanticColors.statusErrorIcon,
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Text(
-                          '채팅 삭제',
-                          style: TextStyle(
-                            color: AppSemanticColors.statusErrorIcon,
-                          ),
-                        ),
-                      ],
-                    ),
+              tooltip: '더보기',
+              // 기본 Material 팝업 대신 앱 공통 액션 시트 (다른 ⋮ 메뉴와 같은 문법)
+              onPressed: () => showAppActionSheet(
+                context,
+                title: widget.room.name,
+                actions: [
+                  AppSheetAction(
+                    icon: Icons.info_outline,
+                    label: '채팅방 정보',
+                    onSelected: () =>
+                        _handleRoomMenuAction(_ChatRoomMenuAction.info),
                   ),
-              ],
+                  AppSheetAction(
+                    icon: Icons.search,
+                    label: '대화 내용 검색',
+                    onSelected: () =>
+                        _handleRoomMenuAction(_ChatRoomMenuAction.search),
+                  ),
+                  AppSheetAction(
+                    icon: Icons.folder_outlined,
+                    label: '주고받은 파일',
+                    onSelected: () =>
+                        _handleRoomMenuAction(_ChatRoomMenuAction.files),
+                  ),
+                  if (isAdmin)
+                    AppSheetAction(
+                      icon: Icons.delete_outline,
+                      label: '채팅 삭제',
+                      isDestructive: true,
+                      onSelected: () =>
+                          _handleRoomMenuAction(_ChatRoomMenuAction.delete),
+                    ),
+                ],
+              ),
             ),
           ],
         ),

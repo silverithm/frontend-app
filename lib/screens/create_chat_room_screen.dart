@@ -11,6 +11,7 @@ import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/common/app_snackbar.dart';
 
 class CreateChatRoomScreen extends StatefulWidget {
   const CreateChatRoomScreen({super.key});
@@ -67,9 +68,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
     } catch (e) {
       print('[CreateChatRoomScreen] 회원 목록 로드 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('회원 목록을 불러오는데 실패했습니다: $e')));
+        AppSnackBar.showError(context, message: '회원 목록을 불러오는데 실패했습니다: $e');
       }
     } finally {
       setState(() => _isLoading = false);
@@ -79,16 +78,12 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
   Future<void> _createChatRoom() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('채팅방 이름을 입력해주세요')));
+      AppSnackBar.showInfo(context, message: '채팅방 이름을 입력해주세요');
       return;
     }
 
     if (_selectedParticipantIds.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('참가자를 1명 이상 선택해주세요')));
+      AppSnackBar.showInfo(context, message: '참가자를 1명 이상 선택해주세요');
       return;
     }
 
@@ -124,16 +119,12 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
           MaterialPageRoute(builder: (_) => ChatRoomScreen(room: room)),
         );
       } else if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('채팅방 생성에 실패했습니다')));
+        AppSnackBar.showError(context, message: '채팅방 생성에 실패했습니다');
       }
     } catch (e) {
       print('[CreateChatRoomScreen] 채팅방 생성 에러: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('채팅방 생성에 실패했습니다: $e')));
+        AppSnackBar.showError(context, message: '채팅방 생성에 실패했습니다: $e');
       }
     } finally {
       setState(() => _isLoading = false);

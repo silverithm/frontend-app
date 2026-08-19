@@ -117,9 +117,11 @@ class NoticeCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.space2),
 
-              // Content preview — 서식 공지는 태그 없는 평문으로 줄인다
+              // Content preview — 서식 공지만 태그를 걷어낸다 (평문의 꺾쇠 표기는 보존)
               Text(
-                stripHtmlToPlainText(notice.content),
+                containsHtmlTags(notice.content)
+                    ? stripHtmlToPlainText(notice.content)
+                    : notice.content,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textSecondary,
                 ),

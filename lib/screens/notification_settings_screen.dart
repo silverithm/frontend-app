@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../widgets/common/app_snackbar.dart';
 
 /// 알림 설정 화면.
 ///
@@ -92,15 +93,11 @@ class _NotificationSettingsScreenState
   }
 
   void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError
-            ? AppSemanticColors.statusErrorIcon
-            : AppSemanticColors.statusSuccessIcon,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (isError) {
+      AppSnackBar.showError(context, message: message);
+    } else {
+      AppSnackBar.showSuccess(context, message: message);
+    }
   }
 
   @override

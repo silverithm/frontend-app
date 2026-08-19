@@ -52,9 +52,7 @@ class _AdminApprovalTemplateScreenState
       await approvalProvider.loadTemplates(companyId: companyId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('데이터 로드 실패: $e')),
-        );
+        AppSnackBar.showError(context, message: '데이터 로드 실패: $e');
       }
     } finally {
       setState(() => _isLoading = false);

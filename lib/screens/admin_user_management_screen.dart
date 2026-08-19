@@ -265,6 +265,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
       ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+      onTap: () => _showMemberDetail(user),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.space3),
         child: Column(
@@ -379,6 +382,105 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               ],
             ),
           ],
+        ),
+      ),
+      ),
+    );
+  }
+
+  /// 활성 회원 상세 — 카드에 없는 아이디·부서·직책·최근 로그인까지 한 시트로.
+  void _showMemberDetail(User user) {
+    String formatDate(DateTime? d) => d == null
+        ? '-'
+        : '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
+
+    Widget row(String label, String value) => Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 72,
+                child: Text(
+                  label,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  value.isEmpty ? '-' : value,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+    final bool isActive = user.status == 'active';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      user.name,
+                      style: AppTypography.heading5.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space2,
+                      vertical: AppSpacing.space1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppSemanticColors.statusSuccessBackground
+                          : AppSemanticColors.backgroundTertiary,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    ),
+                    child: Text(
+                      isActive ? '활성' : '비활성',
+                      style: AppTypography.labelSmall.copyWith(
+                        color: isActive
+                            ? AppSemanticColors.statusSuccessText
+                            : AppSemanticColors.textSecondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              row('역할', AdminUtils.getRoleDisplayName(user.role)),
+              row('이메일', user.email),
+              row('아이디', user.username),
+              row('부서', user.department ?? ''),
+              row('직책', user.position ?? ''),
+              row('가입일', formatDate(user.createdAt)),
+              row('최근 로그인', formatDate(user.lastLoginAt)),
+            ],
+          ),
         ),
       ),
     );

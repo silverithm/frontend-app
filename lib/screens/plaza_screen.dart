@@ -20,6 +20,7 @@ import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'plaza_post_detail_screen.dart';
+import '../widgets/common/app_snackbar.dart';
 
 /// 게시판 key → 화면 표시 라벨. 목록·상세·글쓰기 시트가 공통으로 쓴다.
 String plazaBoardLabel(String? key) {
@@ -504,13 +505,11 @@ class _NewsTabState extends State<_NewsTab> {
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('링크를 열 수 없습니다')));
+        AppSnackBar.showError(context, message: '링크를 열 수 없습니다');
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('링크를 여는 중 오류가 발생했습니다')));
+        AppSnackBar.showError(context, message: '링크를 여는 중 오류가 발생했습니다');
       }
     }
   }
@@ -1166,9 +1165,7 @@ class _LibraryTabState extends State<_LibraryTab> {
 
       final result = await OpenFilex.open(savePath);
       if (result.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('다운로드 완료: $fileName')),
-        );
+        AppSnackBar.showSuccess(context, message: '다운로드 완료: $fileName');
       }
       _load(); // 다운로드 수 갱신
     } catch (e) {
@@ -1177,13 +1174,12 @@ class _LibraryTabState extends State<_LibraryTab> {
         // 403(이용 조건 미충족)이면 원시 에러 대신 원인을 알려준다 — 대개 목록 진입 시
         // 이미 자격을 확인하지만, 확인 이후 자격이 바뀌는 경합 상황을 대비한다
         final is403 = e is dio.DioException && e.response?.statusCode == 403;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(is403
-                ? '자료실은 자유게시판에 글을 1개 이상 작성한 회원만 이용할 수 있습니다'
-                : '다운로드에 실패했습니다'),
-          ),
-        );
+        if (is403) {
+          AppSnackBar.showWarning(context,
+              message: '자료실은 자유게시판에 글을 1개 이상 작성한 회원만 이용할 수 있습니다');
+        } else {
+          AppSnackBar.showError(context, message: '다운로드에 실패했습니다');
+        }
       }
     }
   }
@@ -1318,7 +1314,13 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                 height: AppSpacing.space2),
                                         itemBuilder: (context, index) {
                                           final item = _items[index];
-                                          return Container(
+                                          // 카드 본문을 눌러도 내려받게 — 오른쪽 아이콘만 살아 있으면 죽은 카드처럼 느껴진다
+                                          return InkWell(
+                                            onTap: () => _download(item),
+                                            borderRadius:
+                                                BorderRadius.circular(
+                                                    AppSpacing.space3),
+                                            child: Container(
                                             padding: const EdgeInsets.all(
                                                 AppSpacing.space3),
                                             decoration: BoxDecoration(
@@ -1367,6 +1369,31 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                                 color: AppSemanticColors
                                                                     .textTertiary),
                                                       ),
+                                                      // 업로드할 때 적은 설명 — 안 보여주면 적을 이유가 없다 (회사 자료실과 동일)
+                                                      if ((item['description'] ?? '')
+                                                          .toString()
+                                                          .trim()
+                                                          .isNotEmpty)
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  top: AppSpacing
+                                                                      .space1),
+                                                          child: Text(
+                                                            item['description']
+                                                                .toString(),
+                                                            maxLines: 2,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: AppTypography
+                                                                .bodySmall
+                                                                .copyWith(
+                                                                    color: AppSemanticColors
+                                                                        .textSecondary),
+                                                          ),
+                                                        ),
                                                     ],
                                                   ),
                                                 ),
@@ -1387,6 +1414,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                       _download(item),
                                                 ),
                                               ],
+                                            ),
                                             ),
                                           );
                                         },
