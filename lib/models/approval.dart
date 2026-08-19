@@ -122,6 +122,28 @@ class ApproverCandidate {
   String get key => '$approverType:$approverId';
 }
 
+/// 문서 열람 대상 (직책 또는 개인). 이름은 지정 시점 스냅샷이다.
+class ApprovalViewer {
+  final String viewerType; // POSITION | MEMBER | ADMIN
+  final int refId;
+  final String viewerName;
+
+  ApprovalViewer({
+    required this.viewerType,
+    required this.refId,
+    required this.viewerName,
+  });
+
+  factory ApprovalViewer.fromJson(Map<String, dynamic> json) {
+    final rawRef = json['refId'];
+    return ApprovalViewer(
+      viewerType: json['viewerType']?.toString() ?? '',
+      refId: rawRef is int ? rawRef : (int.tryParse(rawRef?.toString() ?? '') ?? 0),
+      viewerName: json['viewerName']?.toString() ?? '',
+    );
+  }
+}
+
 class ApprovalRequest {
   final int id;
   final int companyId;
@@ -147,6 +169,7 @@ class ApprovalRequest {
   final String? companySealUrl;
   final Map<String, dynamic>? formData; // 온라인 폼 데이터
   final ApprovalDocumentFooter? documentFooter; // 공문 하단 발신부
+  final List<ApprovalViewer> viewers; // 열람 대상 (직책/개인)
 
   ApprovalRequest({
     required this.id,
@@ -172,6 +195,7 @@ class ApprovalRequest {
     this.companySealUrl,
     this.formData,
     this.documentFooter,
+    this.viewers = const [],
   });
 
   factory ApprovalRequest.fromJson(Map<String, dynamic> json) {
@@ -234,6 +258,12 @@ class ApprovalRequest {
           ? ApprovalDocumentFooter.fromJson(
               Map<String, dynamic>.from(json['documentFooter'] as Map))
           : null,
+      viewers: json['viewers'] is List
+          ? (json['viewers'] as List)
+              .whereType<Map>()
+              .map((v) => ApprovalViewer.fromJson(Map<String, dynamic>.from(v)))
+              .toList()
+          : const [],
     );
   }
 
@@ -339,6 +369,15 @@ class ApprovalRequest {
       rejectReason: rejectReason ?? this.rejectReason,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      // 확장 필드는 항상 원본을 유지한다 — 빠뜨리면 copyWith가 결재선·공문·열람 대상을 지워버린다
+      hasApprovalLine: hasApprovalLine,
+      approvalLine: approvalLine,
+      docNumber: docNumber,
+      docNumberDisplay: docNumberDisplay,
+      companySealUrl: companySealUrl,
+      formData: formData,
+      documentFooter: documentFooter,
+      viewers: viewers,
     );
   }
 }

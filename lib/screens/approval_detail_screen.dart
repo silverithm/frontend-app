@@ -347,6 +347,15 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                       '${_approval.currentStep!.approverName} (${_approval.approvalLine.where((s) => s.isApproved).length}/${_approval.approvalLine.length} 승인)',
                     ),
                   ],
+                  // 열람 대상 — 직책·개인 단위로 문서를 볼 수 있게 지정된 사람들 (웹과 동일)
+                  if (_approval.viewers.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.space2),
+                    _buildInfoRow(
+                      Icons.visibility_outlined,
+                      '열람 대상',
+                      _approval.viewers.map((v) => v.viewerName).join(', '),
+                    ),
+                  ],
                 ],
               ),
             ),
