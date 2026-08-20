@@ -75,6 +75,28 @@ class VacationProvider with ChangeNotifier {
   bool isDeadlinePassedForMonth(DateTime month) {
     final deadline = deadlineForMonth(month);
     if (deadline == null) return false;
+    return _isPastEndOfDay(deadline);
+  }
+
+  /// [targetMonth]월 휴무의 '신청 마감일' — 마감일은 항상 그 전 달에 위치한다.
+  /// (예: 9월 휴무는 8월 16일까지 신청 — 8월에 있는 마감일이 9월분을 관장한다.
+  /// 서버 스케줄러(VacationDeadlinePreReminderScheduler)와 같은 의미론.)
+  /// [deadlineForMonth]는 "그 달 안에 있는 마감일"이라 화면의 '이 달 휴무 마감'
+  /// 표시에 그대로 쓰면 한 달 밀려 보인다 — 신청 안내에는 반드시 이 메서드를 쓴다.
+  DateTime? deadlineForTargetMonth(DateTime targetMonth) {
+    return deadlineForMonth(
+      DateTime(targetMonth.year, targetMonth.month - 1, 1),
+    );
+  }
+
+  /// [targetMonth]월 휴무의 신청 마감이 이미 지났는지
+  bool isDeadlinePassedForTargetMonth(DateTime targetMonth) {
+    final deadline = deadlineForTargetMonth(targetMonth);
+    if (deadline == null) return false;
+    return _isPastEndOfDay(deadline);
+  }
+
+  bool _isPastEndOfDay(DateTime deadline) {
     final endOfDeadlineDay = DateTime(
       deadline.year,
       deadline.month,

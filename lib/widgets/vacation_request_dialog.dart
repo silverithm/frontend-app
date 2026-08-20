@@ -662,9 +662,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                           final allowedMonth = vacationProvider.isNextMonthOnly
                               ? vacationProvider.nextMonthOnlyMonth
                               : null;
-                          final deadline = vacationProvider.deadlineForMonth(
-                            month,
-                          );
+                          // 신청하려는 날짜가 속한 달의 '신청 마감일' —
+                          // 마감일은 그 전 달에 있다 (9월 휴무 마감 = 8월 16일)
+                          final deadline = vacationProvider
+                              .deadlineForTargetMonth(month);
                           final warnEvents = vacationProvider
                               .eventsForDate(widget.selectedDate)
                               .where((e) => e.warnOnRequest)
@@ -681,8 +682,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 nextMonthOnly: vacationProvider.isNextMonthOnly,
                                 allowedMonth: allowedMonth,
                                 deadline: deadline,
+                                deadlineTargetMonth: month,
                                 deadlinePassed: vacationProvider
-                                    .isDeadlinePassedForMonth(month),
+                                    .isDeadlinePassedForTargetMonth(month),
                                 events: warnEvents,
                                 eventsHeading: '이 날은 기관 행사가 있습니다',
                               ),

@@ -299,10 +299,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             SliverToBoxAdapter(
               child: Consumer<VacationProvider>(
                 builder: (context, vacationProvider, child) {
+                  // 이 화면 배너는 '다가오는 마감' 안내가 목적 —
+                  // 항상 다음 달 휴무분(마감일은 이번 달에 위치)을 보여준다
                   final now = DateTime.now();
-                  final month = vacationProvider.isNextMonthOnly
-                      ? vacationProvider.nextMonthOnlyMonth
-                      : DateTime(now.year, now.month);
+                  final month = DateTime(now.year, now.month + 1);
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.space4,
@@ -315,10 +315,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                       allowedMonth: vacationProvider.isNextMonthOnly
                           ? vacationProvider.nextMonthOnlyMonth
                           : null,
-                      deadline: vacationProvider.deadlineForMonth(month),
-                      deadlinePassed: vacationProvider.isDeadlinePassedForMonth(
-                        month,
-                      ),
+                      deadline: vacationProvider.deadlineForTargetMonth(month),
+                      deadlineTargetMonth: month,
+                      deadlinePassed: vacationProvider
+                          .isDeadlinePassedForTargetMonth(month),
                     ),
                   );
                 },

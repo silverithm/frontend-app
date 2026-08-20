@@ -10,8 +10,13 @@ import '../theme/app_typography.dart';
 class VacationPlanningBanner extends StatelessWidget {
   final bool nextMonthOnly;
   final DateTime? allowedMonth; // nextMonthOnly가 켜졌을 때 신청 가능한 달
-  final DateTime? deadline; // 표시 중인 달의 마감일 (없으면 null)
+  final DateTime? deadline; // [deadlineTargetMonth]월 휴무의 신청 마감일 (없으면 null)
   final bool deadlinePassed;
+
+  /// 마감일이 관장하는 휴무 월. 마감일은 정의상 그 전 달에 위치한다
+  /// (예: 9월 휴무 마감일은 8월 16일). 문구에 이 달을 명시해
+  /// 마감일이 어느 달 휴무에 적용되는지 헷갈리지 않게 한다.
+  final DateTime? deadlineTargetMonth;
   final List<VacationEvent> events; // 표시할 행사 (보통 선택된 날짜 또는 이번 달 것)
   final String? eventsHeading;
 
@@ -21,6 +26,7 @@ class VacationPlanningBanner extends StatelessWidget {
     this.allowedMonth,
     this.deadline,
     this.deadlinePassed = false,
+    this.deadlineTargetMonth,
     this.events = const [],
     this.eventsHeading,
   });
@@ -31,6 +37,17 @@ class VacationPlanningBanner extends StatelessWidget {
   String _formatMonth(DateTime date) => '${date.year}년 ${date.month}월';
 
   String _formatDate(DateTime date) => '${date.month}월 ${date.day}일';
+
+  /// 마감이 관장하는 달 이름. 지정이 없으면 마감일의 다음 달로 계산한다
+  /// — 마감일은 정의상 대상 월의 전 달에 있다.
+  String _targetMonthLabel() {
+    final target = deadlineTargetMonth ??
+        (deadline != null
+            ? DateTime(deadline!.year, deadline!.month + 1, 1)
+            : null);
+    if (target == null) return '다음 달';
+    return '${target.month}월';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,8 +82,8 @@ class VacationPlanningBanner extends StatelessWidget {
                 ? AppSemanticColors.statusErrorIcon
                 : AppSemanticColors.statusWarningIcon,
             title: deadlinePassed
-                ? '${_formatDate(deadline!)} 신청 마감이 지났어요'
-                : '이번 달 휴무 신청 마감일: ${_formatDate(deadline!)}',
+                ? '${_targetMonthLabel()} 휴무 신청이 ${_formatDate(deadline!)}에 마감됐어요'
+                : '${_targetMonthLabel()} 휴무 신청 마감일: ${_formatDate(deadline!)}',
             description: deadlinePassed
                 ? '마감을 놓친 휴무는 관리자에게 직접 문의해주세요.'
                 : '마감일까지 근무표에 반영할 휴무를 신청해주세요.',
