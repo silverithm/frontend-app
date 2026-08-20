@@ -1637,6 +1637,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ],
                             onChanged: (value) {
                               setModalState(() {
+                                final wasLabel = selectedCategory.startsWith(
+                                  'label:',
+                                );
                                 selectedCategory = value ?? 'MEETING';
                                 if (value != null &&
                                     value.startsWith('label:')) {
@@ -1649,6 +1652,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       break;
                                     }
                                   }
+                                } else if (wasLabel) {
+                                  // 커스텀 구분에서 기본 구분으로 돌아오면
+                                  // 데려왔던 구분색도 내려놓는다
+                                  selectedColorHex = '';
                                 }
                               });
                             },
@@ -1681,43 +1688,46 @@ class _CalendarScreenState extends State<CalendarScreen>
                     ),
                     const SizedBox(height: AppSpacing.space3),
 
-                    // 색상 — 팔레트 8색 + 색상 없음(카테고리 기본색으로 자동 폴백)
-                    Text(
-                      '색상',
-                      style: AppTypography.labelLarge.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.space2),
-                    Wrap(
-                      spacing: AppSpacing.space2,
-                      runSpacing: AppSpacing.space2,
-                      children: [
-                        _buildScheduleColorSwatch(
-                          color: null,
-                          isSelected: selectedColorHex.isEmpty,
-                          tooltip: '색상 없음',
-                          onTap: () {
-                            setModalState(() {
-                              selectedColorHex = '';
-                            });
-                          },
+                    // 색상 — 기본 구분일 때만. 커스텀 구분은 자기 색이 곧 일정
+                    // 색이라 따로 고를 게 없다 (다른 색은 구분 관리에서 바꾼다).
+                    if (!selectedCategory.startsWith('label:')) ...[
+                      Text(
+                        '색상',
+                        style: AppTypography.labelLarge.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                          fontWeight: FontWeight.w600,
                         ),
-                        for (final option in ScheduleColorPalette.values)
+                      ),
+                      const SizedBox(height: AppSpacing.space2),
+                      Wrap(
+                        spacing: AppSpacing.space2,
+                        runSpacing: AppSpacing.space2,
+                        children: [
                           _buildScheduleColorSwatch(
-                            color: option.color,
-                            isSelected: selectedColorHex == option.hex,
-                            tooltip: option.name,
+                            color: null,
+                            isSelected: selectedColorHex.isEmpty,
+                            tooltip: '색상 없음',
                             onTap: () {
                               setModalState(() {
-                                selectedColorHex = option.hex;
+                                selectedColorHex = '';
                               });
                             },
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
+                          for (final option in ScheduleColorPalette.values)
+                            _buildScheduleColorSwatch(
+                              color: option.color,
+                              isSelected: selectedColorHex == option.hex,
+                              tooltip: option.name,
+                              onTap: () {
+                                setModalState(() {
+                                  selectedColorHex = option.hex;
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                    ],
 
                     // 장소
                     SeedTextField(
