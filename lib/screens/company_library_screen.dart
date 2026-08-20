@@ -18,6 +18,7 @@ import '../utils/admin_utils.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_text_field.dart';
 
 /// 우리 기관 사람만 보는 자료실. 케어브이 커뮤니티 자료실과 달리
 /// 기관 밖으로는 나가지 않아 서식·매뉴얼처럼 내부 문서를 둔다.
@@ -264,28 +265,56 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space4),
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(
-                      labelText: '제목',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+                  SeedTextField(label: '제목', controller: titleController),
                   const SizedBox(height: AppSpacing.space3),
-                  TextField(
+                  SeedTextField(
+                    label: '설명 (선택)',
                     controller: descriptionController,
                     maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: '설명 (선택)',
-                      border: OutlineInputBorder(),
-                    ),
                   ),
                   const SizedBox(height: AppSpacing.space3),
+                  Text(
+                    '분류',
+                    style: TextStyle(
+                      fontSize: AppTypography.fontSizeSm,
+                      fontWeight: AppTypography.fontWeightMedium,
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space1_5),
                   DropdownButtonFormField<String>(
                     initialValue: category,
-                    decoration: const InputDecoration(
-                      labelText: '분류',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space3_5,
+                        vertical: AppSpacing.space2_5,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.lg,
+                        ),
+                        borderSide: BorderSide(
+                          color: AppSemanticColors.borderDefault,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.lg,
+                        ),
+                        borderSide: BorderSide(
+                          color: AppSemanticColors.borderDefault,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.lg,
+                        ),
+                        borderSide: BorderSide(
+                          color: AppSemanticColors.borderFocus,
+                          width: 2,
+                        ),
+                      ),
                     ),
                     items: _presetCategories
                         .map(
@@ -297,13 +326,14 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                     },
                   ),
                   const SizedBox(height: AppSpacing.space3),
-                  OutlinedButton.icon(
+                  SeedButton(
+                    label: picked?.name ?? '파일 선택',
+                    variant: SeedButtonVariant.neutralOutline,
+                    prefixIcon: Icons.attach_file,
                     onPressed: () async {
                       final file = await openFile();
                       if (file != null) setSheetState(() => picked = file);
                     },
-                    icon: const Icon(Icons.attach_file),
-                    label: Text(picked?.name ?? '파일 선택'),
                   ),
                   const SizedBox(height: AppSpacing.space5),
                   SizedBox(

@@ -9,10 +9,11 @@ import '../models/vacation_kind.dart';
 import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
 import 'seed/seed_chip.dart';
+import 'seed/seed_text_field.dart';
 
 class AdminVacationAddDialog extends StatefulWidget {
   final DateTime? selectedDate;
-  
+
   const AdminVacationAddDialog({
     super.key,
     this.selectedDate,
@@ -25,7 +26,7 @@ class AdminVacationAddDialog extends StatefulWidget {
 class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
-  
+
   DateTime? _selectedDate;
   /// 웹 관리자와 같은 6가지 종류에서 하나를 고른다 (유형과 기간이 여기서 함께 정해진다)
   VacationKind _selectedKind = VacationKind.regular;
@@ -49,17 +50,17 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
 
   Future<void> _loadMembers() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authProvider = context.read<AuthProvider>();
       final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
-      
+
       print('[AdminVacationAddDialog] 회사 회원 조회 시작 - companyId: $companyId');
-      
+
       final result = await ApiService().getCompanyMembers(companyId: companyId);
-      
+
       print('[AdminVacationAddDialog] API 응답: $result');
-      
+
       if (result['members'] != null) {
         // 활성화된 회원만 필터링 (active 상태)
         final allMembers = List<Map<String, dynamic>>.from(result['members']);
@@ -68,7 +69,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
           // active, approved 둘 다 허용
           return status == 'active' || status == 'approved';
         }).toList();
-        
+
         setState(() {
           _members = activeMembers;
         });
@@ -108,7 +109,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
@@ -137,7 +138,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
     try {
       final authProvider = context.read<AuthProvider>();
       final companyId = authProvider.currentUser?.company?.id?.toString() ?? '';
-      
+
       final result = await ApiService().createVacationByAdmin(
         companyId: companyId,
         memberId: _selectedMemberId!,
@@ -177,9 +178,12 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         FocusScope.of(context).unfocus();
       },
       child: Dialog(
+        // AppDialog.showCustom과 동일한 shape·배경 토큰 (호출부는 AdminVacationAddDialog
+        // 시그니처를 그대로 쓰므로 정적 헬퍼를 직접 호출할 수 없어, 산출 스타일만 맞춘다)
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
+        backgroundColor: AppSemanticColors.surfaceDefault,
         insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.space5, vertical: AppSpacing.space6),
         child: GestureDetector(
           onTap: () {}, // Dialog 내부 클릭 시 이벤트 전파 차단
@@ -226,11 +230,43 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                       value: _selectedMemberId,
                       decoration: InputDecoration(
                         hintText: '직원을 선택하세요',
+                        hintStyle: TextStyle(color: AppSemanticColors.textTertiary),
                         filled: true,
                         fillColor: AppSemanticColors.backgroundSecondary,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                           borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                          borderSide: BorderSide.none,
+                        ),
+                        // SeedTextField와 동일한 상태색 — 검증 실패 시 기본 Material 빨강으로
+                        // 새지 않도록 focus·error 보더를 토큰으로 명시한다
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                          borderSide: BorderSide(
+                            color: AppSemanticColors.borderFocus,
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                          borderSide: BorderSide(
+                            color: AppSemanticColors.statusErrorIcon,
+                            width: 1.5,
+                          ),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                          borderSide: BorderSide(
+                            color: AppSemanticColors.statusErrorIcon,
+                            width: 2,
+                          ),
+                        ),
+                        errorStyle: TextStyle(
+                          color: AppSemanticColors.statusErrorText,
+                          fontSize: AppTypography.fontSizeXs,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.space4,
@@ -261,7 +297,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                       },
                     ),
               const SizedBox(height: AppSpacing.space4),
-              
+
               // 날짜 선택
               Text(
                 '휴무 날짜',
@@ -357,7 +393,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
-              
+
               // 휴무 사유
               Text(
                 '휴무 사유 (선택)',
@@ -366,19 +402,13 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space2),
-              TextFormField(
+              SeedTextField(
+                label: '휴무 사유',
+                // 바로 위에 동일한 라벨(Text)이 이미 있어 중복 표시를 피한다
+                showLabel: false,
                 controller: _reasonController,
+                placeholder: '휴무 사유를 입력하세요',
                 maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: '휴무 사유를 입력하세요',
-                  filled: true,
-                  fillColor: AppSemanticColors.backgroundSecondary,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.all(AppSpacing.space4),
-                ),
               ),
               const SizedBox(height: AppSpacing.space6),
 

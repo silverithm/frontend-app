@@ -10,6 +10,7 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/plaza_html_body.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_text_field.dart';
 import 'plaza_screen.dart' show plazaBoardLabel, plazaIsJobBoard, showPlazaPostEditor;
 
 /// 광장 게시글 상세 + 댓글
@@ -358,44 +359,11 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                             ),
                             const SizedBox(width: AppSpacing.space2),
                             Expanded(
-                              child: TextField(
+                              child: SeedTextField(
+                                label: '댓글',
+                                showLabel: false,
+                                placeholder: '댓글을 입력하세요',
                                 controller: _commentController,
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppSemanticColors.textPrimary,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: '댓글을 입력하세요',
-                                  hintStyle: AppTypography.bodySmall.copyWith(
-                                    color: AppSemanticColors.textTertiary,
-                                  ),
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.space3,
-                                    vertical: AppSpacing.space2,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.xl),
-                                    borderSide: BorderSide(
-                                      color: AppSemanticColors.borderDefault,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.xl),
-                                    borderSide: BorderSide(
-                                      color: AppSemanticColors.borderDefault,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.xl),
-                                    borderSide: BorderSide(
-                                      color: AppSemanticColors
-                                          .interactivePrimaryDefault,
-                                    ),
-                                  ),
-                                ),
                               ),
                             ),
                             IconButton(

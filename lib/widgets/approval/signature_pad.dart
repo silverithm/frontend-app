@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
+import '../seed/seed_button.dart';
 
 /// 결재 서명 그리기 패드. 투명 배경 PNG(base64 data URL)로 내보낸다.
 class SignaturePadController {
@@ -118,9 +119,11 @@ class _SignaturePadState extends State<SignaturePad> {
             ),
           ),
         ),
-        TextButton(
+        SeedButton(
+          label: '지우기',
+          variant: SeedButtonVariant.neutralWeak,
+          size: SeedButtonSize.xsmall,
           onPressed: _clear,
-          child: const Text('지우기', style: TextStyle(fontSize: 12)),
         ),
       ],
     );

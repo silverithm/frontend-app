@@ -14,6 +14,7 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_text_field.dart';
 
 class NoticeDetailScreen extends StatefulWidget {
   final int noticeId;
@@ -493,41 +494,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
+            child: SeedTextField(
+              label: '댓글',
+              showLabel: false,
+              placeholder: '댓글을 입력하세요',
               controller: _commentController,
-              decoration: InputDecoration(
-                hintText: '댓글을 입력하세요',
-                hintStyle: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  borderSide: BorderSide(
-                    color: AppSemanticColors.borderDefault,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  borderSide: BorderSide(
-                    color: AppSemanticColors.borderDefault,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  borderSide: BorderSide(
-                    color: AppSemanticColors.interactivePrimaryDefault,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space4,
-                  vertical: AppSpacing.space2,
-                ),
-                isDense: true,
-              ),
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textPrimary,
-              ),
-              maxLines: 1,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _submitComment(),
             ),

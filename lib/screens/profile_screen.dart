@@ -20,7 +20,9 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/index.dart';
+import '../widgets/common/app_action_sheet.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_list_cell.dart';
 import 'login_screen.dart';
 import 'subscription_check_screen.dart';
 import 'signature_manage_screen.dart';
@@ -155,94 +157,27 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _showProfileImageOptions(BuildContext context, User user) {
     final hasImage = (user.profileImageUrl ?? '').isNotEmpty;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusInfoBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Icon(
-                      Icons.photo_library_outlined,
-                      color: AppSemanticColors.statusInfoIcon,
-                    ),
-                  ),
-                  title: Text(
-                    '앨범에서 선택',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _pickAndUploadProfileImage(ImageSource.gallery);
-                  },
-                ),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusSuccessBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Icon(
-                      Icons.photo_camera_outlined,
-                      color: AppSemanticColors.statusSuccessIcon,
-                    ),
-                  ),
-                  title: Text(
-                    '사진 촬영',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _pickAndUploadProfileImage(ImageSource.camera);
-                  },
-                ),
-                if (hasImage)
-                  ListTile(
-                    leading: Container(
-                      padding: const EdgeInsets.all(AppSpacing.space2),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.statusErrorBackground,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      ),
-                      child: Icon(
-                        Icons.delete_outline,
-                        color: AppSemanticColors.statusErrorIcon,
-                      ),
-                    ),
-                    title: Text(
-                      '사진 삭제',
-                      style: AppTypography.bodyLarge.copyWith(
-                        color: AppSemanticColors.statusErrorText,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      _confirmDeleteProfileImage();
-                    },
-                  ),
-              ],
-            ),
+    showAppActionSheet(
+      context,
+      actions: [
+        AppSheetAction(
+          icon: Icons.photo_library_outlined,
+          label: '앨범에서 선택',
+          onSelected: () => _pickAndUploadProfileImage(ImageSource.gallery),
+        ),
+        AppSheetAction(
+          icon: Icons.photo_camera_outlined,
+          label: '사진 촬영',
+          onSelected: () => _pickAndUploadProfileImage(ImageSource.camera),
+        ),
+        if (hasImage)
+          AppSheetAction(
+            icon: Icons.delete_outline,
+            label: '사진 삭제',
+            isDestructive: true,
+            onSelected: _confirmDeleteProfileImage,
           ),
-        );
-      },
+      ],
     );
   }
 
@@ -1616,37 +1551,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     bool isFirst = false,
     bool isLast = false,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.vertical(
-          top: isFirst ? const Radius.circular(AppBorderRadius.xl2) : Radius.zero,
-          bottom: isLast ? const Radius.circular(AppBorderRadius.xl2) : Radius.zero,
+    return SeedListCell(
+      leading: Container(
+        padding: const EdgeInsets.all(AppSpacing.space3),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.backgroundTertiary,
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         ),
+        child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space5,
-          vertical: AppSpacing.space2,
-        ),
-        leading: Container(
-          padding: const EdgeInsets.all(AppSpacing.space3),
-          decoration: BoxDecoration(
-            color: AppSemanticColors.backgroundTertiary,
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          ),
-          child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
-        ),
-        title: Text(
-          title,
-          style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
-        ),
-        trailing: trailing,
-        onTap: onTap,
-      ),
+      title: title,
+      description: subtitle,
+      trailing: trailing,
+      onTap: onTap,
     );
   }
 
@@ -1729,11 +1646,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     bool isFirst = false,
     bool isLast = false,
   }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space5,
-          vertical: AppSpacing.space2,
-        ),
+    return SeedListCell(
       leading: Container(
         padding: const EdgeInsets.all(AppSpacing.space3),
         decoration: BoxDecoration(
@@ -1742,19 +1655,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
       ),
-      title: Text(
-        title,
-        style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
-      ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: AppSemanticColors.textTertiary,
-        size: 20,
-      ),
+      title: title,
+      description: subtitle,
       onTap: onTap,
     );
   }

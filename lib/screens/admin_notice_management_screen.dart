@@ -427,22 +427,16 @@ class _AdminNoticeManagementScreenState
   }
 
   void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+    AppBottomSheet.show(
+      context,
+      child: StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: const EdgeInsets.all(AppSpacing.space4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -553,9 +547,8 @@ class _AdminNoticeManagementScreenState
               ),
             );
           },
-        );
-      },
-    );
+        ),
+      );
   }
 
   Widget _buildFilterChip({

@@ -10,6 +10,7 @@ import '../widgets/dispatch/dispatch_calendar_view.dart';
 import '../widgets/dispatch/dispatch_day_sheet.dart';
 import '../widgets/dispatch/dispatch_list_view.dart';
 import '../widgets/dispatch/senior_absence_view.dart';
+import '../widgets/seed/seed_button.dart';
 import 'dispatch_settings_screen.dart';
 
 /// 배차관리 — 달력 / 목록 / 결석 세 화면과 설정 진입.
@@ -122,7 +123,7 @@ class _DispatchScreenState extends State<DispatchScreen> {
                 decoration: BoxDecoration(
                   color: selected
                       ? AppSemanticColors.surfaceDefault
-                      : Colors.transparent,
+                      : AppColors.transparent,
                   borderRadius: BorderRadius.circular(AppBorderRadius.md),
                 ),
                 child: Text(
@@ -246,12 +247,9 @@ class _DispatchScreenState extends State<DispatchScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.space4),
-            FilledButton(
+            SeedButton(
+              label: '설정하러 가기',
               onPressed: _openSettings,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppSemanticColors.brandDefault,
-              ),
-              child: const Text('설정하러 가기'),
             ),
           ],
         ),

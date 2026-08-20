@@ -11,8 +11,10 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/document_form_fields.dart';
+import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'approval_template_list_screen.dart';
 import 'hwp_editor_screen.dart';
@@ -75,82 +77,59 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
   }
 
   void _showFilePickOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Icon(
-                      Icons.photo_library,
-                      color: AppSemanticColors.interactivePrimaryDefault,
-                    ),
+    AppBottomSheet.show<void>(
+      context,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SeedListCell(
+                leading: Container(
+                  padding: const EdgeInsets.all(AppSpacing.space2),
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                   ),
-                  title: Text(
-                    '이미지 첨부',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
+                  child: Icon(
+                    Icons.photo_library,
+                    color: AppSemanticColors.interactivePrimaryDefault,
                   ),
-                  subtitle: Text(
-                    'JPG, PNG 이미지 선택',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickImage();
-                  },
                 ),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusWarningIcon.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Icon(
-                      Icons.insert_drive_file,
-                      color: AppSemanticColors.statusWarningIcon,
-                    ),
+                title: '이미지 첨부',
+                description: 'JPG, PNG 이미지 선택',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage();
+                },
+              ),
+              SeedListCell(
+                leading: Container(
+                  padding: const EdgeInsets.all(AppSpacing.space2),
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.statusWarningIcon.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                   ),
-                  title: Text(
-                    '문서 첨부',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
+                  child: Icon(
+                    Icons.insert_drive_file,
+                    color: AppSemanticColors.statusWarningIcon,
                   ),
-                  subtitle: Text(
-                    'PDF, DOC, XLS 문서 선택',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickDocument();
-                  },
                 ),
-              ],
-            ),
+                title: '문서 첨부',
+                description: 'PDF, DOC, XLS 문서 선택',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickDocument();
+                },
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

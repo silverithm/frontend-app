@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
@@ -69,22 +70,19 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
   }
 
   void _showDetail(VoiceMessage message) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.space5),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+    AppBottomSheet.show(
+      context,
+      // 원래 isScrollControlled: true였던 전체높이 확장 동작을 유지 — height를
+      // 주면 AppBottomSheet 내부적으로 isScrollControlled true로 연결된다.
+      height: MediaQuery.of(context).size.height * 0.9,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space5),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                   Row(
                     children: [
                       _StatusBadge(status: message.status),
@@ -153,9 +151,8 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
               ),
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
   }
 
   String _formatDate(DateTime? date) {

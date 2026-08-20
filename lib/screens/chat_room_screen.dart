@@ -26,6 +26,8 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_list_cell.dart';
+import '../widgets/seed/seed_text_field.dart';
 import '../widgets/chat/chat_image_viewer.dart';
 import '../widgets/common/app_action_sheet.dart';
 
@@ -258,14 +260,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         itemCount: _mentionCandidates.length,
         itemBuilder: (context, index) {
           final participant = _mentionCandidates[index];
-          return ListTile(
-            dense: true,
+          return SeedListCell(
             leading: SeedAvatar(
               name: participant.userName,
               imageUrl: participant.profileImageUrl,
               size: SeedAvatarSize.small,
             ),
-            title: Text(participant.userName, style: AppTypography.bodyMedium),
+            title: participant.userName,
+            showChevron: false,
             onTap: () => _applyMention(participant),
           );
         },
@@ -312,87 +314,38 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _showAttachmentOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
+    AppBottomSheet.show(
+      context,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SeedListCell(
+                leadingIcon: Icons.photo_library,
+                title: '사진',
+                description: '갤러리에서 사진 선택',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndSendPhoto();
+                },
+              ),
+              SeedListCell(
+                leadingIcon: Icons.insert_drive_file,
+                title: '파일',
+                description: '문서, PDF 등 파일 선택',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndSendFile();
+                },
+              ),
+            ],
+          ),
         ),
       ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.interactivePrimaryDefault
-                          .withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Icon(
-                      Icons.photo_library,
-                      color: AppSemanticColors.interactivePrimaryDefault,
-                    ),
-                  ),
-                  title: Text(
-                    '사진',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
-                  ),
-                  subtitle: Text(
-                    '갤러리에서 사진 선택',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickAndSendPhoto();
-                  },
-                ),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusWarningIcon.withValues(
-                        alpha: 0.1,
-                      ),
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Icon(
-                      Icons.insert_drive_file,
-                      color: AppSemanticColors.statusWarningIcon,
-                    ),
-                  ),
-                  title: Text(
-                    '파일',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
-                  ),
-                  subtitle: Text(
-                    '문서, PDF 등 파일 선택',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _pickAndSendFile();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -801,15 +754,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _showNoticeDetail(ChatRoom room) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (context) => SafeArea(
+    AppBottomSheet.show(
+      context,
+      child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space5),
           child: Column(
@@ -885,140 +832,119 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   void _showMessageSearch() {
     final searchController = TextEditingController();
+    final searchFocusNode = FocusNode();
     List<ChatMessage> results = [];
     bool isSearching = false;
     bool hasSearched = false;
+    bool didAutofocus = false;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            Future<void> runSearch() async {
-              final keyword = searchController.text.trim();
-              if (keyword.isEmpty) return;
+    AppBottomSheet.show(
+      context,
+      height: MediaQuery.of(context).size.height * 0.75,
+      child: StatefulBuilder(
+        builder: (context, setSheetState) {
+          if (!didAutofocus) {
+            didAutofocus = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              searchFocusNode.requestFocus();
+            });
+          }
 
-              setSheetState(() => isSearching = true);
-              final found = await _chatProvider.searchMessages(
-                widget.room.id,
-                keyword,
-              );
-              setSheetState(() {
-                results = found;
-                isSearching = false;
-                hasSearched = true;
-              });
-            }
+          Future<void> runSearch() async {
+            final keyword = searchController.text.trim();
+            if (keyword.isEmpty) return;
 
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.75,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(AppSpacing.space4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: searchController,
-                              autofocus: true,
-                              textInputAction: TextInputAction.search,
-                              onSubmitted: (_) => runSearch(),
-                              decoration: InputDecoration(
-                                hintText: '대화 내용 검색',
-                                prefixIcon: const Icon(Icons.search),
-                                filled: true,
-                                fillColor:
-                                    AppSemanticColors.backgroundSecondary,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.lg,
-                                  ),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.space2),
-                          SeedButton(
-                            label: '검색',
-                            variant: SeedButtonVariant.brandSolid,
-                            size: SeedButtonSize.small,
-                            onPressed: runSearch,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    Expanded(
-                      child: isSearching
-                          ? const Center(child: CircularProgressIndicator())
-                          : !hasSearched
-                          ? Center(
-                              child: Text(
-                                '찾을 말을 입력해주세요',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textTertiary,
-                                ),
-                              ),
-                            )
-                          : results.isEmpty
-                          ? Center(
-                              child: Text(
-                                '검색 결과가 없습니다',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textTertiary,
-                                ),
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: results.length,
-                              separatorBuilder: (_, __) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (context, index) {
-                                final message = results[index];
-                                return ListTile(
-                                  title: Text(
-                                    message.senderName,
-                                    style: AppTypography.labelSmall.copyWith(
-                                      color: AppSemanticColors.textTertiary,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    message.displayContent,
-                                    style: AppTypography.bodyMedium,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  trailing: Text(
-                                    _formatMessageTime(message.createdAt),
-                                    style: AppTypography.labelSmall.copyWith(
-                                      color: AppSemanticColors.textTertiary,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
-              ),
+            setSheetState(() => isSearching = true);
+            final found = await _chatProvider.searchMessages(
+              widget.room.id,
+              keyword,
             );
-          },
-        );
-      },
-    );
+            setSheetState(() {
+              results = found;
+              isSearching = false;
+              hasSearched = true;
+            });
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.space4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SeedTextField(
+                          label: '대화 내용 검색',
+                          showLabel: false,
+                          controller: searchController,
+                          focusNode: searchFocusNode,
+                          placeholder: '대화 내용 검색',
+                          prefixIcon: Icons.search,
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: (_) => runSearch(),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
+                      SeedButton(
+                        label: '검색',
+                        variant: SeedButtonVariant.brandSolid,
+                        size: SeedButtonSize.small,
+                        onPressed: runSearch,
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: isSearching
+                      ? const Center(child: CircularProgressIndicator())
+                      : !hasSearched
+                      ? Center(
+                          child: Text(
+                            '찾을 말을 입력해주세요',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                          ),
+                        )
+                      : results.isEmpty
+                      ? Center(
+                          child: Text(
+                            '검색 결과가 없습니다',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: results.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final message = results[index];
+                            return SeedListCell(
+                              title: message.senderName,
+                              description: message.displayContent,
+                              showChevron: false,
+                              trailing: Text(
+                                _formatMessageTime(message.createdAt),
+                                style: AppTypography.labelSmall.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ).whenComplete(() => searchFocusNode.dispose());
   }
 
   // ===================== 파일함 =====================
@@ -1029,106 +955,86 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     if (!mounted) return;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Consumer<ChatProvider>(
-            builder: (context, provider, child) {
-              final files = provider.sharedMedia;
+    AppBottomSheet.show(
+      context,
+      height: MediaQuery.of(context).size.height * 0.7,
+      child: Consumer<ChatProvider>(
+        builder: (context, provider, child) {
+          final files = provider.sharedMedia;
 
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(AppSpacing.space4),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.folder_outlined,
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Text(
-                          '주고받은 파일 ${files.length}건',
-                          style: AppTypography.bodyLarge.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.space4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.folder_outlined,
+                      color: AppSemanticColors.textSecondary,
                     ),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: files.isEmpty
-                        ? Center(
-                            child: Text(
-                              '아직 주고받은 파일이 없습니다',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppSemanticColors.textTertiary,
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: files.length,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final file = files[index];
-                              final isImage = file.type == MessageType.image;
-
-                              return ListTile(
-                                leading: isImage && file.fileUrl != null
-                                    ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.md,
-                                        ),
-                                        child: Image.network(
-                                          file.fileUrl!,
-                                          width: 44,
-                                          height: 44,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              const Icon(Icons.image_outlined),
-                                        ),
-                                      )
-                                    : Icon(
-                                        Icons.insert_drive_file_outlined,
-                                        color: AppSemanticColors.textSecondary,
-                                      ),
-                                title: Text(
-                                  file.fileName ?? '파일',
-                                  style: AppTypography.bodyMedium,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle: Text(
-                                  '${file.senderName} · ${_formatMessageTime(file.createdAt)}',
-                                  style: AppTypography.labelSmall.copyWith(
-                                    color: AppSemanticColors.textTertiary,
-                                  ),
-                                ),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  _openAttachment(file);
-                                },
-                              );
-                            },
+                    const SizedBox(width: AppSpacing.space2),
+                    Text(
+                      '주고받은 파일 ${files.length}건',
+                      style: AppTypography.bodyLarge.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: files.isEmpty
+                    ? Center(
+                        child: Text(
+                          '아직 주고받은 파일이 없습니다',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textTertiary,
                           ),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: files.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final file = files[index];
+                          final isImage = file.type == MessageType.image;
+
+                          return SeedListCell(
+                            leading: isImage && file.fileUrl != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.md,
+                                    ),
+                                    child: Image.network(
+                                      file.fileUrl!,
+                                      width: 44,
+                                      height: 44,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.image_outlined),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.insert_drive_file_outlined,
+                                    color: AppSemanticColors.textSecondary,
+                                  ),
+                            title: file.fileName ?? '파일',
+                            description:
+                                '${file.senderName} · ${_formatMessageTime(file.createdAt)}',
+                            showChevron: false,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _openAttachment(file);
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -1212,106 +1118,97 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final isMyMessage = message.senderId == authProvider.currentUser?.chatUserId;
     final rootContext = context;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 이모지 빠른 선택
-              if (message.type != MessageType.system)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.space3,
-                    horizontal: AppSpacing.space4,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: _quickEmojis.map((emoji) {
-                      // 이미 선택한 이모지인지 확인
-                      final isSelected = message.reactions.any(
-                        (r) => r.emoji == emoji && r.myReaction,
-                      );
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          _toggleReaction(message, emoji);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(AppSpacing.space2),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppSemanticColors.interactivePrimaryDefault
-                                      .withValues(alpha: 0.2)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.lg,
-                            ),
-                          ),
-                          child: Text(
-                            emoji,
-                            style: const TextStyle(fontSize: 28),
+    AppBottomSheet.show(
+      context,
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 이모지 빠른 선택
+            if (message.type != MessageType.system)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.space3,
+                  horizontal: AppSpacing.space4,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: _quickEmojis.map((emoji) {
+                    // 이미 선택한 이모지인지 확인
+                    final isSelected = message.reactions.any(
+                      (r) => r.emoji == emoji && r.myReaction,
+                    );
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _toggleReaction(message, emoji);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacing.space2),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppSemanticColors.interactivePrimaryDefault
+                                    .withValues(alpha: 0.2)
+                              : AppColors.transparent,
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.lg,
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
+                        child: Text(
+                          emoji,
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.copy),
-                title: const Text('복사'),
+              ),
+            const Divider(height: 1),
+            SeedListCell(
+              leadingIcon: Icons.copy,
+              title: '복사',
+              showChevron: false,
+              onTap: () {
+                Navigator.pop(context);
+                Clipboard.setData(ClipboardData(text: message.content ?? ''));
+                if (rootContext.mounted) {
+                  AppSnackBar.showSuccess(rootContext, message: '복사되었습니다');
+                }
+              },
+            ),
+            SeedListCell(
+              leadingIcon: Icons.visibility,
+              title: '읽은 사람 보기',
+              showChevron: false,
+              onTap: () {
+                Navigator.pop(context);
+                _showMessageReaders(message);
+              },
+            ),
+            if (message.type != MessageType.system && !message.isDeleted)
+              SeedListCell(
+                leadingIcon: Icons.campaign_outlined,
+                title: '공지로 등록',
+                showChevron: false,
                 onTap: () {
                   Navigator.pop(context);
-                  Clipboard.setData(ClipboardData(text: message.content ?? ''));
-                  if (rootContext.mounted) {
-                    AppSnackBar.showSuccess(rootContext, message: '복사되었습니다');
-                  }
+                  _setAsNotice(message);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.visibility),
-                title: const Text('읽은 사람 보기'),
+            if (isMyMessage && !message.isDeleted)
+              SeedListCell(
+                leadingIcon: Icons.delete,
+                title: '삭제',
+                isDestructive: true,
+                showChevron: false,
                 onTap: () {
                   Navigator.pop(context);
-                  _showMessageReaders(message);
+                  _deleteMessage(message);
                 },
               ),
-              if (message.type != MessageType.system && !message.isDeleted)
-                ListTile(
-                  leading: const Icon(Icons.campaign_outlined),
-                  title: const Text('공지로 등록'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _setAsNotice(message);
-                  },
-                ),
-              if (isMyMessage && !message.isDeleted)
-                ListTile(
-                  leading: Icon(
-                    Icons.delete,
-                    color: AppSemanticColors.statusErrorIcon,
-                  ),
-                  title: Text(
-                    '삭제',
-                    style: TextStyle(color: AppSemanticColors.statusErrorIcon),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _deleteMessage(message);
-                  },
-                ),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
@@ -1581,68 +1478,61 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     if (!mounted) return;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (context) {
-        return Consumer<ChatProvider>(
-          builder: (context, chatProvider, child) {
-            final readers = chatProvider.messageReaders;
+    AppBottomSheet.show(
+      context,
+      child: Consumer<ChatProvider>(
+        builder: (context, chatProvider, child) {
+          final readers = chatProvider.messageReaders;
 
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.space4),
+                  child: Text(
+                    '읽은 사람 (${readers.length}명)',
+                    style: AppTypography.heading6,
+                  ),
+                ),
+                if (readers.isEmpty)
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.space4),
                     child: Text(
-                      '읽은 사람 (${readers.length}명)',
-                      style: AppTypography.heading6,
-                    ),
-                  ),
-                  if (readers.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(AppSpacing.space4),
-                      child: Text(
-                        '아직 읽은 사람이 없습니다',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
+                      '아직 읽은 사람이 없습니다',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textTertiary,
                       ),
-                    )
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: readers.length,
-                      itemBuilder: (context, index) {
-                        final reader = readers[index];
-                        return ListTile(
-                          leading: SeedAvatar(
-                            name: reader.userName,
-                            size: SeedAvatarSize.small,
-                          ),
-                          title: Text(reader.userName),
-                          trailing: Text(
-                            _formatReadTime(reader.readAt),
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                            ),
-                          ),
-                        );
-                      },
                     ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+                  )
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: readers.length,
+                    itemBuilder: (context, index) {
+                      final reader = readers[index];
+                      return SeedListCell(
+                        leading: SeedAvatar(
+                          name: reader.userName,
+                          size: SeedAvatarSize.small,
+                        ),
+                        title: reader.userName,
+                        showChevron: false,
+                        trailing: Text(
+                          _formatReadTime(reader.readAt),
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     ).then((_) {
       context.read<ChatProvider>().clearMessageReaders();
     });

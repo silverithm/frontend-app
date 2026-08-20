@@ -421,15 +421,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         );
 
     final bool isActive = user.status == 'active';
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (sheetContext) => SafeArea(
+    AppBottomSheet.show(
+      context,
+      child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space5),
           child: Column(
@@ -828,15 +822,9 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
           ),
         );
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (sheetContext) => SafeArea(
+    AppBottomSheet.show(
+      context,
+      child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space5),
           child: Column(
@@ -888,7 +876,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                       label: '거부',
                       variant: SeedButtonVariant.neutralOutline,
                       onPressed: () {
-                        Navigator.of(sheetContext).pop();
+                        Navigator.of(context).pop();
                         _showRejectDialog(user);
                       },
                     ),
@@ -899,7 +887,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                       label: '승인',
                       variant: SeedButtonVariant.brandSolid,
                       onPressed: () {
-                        Navigator.of(sheetContext).pop();
+                        Navigator.of(context).pop();
                         _showApprovalDialog(user);
                       },
                     ),

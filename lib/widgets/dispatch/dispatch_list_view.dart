@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../utils/dispatch_algorithm.dart';
+import '../seed/seed_button.dart';
 import 'dispatch_route_card.dart';
 
 /// 기간을 정해 날짜별 배차를 쭉 훑어보는 화면.
@@ -110,19 +111,13 @@ class _DispatchListViewState extends State<DispatchListView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OutlinedButton.icon(
-          onPressed: _pickRange,
-          icon: const Icon(Icons.date_range_outlined, size: 18),
-          label: Text(
-            '${_label(_start)} ~ ${_label(_end)}',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textPrimary,
-            ),
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppSemanticColors.textSecondary,
-            side: BorderSide(color: AppSemanticColors.borderDefault),
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+        SizedBox(
+          width: double.infinity,
+          child: SeedButton(
+            label: '${_label(_start)} ~ ${_label(_end)}',
+            onPressed: _pickRange,
+            variant: SeedButtonVariant.neutralOutline,
+            prefixIcon: Icons.date_range_outlined,
           ),
         ),
         const SizedBox(height: AppSpacing.space2),
@@ -187,7 +182,9 @@ class _DispatchListViewState extends State<DispatchListView> {
     required ValueChanged<String?> onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3),
+      constraints: const BoxConstraints(minHeight: 40),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3_5),
+      alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         border: Border.all(color: AppSemanticColors.borderDefault),
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -199,6 +196,7 @@ class _DispatchListViewState extends State<DispatchListView> {
           hint: Text(hint),
           items: items,
           onChanged: onChanged,
+          icon: Icon(Icons.expand_more, color: AppSemanticColors.textTertiary),
           style: AppTypography.bodySmall.copyWith(
             color: AppSemanticColors.textPrimary,
           ),

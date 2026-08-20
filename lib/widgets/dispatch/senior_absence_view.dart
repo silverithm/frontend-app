@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../utils/dispatch_algorithm.dart';
+import '../seed/seed_button.dart';
 
 /// 어르신 결석 관리.
 ///
@@ -42,19 +43,13 @@ class _SeniorAbsenceViewState extends State<SeniorAbsenceView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OutlinedButton.icon(
-          onPressed: _pickDate,
-          icon: const Icon(Icons.event_outlined, size: 18),
-          label: Text(
-            '${_date.year}년 ${_date.month}월 ${_date.day}일',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textPrimary,
-            ),
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppSemanticColors.textSecondary,
-            side: BorderSide(color: AppSemanticColors.borderDefault),
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+        SizedBox(
+          width: double.infinity,
+          child: SeedButton(
+            label: '${_date.year}년 ${_date.month}월 ${_date.day}일',
+            onPressed: _pickDate,
+            variant: SeedButtonVariant.neutralOutline,
+            prefixIcon: Icons.event_outlined,
           ),
         ),
         const SizedBox(height: AppSpacing.space3),

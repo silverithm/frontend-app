@@ -88,12 +88,9 @@ Future<bool?> showPlazaPostEditor(
                 const SizedBox(height: AppSpacing.space3),
                 DropdownButtonFormField<String>(
                   initialValue: board,
-                  decoration: InputDecoration(
-                    labelText: '게시판',
-                    border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.xl)),
-                  ),
+                  // 테두리·라벨색 등은 AppTheme.inputDecorationTheme(토큰 기반)을
+                  // 그대로 물려받는다 — 필드마다 다른 radius로 손조립하지 않는다.
+                  decoration: const InputDecoration(labelText: '게시판'),
                   items: const [
                     DropdownMenuItem(value: 'free', child: Text('자유')),
                     DropdownMenuItem(value: 'qna', child: Text('Q&A')),
@@ -950,11 +947,9 @@ Future<bool?> showPlazaLibraryEditor(
               const SizedBox(height: AppSpacing.space3),
               DropdownButtonFormField<String>(
                 initialValue: category,
-                decoration: InputDecoration(
-                  labelText: '분류',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl)),
-                ),
+                // 테두리·라벨색 등은 AppTheme.inputDecorationTheme(토큰 기반)을
+                // 그대로 물려받는다 — 필드마다 다른 radius로 손조립하지 않는다.
+                decoration: const InputDecoration(labelText: '분류'),
                 items: const [
                   DropdownMenuItem(value: 'form', child: Text('서식')),
                   DropdownMenuItem(value: 'eval', child: Text('평가')),

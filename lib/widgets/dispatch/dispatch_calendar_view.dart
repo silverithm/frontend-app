@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../utils/dispatch_algorithm.dart';
+import '../seed/seed_button.dart';
 
 /// 한 달 배차 현황 달력.
 ///
@@ -56,19 +57,11 @@ class DispatchCalendarView extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.space2),
-        TextButton(
+        SeedButton(
+          label: '오늘',
           onPressed: onToday,
-          style: TextButton.styleFrom(
-            minimumSize: const Size(0, 32),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
-            visualDensity: VisualDensity.compact,
-          ),
-          child: Text(
-            '오늘',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textLink,
-            ),
-          ),
+          variant: SeedButtonVariant.brandWeak,
+          size: SeedButtonSize.xsmall,
         ),
         const Spacer(),
         IconButton(

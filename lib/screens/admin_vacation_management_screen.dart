@@ -12,6 +12,7 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
+import '../widgets/seed/seed_text_field.dart';
 
 class AdminVacationManagementScreen extends StatefulWidget {
   final bool showAppBar;
@@ -307,54 +308,27 @@ class _AdminVacationManagementScreenState
                   const SizedBox(height: AppSpacing.space4),
 
                   // 검색 필드
-                  TextField(
+                  SeedTextField(
+                    label: '검색',
+                    // 섹션 자체가 이미 카드/필터 묶음 안에 있어 별도 라벨 없이 쓰던 필드
+                    showLabel: false,
                     controller: _searchController,
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value;
                       });
                     },
-                    decoration: InputDecoration(
-                      hintText: '이름, 직무로 검색...',
-                      hintStyle: TextStyle(
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {
-                                  _searchQuery = '';
-                                });
-                              },
-                              icon: Icon(
-                                Icons.clear,
-                                color: AppSemanticColors.textSecondary,
-                              ),
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: AppSemanticColors.backgroundSecondary,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                        borderSide: BorderSide(
-                          color: AppSemanticColors.borderFocus,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space4,
-                        vertical: AppSpacing.space3,
-                      ),
-                    ),
+                    placeholder: '이름, 직무로 검색...',
+                    prefixIcon: Icons.search,
+                    suffixIcon: _searchQuery.isNotEmpty ? Icons.clear : null,
+                    onSuffixIconTap: _searchQuery.isNotEmpty
+                        ? () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          }
+                        : null,
                   ),
                 ],
               ),
@@ -879,115 +853,110 @@ class _AdminVacationManagementScreenState
             : '거절됨';
     final String reason = (request['reason'] ?? '').toString();
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space5),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      request['userName'] ?? '알 수 없음',
-                      style: AppTypography.heading5.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space2,
-                      vertical: AppSpacing.space1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Text(
-                      statusText,
-                      style: AppTypography.labelMedium.copyWith(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              _detailRow('역할', _getRoleDisplayName(request['role'] ?? '')),
-              _detailRow('휴무일', (request['date'] ?? '').toString()),
-              _detailRow('신청일', _formatDate(request['createdAt'])),
-              if (reason.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.space3),
-                Text(
-                  '사유',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space1),
-                Flexible(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(AppSpacing.space3),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.backgroundSecondary,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: SingleChildScrollView(
-                      child: Text(
-                        reason,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              if (isPending) ...[
-                const SizedBox(height: AppSpacing.space5),
+    AppBottomSheet.show(
+      context,
+      child: Builder(
+        builder: (sheetContext) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.space5),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   children: [
                     Expanded(
-                      child: SeedButton(
-                        label: '거절',
-                        variant: SeedButtonVariant.neutralOutline,
-                        onPressed: () {
-                          Navigator.of(sheetContext).pop();
-                          _rejectRequest(request['id'].toString());
-                        },
+                      child: Text(
+                        request['userName'] ?? '알 수 없음',
+                        style: AppTypography.heading5.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.space3),
-                    Expanded(
-                      child: SeedButton(
-                        label: '승인',
-                        variant: SeedButtonVariant.brandSolid,
-                        onPressed: () {
-                          Navigator.of(sheetContext).pop();
-                          _approveRequest(request['id'].toString());
-                        },
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space2,
+                        vertical: AppSpacing.space1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusBackground,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: AppTypography.labelMedium.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: AppSpacing.space4),
+                _detailRow('역할', _getRoleDisplayName(request['role'] ?? '')),
+                _detailRow('휴무일', (request['date'] ?? '').toString()),
+                _detailRow('신청일', _formatDate(request['createdAt'])),
+                if (reason.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.space3),
+                  Text(
+                    '사유',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space1),
+                  Flexible(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.space3),
+                      decoration: BoxDecoration(
+                        color: AppSemanticColors.backgroundSecondary,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          reason,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                if (isPending) ...[
+                  const SizedBox(height: AppSpacing.space5),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SeedButton(
+                          label: '거절',
+                          variant: SeedButtonVariant.neutralOutline,
+                          onPressed: () {
+                            Navigator.of(sheetContext).pop();
+                            _rejectRequest(request['id'].toString());
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space3),
+                      Expanded(
+                        child: SeedButton(
+                          label: '승인',
+                          variant: SeedButtonVariant.brandSolid,
+                          onPressed: () {
+                            Navigator.of(sheetContext).pop();
+                            _approveRequest(request['id'].toString());
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

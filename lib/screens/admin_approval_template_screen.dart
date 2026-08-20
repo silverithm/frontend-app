@@ -13,6 +13,7 @@ import 'approval_template_preview_screen.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_text_field.dart';
 
 /// 선택된 파일 정보를 담는 클래스
 class _TemplateFileInfo {
@@ -114,47 +115,19 @@ class _AdminApprovalTemplateScreenState
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '양식 이름 *',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space2),
-                      TextField(
+                      SeedTextField(
+                        label: '양식 이름 *',
                         controller: nameController,
-                        decoration: InputDecoration(
-                          hintText: '양식 이름을 입력하세요',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.space4,
-                            vertical: AppSpacing.space3,
-                          ),
-                        ),
+                        placeholder: '양식 이름을 입력하세요',
+                        size: SeedTextFieldSize.large,
                       ),
                       const SizedBox(height: AppSpacing.space4),
-                      Text(
-                        '설명',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space2),
-                      TextField(
+                      SeedTextField(
+                        label: '설명',
                         controller: descriptionController,
                         maxLines: 3,
-                        decoration: InputDecoration(
-                          hintText: '양식에 대한 설명을 입력하세요 (선택)',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.space4,
-                            vertical: AppSpacing.space3,
-                          ),
-                        ),
+                        placeholder: '양식에 대한 설명을 입력하세요 (선택)',
+                        size: SeedTextFieldSize.large,
                       ),
                       const SizedBox(height: AppSpacing.space4),
                       Text(

@@ -19,6 +19,7 @@ import '../widgets/seed/seed_button.dart';
 import '../utils/document_open.dart';
 import 'approval_detail_screen.dart';
 import '../widgets/seed/seed_chip.dart';
+import '../widgets/seed/seed_text_field.dart';
 
 class AdminApprovalManagementScreen extends StatefulWidget {
   const AdminApprovalManagementScreen({super.key});
@@ -529,48 +530,26 @@ class _AdminApprovalManagementScreenState
           const SizedBox(height: AppSpacing.space4),
 
           // 검색 필드
-          TextField(
+          SeedTextField(
+            label: '검색',
+            showLabel: false,
             controller: _searchController,
+            placeholder: '제목, 요청자로 검색...',
+            prefixIcon: Icons.search,
+            suffixIcon: _searchQuery.isNotEmpty ? Icons.clear : null,
+            onSuffixIconTap: _searchQuery.isNotEmpty
+                ? () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  }
+                : null,
             onChanged: (value) {
               setState(() {
                 _searchQuery = value;
               });
             },
-            decoration: InputDecoration(
-              hintText: '제목, 요청자로 검색...',
-              hintStyle: TextStyle(color: AppSemanticColors.textSecondary),
-              prefixIcon:
-                  Icon(Icons.search, color: AppSemanticColors.textSecondary),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {
-                          _searchQuery = '';
-                        });
-                      },
-                      icon: Icon(Icons.clear,
-                          color: AppSemanticColors.textSecondary),
-                    )
-                  : null,
-              filled: true,
-              fillColor: AppSemanticColors.backgroundSecondary,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                borderSide: BorderSide(
-                  color: AppSemanticColors.interactivePrimaryDefault,
-                  width: 2,
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space4,
-                vertical: AppSpacing.space3,
-              ),
-            ),
           ),
         ],
       ),

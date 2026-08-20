@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../seed/seed_chip.dart';
+import '../seed/seed_text_field.dart';
 
 /// 결재 양식(formSchema)의 필드를 "공문 표" 레이아웃(라벨 셀 + 입력 셀, 섹션 구획)으로
 /// 렌더링한다.
@@ -215,19 +216,21 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
 
     switch (type) {
       case 'textarea':
-        return TextField(
+        return SeedTextField(
+          label: field['label']?.toString() ?? '',
+          showLabel: false,
           controller: _controllerFor(id),
           maxLines: 3,
-          style: AppTypography.bodySmall,
-          decoration: _decoration(field['placeholder']?.toString()),
+          placeholder: field['placeholder']?.toString(),
         );
 
       case 'number':
-        return TextField(
+        return SeedTextField(
+          label: field['label']?.toString() ?? '',
+          showLabel: false,
           controller: _controllerFor(id),
           keyboardType: TextInputType.number,
-          style: AppTypography.bodySmall,
-          decoration: _decoration(field['placeholder']?.toString()),
+          placeholder: field['placeholder']?.toString(),
         );
 
       case 'date':
@@ -329,10 +332,11 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
         );
 
       default: // text
-        return TextField(
+        return SeedTextField(
+          label: field['label']?.toString() ?? '',
+          showLabel: false,
           controller: _controllerFor(id),
-          style: AppTypography.bodySmall,
-          decoration: _decoration(field['placeholder']?.toString()),
+          placeholder: field['placeholder']?.toString(),
         );
     }
   }

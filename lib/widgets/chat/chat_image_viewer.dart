@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 
@@ -38,14 +39,14 @@ class ChatImageViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.black,
+        foregroundColor: AppColors.white,
         elevation: 0,
         title: Text(
           fileName,
-          style: AppTypography.bodyMedium.copyWith(color: Colors.white),
+          style: AppTypography.bodyMedium.copyWith(color: AppColors.white),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -67,22 +68,22 @@ class ChatImageViewer extends StatelessWidget {
             fit: BoxFit.contain,
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
-              return const CircularProgressIndicator(color: Colors.white);
+              return const CircularProgressIndicator(color: AppColors.white);
             },
             errorBuilder: (context, error, stackTrace) {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.broken_image_outlined,
-                    color: Colors.white54,
+                    color: AppColors.white.withValues(alpha: 0.54),
                     size: 48,
                   ),
                   const SizedBox(height: AppSpacing.space3),
                   Text(
                     '사진을 불러오지 못했습니다',
                     style: AppTypography.bodyMedium.copyWith(
-                      color: Colors.white70,
+                      color: AppColors.white70,
                     ),
                   ),
                 ],
