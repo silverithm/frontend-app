@@ -3194,6 +3194,61 @@ class ApiService {
     });
   }
 
+  // ================== 기본 일정 구분 설정 API ==================
+  // 기본 구분(회의·행사·교육·기타)의 기관별 이름·색·숨김. 삭제는 없다(기존 일정이 물고 있음).
+
+  // 기본 구분 설정 조회 — 응답: { categories: [{category,name,color,hidden,customized,...}] }
+  Future<Map<String, dynamic>> getScheduleCategorySettings({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedule-categories?companyId=$companyId',
+      );
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 기본 구분 이름·색·숨김 변경 (null 필드는 유지)
+  Future<Map<String, dynamic>> updateScheduleCategorySetting({
+    required String companyId,
+    required String category,
+    String? name,
+    String? color,
+    bool? hidden,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedule-categories/$category?companyId=$companyId',
+      );
+      final headers = await _getHeaders();
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({
+          if (name != null) 'name': name,
+          if (color != null) 'color': color,
+          if (hidden != null) 'hidden': hidden,
+        }),
+      );
+    });
+  }
+
+  // 기본 구분 설정을 기본값으로 되돌리기
+  Future<Map<String, dynamic>> resetScheduleCategorySetting({
+    required String companyId,
+    required String category,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedule-categories/$category?companyId=$companyId',
+      );
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
   // ================== 일정 구분(라벨) API ==================
   // 기관이 직접 만드는 일정 구분(이름+색). 웹 관리자와 같은 schedule-labels API를 쓴다.
 

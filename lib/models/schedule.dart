@@ -165,6 +165,43 @@ class Schedule {
   }
 }
 
+/// 기본 일정 구분(회의·행사·교육·기타)의 기관별 설정 상태.
+/// 서버가 enum 기본값과 기관 설정을 머지해 내려준다.
+/// 기본 구분은 기존 일정이 물고 있어 삭제 대신 숨김(hidden)만 지원한다.
+class ScheduleCategorySetting {
+  final String category;
+  final String name;
+  final String color;
+  final bool hidden;
+  final String defaultName;
+  final String defaultColor;
+
+  /// 이름·색·숨김 중 하나라도 기본에서 바뀌었는지 (되돌리기 노출용)
+  final bool customized;
+
+  ScheduleCategorySetting({
+    required this.category,
+    required this.name,
+    required this.color,
+    required this.hidden,
+    required this.defaultName,
+    required this.defaultColor,
+    required this.customized,
+  });
+
+  factory ScheduleCategorySetting.fromJson(Map<String, dynamic> json) {
+    return ScheduleCategorySetting(
+      category: json['category']?.toString() ?? 'OTHER',
+      name: json['name']?.toString() ?? '',
+      color: json['color']?.toString() ?? '#14B8A6',
+      hidden: json['hidden'] == true,
+      defaultName: json['defaultName']?.toString() ?? '',
+      defaultColor: json['defaultColor']?.toString() ?? '#14B8A6',
+      customized: json['customized'] == true,
+    );
+  }
+}
+
 /// 일정 라벨
 class ScheduleLabel {
   final int id;

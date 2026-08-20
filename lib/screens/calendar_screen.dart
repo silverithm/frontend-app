@@ -1466,6 +1466,9 @@ class _CalendarScreenState extends State<CalendarScreen>
     String selectedColorHex = '';
     // 기관이 만든 커스텀 일정 구분. 시트가 뜬 뒤 비동기로 합류한다.
     List<ScheduleLabel> customLabels = [];
+    // 기본 구분(회의 등)의 기관별 상태 — 이름·색 변경, 숨김 반영.
+    // 비어 있으면(로드 전/실패) 하드코딩 4종으로 동작한다.
+    List<ScheduleCategorySetting> baseCategories = [];
     void Function(VoidCallback)? modalSetState;
     DateTime startDate = _scheduleSelectedDate ?? DateTime.now();
     DateTime endDate = _scheduleSelectedDate ?? DateTime.now();
@@ -1494,6 +1497,30 @@ class _CalendarScreenState extends State<CalendarScreen>
               .map(ScheduleLabel.fromJson)
               .toList();
           customLabels = labels;
+          modalSetState?.call(() {});
+        })
+        .catchError((_) {});
+
+    // 기본 구분의 기관별 설정(이름·색·숨김) 로드
+    ApiService()
+        .getScheduleCategorySettings(companyId: companyId.toString())
+        .then((data) {
+          final list = data['categories'];
+          if (list is! List || list.isEmpty) return;
+          baseCategories = list
+              .whereType<Map<String, dynamic>>()
+              .map(ScheduleCategorySetting.fromJson)
+              .toList();
+          // 기본 선택(회의)이 숨겨져 있으면 첫 보이는 구분으로 바꾼다
+          if (!selectedCategory.startsWith('label:')) {
+            final current = baseCategories
+                .where((c) => c.category == selectedCategory)
+                .toList();
+            if (current.isNotEmpty && current.first.hidden) {
+              final visible = baseCategories.where((c) => !c.hidden).toList();
+              if (visible.isNotEmpty) selectedCategory = visible.first.category;
+            }
+          }
           modalSetState?.call(() {});
         })
         .catchError((_) {});
@@ -1595,22 +1622,53 @@ class _CalendarScreenState extends State<CalendarScreen>
                               ),
                             ),
                             items: [
-                              const DropdownMenuItem(
-                                value: 'MEETING',
-                                child: Text('회의'),
-                              ),
-                              const DropdownMenuItem(
-                                value: 'EVENT',
-                                child: Text('행사'),
-                              ),
-                              const DropdownMenuItem(
-                                value: 'TRAINING',
-                                child: Text('교육'),
-                              ),
-                              const DropdownMenuItem(
-                                value: 'OTHER',
-                                child: Text('기타'),
-                              ),
+                              // 기관 설정이 로드되면 이름 변경·숨김을 반영하고,
+                              // 아니면 하드코딩 4종으로 동작한다
+                              if (baseCategories.isEmpty) ...[
+                                const DropdownMenuItem(
+                                  value: 'MEETING',
+                                  child: Text('회의'),
+                                ),
+                                const DropdownMenuItem(
+                                  value: 'EVENT',
+                                  child: Text('행사'),
+                                ),
+                                const DropdownMenuItem(
+                                  value: 'TRAINING',
+                                  child: Text('교육'),
+                                ),
+                                const DropdownMenuItem(
+                                  value: 'OTHER',
+                                  child: Text('기타'),
+                                ),
+                              ] else
+                                for (final base in baseCategories.where(
+                                  (c) =>
+                                      !c.hidden ||
+                                      c.category == selectedCategory,
+                                ))
+                                  DropdownMenuItem(
+                                    value: base.category,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: BoxDecoration(
+                                            color: colorFromHex(base.color) ??
+                                                AppSemanticColors
+                                                    .interactivePrimaryDefault,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          width: AppSpacing.space2,
+                                        ),
+                                        Text(base.name),
+                                      ],
+                                    ),
+                                  ),
                               for (final label in customLabels)
                                 DropdownMenuItem(
                                   value: 'label:${label.id}',
@@ -1678,6 +1736,28 @@ class _CalendarScreenState extends State<CalendarScreen>
                                           'label:${l.id}' == selectedCategory,
                                     )) {
                                   selectedCategory = 'MEETING';
+                                }
+                                modalSetState?.call(() {});
+                              },
+                              onBaseCategoriesChanged: (categories) {
+                                baseCategories = categories;
+                                // 고른 기본 구분이 숨겨졌으면 첫 보이는 구분으로
+                                if (!selectedCategory.startsWith('label:')) {
+                                  final current = categories
+                                      .where(
+                                        (c) => c.category == selectedCategory,
+                                      )
+                                      .toList();
+                                  if (current.isNotEmpty &&
+                                      current.first.hidden) {
+                                    final visible = categories
+                                        .where((c) => !c.hidden)
+                                        .toList();
+                                    if (visible.isNotEmpty) {
+                                      selectedCategory =
+                                          visible.first.category;
+                                    }
+                                  }
                                 }
                                 modalSetState?.call(() {});
                               },
@@ -2116,17 +2196,22 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  /// 일정 구분 관리 시트 — 기관 커스텀 구분(이름+색)의 추가·수정·삭제.
+  /// 일정 구분 관리 시트 — 기본 구분(이름·색 변경, 숨김)과
+  /// 기관 커스텀 구분(이름+색 추가·수정·삭제)을 함께 관리한다.
   /// 웹 관리자 화면의 '구분 관리' 다이얼로그와 같은 기능이다.
-  /// 변경이 있을 때마다 [onLabelsChanged]로 최신 목록을 돌려준다.
+  /// 변경이 있을 때마다 콜백으로 최신 목록을 돌려준다.
   void _showScheduleLabelManageSheet({
     required String companyId,
     required void Function(List<ScheduleLabel>) onLabelsChanged,
+    required void Function(List<ScheduleCategorySetting>)
+        onBaseCategoriesChanged,
   }) {
     final nameController = TextEditingController();
     String colorHex = ScheduleColorPalette.values.first.hex;
-    int? editingId; // null이면 추가 모드
+    int? editingId; // 커스텀 구분 수정 중이면 라벨 id
+    String? editingBase; // 기본 구분 수정 중이면 카테고리 코드 (editingId와 배타)
     List<ScheduleLabel> labels = [];
+    List<ScheduleCategorySetting> baseCats = [];
     bool isLoading = true;
     bool isSaving = false;
 
@@ -2158,18 +2243,34 @@ class _CalendarScreenState extends State<CalendarScreen>
               } catch (_) {
                 // 목록 로드 실패 — 빈 목록으로 두고 추가는 계속 시도할 수 있게 한다
               }
+              try {
+                final data = await ApiService().getScheduleCategorySettings(
+                  companyId: companyId,
+                );
+                final list = data['categories'];
+                if (list is List && list.isNotEmpty) {
+                  baseCats = list
+                      .whereType<Map<String, dynamic>>()
+                      .map(ScheduleCategorySetting.fromJson)
+                      .toList();
+                  onBaseCategoriesChanged(baseCats);
+                }
+              } catch (_) {
+                // 기본 구분 설정 로드 실패 — 섹션을 비워둔다
+              }
               if (sheetContext.mounted) {
                 setSheetState(() => isLoading = false);
               }
             }
 
-            if (isLoading && labels.isEmpty) {
+            if (isLoading && labels.isEmpty && baseCats.isEmpty) {
               reload();
             }
 
             void resetForm() {
               nameController.clear();
               editingId = null;
+              editingBase = null;
               colorHex = ScheduleColorPalette.values.first.hex;
             }
 
@@ -2181,7 +2282,15 @@ class _CalendarScreenState extends State<CalendarScreen>
               }
               setSheetState(() => isSaving = true);
               try {
-                if (editingId == null) {
+                if (editingBase != null) {
+                  // 기본 구분 — 이름·색 덮어쓰기 (삭제는 없고 숨김만 있다)
+                  await ApiService().updateScheduleCategorySetting(
+                    companyId: companyId,
+                    category: editingBase!,
+                    name: name,
+                    color: colorHex,
+                  );
+                } else if (editingId == null) {
                   await ApiService().createScheduleLabel(
                     companyId: companyId,
                     name: name,
@@ -2200,6 +2309,49 @@ class _CalendarScreenState extends State<CalendarScreen>
               } catch (_) {
                 if (sheetContext.mounted) {
                   AppSnackBar.showError(context, message: '구분 저장에 실패했습니다');
+                }
+              }
+              if (sheetContext.mounted) {
+                setSheetState(() => isSaving = false);
+              }
+            }
+
+            Future<void> toggleBaseHidden(
+              ScheduleCategorySetting setting,
+            ) async {
+              setSheetState(() => isSaving = true);
+              try {
+                await ApiService().updateScheduleCategorySetting(
+                  companyId: companyId,
+                  category: setting.category,
+                  hidden: !setting.hidden,
+                );
+                await reload();
+              } catch (_) {
+                if (sheetContext.mounted) {
+                  AppSnackBar.showError(context, message: '기본 구분 변경에 실패했습니다');
+                }
+              }
+              if (sheetContext.mounted) {
+                setSheetState(() => isSaving = false);
+              }
+            }
+
+            Future<void> resetBase(ScheduleCategorySetting setting) async {
+              setSheetState(() => isSaving = true);
+              try {
+                await ApiService().resetScheduleCategorySetting(
+                  companyId: companyId,
+                  category: setting.category,
+                );
+                if (editingBase == setting.category) resetForm();
+                await reload();
+              } catch (_) {
+                if (sheetContext.mounted) {
+                  AppSnackBar.showError(
+                    context,
+                    message: '기본 구분 되돌리기에 실패했습니다',
+                  );
                 }
               }
               if (sheetContext.mounted) {
@@ -2290,6 +2442,107 @@ class _CalendarScreenState extends State<CalendarScreen>
                     ),
                     const SizedBox(height: AppSpacing.space3),
 
+    // 기본 구분 — 이름·색 변경과 숨김만 (기존 일정이 물고 있어 삭제는 없다)
+                    if (baseCats.isNotEmpty) ...[
+                      Text(
+                        '기본 구분',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      for (final base in baseCats)
+                        Opacity(
+                          opacity: base.hidden ? 0.45 : 1,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.space1,
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: colorFromHex(base.color) ??
+                                        AppSemanticColors
+                                            .interactivePrimaryDefault,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.space3),
+                                Expanded(
+                                  child: Text(
+                                    base.hidden
+                                        ? '${base.name} (숨김)'
+                                        : base.name,
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: AppSemanticColors.textPrimary,
+                                      fontWeight:
+                                          editingBase == base.category
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                                if (base.customized)
+                                  IconButton(
+                                    onPressed: isSaving
+                                        ? null
+                                        : () => resetBase(base),
+                                    icon: Icon(
+                                      Icons.restart_alt,
+                                      size: 20,
+                                      color: AppSemanticColors.textSecondary,
+                                    ),
+                                    tooltip: '기본값으로 되돌리기',
+                                  ),
+                                IconButton(
+                                  onPressed: isSaving
+                                      ? null
+                                      : () {
+                                          setSheetState(() {
+                                            editingId = null;
+                                            editingBase = base.category;
+                                            nameController.text = base.name;
+                                            colorHex = base.color;
+                                          });
+                                        },
+                                  icon: Icon(
+                                    Icons.edit_outlined,
+                                    size: 20,
+                                    color: AppSemanticColors
+                                        .interactivePrimaryDefault,
+                                  ),
+                                  tooltip: '수정',
+                                ),
+                                IconButton(
+                                  onPressed: isSaving
+                                      ? null
+                                      : () => toggleBaseHidden(base),
+                                  icon: Icon(
+                                    base.hidden
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    size: 20,
+                                    color: AppSemanticColors.textSecondary,
+                                  ),
+                                  tooltip: base.hidden ? '보이기' : '숨기기',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: AppSpacing.space3),
+                      Text(
+                        '내가 만든 구분',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+
                     // 기존 구분 목록
                     if (isLoading)
                       const Center(
@@ -2345,6 +2598,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     ? null
                                     : () {
                                         setSheetState(() {
+                                          editingBase = null;
                                           editingId = label.id;
                                           nameController.text = label.name;
                                           colorHex = label.color;
@@ -2376,7 +2630,9 @@ class _CalendarScreenState extends State<CalendarScreen>
 
                     // 추가/수정 폼
                     SeedTextField(
-                      label: editingId == null ? '새 구분 이름' : '구분 이름 수정',
+                      label: editingBase != null
+                          ? '기본 구분 이름 수정'
+                          : (editingId == null ? '새 구분 이름' : '구분 이름 수정'),
                       controller: nameController,
                       placeholder: '예: 운영, 인사, 회계, 사업',
                     ),
@@ -2409,7 +2665,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                     const SizedBox(height: AppSpacing.space4),
                     Row(
                       children: [
-                        if (editingId != null) ...[
+                        if (editingId != null || editingBase != null) ...[
                           Expanded(
                             child: SeedButton(
                               label: '취소',
@@ -2424,7 +2680,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                         ],
                         Expanded(
                           child: SeedButton(
-                            label: editingId == null ? '추가' : '수정 저장',
+                            label: (editingId == null && editingBase == null)
+                                ? '추가'
+                                : '수정 저장',
                             variant: SeedButtonVariant.brandSolid,
                             size: SeedButtonSize.large,
                             isLoading: isSaving,
