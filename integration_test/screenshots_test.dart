@@ -16,6 +16,8 @@ void main() {
 
   const email = String.fromEnvironment('SHOT_EMAIL');
   const password = String.fromEnvironment('SHOT_PASSWORD');
+  // 직원 계정 캡처용 — true면 로그인에서 '직원' 토글을 쓴다
+  const isStaff = bool.fromEnvironment('SHOT_STAFF');
 
   /// 네트워크·무한 애니메이션이 있어 pumpAndSettle 대신 시간 기반 펌프를 쓴다.
   /// Future.delayed로 실제 시간이 흘러야 main()의 비동기 초기화·네트워크가 진행된다.
@@ -58,10 +60,10 @@ void main() {
 
     await shot(tester, '01_login');
 
-    // 관리자 로그인
-    final adminToggle = find.text('관리자');
-    if (adminToggle.evaluate().isNotEmpty) {
-      await tester.tap(adminToggle.first);
+    // 역할 토글 — 기본 관리자, SHOT_STAFF면 직원
+    final roleToggle = find.text(isStaff ? '직원' : '관리자');
+    if (roleToggle.evaluate().isNotEmpty) {
+      await tester.tap(roleToggle.first);
       await settle(tester, seconds: 1);
     }
     final fields = find.byType(TextField);
