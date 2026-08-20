@@ -23,11 +23,12 @@ import 'menu_screen.dart';
 
 /// 하단 탭 인덱스 — 홈 등 다른 화면에서 탭 이동 시 이 상수를 쓴다 (매직넘버 금지).
 /// 직원·관리자 모두 같은 5탭 구조라 인덱스가 역할에 따라 달라지지 않는다.
+/// 순서: 홈 → 채팅 → 일정 → 전자결재 → 전체 (2026-08 개편)
 class MainTabs {
   static const int home = 0;
-  static const int calendar = 1;
-  static const int approval = 2;
-  static const int chat = 3;
+  static const int chat = 1;
+  static const int calendar = 2;
+  static const int approval = 3;
   static const int menu = 4;
 }
 
@@ -293,17 +294,18 @@ class _MainScreenState extends State<MainScreen>
   }
 
   List<Widget> _buildScreens(bool isAdmin) {
+    // MainTabs 순서와 반드시 일치해야 한다: 홈·채팅·일정·전자결재·전체
     return [
       HomeScreen(onNavigateToTab: _onItemTapped),
+      const ChatRoomListScreen(),
       const CalendarScreen(),
       isAdmin ? const AdminUnifiedApprovalScreen() : const ApprovalListScreen(),
-      const ChatRoomListScreen(),
       const MenuScreen(),
     ];
   }
 
   List<BottomNavigationBarItem> _buildNavItems(bool isAdmin) {
-    // 미확인 건수 뱃지 — 승인함은 결재+휴무+가입 대기 합산, 채팅은 미읽음
+    // 미확인 건수 뱃지 — 전자결재는 결재+휴무+가입 대기 합산, 채팅은 미읽음
     final approvalProvider = context.watch<ApprovalProvider>();
     final chatProvider = context.watch<ChatProvider>();
     final vacationProvider = context.watch<VacationProvider>();
@@ -325,6 +327,13 @@ class _MainScreenState extends State<MainScreen>
         '홈',
       ),
       _buildNavItem(
+        MainTabs.chat,
+        Icons.chat_rounded,
+        Icons.chat_bubble_outline_rounded,
+        '채팅',
+        badgeCount: chatBadge,
+      ),
+      _buildNavItem(
         MainTabs.calendar,
         Icons.calendar_month_rounded,
         Icons.calendar_month_outlined,
@@ -334,15 +343,8 @@ class _MainScreenState extends State<MainScreen>
         MainTabs.approval,
         Icons.fact_check_rounded,
         Icons.fact_check_outlined,
-        isAdmin ? '승인함' : '결재',
+        '전자결재',
         badgeCount: approvalBadge,
-      ),
-      _buildNavItem(
-        MainTabs.chat,
-        Icons.chat_rounded,
-        Icons.chat_bubble_outline_rounded,
-        '채팅',
-        badgeCount: chatBadge,
       ),
       _buildNavItem(
         MainTabs.menu,

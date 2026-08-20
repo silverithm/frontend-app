@@ -871,10 +871,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                   allowedMonth: vacationProvider.isNextMonthOnly
                       ? vacationProvider.nextMonthOnlyMonth
                       : null,
-                  deadline: vacationProvider.deadlineForMonth(month),
-                  deadlinePassed: vacationProvider.isDeadlinePassedForMonth(
-                    month,
-                  ),
+                  // 보고 있는 달 휴무의 '신청 마감일' (그 전 달에 위치)
+                  deadline: vacationProvider.deadlineForTargetMonth(month),
+                  deadlineTargetMonth: month,
+                  deadlinePassed: vacationProvider
+                      .isDeadlinePassedForTargetMonth(month),
                 ),
               );
             },
