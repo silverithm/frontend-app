@@ -72,6 +72,11 @@ class NoticeProvider with ChangeNotifier {
     required String companyId,
     bool refresh = false,
   }) async {
+    // 로딩 중 중복 호출 방지 — 무한 스크롤이 바닥 근처에서 스크롤 이벤트마다
+    // _onScroll을 여러 번 발화시켜, 가드가 없으면 같은 페이지를 동시에 여러 번
+    // 요청해 목록에 중복 항목이 쌓이고 _currentPage가 꼬였다.
+    if (_isLoading && !refresh) return;
+
     try {
       if (refresh) {
         _currentPage = 0;
@@ -139,6 +144,9 @@ class NoticeProvider with ChangeNotifier {
     required String companyId,
     bool refresh = false,
   }) async {
+    // 로딩 중 중복 호출 방지 (위 loadNotices와 동일한 이유)
+    if (_isLoading && !refresh) return;
+
     try {
       if (refresh) {
         _currentPage = 0;

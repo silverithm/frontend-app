@@ -92,6 +92,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       content: _commentController.text.trim(),
     );
 
+    if (!mounted) return;
     setState(() => _isSubmittingComment = false);
 
     if (success) {
@@ -110,7 +111,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       confirmVariant: SeedButtonVariant.critical,
     );
 
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
       final noticeProvider = context.read<NoticeProvider>();
       await noticeProvider.deleteComment(
         noticeId: widget.noticeId,
@@ -519,8 +520,9 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             child: GestureDetector(
             onTap: _isSubmittingComment ? null : _submitComment,
             child: Container(
-              width: AppSpacing.space9,
-              height: AppSpacing.space9,
+              // 채팅 전송 버튼(space10=40px)과 같은 터치 타깃 크기로 통일
+              width: AppSpacing.space10,
+              height: AppSpacing.space10,
               decoration: BoxDecoration(
                 color: AppSemanticColors.interactivePrimaryDefault,
                 borderRadius: BorderRadius.circular(AppBorderRadius.full),

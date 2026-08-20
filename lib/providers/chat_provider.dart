@@ -1441,6 +1441,10 @@ class ChatProvider with ChangeNotifier {
   @override
   void dispose() {
     _roomListRefreshDebounce?.cancel();
+    _cancelAllTypingTimers();
+    // 소켓을 안 끊고 dispose하면 STOMP 콜백이 dispose된 provider에 대고
+    // notifyListeners()를 불러 크래시로 이어질 수 있다.
+    disconnectWebSocket();
     super.dispose();
   }
 }

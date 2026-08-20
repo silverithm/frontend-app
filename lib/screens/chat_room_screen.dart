@@ -951,7 +951,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
         },
       ),
-    ).whenComplete(() => searchFocusNode.dispose());
+    ).whenComplete(() {
+      searchController.dispose();
+      searchFocusNode.dispose();
+    });
   }
 
   // ===================== 파일함 =====================
@@ -1018,6 +1021,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                       width: 44,
                                       height: 44,
                                       fit: BoxFit.cover,
+                                      // 44dp 썸네일에 원본 해상도를 그대로 디코드하지 않도록 제한
+                                      cacheWidth: 88,
+                                      cacheHeight: 88,
                                       errorBuilder: (_, __, ___) =>
                                           const Icon(Icons.image_outlined),
                                     ),
@@ -1712,10 +1718,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       itemCount: chatProvider.messages.length,
                       itemBuilder: (context, index) {
                         final message = chatProvider.messages[index];
+                        // localId → id 순으로 안정된 키를 준다. 전송 중(sending) 메시지가
+                        // 서버 확정 메시지로 교체돼도 같은 자리로 인식되게 한다.
+                        final itemKey = ValueKey(
+                          message.localId ?? message.id,
+                        );
 
                         // 시스템 메시지는 가운데 정렬로 별도 처리
                         if (message.type == MessageType.system) {
-                          return _buildSystemMessage(message);
+                          return KeyedSubtree(
+                            key: itemKey,
+                            child: _buildSystemMessage(message),
+                          );
                         }
 
                         final isMyMessage = message.senderId == currentUserId;
@@ -1725,12 +1739,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                 chatProvider.messages[index + 1].senderId !=
                                     message.senderId);
 
-                        return _buildMessageBubble(
-                          message,
-                          isMyMessage,
-                          showSenderName,
-                          isAdmin,
-                          chatProvider.participants,
+                        return KeyedSubtree(
+                          key: itemKey,
+                          child: _buildMessageBubble(
+                            message,
+                            isMyMessage,
+                            showSenderName,
+                            isAdmin,
+                            chatProvider.participants,
+                          ),
                         );
                       },
                     );
@@ -2050,6 +2067,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   child: Image.network(
                     message.fileUrl!,
                     fit: BoxFit.cover,
+                    // 말풍선 최대 폭(화면의 70%)보다 큰 원본을 그대로 디코드하지 않도록 제한
+                    cacheWidth:
+                        (MediaQuery.of(context).size.width * 0.7 * 2).round(),
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return const SizedBox(

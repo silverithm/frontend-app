@@ -219,6 +219,10 @@ class _AdminNoticeManagementScreenState
             vertical: AppSpacing.space3,
           ),
         ),
+        // suffixIcon(지우기 버튼)이 _searchController.text를 참조하므로, 타이핑·클리어
+        // 때마다 다시 그려야 즉시 나타나거나 사라진다 — 이 콜백이 없으면 다른 계기로
+        // 화면이 리빌드될 때까지 지우기 버튼 표시가 실제 입력값을 따라가지 못했다.
+        onChanged: (_) => setState(() {}),
         onSubmitted: (_) => _loadNotices(refresh: true),
       ),
     );

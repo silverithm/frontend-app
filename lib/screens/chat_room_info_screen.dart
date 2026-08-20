@@ -454,6 +454,8 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                         child: Image.network(
                           image.fileUrl ?? '',
                           fit: BoxFit.cover,
+                          // 3열 그리드 썸네일 크기에 맞춰 원본 디코드를 제한
+                          cacheWidth: 300,
                           errorBuilder: (_, __, ___) => Container(
                             color: AppSemanticColors.backgroundTertiary,
                             child: Icon(
