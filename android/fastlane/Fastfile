@@ -20,12 +20,12 @@ platform :android do
     )
   end
 
-  desc "프로덕션 20% 단계적 출시"
-  lane :release do
+  desc "프로덕션 출시 (기본 20% 단계적 — rollout:1.0 으로 전체 출시)"
+  lane :release do |options|
     build
     upload_to_play_store(
       track: "production",
-      rollout: "0.2",
+      rollout: options[:rollout] || "0.2",
       aab: AAB_PATH,
       skip_upload_metadata: true,
       skip_upload_images: true,
