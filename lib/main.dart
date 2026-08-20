@@ -50,8 +50,12 @@ void main() async {
   // FCM 백그라운드 메시지 핸들러 설정
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
+  // 검토용 스크린샷 캡처 실행(SHOT_MODE) — 시스템 권한 팝업으로 부팅이
+  // 멈추지 않게 알림 초기화·APNs 대기를 건너뛴다 (일반 빌드에는 영향 없음)
+  const bool isScreenshotRun = bool.fromEnvironment('SHOT_MODE');
+
   // iOS에서 APNS 토큰 초기화 대기
-  if (defaultTargetPlatform == TargetPlatform.iOS) {
+  if (!isScreenshotRun && defaultTargetPlatform == TargetPlatform.iOS) {
     await Future.delayed(Duration(milliseconds: 2000)); // 2초 대기
   }
 
@@ -62,7 +66,9 @@ void main() async {
   await StorageService().init();
 
   // FCM 서비스 초기화
-  await FCMService().initialize();
+  if (!isScreenshotRun) {
+    await FCMService().initialize();
+  }
   
   // 인앱 리뷰 서비스 초기화
   await InAppReviewService().initializeInstallDate();

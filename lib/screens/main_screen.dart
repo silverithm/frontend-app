@@ -298,7 +298,10 @@ class _MainScreenState extends State<MainScreen>
       HomeScreen(onNavigateToTab: _onItemTapped),
       const ChatRoomListScreen(),
       const CalendarScreen(),
-      const ApprovalHubScreen(),
+      // 관리자는 승인할 문서(결재 관리)가 기본, 직원은 신청이 기본
+      isAdmin
+          ? const ApprovalHubScreen(initialTab: 1)
+          : const ApprovalHubScreen(),
       const MenuScreen(),
     ];
   }

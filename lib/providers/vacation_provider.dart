@@ -9,6 +9,8 @@ class VacationProvider with ChangeNotifier {
   List<VacationRequest> _vacationRequests = [];
   Map<DateTime, List<VacationRequest>> _calendarData = {};
   Map<DateTime, int> _vacationLimits = {}; // 날짜별 제한 인원 수
+  // '전체(all)' 한도가 직접 설정된 날짜 — 직종 최댓값으로 덮이면 안 된다
+  final Set<DateTime> _allLimitDates = {};
   bool _isLoading = false;
   String _errorMessage = '';
   DateTime _selectedDate = DateTime.now();
@@ -738,6 +740,7 @@ class VacationProvider with ChangeNotifier {
 
       // 응답을 vacationLimits Map으로 변환
       _vacationLimits.clear();
+      _allLimitDates.clear();
 
       if (response['limits'] != null) {
         final limitsList = response['limits'] as List;
@@ -760,11 +763,19 @@ class VacationProvider with ChangeNotifier {
 
             final date = DateTime.parse(dateStr);
             final dateKey = DateTime(date.year, date.month, date.day);
-            final currentLimit = _vacationLimits[dateKey];
-            _vacationLimits[dateKey] =
-                currentLimit == null || maxPeople > currentLimit
-                ? maxPeople
-                : currentLimit;
+            // 관리자가 '전체(all)' 한도를 직접 건 날짜는 그 값이 정답 —
+            // 직종별 최댓값 누적으로 덮이지 않게 확정 기록한다
+            final isAllRow = (itemRole ?? '').toLowerCase() == 'all';
+            if (isAllRow) {
+              _vacationLimits[dateKey] = maxPeople;
+              _allLimitDates.add(dateKey);
+            } else if (!_allLimitDates.contains(dateKey)) {
+              final currentLimit = _vacationLimits[dateKey];
+              _vacationLimits[dateKey] =
+                  currentLimit == null || maxPeople > currentLimit
+                  ? maxPeople
+                  : currentLimit;
+            }
 
             print(
               '[VacationProvider] 역할 일치 - 날짜: $dateStr, 역할: $itemRole, 제한: $maxPeople',

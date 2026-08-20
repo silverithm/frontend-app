@@ -84,8 +84,15 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
   }
 
   Future<void> _connectWebSocket() async {
+    if (!mounted) return;
     final chatProvider = context.read<ChatProvider>();
-    await chatProvider.connectWebSocket();
+    try {
+      await chatProvider.connectWebSocket();
+    } catch (e) {
+      // 소켓 연결 실패가 목록 화면 자체를 죽이면 안 된다 —
+      // 목록은 REST로 이미 떠 있고, 소켓은 다음 진입·재시도에서 다시 붙는다
+      debugPrint('[ChatRoomList] 웹소켓 연결 실패: $e');
+    }
   }
 
   void _navigateToChatRoom(ChatRoom room) {

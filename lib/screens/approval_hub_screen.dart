@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'admin_approval_management_screen.dart';
 import 'approval_list_screen.dart';
@@ -52,7 +51,8 @@ class _ApprovalHubScreenState extends State<ApprovalHubScreen>
         title: Text('전자결재', style: AppTypography.heading5),
         backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
-        automaticallyImplyLeading: false,
+        // 탭 루트에선 canPop=false라 자동으로 안 뜨고,
+        // 알림에서 push로 열리면 뒤로가기가 생긴다
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(

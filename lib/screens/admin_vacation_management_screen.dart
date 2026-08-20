@@ -855,6 +855,8 @@ class _AdminVacationManagementScreenState
 
     AppBottomSheet.show(
       context,
+      // 내용이 길어질 수 있는 상세 시트 — 절반 높이 제약을 받지 않게 한다
+      isScrollControlled: true,
       child: Builder(
         builder: (sheetContext) => SafeArea(
           child: Padding(

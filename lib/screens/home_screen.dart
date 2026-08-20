@@ -257,11 +257,6 @@ class _HomeScreenState extends State<HomeScreen> {
       widget.onNavigateToTab!(MainTabs.approval);
       return;
     }
-
-    final isAdmin = AdminUtils.canAccessAdminPages(
-      context.read<AuthProvider>().currentUser,
-    );
-
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const ApprovalHubScreen()),
     );

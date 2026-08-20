@@ -241,8 +241,13 @@ class _AdminApprovalManagementScreenState
     if (request.approvalLine.isEmpty) return _canManage;
     final currentStep = request.currentStep;
     if (currentStep == null) return false;
-    final myId = context.read<AuthProvider>().currentUser?.id ?? '';
-    return currentStep.approverId == myId;
+    final user = context.read<AuthProvider>().currentUser;
+    final myId = user?.id ?? '';
+    // 결재선의 approverId는 직원이면 memberId, 관리자면 'admin_<id>' 형식이다.
+    // 원시 id로만 비교하면 관리자형 단계가 내 차례로 인식되지 못해
+    // 정상 승인 대신 직권 승인(전결)으로 빠져 뒤 단계가 스킵된다.
+    final ids = <String>{myId, if (AdminUtils.hasAdminPermission(user)) 'admin_$myId'};
+    return ids.contains(currentStep.approverId);
   }
 
   /// 직권 승인/반려로 건너뛰게 될 남은 결재 단계 (내 차례 제외)
