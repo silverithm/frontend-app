@@ -20,6 +20,7 @@ import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'plaza_post_detail_screen.dart';
+import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 
 /// 게시판 key → 화면 표시 라벨. 목록·상세·글쓰기 시트가 공통으로 쓴다.
@@ -60,14 +61,10 @@ Future<bool?> showPlazaPostEditor(
   bool contactPublic = existingPost?['contactPublic'] == true;
   final user = context.read<AuthProvider>().currentUser;
 
-  final saved = await showModalBottomSheet<bool>(
-    context: context,
+  final saved = await AppBottomSheet.show<bool>(
+    context,
     isScrollControlled: true,
-    backgroundColor: AppSemanticColors.surfaceDefault,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
-    ),
-    builder: (sheetContext) => StatefulBuilder(
+    child: StatefulBuilder(
       builder: (context, setSheetState) {
         final isJobBoard = plazaIsJobBoard(board);
         return Padding(
@@ -921,14 +918,10 @@ Future<bool?> showPlazaLibraryEditor(
   bool isSaving = false;
   final user = context.read<AuthProvider>().currentUser;
 
-  final saved = await showModalBottomSheet<bool>(
-    context: context,
+  final saved = await AppBottomSheet.show<bool>(
+    context,
     isScrollControlled: true,
-    backgroundColor: AppSemanticColors.surfaceDefault,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
-    ),
-    builder: (sheetContext) => StatefulBuilder(
+    child: StatefulBuilder(
       builder: (context, setSheetState) => Padding(
         padding: EdgeInsets.only(
           left: AppSpacing.space4,
@@ -1394,6 +1387,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                 ),
                                                 if (item['isMine'] == true)
                                                   IconButton(
+                                                    tooltip: '수정',
                                                     icon: Icon(
                                                         Icons.edit_outlined,
                                                         color: AppSemanticColors
@@ -1402,6 +1396,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                         _showEditSheet(item),
                                                   ),
                                                 IconButton(
+                                                  tooltip: '다운로드',
                                                   icon: Icon(Icons.download,
                                                       color: AppSemanticColors
                                                           .interactivePrimaryDefault),

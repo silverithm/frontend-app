@@ -554,6 +554,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               ),
                             ),
                             child: IconButton(
+                              tooltip: '닫기',
                               onPressed: _isSubmitting
                                   ? null
                                   : () => Navigator.pop(context),

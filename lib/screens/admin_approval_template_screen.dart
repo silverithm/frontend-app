@@ -174,6 +174,7 @@ class _AdminApprovalTemplateScreenState
                                 ),
                               ),
                               IconButton(
+                                tooltip: '선택한 파일 제거',
                                 onPressed: () {
                                   setDialogState(() {
                                     selectedFile = null;

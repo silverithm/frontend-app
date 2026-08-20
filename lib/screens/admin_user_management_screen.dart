@@ -62,27 +62,23 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           child: Scaffold(
             backgroundColor: AppSemanticColors.backgroundPrimary,
             appBar: AppBar(
-              title: Text(
-                '회원 관리',
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textInverse,
-                ),
-              ),
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-              foregroundColor: AppSemanticColors.textInverse,
+              title: Text('회원 관리', style: AppTypography.heading5),
+              backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
               automaticallyImplyLeading: widget.showBackButton,
               leading: widget.showBackButton
                   ? IconButton(
+                      tooltip: '뒤로 가기',
                       icon: const Icon(Icons.arrow_back),
                       onPressed: () => Navigator.of(context).pop(),
                     )
                   : null,
               actions: [
                 IconButton(
+                  tooltip: '새로고침',
                   icon: Icon(
                     Icons.refresh,
-                    color: AppSemanticColors.textInverse,
+                    color: AppSemanticColors.textPrimary,
                   ),
                   onPressed: _loadData,
                 ),
@@ -91,18 +87,23 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 preferredSize: const Size.fromHeight(48),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppSemanticColors.textInverse.withValues(alpha: 0.1),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppSemanticColors.borderDefault,
+                        width: 1,
+                      ),
+                    ),
                   ),
                   child: TabBar(
-                    labelColor: AppSemanticColors.textInverse,
-                    unselectedLabelColor: AppSemanticColors.textInverse
-                        .withValues(alpha: 0.6),
-                    indicatorColor: AppSemanticColors.textInverse,
-                    indicatorWeight: 3,
+                    labelColor: AppSemanticColors.interactivePrimaryDefault,
+                    unselectedLabelColor: AppSemanticColors.textTertiary,
+                    indicatorColor: AppSemanticColors.interactivePrimaryDefault,
+                    indicatorWeight: 2,
                     labelStyle: AppTypography.labelMedium.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                     unselectedLabelStyle: AppTypography.labelMedium,
+                    dividerColor: AppColors.transparent,
                     tabs: const [
                       Tab(
                         icon: Icon(Icons.pending_actions, size: 20),
@@ -126,10 +127,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   Widget _buildNoPermissionView() {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('회원 관리'),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
+        title: Text('회원 관리', style: AppTypography.heading5),
+        backgroundColor: AppSemanticColors.backgroundPrimary,
+        elevation: 0,
       ),
       body: Center(
         child: Column(
@@ -166,7 +166,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     return Consumer<AdminProvider>(
       builder: (context, adminProvider, child) {
         if (adminProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(
+              color: AppSemanticColors.interactivePrimaryDefault,
+            ),
+          );
         }
 
         if (adminProvider.errorMessage.isNotEmpty) {
@@ -599,7 +603,11 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
     return Consumer<AdminProvider>(
       builder: (context, adminProvider, child) {
         if (adminProvider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(
+              color: AppSemanticColors.interactivePrimaryDefault,
+            ),
+          );
         }
 
         if (adminProvider.errorMessage.isNotEmpty) {

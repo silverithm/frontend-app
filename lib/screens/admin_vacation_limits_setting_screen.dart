@@ -272,6 +272,7 @@ class _AdminVacationLimitsSettingScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
+                        tooltip: '이전 달',
                         onPressed: _previousMonth,
                         icon: const Icon(Icons.chevron_left),
                       ),
@@ -280,6 +281,7 @@ class _AdminVacationLimitsSettingScreenState
                         style: AppTypography.heading5,
                       ),
                       IconButton(
+                        tooltip: '다음 달',
                         onPressed: _nextMonth,
                         icon: const Icon(Icons.chevron_right),
                       ),

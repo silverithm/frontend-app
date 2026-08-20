@@ -242,10 +242,13 @@ class AppBottomSheet {
     bool isDismissible = true,
     bool enableDrag = true,
     double? height,
+    // 폼(텍스트 입력) 시트는 키보드가 올라올 때 시트가 함께 커져야 해서
+    // 명시적으로 true를 넘긴다. 안 넘기면 기존과 동일하게 height 유무로 정한다.
+    bool? isScrollControlled,
   }) {
     return showModalBottomSheet<T>(
       context: context,
-      isScrollControlled: height != null,
+      isScrollControlled: isScrollControlled ?? (height != null),
       isDismissible: isDismissible,
       enableDrag: enableDrag,
       backgroundColor: AppColors.transparent,

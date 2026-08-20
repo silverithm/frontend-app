@@ -736,15 +736,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ),
           ),
           if (isAdmin)
-            GestureDetector(
-              onTap: _clearNotice,
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.space2),
-                child: Icon(
-                  Icons.close,
-                  size: AppSpacing.space4,
-                  color: AppSemanticColors.statusInfoText,
+            Semantics(
+              button: true,
+              label: '공지 지우기',
+              child: GestureDetector(
+                onTap: _clearNotice,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space3,
+                    vertical: AppSpacing.space2_5,
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    size: AppSpacing.space4,
+                    color: AppSemanticColors.statusInfoText,
+                  ),
                 ),
               ),
             ),
@@ -2029,7 +2036,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     switch (message.type) {
       case MessageType.image:
-        return GestureDetector(
+        return Semantics(
+          button: true,
+          label: '이미지 크게 보기',
+          child: GestureDetector(
           onTap: () => _openAttachment(message),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2062,6 +2072,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   ),
                 ),
             ],
+          ),
           ),
         );
 
@@ -2168,6 +2179,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         children: [
           // 첨부 버튼 (사진/파일)
           IconButton(
+            tooltip: '파일 첨부',
             onPressed: _showAttachmentOptions,
             icon: Icon(
               Icons.add_circle_outline,
@@ -2212,7 +2224,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           Material(
             color: AppSemanticColors.interactivePrimaryDefault,
             shape: const CircleBorder(),
-            child: InkWell(
+            child: Semantics(
+              button: true,
+              label: '메시지 전송',
+              child: InkWell(
               onTap: _sendMessage,
               customBorder: const CircleBorder(),
               child: SizedBox(
@@ -2225,6 +2240,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     size: AppSpacing.space5,
                   ),
                 ),
+              ),
               ),
             ),
           ),

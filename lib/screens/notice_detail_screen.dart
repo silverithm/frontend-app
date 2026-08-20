@@ -135,6 +135,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
+          tooltip: '뒤로 가기',
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -453,12 +454,19 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
               ),
               const Spacer(),
               if (isMyComment)
-                GestureDetector(
-                  onTap: () => _deleteComment(comment.id),
-                  child: Icon(
-                    Icons.close,
-                    size: 16,
-                    color: AppSemanticColors.textTertiary,
+                Semantics(
+                  button: true,
+                  label: '댓글 삭제',
+                  child: GestureDetector(
+                    onTap: () => _deleteComment(comment.id),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.close,
+                        size: 16,
+                        color: AppSemanticColors.textTertiary,
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -504,7 +512,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             ),
           ),
           const SizedBox(width: AppSpacing.space2),
-          GestureDetector(
+          Semantics(
+            button: true,
+            enabled: !_isSubmittingComment,
+            label: '댓글 등록',
+            child: GestureDetector(
             onTap: _isSubmittingComment ? null : _submitComment,
             child: Container(
               width: AppSpacing.space9,
@@ -531,6 +543,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                         color: AppSemanticColors.textInverse,
                       ),
               ),
+            ),
             ),
           ),
         ],

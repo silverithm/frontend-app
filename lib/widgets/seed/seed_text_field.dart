@@ -239,19 +239,29 @@ class _SeedTextFieldState extends State<SeedTextField> {
               ),
               if (widget.enableObscureToggle) ...[
                 const SizedBox(width: AppSpacing.space2),
-                GestureDetector(
-                  onTap: () => setState(() => _obscure = !_obscure),
-                  child: Icon(
-                    _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    size: 18,
-                    color: AppSemanticColors.textTertiary,
+                Semantics(
+                  button: true,
+                  label: _obscure ? '비밀번호 표시' : '비밀번호 숨기기',
+                  child: GestureDetector(
+                    onTap: () => setState(() => _obscure = !_obscure),
+                    child: Padding(
+                      padding: const EdgeInsets.all(11),
+                      child: Icon(
+                        _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        size: 18,
+                        color: AppSemanticColors.textTertiary,
+                      ),
+                    ),
                   ),
                 ),
               ] else if (widget.suffixIcon != null) ...[
                 const SizedBox(width: AppSpacing.space2),
                 GestureDetector(
                   onTap: widget.onSuffixIconTap,
-                  child: Icon(widget.suffixIcon, size: 18, color: AppSemanticColors.textTertiary),
+                  child: Padding(
+                    padding: const EdgeInsets.all(11),
+                    child: Icon(widget.suffixIcon, size: 18, color: AppSemanticColors.textTertiary),
+                  ),
                 ),
               ],
             ],

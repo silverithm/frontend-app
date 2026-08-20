@@ -167,7 +167,11 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
         if (chatProvider.isLoading && chatProvider.chatRooms.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(
+              color: AppSemanticColors.interactivePrimaryDefault,
+            ),
+          );
         }
 
         if (chatProvider.errorMessage.isNotEmpty &&
@@ -202,17 +206,16 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
           Icon(
             Icons.chat_bubble_outline,
             size: AppSpacing.space16,
-            color: AppSemanticColors.textDisabled,
+            color: AppSemanticColors.textTertiary,
           ),
           const SizedBox(height: AppSpacing.space4),
           Text(
             '아직 채팅방이 없어요',
-            style: AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodyLarge.copyWith(
               color: AppSemanticColors.textSecondary,
-              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: AppSpacing.space1_5),
+          const SizedBox(height: AppSpacing.space2),
           Text(
             '+ 버튼으로 첫 채팅을 시작해보세요',
             style: AppTypography.bodySmall.copyWith(

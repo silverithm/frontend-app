@@ -275,7 +275,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user == null) {
       return Scaffold(
         backgroundColor: AppSemanticColors.backgroundPrimary,
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: AppSemanticColors.interactivePrimaryDefault,
+          ),
+        ),
       );
     }
 
@@ -352,9 +356,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             if (_isLoading)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppSemanticColors.interactivePrimaryDefault,
+                  ),
+                ),
               )
             else
               SliverPadding(

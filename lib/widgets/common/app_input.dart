@@ -260,6 +260,7 @@ class _AppPasswordInputState extends State<AppPasswordInput> {
       validator: widget.validator,
       autovalidateMode: widget.autovalidateMode,
       suffixIcon: IconButton(
+        tooltip: _obscureText ? '비밀번호 표시' : '비밀번호 숨기기',
         icon: Icon(
           _obscureText ? Icons.visibility_off : Icons.visibility,
           color: AppSemanticColors.textTertiary,

@@ -19,6 +19,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common/app_action_sheet.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -279,6 +280,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
+                tooltip: '이전 달',
                 onPressed: () {
                   setState(() {
                     _scheduleCurrentDate = DateTime(
@@ -310,6 +312,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ),
               ),
               IconButton(
+                tooltip: '다음 달',
                 onPressed: () {
                   setState(() {
                     _scheduleCurrentDate = DateTime(
@@ -558,6 +561,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                     ),
                   ),
                   IconButton(
+                    tooltip: '날짜 선택 해제',
                     onPressed: () {
                       setState(() {
                         _scheduleSelectedDate = null;
@@ -996,6 +1000,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                           ),
                           IconButton(
+                            tooltip: '날짜 선택 해제',
                             onPressed: () {
                               setState(() {
                                 _selectedDate = null;
@@ -1527,6 +1532,9 @@ class _CalendarScreenState extends State<CalendarScreen>
         })
         .catchError((_) {});
 
+    // AppBottomSheet.show로 바꾸지 않고 유지: 이미 토큰 스타일(둥근 상단·
+    // surfaceDefault·핸들바)을 자체로 완전히 갖춰서 교체해도 시각적으로
+    // 달라지는 게 없다.
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1580,6 +1588,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ),
                         ),
                         IconButton(
+                          tooltip: '닫기',
                           onPressed: () => Navigator.pop(context),
                           icon: Icon(
                             Icons.close,
@@ -2217,6 +2226,9 @@ class _CalendarScreenState extends State<CalendarScreen>
     bool isLoading = true;
     bool isSaving = false;
 
+    // AppBottomSheet.show로 바꾸지 않고 유지: 이미 토큰 스타일(둥근 상단·
+    // surfaceDefault·핸들바)을 자체로 완전히 갖춰서 교체해도 시각적으로
+    // 달라지는 게 없다.
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2428,6 +2440,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ),
                         ),
                         IconButton(
+                          tooltip: '닫기',
                           onPressed: () => Navigator.pop(sheetContext),
                           icon: Icon(
                             Icons.close,
@@ -2547,10 +2560,12 @@ class _CalendarScreenState extends State<CalendarScreen>
 
                     // 기존 구분 목록
                     if (isLoading)
-                      const Center(
+                      Center(
                         child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.space4),
-                          child: CircularProgressIndicator(),
+                          padding: const EdgeInsets.all(AppSpacing.space4),
+                          child: CircularProgressIndicator(
+                            color: AppSemanticColors.interactivePrimaryDefault,
+                          ),
                         ),
                       )
                     else if (labels.isEmpty)
@@ -2749,77 +2764,29 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   void _showAdminActionDialog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
+    // 앱 공통 액션 시트 문법(둥근 상단+surfaceDefault+핸들바+틴트 아이콘)을 그대로
+    // 쓴다 — 손조립 Container/Column 대신 showAppActionSheet.
+    showAppActionSheet(
+      context,
+      title: '관리자 기능',
+      actions: [
+        AppSheetAction(
+          icon: Icons.event_available,
+          label: '휴무 추가',
+          onSelected: _showAddVacationDialog,
         ),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(AppSpacing.space5),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: AppSpacing.space10,
-              height: AppSpacing.space1,
-              margin: const EdgeInsets.only(bottom: AppSpacing.space5),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.borderSubtle,
-                borderRadius: BorderRadius.circular(AppBorderRadius.base),
+        AppSheetAction(
+          icon: Icons.settings,
+          label: '휴무 제한 설정',
+          onSelected: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const AdminVacationLimitsSettingScreen(),
               ),
-            ),
-            Text('관리자 기능', style: AppTypography.heading5),
-            const SizedBox(height: AppSpacing.space5),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(AppSpacing.space2),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.statusInfoBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                ),
-                child: Icon(
-                  Icons.event_available,
-                  color: AppSemanticColors.statusInfoIcon,
-                ),
-              ),
-              title: const Text('휴무 추가'),
-              subtitle: const Text('직원의 휴무를 직접 추가합니다'),
-              onTap: () {
-                Navigator.pop(context);
-                _showAddVacationDialog();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(AppSpacing.space2),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.statusWarningBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                ),
-                child: Icon(
-                  Icons.settings,
-                  color: AppSemanticColors.statusWarningIcon,
-                ),
-              ),
-              title: const Text('휴무 제한 설정'),
-              subtitle: const Text('날짜별 최대 휴무 인원을 설정합니다'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const AdminVacationLimitsSettingScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
+            );
+          },
         ),
-      ),
+      ],
     );
   }
 

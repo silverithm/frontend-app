@@ -960,7 +960,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     Positioned(
                                       right: 0,
                                       bottom: 0,
-                                      child: GestureDetector(
+                                      child: Semantics(
+                                        button: true,
+                                        label: '프로필 사진 변경',
+                                        child: GestureDetector(
                                         onTap: _isUploadingPhoto
                                             ? null
                                             : () =>
@@ -981,6 +984,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             size: 18,
                                             color: AppSemanticColors.textInverse,
                                           ),
+                                        ),
                                         ),
                                       ),
                                     ),

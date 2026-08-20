@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../common/app_dialog.dart';
 import '../seed/seed_button.dart';
 import 'signature_pad.dart';
 
@@ -25,14 +26,12 @@ Future<SignatureConfirmResult?> showSignatureConfirmSheet(
   BuildContext context, {
   String title = '결재 승인',
 }) {
-  return showModalBottomSheet<SignatureConfirmResult>(
-    context: context,
+  // 손조립 시트였지만 핸들바가 빠져 있었다 — 공용 AppBottomSheet.show로 교체해
+  // 둥근 상단·surfaceDefault·핸들바를 다른 시트들과 통일한다.
+  return AppBottomSheet.show<SignatureConfirmResult>(
+    context,
     isScrollControlled: true,
-    backgroundColor: AppSemanticColors.surfaceDefault,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)),
-    ),
-    builder: (context) => _SignatureConfirmSheet(title: title),
+    child: _SignatureConfirmSheet(title: title),
   );
 }
 
@@ -117,6 +116,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 ),
               ),
               IconButton(
+                tooltip: '닫기',
                 onPressed: () => Navigator.pop(context),
                 icon: Icon(Icons.close, color: AppSemanticColors.textSecondary),
               ),

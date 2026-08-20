@@ -188,17 +188,10 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
     XFile? picked;
     bool isSaving = false;
 
-    await showModalBottomSheet(
-      context: context,
+    await AppBottomSheet.show(
+      context,
       isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
-        ),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
+      child: StatefulBuilder(
           builder: (context, setSheetState) {
             Future<void> submit() async {
               if (titleController.text.trim().isEmpty || picked == null) {
@@ -231,8 +224,8 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                   uploaderName: auth.currentUser?.name ?? '',
                 );
 
-                if (!sheetContext.mounted) return;
-                Navigator.pop(sheetContext);
+                if (!context.mounted) return;
+                Navigator.pop(context);
                 if (mounted) {
                   AppSnackBar.showSuccess(this.context, message: '자료를 올렸습니다');
                   _load();
@@ -347,8 +340,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
               ),
             );
           },
-        );
-      },
+        ),
     );
   }
 

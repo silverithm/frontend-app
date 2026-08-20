@@ -865,6 +865,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
+          tooltip: '닫기',
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop({'status': 'cancel'}),
         ),

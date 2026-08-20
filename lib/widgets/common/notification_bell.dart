@@ -39,6 +39,7 @@ class NotificationBell extends StatelessWidget {
               ),
             ),
             child: IconButton(
+              tooltip: '알림',
               icon: Icon(
                 Icons.notifications_outlined,
                 color: iconColor ?? AppSemanticColors.textSecondary,

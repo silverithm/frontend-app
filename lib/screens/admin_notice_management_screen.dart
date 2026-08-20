@@ -90,6 +90,7 @@ class _AdminNoticeManagementScreenState
               elevation: 0,
               actions: [
                 IconButton(
+                  tooltip: '필터',
                   icon: const Icon(Icons.filter_list),
                   onPressed: _showFilterBottomSheet,
                 ),
@@ -108,6 +109,7 @@ class _AdminNoticeManagementScreenState
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
+                  tooltip: '필터',
                   icon: Icon(
                     Icons.filter_list,
                     color: AppSemanticColors.textSecondary,
@@ -198,6 +200,7 @@ class _AdminNoticeManagementScreenState
           prefixIcon: Icon(Icons.search, color: hintColor),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
+                  tooltip: '검색어 지우기',
                   icon: Icon(Icons.clear, color: hintColor),
                   onPressed: () {
                     _searchController.clear();

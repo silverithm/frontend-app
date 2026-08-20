@@ -538,6 +538,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         iconTheme: IconThemeData(color: AppSemanticColors.textPrimary),
         elevation: 0,
         leading: IconButton(
+          tooltip: '뒤로 가기',
           icon: Icon(Icons.arrow_back, color: AppSemanticColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
@@ -2355,6 +2356,7 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
+          tooltip: '닫기',
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),

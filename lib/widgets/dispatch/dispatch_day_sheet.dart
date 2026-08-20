@@ -18,6 +18,9 @@ class DispatchDaySheet extends StatelessWidget {
     required DateTime date,
     required DailyDispatch dispatch,
   }) {
+    // AppBottomSheet.show로 바꾸지 않고 유지: 토큰 스타일(둥근 상단·핸들바)을
+    // 이미 자체로 갖췄고, 목록 길이에 따라 늘어나는 DraggableScrollableSheet가
+    // 필요한데 AppBottomSheet.show는 고정 높이 Container만 지원해서 대체 불가.
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

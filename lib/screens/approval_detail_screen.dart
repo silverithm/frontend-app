@@ -271,6 +271,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
             Container(
               margin: const EdgeInsets.only(right: AppSpacing.space2),
               child: IconButton(
+                tooltip: '결재 삭제',
                 icon: _isDeleting
                     ? SizedBox(
                         width: 20,

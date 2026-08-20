@@ -647,6 +647,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                         ),
                       ),
                       IconButton(
+                        tooltip: '선택한 파일 제거',
                         onPressed: _removeFile,
                         icon: Icon(
                           Icons.close,

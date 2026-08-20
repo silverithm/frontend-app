@@ -13,6 +13,7 @@ import '../utils/admin_utils.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_list_cell.dart';
 import '../utils/document_open.dart';
 import '../widgets/chat/chat_image_viewer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -314,73 +315,66 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                             participant.memberRoleText!,
                         ];
 
-                        return ListTile(
+                        final showAdminBadge =
+                            participant.role == ParticipantRole.admin;
+                        final showRemoveAction =
+                            isRoomAdmin && !isCurrentUser;
+
+                        return SeedListCell(
                           leading: SeedAvatar(
                             name: participant.userName,
                             imageUrl: participant.profileImageUrl,
                             size: SeedAvatarSize.medium,
                           ),
-                          title: Row(
-                            children: [
-                              Text(
-                                participant.userName +
-                                    (isCurrentUser ? ' (나)' : ''),
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textPrimary,
-                                ),
-                              ),
-                              if (participant.role == ParticipantRole.admin)
-                                Container(
-                                  margin: const EdgeInsets.only(
-                                    left: AppSpacing.space2,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.space2,
-                                    vertical: AppSpacing.space1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isAdmin
-                                        ? AppSemanticColors
-                                              .interactiveSecondaryDefault
-                                              .withValues(alpha: 0.1)
-                                        : AppSemanticColors
-                                              .interactivePrimaryDefault
-                                              .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.base,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '방장',
-                                    style: AppTypography.labelSmall.copyWith(
-                                      color: AppSemanticColors
-                                          .interactivePrimaryDefault,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          subtitle: participantMeta.isNotEmpty
-                              ? Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: AppSpacing.space0_5,
-                                  ),
-                                  child: Text(
-                                    participantMeta.join(' • '),
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: AppSemanticColors.textTertiary,
-                                    ),
-                                  ),
-                                )
+                          title: participant.userName +
+                              (isCurrentUser ? ' (나)' : ''),
+                          description: participantMeta.isNotEmpty
+                              ? participantMeta.join(' • ')
                               : null,
-                          trailing: isRoomAdmin && !isCurrentUser
-                              ? IconButton(
-                                  icon: Icon(
-                                    Icons.remove_circle_outline,
-                                    color: AppSemanticColors.statusErrorIcon,
-                                  ),
-                                  onPressed: () =>
-                                      _kickParticipant(participant),
+                          showChevron: false,
+                          trailing: (showAdminBadge || showRemoveAction)
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (showAdminBadge)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.space2,
+                                          vertical: AppSpacing.space1,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isAdmin
+                                              ? AppSemanticColors
+                                                    .interactiveSecondaryDefault
+                                                    .withValues(alpha: 0.1)
+                                              : AppSemanticColors
+                                                    .interactivePrimaryDefault
+                                                    .withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            AppBorderRadius.base,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '방장',
+                                          style: AppTypography.labelSmall
+                                              .copyWith(
+                                            color: AppSemanticColors
+                                                .interactivePrimaryDefault,
+                                          ),
+                                        ),
+                                      ),
+                                    if (showRemoveAction)
+                                      IconButton(
+                                        tooltip: '참가자 내보내기',
+                                        icon: Icon(
+                                          Icons.remove_circle_outline,
+                                          color: AppSemanticColors
+                                              .statusErrorIcon,
+                                        ),
+                                        onPressed: () =>
+                                            _kickParticipant(participant),
+                                      ),
+                                  ],
                                 )
                               : null,
                         );
@@ -450,21 +444,25 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                   itemBuilder: (context, index) {
                     final image = images[index];
                     // 썸네일을 누르면 말풍선과 같은 전체화면 원본 보기
-                    return GestureDetector(
-                      onTap: () => _openMedia(image),
-                      child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      child: Image.network(
-                        image.fileUrl ?? '',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: AppSemanticColors.backgroundTertiary,
-                          child: Icon(
-                            Icons.broken_image,
-                            color: AppSemanticColors.textTertiary,
+                    return Semantics(
+                      button: true,
+                      label: '사진 확대 보기',
+                      child: GestureDetector(
+                        onTap: () => _openMedia(image),
+                        child: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        child: Image.network(
+                          image.fileUrl ?? '',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: AppSemanticColors.backgroundTertiary,
+                            child: Icon(
+                              Icons.broken_image,
+                              color: AppSemanticColors.textTertiary,
+                            ),
                           ),
                         ),
-                      ),
+                        ),
                       ),
                     );
                   },
@@ -487,35 +485,11 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                   itemCount: files.length,
                   itemBuilder: (context, index) {
                     final file = files[index];
-                    return ListTile(
-                      leading: Container(
-                        width: AppSpacing.space10,
-                        height: AppSpacing.space10,
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.backgroundTertiary,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.lg,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.insert_drive_file,
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
-                      title: Text(
-                        file.fileName ?? '파일',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(
-                        _formatFileSize(file.fileSize),
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
+                    return SeedListCell(
+                      leadingIcon: Icons.insert_drive_file,
+                      title: file.fileName ?? '파일',
+                      description: _formatFileSize(file.fileSize),
+                      showChevron: false,
                       onTap: () => _openMedia(file),
                     );
                   },

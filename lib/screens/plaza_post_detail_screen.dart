@@ -141,10 +141,12 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
         actions: [
           if (post?['isMine'] == true) ...[
             IconButton(
+              tooltip: '수정',
               icon: const Icon(Icons.edit_outlined),
               onPressed: _editPost,
             ),
             IconButton(
+              tooltip: '삭제',
               icon: const Icon(Icons.delete_outline),
               onPressed: _deletePost,
             ),
@@ -300,17 +302,24 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                                           ),
                                         ),
                                         if (comment['isMine'] == true)
-                                          GestureDetector(
-                                            onTap: () {
-                                              final commentId = comment['id'];
-                                              if (commentId is int) {
-                                                _deleteComment(commentId);
-                                              }
-                                            },
-                                            child: Icon(Icons.close,
-                                                size: 14,
-                                                color: AppSemanticColors
-                                                    .textTertiary),
+                                          Semantics(
+                                            button: true,
+                                            label: '댓글 삭제',
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                final commentId = comment['id'];
+                                                if (commentId is int) {
+                                                  _deleteComment(commentId);
+                                                }
+                                              },
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(12),
+                                                child: Icon(Icons.close,
+                                                    size: 14,
+                                                    color: AppSemanticColors
+                                                        .textTertiary),
+                                              ),
+                                            ),
                                           ),
                                       ],
                                     ),
@@ -367,6 +376,7 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                               ),
                             ),
                             IconButton(
+                              tooltip: '댓글 등록',
                               icon: Icon(Icons.send,
                                   color: AppSemanticColors
                                       .interactivePrimaryDefault),

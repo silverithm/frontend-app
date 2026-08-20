@@ -188,6 +188,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
+                      tooltip: '이전 달',
                       onPressed: _previousMonth,
                       icon: Icon(
                         Icons.chevron_left,
@@ -209,6 +210,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                     ),
 
                     IconButton(
+                      tooltip: '다음 달',
                       onPressed: _nextMonth,
                       icon: Icon(
                         Icons.chevron_right,

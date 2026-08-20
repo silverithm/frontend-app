@@ -42,6 +42,7 @@ class MessageInput extends StatelessWidget {
           // 파일 첨부 버튼
           if (onAttachment != null)
             IconButton(
+              tooltip: '파일 첨부',
               onPressed: onAttachment,
               icon: Icon(
                 Icons.add_circle_outline,
@@ -79,19 +80,23 @@ class MessageInput extends StatelessWidget {
           const SizedBox(width: AppSpacing.space2),
 
           // 전송 버튼
-          GestureDetector(
-            onTap: onSend,
-            child: Container(
-              width: AppSpacing.space10,
-              height: AppSpacing.space10,
-              decoration: BoxDecoration(
-                color: AppSemanticColors.interactivePrimaryDefault,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.send_rounded,
-                color: AppSemanticColors.textInverse,
-                size: AppSpacing.space5,
+          Semantics(
+            button: true,
+            label: '메시지 전송',
+            child: GestureDetector(
+              onTap: onSend,
+              child: Container(
+                width: AppSpacing.space10,
+                height: AppSpacing.space10,
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.interactivePrimaryDefault,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.send_rounded,
+                  color: AppSemanticColors.textInverse,
+                  size: AppSpacing.space5,
+                ),
               ),
             ),
           ),
