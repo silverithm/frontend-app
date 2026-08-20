@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../models/fcm_token_update_dto.dart';
 import '../screens/my_vacation_screen.dart';
 import '../screens/approval_hub_screen.dart';
+import '../screens/admin_user_management_screen.dart';
 import '../screens/notice_detail_screen.dart';
 import '../screens/chat_room_list_screen.dart';
 import '../screens/calendar_screen.dart';
@@ -490,6 +491,14 @@ class FCMService {
         MaterialPageRoute(
           builder: (_) => CalendarScreen(initialScheduleDate: date),
         ),
+      );
+    } else if (type == 'member_join_requested' || type == 'member_withdrawal') {
+      // 가입 요청·탈퇴는 관리자에게 오는 알림 — 예전엔 매핑이 없어 눌러도
+      // 아무 데도 안 갔다. 회원관리(가입 승인 목록)로 보낸다.
+      // (member_join_approved/rejected는 신청자 본인에게 가는 알림이라
+      // 특정 화면 없이 앱만 연다)
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const AdminUserManagementScreen()),
       );
     }
   }
