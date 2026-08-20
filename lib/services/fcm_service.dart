@@ -9,7 +9,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../services/api_service.dart';
 import '../models/fcm_token_update_dto.dart';
 import '../screens/my_vacation_screen.dart';
-import '../screens/approval_list_screen.dart';
+import '../screens/approval_hub_screen.dart';
 import '../screens/notice_detail_screen.dart';
 import '../screens/chat_room_list_screen.dart';
 import '../screens/calendar_screen.dart';
@@ -464,7 +464,7 @@ class FCMService {
       );
     } else if (type == 'approval') {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ApprovalListScreen()),
+        MaterialPageRoute(builder: (_) => const ApprovalHubScreen(initialTab: 1)),
       );
     } else if (type == 'notice') {
       final noticeId = int.tryParse(data['noticeId']?.toString() ?? '');

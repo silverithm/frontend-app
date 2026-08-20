@@ -187,9 +187,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                         unselectedLabelStyle: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.normal,
                         ),
+                        // 웹 관리자 화면과 같은 이름 — 근무조정(휴무)·월간일정(일정)
                         tabs: const [
-                          Tab(text: '휴무 달력'),
-                          Tab(text: '일정 달력'),
+                          Tab(text: '근무조정'),
+                          Tab(text: '월간일정'),
                         ],
                       ),
                     );

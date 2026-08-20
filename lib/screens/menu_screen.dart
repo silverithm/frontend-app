@@ -11,6 +11,8 @@ import '../widgets/seed/seed_list_cell.dart';
 import 'admin_company_settings_screen.dart';
 import 'admin_notice_management_screen.dart';
 import 'admin_user_management_screen.dart';
+import 'admin_vacation_management_screen.dart';
+import 'admin_approval_template_screen.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 import 'company_library_screen.dart';
 import 'dispatch_screen.dart';
@@ -142,6 +144,21 @@ class MenuScreen extends StatelessWidget {
                   description: '가입 승인 · 직원 목록',
                   onTap: () =>
                       _push(context, const AdminUserManagementScreen()),
+                ),
+                // 전자결재 탭이 신청/관리 둘로 단순해지면서(2026-08 개편)
+                // 예전 승인함의 휴무 승인·양식 관리는 여기로 옮겼다
+                _MenuItem(
+                  icon: Icons.beach_access_outlined,
+                  label: '휴무 승인',
+                  description: '직원 휴무 신청 승인·반려',
+                  onTap: () =>
+                      _push(context, const AdminVacationManagementScreen()),
+                ),
+                _MenuItem(
+                  icon: Icons.description_outlined,
+                  label: '결재 양식 관리',
+                  onTap: () =>
+                      _push(context, const AdminApprovalTemplateScreen()),
                 ),
                 _MenuItem(
                   icon: Icons.event_busy_outlined,

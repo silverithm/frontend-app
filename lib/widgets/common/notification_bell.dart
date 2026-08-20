@@ -5,7 +5,7 @@ import '../../providers/notification_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
-import '../../screens/approval_list_screen.dart';
+import '../../screens/approval_hub_screen.dart';
 import '../../screens/chat_room_list_screen.dart';
 import '../../screens/my_vacation_screen.dart';
 import '../../screens/notice_list_screen.dart';
@@ -283,7 +283,7 @@ class _NotificationBottomSheet extends StatelessWidget {
     if (type.startsWith('vacation')) {
       target = const MyVacationScreen();
     } else if (type.startsWith('approval')) {
-      target = const ApprovalListScreen();
+      target = const ApprovalHubScreen(initialTab: 1);
     } else if (type.startsWith('notice')) {
       target = const NoticeListScreen();
     } else if (type.startsWith('chat')) {

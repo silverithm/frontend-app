@@ -14,8 +14,7 @@ import '../utils/admin_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import 'admin_unified_approval_screen.dart';
-import 'approval_list_screen.dart';
+import 'approval_hub_screen.dart';
 import 'calendar_screen.dart';
 import 'chat_room_list_screen.dart';
 import 'home_screen.dart';
@@ -299,7 +298,7 @@ class _MainScreenState extends State<MainScreen>
       HomeScreen(onNavigateToTab: _onItemTapped),
       const ChatRoomListScreen(),
       const CalendarScreen(),
-      isAdmin ? const AdminUnifiedApprovalScreen() : const ApprovalListScreen(),
+      const ApprovalHubScreen(),
       const MenuScreen(),
     ];
   }

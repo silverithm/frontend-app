@@ -227,9 +227,17 @@ class _AdminApprovalManagementScreenState
     }
   }
 
+  /// 기관 관리자 여부 — 일괄 처리·legacy 문서 직접 승인은 관리자 전용.
+  /// 이 화면은 직원 문서함(결재선·열람 대상 문서)으로도 쓰이므로
+  /// 관리자 전용 UI는 전부 이 값으로 가드한다.
+  bool get _canManage =>
+      AdminUtils.hasAdminPermission(context.read<AuthProvider>().currentUser);
+
   /// 결재선이 있으면 내 차례일 때만 처리 가능
   bool _isMyTurn(ApprovalRequest request) {
-    if (request.approvalLine.isEmpty) return true; // legacy 단일 승인
+    // legacy 단일 승인 문서는 관리자(또는 결재 권한자)만 처리한다 —
+    // 직원 문서함에서 노출되면 서버 403만 만나게 된다
+    if (request.approvalLine.isEmpty) return _canManage;
     final currentStep = request.currentStep;
     if (currentStep == null) return false;
     final myId = context.read<AuthProvider>().currentUser?.id ?? '';
@@ -426,8 +434,10 @@ class _AdminApprovalManagementScreenState
                 child: _buildFilterSection(),
               ),
 
-              // 일괄 처리 버튼
-              if (_statusFilter == 'pending' && filteredRequests.isNotEmpty)
+              // 일괄 처리 버튼 — 기관 관리자 전용
+              if (_canManage &&
+                  _statusFilter == 'pending' &&
+                  filteredRequests.isNotEmpty)
                 SliverToBoxAdapter(
                   child: _buildBulkActionSection(filteredRequests),
                 ),
@@ -731,7 +741,7 @@ class _AdminApprovalManagementScreenState
             children: [
               Row(
                 children: [
-                  if (isPending)
+                  if (_canManage && isPending)
                     SizedBox(
                       width: 24,
                       height: 24,
@@ -752,7 +762,8 @@ class _AdminApprovalManagementScreenState
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
-                  if (isPending) const SizedBox(width: AppSpacing.space3),
+                  if (_canManage && isPending)
+                    const SizedBox(width: AppSpacing.space3),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

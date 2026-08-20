@@ -23,8 +23,7 @@ import '../widgets/common/notification_bell.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/today_schedule_dialog.dart';
 import 'admin_notice_management_screen.dart';
-import 'admin_unified_approval_screen.dart';
-import 'approval_list_screen.dart';
+import 'approval_hub_screen.dart';
 import 'main_screen.dart' show MainTabs;
 import 'notice_detail_screen.dart';
 import 'notice_list_screen.dart';
@@ -264,11 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => isAdmin
-            ? const AdminUnifiedApprovalScreen()
-            : const ApprovalListScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const ApprovalHubScreen()),
     );
   }
 
