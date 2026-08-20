@@ -154,7 +154,10 @@ class _AdminApprovalManagementScreenState
         AppSnackBar.showError(context, message: '데이터 로드 실패: $e');
       }
     } finally {
-      setState(() => _isLoading = false);
+      // 로드 중 화면을 벗어나면(탭 전환 등) dispose 뒤 setState로 크래시한다
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
