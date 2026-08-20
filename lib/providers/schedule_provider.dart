@@ -208,6 +208,103 @@ class ScheduleProvider with ChangeNotifier {
     }
   }
 
+  /// 할 일(담당자 업무) 완료 토글.
+  ///
+  /// 서버는 바뀐 할 일 하나만 돌려주고 부모 일정은 함께 내려주지 않는다. 할 일이 전부
+  /// 끝나면 일정도 자동 완료되는 서버 규칙(schedule_service의 syncScheduleCompletion)을
+  /// 웹 월간일정과 같은 방식으로 로컬에서 그대로 계산해 반영한다 — 다시 불러오면
+  /// 체크 한 번에 목록이 통째로 깜빡인다.
+  ///
+  /// 담당자 본인이나 관리자가 아니면 서버가 거절한다. 그 이유를 [error]에 담아 화면이
+  /// 알릴 수 있게 한다.
+  Future<bool> toggleTaskCompletion({
+    required int scheduleId,
+    required int taskId,
+    required bool completed,
+  }) async {
+    try {
+      _error = null;
+      final response = await _apiService.updateScheduleTaskCompletion(
+        scheduleId: scheduleId,
+        taskId: taskId,
+        completed: completed,
+      );
+
+      final index = _schedules.indexWhere((s) => s.id == scheduleId);
+      if (index >= 0) {
+        final schedule = _schedules[index];
+        final tasks = List<ScheduleTask>.from(schedule.tasks);
+        final taskIndex = tasks.indexWhere((t) => t.id == taskId);
+
+        if (taskIndex >= 0) {
+          final updatedJson = response['task'];
+          if (updatedJson is Map<String, dynamic>) {
+            tasks[taskIndex] = ScheduleTask.fromJson(updatedJson);
+          } else {
+            final old = tasks[taskIndex];
+            tasks[taskIndex] = ScheduleTask(
+              id: old.id,
+              scheduleId: old.scheduleId,
+              content: old.content,
+              assigneeMemberId: old.assigneeMemberId,
+              assigneeName: old.assigneeName,
+              isCompleted: completed,
+              completedAt: old.completedAt,
+              completedByName: old.completedByName,
+              scheduleTitle: old.scheduleTitle,
+              scheduleStartDate: old.scheduleStartDate,
+            );
+          }
+
+          final completedCount = tasks.where((t) => t.isCompleted).length;
+          // 할 일이 하나라도 있으면 전부 완료됐을 때만 일정이 완료 상태다 (서버 로직과 동일)
+          final newIsCompleted =
+              tasks.isNotEmpty ? completedCount == tasks.length : schedule.isCompleted;
+
+          _schedules[index] = Schedule(
+            id: schedule.id,
+            title: schedule.title,
+            content: schedule.content,
+            category: schedule.category,
+            categoryDisplayName: schedule.categoryDisplayName,
+            label: schedule.label,
+            color: schedule.color,
+            location: schedule.location,
+            startDate: schedule.startDate,
+            startTime: schedule.startTime,
+            endDate: schedule.endDate,
+            endTime: schedule.endTime,
+            isAllDay: schedule.isAllDay,
+            sendNotification: schedule.sendNotification,
+            participants: schedule.participants,
+            isCompleted: newIsCompleted,
+            completedAt: schedule.completedAt,
+            completedByName: schedule.completedByName,
+            managerId: schedule.managerId,
+            managerName: schedule.managerName,
+            tasks: tasks,
+            taskTotal: tasks.length,
+            taskCompleted: completedCount,
+            authorId: schedule.authorId,
+            authorName: schedule.authorName,
+            companyId: schedule.companyId,
+            createdAt: schedule.createdAt,
+            updatedAt: schedule.updatedAt,
+          );
+          _groupSchedulesByDate();
+        }
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('[ScheduleProvider] 할 일 완료 변경 에러: $e');
+      _error = _completionErrorMessage(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// 서버가 준 거절 사유를 그대로 보여준다 ("담당자 또는 관리자만 ...").
   /// 사유를 못 읽으면 일반 문구로 대신한다.
   String _completionErrorMessage(Object error) {

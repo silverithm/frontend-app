@@ -363,6 +363,40 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
 
             const SizedBox(height: AppSpacing.space4),
 
+            // 임시저장 안내 — 앱에서는 이어쓰기를 구현하지 않으므로 웹으로 안내만 한다
+            if (_approval.status == ApprovalStatus.draft) ...[
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.space4),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.statusInfoBackground,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  border: Border.all(
+                    color: AppSemanticColors.statusInfoBorder,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppSemanticColors.statusInfoIcon,
+                    ),
+                    const SizedBox(width: AppSpacing.space2),
+                    Expanded(
+                      child: Text(
+                        '이 문서는 아직 상신되지 않은 임시저장 상태입니다. 웹에서 이어서 작성할 수 있습니다.',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.statusInfoText,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space4),
+            ],
+
             // 공문(표준 기안문) 뷰
             OfficialDocumentView(
               approval: _approval,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/vacation_request.dart';
+import '../models/vacation_kind.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
 import 'package:intl/intl.dart';
@@ -35,10 +36,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
-  VacationType _selectedType = VacationType.personal;
-  VacationDuration _selectedDuration = VacationDuration.fullDay;
-  VacationDetailType _detailType = VacationDetailType.personal; // 연차 미사용 세부 유형
-  bool _isVacationUsed = false; // 연차 사용 여부
+  // 웹 VACATION_KIND_OPTIONS·앱 관리자 폼(AdminVacationAddDialog)과 같은 6종 단일 선택.
+  // 유형(일반/필수/대체)과 기간(연차/반차)을 한 목록에서 함께 고르므로
+  // '필수 반차' 같은 조합이 생기지 않는다.
+  VacationKind _selectedKind = VacationKind.regular;
+  VacationDetailType _detailType = VacationDetailType.personal; // 연차 계열이 아닐 때만 쓰는 세부 유형
   bool _isSubmitting = false;
 
   // 선택 날짜의 휴무 현황 — 제한 인원이 보여야 겹치기 전에 조정할 수 있다
@@ -352,9 +354,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
               : authProvider.currentUser!.role,
         ),
         date: widget.selectedDate,
-        type: _selectedType,
-        duration: _selectedDuration,
-        isVacationUsed: _isVacationUsed,
+        type: _typeForSubmit(_selectedKind),
+        duration: _durationForSubmit(_selectedKind),
+        isVacationUsed: _selectedKind.useAnnualLeave,
         vacationDetailType: _detailType.serverValue,
         reason: _reasonController.text.trim().isNotEmpty
             ? _reasonController.text.trim()
@@ -366,7 +368,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       if (success && mounted) {
         // Analytics 휴무 신청 이벤트 기록
         await AnalyticsService().logVacationRequest(
-          vacationType: _selectedType.toString().split('.').last,
+          vacationType: _selectedKind.name,
           startDate: widget.selectedDate.toIso8601String().split('T')[0],
           endDate: widget.selectedDate.toIso8601String().split('T')[0],
         );
@@ -374,9 +376,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         Navigator.of(context).pop();
         AppSnackBar.showSuccess(
           context,
-          message: _isVacationUsed
-              ? '${_getDurationDisplayText(_selectedDuration)} 신청이 완료되었습니다'
-              : '미사용 휴무 신청이 완료되었습니다',
+          message: '${_selectedKind.label} 신청이 완료되었습니다',
         );
         widget.onRequestSubmitted?.call();
       } else if (mounted) {
@@ -410,17 +410,64 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     return '${date.year}년 ${date.month}월 ${date.day}일 ($weekday)';
   }
 
-  String _getDurationDisplayText(VacationDuration duration) {
-    switch (duration) {
-      case VacationDuration.unused:
-        return '미사용';
-      case VacationDuration.fullDay:
-        return '연차';
-      case VacationDuration.halfDayAm:
-        return '오전 반차';
-      case VacationDuration.halfDayPm:
-        return '오후 반차';
+  /// 화면에서 고른 한 가지 종류(VacationKind)를 서버 필드(type/duration)로 되돌린다.
+  VacationType _typeForSubmit(VacationKind kind) {
+    switch (kind.serverType) {
+      case 'mandatory':
+        return VacationType.mandatory;
+      case 'substitute':
+        return VacationType.substitute;
+      default:
+        return VacationType.personal;
     }
+  }
+
+  VacationDuration _durationForSubmit(VacationKind kind) {
+    switch (kind.serverDuration) {
+      case 'FULL_DAY':
+        return VacationDuration.fullDay;
+      case 'HALF_DAY_AM':
+        return VacationDuration.halfDayAm;
+      case 'HALF_DAY_PM':
+        return VacationDuration.halfDayPm;
+      default:
+        return VacationDuration.unused;
+    }
+  }
+
+  /// 휴무 종류 하나를 고르는 칩. Wrap 안에 놓이므로 Row 전용인 [_buildOptionButton]과 달리
+  /// 고유 폭을 갖는다 (아래 세부 유형 칩과 같은 스타일).
+  Widget _buildKindOption(VacationKind kind) {
+    final isSelected = _selectedKind == kind;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedKind = kind;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space3,
+          vertical: AppSpacing.space2,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppSemanticColors.interactivePrimaryDefault
+              : AppSemanticColors.backgroundTertiary,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          kind.label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected
+                ? AppSemanticColors.textInverse
+                : AppSemanticColors.textSecondary,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildOptionButton({
@@ -706,7 +753,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // 연차 사용 여부 선택 (미사용/사용)
+                            // 휴무 종류 — 웹 관리자(VACATION_KIND_OPTIONS)·앱 관리자 폼과 같은
+                            // 6종 단일 선택. 유형(일반·필수·대체)과 기간(연차·반차)을 한 목록에서
+                            // 함께 고르므로 '필수 반차' 같은 조합이 생기지 않는다.
                             Container(
                               padding: const EdgeInsets.all(AppSpacing.space5),
                               decoration: BoxDecoration(
@@ -722,7 +771,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '연차 사용 여부',
+                                    '휴무 종류',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -732,243 +781,28 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   ),
                                   const SizedBox(height: AppSpacing.space3),
 
-                                  // 연차 사용 여부 선택
-                                  Row(
-                                    children: [
-                                      // 미사용
-                                      _buildOptionButton(
-                                        text: '미사용',
-                                        isSelected: !_isVacationUsed,
-                                        onTap: () {
-                                          setState(() {
-                                            _isVacationUsed = false;
-                                          });
-                                        },
-                                        selectedColor: AppSemanticColors
-                                            .statusWarningBorder,
-                                        selectedTextColor:
-                                            AppSemanticColors.statusWarningText,
-                                      ),
-
-                                      const SizedBox(width: AppSpacing.space2),
-
-                                      // 사용
-                                      _buildOptionButton(
-                                        text: '사용',
-                                        isSelected: _isVacationUsed,
-                                        onTap: () {
-                                          setState(() {
-                                            _isVacationUsed = true;
-                                          });
-                                        },
-                                        selectedColor: AppSemanticColors
-                                            .interactivePrimaryActive,
-                                        selectedTextColor: AppSemanticColors
-                                            .interactivePrimaryDefault,
-                                      ),
-                                    ],
+                                  Wrap(
+                                    spacing: AppSpacing.space2,
+                                    runSpacing: AppSpacing.space2,
+                                    children: VacationKind.values
+                                        .map(_buildKindOption)
+                                        .toList(),
                                   ),
-                                ],
-                              ),
-                            ),
 
-                            const SizedBox(height: AppSpacing.space4),
-
-                            // 연차 유형 선택 (사용 선택시에만 표시)
-                            if (_isVacationUsed)
-                              Container(
-                                padding: const EdgeInsets.all(
-                                  AppSpacing.space5,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.xl2,
-                                  ),
-                                  border: Border.all(
-                                    color: AppSemanticColors.borderSubtle,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '연차 유형',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppSemanticColors.textPrimary,
-                                        letterSpacing: -0.025,
-                                      ),
-                                    ),
-                                    const SizedBox(height: AppSpacing.space3),
-
-                                    // 연차 유형 선택 버튼들
-                                    Row(
-                                      children: [
-                                        // 연차
-                                        _buildOptionButton(
-                                          text: '연차',
-                                          isSelected:
-                                              _selectedDuration ==
-                                              VacationDuration.fullDay,
-                                          onTap: () {
-                                            setState(() {
-                                              _selectedDuration =
-                                                  VacationDuration.fullDay;
-                                            });
-                                          },
-                                          selectedColor: AppSemanticColors
-                                              .statusSuccessBorder,
-                                          selectedTextColor: AppSemanticColors
-                                              .statusSuccessIcon,
-                                        ),
-
-                                        const SizedBox(
-                                          width: AppSpacing.space2,
-                                        ),
-
-                                        // 오전 반차
-                                        _buildOptionButton(
-                                          text: '오전 반차',
-                                          isSelected:
-                                              _selectedDuration ==
-                                              VacationDuration.halfDayAm,
-                                          onTap: () {
-                                            setState(() {
-                                              _selectedDuration =
-                                                  VacationDuration.halfDayAm;
-                                            });
-                                          },
-                                          selectedColor: AppSemanticColors
-                                              .statusWarningBorder,
-                                          selectedTextColor: AppSemanticColors
-                                              .statusWarningText,
-                                        ),
-
-                                        const SizedBox(
-                                          width: AppSpacing.space2,
-                                        ),
-
-                                        // 오후 반차
-                                        _buildOptionButton(
-                                          text: '오후 반차',
-                                          isSelected:
-                                              _selectedDuration ==
-                                              VacationDuration.halfDayPm,
-                                          onTap: () {
-                                            setState(() {
-                                              _selectedDuration =
-                                                  VacationDuration.halfDayPm;
-                                            });
-                                          },
-                                          selectedColor: AppSemanticColors
-                                              .interactivePrimaryActive,
-                                          selectedTextColor: AppSemanticColors
-                                              .interactivePrimaryDefault,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                            if (_isVacationUsed)
-                              const SizedBox(height: AppSpacing.space4),
-
-                            // 휴무 유형 선택
-                            Container(
-                              padding: const EdgeInsets.all(AppSpacing.space5),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl2,
-                                ),
-                                border: Border.all(
-                                  color: AppSemanticColors.borderSubtle,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                                  const SizedBox(height: AppSpacing.space2),
                                   Text(
-                                    '휴무 유형',
+                                    _selectedKind.description,
                                     style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppSemanticColors.textPrimary,
-                                      letterSpacing: -0.025,
+                                      fontSize: 12,
+                                      color: AppSemanticColors.textSecondary,
                                     ),
                                   ),
-                                  const SizedBox(height: AppSpacing.space3),
 
-                                  // 한 줄로 배치
-                                  Row(
-                                    children: [
-                                      // 일반 휴무
-                                      _buildOptionButton(
-                                        text: '일반',
-                                        isSelected:
-                                            _selectedType ==
-                                            VacationType.personal,
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedType =
-                                                VacationType.personal;
-                                          });
-                                        },
-                                        selectedColor: AppSemanticColors
-                                            .interactivePrimaryActive,
-                                        selectedTextColor: AppSemanticColors
-                                            .interactivePrimaryDefault,
-                                      ),
-
-                                      const SizedBox(width: AppSpacing.space3),
-
-                                      // 필수 휴무
-                                      _buildOptionButton(
-                                        text: '필수',
-                                        isSelected:
-                                            _selectedType ==
-                                            VacationType.mandatory,
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedType =
-                                                VacationType.mandatory;
-                                          });
-                                        },
-                                        selectedColor:
-                                            AppSemanticColors.statusErrorBorder,
-                                        selectedTextColor:
-                                            AppSemanticColors.statusErrorIcon,
-                                      ),
-
-                                      const SizedBox(width: AppSpacing.space3),
-
-                                      // 대체휴무 (연차 차감 없이 근무일과 맞바꾸는 휴무)
-                                      _buildOptionButton(
-                                        text: '대체',
-                                        isSelected:
-                                            _selectedType ==
-                                            VacationType.substitute,
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedType =
-                                                VacationType.substitute;
-                                          });
-                                        },
-                                        selectedColor:
-                                            AppSemanticColors.statusInfoBorder,
-                                        selectedTextColor:
-                                            AppSemanticColors.statusInfoIcon,
-                                      ),
-                                    ],
-                                  ),
-
-                                  // 연차 미사용 세부 유형 (대체휴무는 자동으로 substitute)
-                                  if (!_isVacationUsed &&
-                                      _selectedType !=
-                                          VacationType.substitute) ...[
+                                  // 연차 계열이 아닌 종류(일반/필수/대체)를 골랐을 때만
+                                  // 세부 유형을 이어서 고른다 (대체휴무는 자동으로 substitute)
+                                  if (_selectedKind == VacationKind.regular ||
+                                      _selectedKind ==
+                                          VacationKind.mandatory) ...[
                                     const SizedBox(height: AppSpacing.space4),
                                     Text(
                                       '세부 유형',
@@ -1071,9 +905,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                           vertical: AppSpacing.space1,
                                         ),
                                         decoration: BoxDecoration(
-                                          color:
-                                              _selectedType ==
-                                                  VacationType.mandatory
+                                          color: _selectedKind.reasonRequired
                                               ? AppSemanticColors
                                                     .statusErrorBackground
                                               : AppSemanticColors
@@ -1083,15 +915,12 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                           ),
                                         ),
                                         child: Text(
-                                          _selectedType ==
-                                                  VacationType.mandatory
+                                          _selectedKind.reasonRequired
                                               ? '필수'
                                               : '선택사항',
                                           style: TextStyle(
                                             fontSize: 10,
-                                            color:
-                                                _selectedType ==
-                                                    VacationType.mandatory
+                                            color: _selectedKind.reasonRequired
                                                 ? AppSemanticColors
                                                       .statusErrorIcon
                                                 : AppSemanticColors
@@ -1109,13 +938,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                     controller: _reasonController,
                                     maxLines: 5,
                                     size: SeedTextFieldSize.large,
-                                    placeholder:
-                                        _selectedType == VacationType.mandatory
+                                    placeholder: _selectedKind.reasonRequired
                                         ? '필수 휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 정기 교육 참석\n• 건강검진\n• 회사 행사 등'
                                         : '휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 개인 사정\n• 병원 진료\n• 가족 행사 등',
                                     validator: (value) {
-                                      if (_selectedType ==
-                                              VacationType.mandatory &&
+                                      if (_selectedKind.reasonRequired &&
                                           (value == null ||
                                               value.trim().isEmpty)) {
                                         return '필수 휴무는 사유를 반드시 입력해주세요';

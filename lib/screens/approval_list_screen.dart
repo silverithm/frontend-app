@@ -295,6 +295,9 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                 }
 
                 // 상태별로 그룹화
+                final draftRequests = requests
+                    .where((r) => r.status == ApprovalStatus.draft)
+                    .toList();
                 final pendingRequests = requests
                     .where((r) => r.status == ApprovalStatus.pending)
                     .toList();
@@ -341,6 +344,21 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                               IntrinsicHeight(
                                 child: Row(
                                   children: [
+                                    if (draftRequests.isNotEmpty) ...[
+                                      Expanded(
+                                        child: _buildStatusCard(
+                                          '임시저장',
+                                          draftRequests.length,
+                                          AppSemanticColors.textSecondary,
+                                          AppSemanticColors.backgroundTertiary,
+                                        ),
+                                      ),
+                                      VerticalDivider(
+                                        width: AppSpacing.space4,
+                                        thickness: 1,
+                                        color: AppSemanticColors.borderSubtle,
+                                      ),
+                                    ],
                                     Expanded(
                                       child: _buildStatusCard(
                                         '대기',
@@ -385,6 +403,58 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                     ),
 
                     // 결재 목록
+                    // 임시저장 — 웹에서 상신 전 저장한 문서. 승인 대기와 혼동되지 않도록 별도 섹션.
+                    if (draftRequests.isNotEmpty) ...[
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildSectionHeader(
+                          '임시저장',
+                          draftRequests.length,
+                          AppSemanticColors.textSecondary,
+                          AppSemanticColors.backgroundTertiary,
+                        ),
+                      ),
+                      ...draftRequests.asMap().entries.map(
+                        (entry) => AnimatedBuilder(
+                          animation: _animationController,
+                          builder: (context, child) {
+                            final delay = entry.key * 0.1;
+                            final animation =
+                                Tween<double>(begin: 0.0, end: 1.0).animate(
+                              CurvedAnimation(
+                                parent: _animationController,
+                                curve: Interval(
+                                  delay,
+                                  delay + 0.3,
+                                  curve: Curves.easeOutBack,
+                                ),
+                              ),
+                            );
+
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.3, 0),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.space4,
+                                  ),
+                                  child: ApprovalCard(
+                                    approval: entry.value,
+                                    onTap: () => _navigateToDetail(entry.value),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                    ],
+
                     if (pendingRequests.isNotEmpty) ...[
                       SlideTransition(
                         position: _slideAnimation,
@@ -399,7 +469,8 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                         (entry) => AnimatedBuilder(
                           animation: _animationController,
                           builder: (context, child) {
-                            final delay = entry.key * 0.1;
+                            final delay =
+                                (draftRequests.length + entry.key) * 0.1;
                             final animation =
                                 Tween<double>(begin: 0.0, end: 1.0).animate(
                               CurvedAnimation(
@@ -451,7 +522,8 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                           animation: _animationController,
                           builder: (context, child) {
                             final delay =
-                                (pendingRequests.length + entry.key) * 0.1;
+                                (draftRequests.length + pendingRequests.length + entry.key) *
+                                    0.1;
                             final animation =
                                 Tween<double>(begin: 0.0, end: 1.0).animate(
                               CurvedAnimation(
@@ -502,7 +574,8 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                         (entry) => AnimatedBuilder(
                           animation: _animationController,
                           builder: (context, child) {
-                            final delay = (pendingRequests.length +
+                            final delay = (draftRequests.length +
+                                    pendingRequests.length +
                                     approvedRequests.length +
                                     entry.key) *
                                 0.1;

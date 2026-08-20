@@ -522,18 +522,90 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     }
 
     if (route == null) {
+      // 웹(handleAddRoute)과 같은 규칙: 노선을 만들려면 운전자가 최소 1명 있어야 한다.
+      // 여기서 주운전자를 바로 고르게 해서, 아무도 안 고른 빈 노선이 만들어지는
+      // 걸 막는다.
+      final driver = await _pickNewRouteMainDriver(provider);
+      if (driver == null) return;
+
       provider.addRoute(
         DispatchRoute(
           id: _newId(),
           name: name,
           type: type,
-          // 새 노선은 주운전자 자리를 하나 비워둔 채 시작한다
-          routeDrivers: const [RouteDriver()],
+          routeDrivers: [
+            RouteDriver(driverId: driver.id, driverName: driver.name),
+          ],
         ),
       );
     } else {
       provider.updateRoute(route.id, (r) => r.copyWith(name: name, type: type));
     }
+  }
+
+  /// 새 노선의 주운전자를 고른다. 취소하거나 아무도 안 고르면 null을 돌려주고,
+  /// 웹 handleAddRoute와 같은 문구("최소 1명의 운전자를 입력해주세요.")로 안내한다.
+  Future<User?> _pickNewRouteMainDriver(DispatchProvider provider) async {
+    final members = context.read<AdminProvider>().companyMembers;
+    if (members.isEmpty) {
+      if (mounted) {
+        AppSnackBar.showInfo(context, message: '직원 목록을 불러오는 중입니다');
+      }
+      return null;
+    }
+
+    final picked = await AppBottomSheet.show<User>(
+      context,
+      child: Builder(
+        builder: (sheetContext) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.space4),
+                child: Text(
+                  '주운전자 선택',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                    fontWeight: AppTypography.fontWeightSemibold,
+                  ),
+                ),
+              ),
+              ...members.map(
+                (member) => SeedListCell(
+                  title: member.name,
+                  description: member.email.isEmpty ? null : member.email,
+                  showChevron: false,
+                  onTap: () => Navigator.of(sheetContext).pop(member),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (picked == null) {
+      if (mounted) {
+        AppSnackBar.showError(context, message: '최소 1명의 운전자를 입력해주세요.');
+      }
+      return null;
+    }
+
+    // 주운전자는 두 노선을 동시에 몰 수 없다 (부운전자 배정과 같은 규칙).
+    final conflict = provider.primaryDriverConflict(picked.name);
+    if (conflict != null) {
+      if (mounted) {
+        AppSnackBar.showError(
+          context,
+          message:
+              '${picked.name} 선생님은 이미 ${conflict.name}(${conflict.type}) 주운전자입니다',
+        );
+      }
+      return null;
+    }
+
+    return picked;
   }
 
   Future<void> _confirmDeleteRoute(
@@ -730,13 +802,16 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       return;
     }
 
-    // 이미 이 노선에 탄 분은 후보에서 뺀다
-    final assigned = provider
+    // 이미 이 노선에 탄 분은 후보에서 뺀다 — 이름이 아니라 elderlyId로 판정한다.
+    // 이름으로 비교하면 동명이인 어르신을 같은 노선에 못 태운다(관리자 웹의
+    // assignedElderlyIds와 같은 기준).
+    final assignedElderlyIds = provider
         .seniorsOfRoute(route.id)
-        .map((s) => s.name)
+        .where((s) => s.elderlyId != null)
+        .map((s) => s.elderlyId)
         .toSet();
     final candidates = _elders
-        .where((e) => !assigned.contains(e.name))
+        .where((e) => e.id == null || !assignedElderlyIds.contains(e.id))
         .toList();
 
     final picked = await AppBottomSheet.show<_ElderOption>(

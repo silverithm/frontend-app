@@ -51,6 +51,8 @@ class _CalendarScreenState extends State<CalendarScreen>
   // 일정 달력용 상태
   DateTime _scheduleCurrentDate = DateTime.now();
   DateTime? _scheduleSelectedDate;
+  // 할 일이 있는 일정 항목 중 체크리스트를 펼쳐 둔 것들 (별도 상세 화면이 없어 항목 확장으로 대신한다)
+  final Set<int> _expandedTaskScheduleIds = {};
 
   @override
   void initState() {
@@ -667,6 +669,31 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
+  /**
+   * 할 일(담당자 업무) 완료를 토글한다.
+   *
+   * 담당자 본인 또는 관리자만 가능 — 일정 수행완료 토글과 같은 이유로 화면에서 미리
+   * 막지 않고 서버 거절 사유를 그대로 보여준다. 실패하면 서버 반영 전이라 상태가
+   * 이미 원래대로이므로 스낵바만 띄운다.
+   */
+  Future<void> _toggleTaskCompletion(Schedule schedule, ScheduleTask task) async {
+    final scheduleProvider = context.read<ScheduleProvider>();
+    final ok = await scheduleProvider.toggleTaskCompletion(
+      scheduleId: schedule.id,
+      taskId: task.id,
+      completed: !task.isCompleted,
+    );
+
+    if (!mounted) return;
+    if (ok) {
+      AppSnackBar.showSuccess(context,
+          message: task.isCompleted ? '할 일 완료를 해제했습니다' : '할 일을 완료했습니다');
+    } else {
+      AppSnackBar.showError(context,
+          message: scheduleProvider.error ?? '할 일 완료 상태를 바꾸지 못했습니다');
+    }
+  }
+
   Widget _buildScheduleItem(Schedule schedule) {
     final scheduleColor = scheduleDisplayColor(schedule);
     final authProvider = context.read<AuthProvider>();
@@ -675,6 +702,14 @@ class _CalendarScreenState extends State<CalendarScreen>
         schedule.authorId != null &&
         currentUserEmail != null &&
         schedule.authorId == currentUserEmail;
+    // 할 일이 등록된 일정은 일정 자체를 직접 완료 처리하지 않는다 — 담당자들이 할 일을
+    // 모두 체크하면 자동으로 완료된다 (웹 월간일정·서버 규칙과 동일)
+    final taskItems = schedule.tasks;
+    final hasTasks = taskItems.isNotEmpty || schedule.taskTotal > 0;
+    final taskDoneCount =
+        taskItems.isNotEmpty ? taskItems.where((t) => t.isCompleted).length : schedule.taskCompleted;
+    final taskTotalCount = taskItems.isNotEmpty ? taskItems.length : schedule.taskTotal;
+    final isTaskListExpanded = _expandedTaskScheduleIds.contains(schedule.id);
 
     return GestureDetector(
       onLongPress: isMySchedule
@@ -691,109 +726,304 @@ class _CalendarScreenState extends State<CalendarScreen>
             width: 1,
           ),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 4,
-              height: 40,
-              decoration: BoxDecoration(
-                color: scheduleColor,
-                borderRadius: BorderRadius.circular(2),
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: scheduleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.space3),
+                // 수행완료 체크 — 웹 월간일정과 같은 동작. 할 일이 있는 일정은 할 일 진행에
+                // 따라 자동으로 완료되므로 수동 토글 버튼을 숨기고 상태만 보여준다
+                SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: hasTasks
+                      ? Center(
+                          child: Icon(
+                            schedule.isCompleted
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked,
+                            size: 22,
+                            color: schedule.isCompleted
+                                ? AppSemanticColors.statusSuccessIcon
+                                : AppSemanticColors.textTertiary,
+                          ),
+                        )
+                      : IconButton(
+                          onPressed: () => _toggleScheduleCompletion(schedule),
+                          icon: Icon(
+                            schedule.isCompleted
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked,
+                            size: 22,
+                            color: schedule.isCompleted
+                                ? AppSemanticColors.statusSuccessIcon
+                                : AppSemanticColors.textTertiary,
+                          ),
+                          tooltip: schedule.isCompleted ? '수행완료 해제' : '수행완료',
+                          visualDensity: VisualDensity.compact,
+                          constraints:
+                              const BoxConstraints(minWidth: 36, minHeight: 36),
+                          padding: EdgeInsets.zero,
+                        ),
+                ),
+                const SizedBox(width: AppSpacing.space2),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              schedule.title,
+                              style: AppTypography.bodyLarge.copyWith(
+                                color: schedule.isCompleted
+                                    ? AppSemanticColors.textTertiary
+                                    : AppSemanticColors.textPrimary,
+                                fontWeight: AppTypography.fontWeightSemibold,
+                                // 끝난 일과 남은 일이 한눈에 갈리도록 완료는 줄을 긋는다 (웹과 같은 표시)
+                                decoration: schedule.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                          ),
+                          if (isMySchedule)
+                            IconButton(
+                              onPressed: () =>
+                                  _showDeleteScheduleDialog(schedule),
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                              tooltip: '일정 삭제',
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.space1),
+                      Row(
+                        children: [
+                          if (schedule.timeText.isNotEmpty) ...[
+                            Icon(
+                              Icons.access_time,
+                              size: 12,
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                            const SizedBox(width: AppSpacing.space1),
+                            Text(
+                              schedule.timeText,
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.space3),
+                          ],
+                          if (schedule.location != null &&
+                              schedule.location!.isNotEmpty) ...[
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 12,
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                            const SizedBox(width: AppSpacing.space1),
+                            Text(
+                              schedule.location!,
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (schedule.authorName != null &&
+                          schedule.authorName!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.space1),
+                          child: Text(
+                            '등록: ${schedule.authorName}',
+                            style: AppTypography.caption.copyWith(
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                          ),
+                        ),
+                      // 담당자 — 참석자와 별개로 지정된 사람 (웹 월간일정과 같은 표시)
+                      if (schedule.managerName != null &&
+                          schedule.managerName!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.space1),
+                          child: Text(
+                            '담당: ${schedule.managerName}',
+                            style: AppTypography.caption.copyWith(
+                              color: AppSemanticColors.brandDefault,
+                              fontWeight: AppTypography.fontWeightMedium,
+                            ),
+                          ),
+                        ),
+                      // 할 일 진행도 — 누르면 아래에 체크리스트를 펼친다/접는다
+                      if (hasTasks)
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(top: AppSpacing.space1_5),
+                          child: InkWell(
+                            borderRadius:
+                                BorderRadius.circular(AppBorderRadius.full),
+                            onTap: () {
+                              setState(() {
+                                if (isTaskListExpanded) {
+                                  _expandedTaskScheduleIds.remove(schedule.id);
+                                } else {
+                                  _expandedTaskScheduleIds.add(schedule.id);
+                                }
+                              });
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.space2,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        AppSemanticColors.statusInfoBackground,
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.full,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '할 일 $taskDoneCount/$taskTotalCount',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppSemanticColors.statusInfoText,
+                                      fontWeight:
+                                          AppTypography.fontWeightSemibold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.space1),
+                                Icon(
+                                  isTaskListExpanded
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
+                                  size: 16,
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space2,
+                    vertical: AppSpacing.space1,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scheduleColor,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                  ),
+                  child: Text(
+                    schedule.categoryText,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppSemanticColors.textInverse,
+                      fontWeight: AppTypography.fontWeightBold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.space3),
-            // 수행완료 체크 — 웹 월간일정과 같은 동작. 누르면 바로 서버에 반영된다
-            IconButton(
-              onPressed: () => _toggleScheduleCompletion(schedule),
-              icon: Icon(
-                schedule.isCompleted
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_unchecked,
-                size: 22,
-                color: schedule.isCompleted
-                    ? AppSemanticColors.statusSuccessIcon
-                    : AppSemanticColors.textTertiary,
-              ),
-              tooltip: schedule.isCompleted ? '수행완료 해제' : '수행완료',
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.zero,
+            // 할 일 체크리스트 — 별도 상세 화면이 없어 항목을 눌러 이 자리에서 편다
+            if (hasTasks && isTaskListExpanded) ...[
+              const SizedBox(height: AppSpacing.space3),
+              Container(height: 1, color: AppSemanticColors.borderSubtle),
+              const SizedBox(height: AppSpacing.space3),
+              if (taskItems.isEmpty)
+                Text(
+                  '할 일 목록을 불러오지 못했습니다',
+                  style: AppTypography.caption.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                )
+              else
+                ...taskItems.map(
+                  (task) => _buildScheduleTaskItem(schedule, task),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 할 일 한 건 — 체크로 완료를 토글한다. 담당자가 지정된 항목은 담당자 본인/관리자만
+  /// 서버가 허용하고, 미지정 항목은 누구나 가능하다 (웹 월간일정과 같은 서버 규칙).
+  Widget _buildScheduleTaskItem(Schedule schedule, ScheduleTask task) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+      decoration: BoxDecoration(
+        color: task.isCompleted
+            ? AppSemanticColors.statusSuccessBackground
+            : AppSemanticColors.backgroundSecondary,
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          IconButton(
+            onPressed: () => _toggleTaskCompletion(schedule, task),
+            icon: Icon(
+              task.isCompleted
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked,
+              size: 18,
+              color: task.isCompleted
+                  ? AppSemanticColors.statusSuccessIcon
+                  : AppSemanticColors.textTertiary,
             ),
-            const SizedBox(width: AppSpacing.space2),
-            Expanded(
+            tooltip: task.isCompleted ? '완료 해제' : '완료',
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            padding: EdgeInsets.zero,
+          ),
+          const SizedBox(width: AppSpacing.space2),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          schedule.title,
-                          style: AppTypography.bodyLarge.copyWith(
-                            color: schedule.isCompleted
-                                ? AppSemanticColors.textTertiary
-                                : AppSemanticColors.textPrimary,
-                            fontWeight: AppTypography.fontWeightSemibold,
-                            // 끝난 일과 남은 일이 한눈에 갈리도록 완료는 줄을 긋는다 (웹과 같은 표시)
-                            decoration: schedule.isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                        ),
-                      ),
-                      if (isMySchedule)
-                        IconButton(
-                          onPressed: () => _showDeleteScheduleDialog(schedule),
-                          icon: Icon(
-                            Icons.delete_outline,
-                            size: 18,
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                          tooltip: '일정 삭제',
-                        ),
-                    ],
+                  Text(
+                    task.content,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: task.isCompleted
+                          ? AppSemanticColors.textTertiary
+                          : AppSemanticColors.textPrimary,
+                      decoration: task.isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.space1),
-                  Row(
-                    children: [
-                      if (schedule.timeText.isNotEmpty) ...[
-                        Icon(
-                          Icons.access_time,
-                          size: 12,
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                        const SizedBox(width: AppSpacing.space1),
-                        Text(
-                          schedule.timeText,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space3),
-                      ],
-                      if (schedule.location != null &&
-                          schedule.location!.isNotEmpty) ...[
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 12,
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                        const SizedBox(width: AppSpacing.space1),
-                        Text(
-                          schedule.location!,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (schedule.authorName != null &&
-                      schedule.authorName!.isNotEmpty)
+                  if (task.assigneeName != null &&
+                      task.assigneeName!.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.space1),
+                      padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        '등록: ${schedule.authorName}',
+                        task.assigneeName!,
                         style: AppTypography.caption.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),
@@ -802,25 +1032,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space2,
-                vertical: AppSpacing.space1,
-              ),
-              decoration: BoxDecoration(
-                color: scheduleColor,
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              ),
-              child: Text(
-                schedule.categoryText,
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textInverse,
-                  fontWeight: AppTypography.fontWeightBold,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

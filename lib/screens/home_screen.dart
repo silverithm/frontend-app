@@ -694,6 +694,8 @@ class _ApprovalPreviewTile extends StatelessWidget {
 
   (String, Color) get _statusInfo {
     switch (approval.status) {
+      case ApprovalStatus.draft:
+        return ('임시저장', AppSemanticColors.textTertiary);
       case ApprovalStatus.pending:
         return ('대기', AppSemanticColors.statusWarningIcon);
       case ApprovalStatus.approved:

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-enum ApprovalStatus { pending, approved, rejected }
+enum ApprovalStatus { draft, pending, approved, rejected }
 
 /// 결재선 단계 (순차 다단계 결재)
 class ApprovalStepModel {
@@ -311,8 +311,12 @@ class ApprovalRequest {
     };
   }
 
+  // 서버 status=DRAFT는 웹에서 상신 전 임시저장한 문서다.
+  // 모르는 값(과거 서버·오타 등)은 기존과 동일하게 pending으로 취급한다.
   static ApprovalStatus _parseStatus(String? status) {
     switch (status?.toUpperCase()) {
+      case 'DRAFT':
+        return ApprovalStatus.draft;
       case 'APPROVED':
         return ApprovalStatus.approved;
       case 'REJECTED':
@@ -325,6 +329,8 @@ class ApprovalRequest {
 
   String get statusText {
     switch (status) {
+      case ApprovalStatus.draft:
+        return '임시저장';
       case ApprovalStatus.pending:
         return '대기중';
       case ApprovalStatus.approved:

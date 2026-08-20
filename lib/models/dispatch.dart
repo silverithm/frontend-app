@@ -237,20 +237,14 @@ class DispatchSettings {
   }
 
   Map<String, dynamic> toJson() => {
-    // 아직 사람을 고르지 않은 빈 자리는 서버로 보내지 않는다.
-    // 이름 없는 운전자가 주운전자 자리에 저장되면 그 노선은 "이름 없는 사람이
-    // 정상 운행"으로 계산돼 버린다. 웹도 저장 시 같은 기준으로 걸러낸다.
-    'routes': routes
-        .map(
-          (r) => r
-              .copyWith(
-                routeDrivers: r.routeDrivers
-                    .where((d) => d.driverName.trim().isNotEmpty)
-                    .toList(),
-              )
-              .toJson(),
-        )
-        .toList(),
+    // routeDrivers의 자리(인덱스)는 곧 역할이다: 0=주운전자, 1=부1운전자 ...
+    // 예전에는 여기서 이름 없는 자리를 걸러냈는데, 그러면 "주운전자 자리가
+    // 비고 부운전자만 채워진" 노선을 저장할 때 부운전자가 앞으로 당겨지며
+    // 주운전자로 승격돼 버렸다(관리자 웹은 노선을 편집할 때 이런 걸러내기를
+    // 하지 않는다 — dispatchStore.ts의 updateRoute류 참고). 그래서 빈 자리도
+    // 그대로 두어 인덱스 의미를 지킨다. 운전자를 하나도 못 고른 채로 노선이
+    // 만들어지는 것 자체는 화면(노선 추가) 쪽 검증으로 막는다.
+    'routes': routes.map((r) => r.toJson()).toList(),
     'seniors': seniors.map((s) => s.toJson()).toList(),
     'seniorAbsences': seniorAbsences.map((a) => a.toJson()).toList(),
   };
