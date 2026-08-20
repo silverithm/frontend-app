@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/html_utils.dart';
 import '../models/approval.dart';
 import '../models/notice.dart';
 import '../models/schedule_colors.dart';
@@ -24,6 +23,7 @@ import '../widgets/seed/seed_button.dart';
 import '../widgets/today_schedule_dialog.dart';
 import 'admin_notice_management_screen.dart';
 import 'approval_hub_screen.dart';
+import 'approval_detail_screen.dart';
 import 'main_screen.dart' show MainTabs;
 import 'notice_detail_screen.dart';
 import 'notice_list_screen.dart';
@@ -162,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
         AppSpacing.space5,
         AppSpacing.space3,
         AppSpacing.space5,
-        AppSpacing.space5,
+        AppSpacing.space3,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           else
-            ...todaySchedules.take(3).map(
+            ...todaySchedules.take(2).map(
               (schedule) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.space2),
                 child: Row(
@@ -215,9 +215,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-          if (todaySchedules.length > 3)
+          if (todaySchedules.length > 2)
             Text(
-              '외 ${todaySchedules.length - 3}건',
+              '외 ${todaySchedules.length - 2}건',
               style: AppTypography.bodySmall.copyWith(
                 color: AppSemanticColors.textTertiary,
               ),
@@ -310,9 +310,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.space5,
-                    AppSpacing.space4,
+                    AppSpacing.space2,
                     AppSpacing.space5,
-                    AppSpacing.space4,
+                    AppSpacing.space2,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,10 +362,10 @@ class _HomeScreenState extends State<HomeScreen> {
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space5,
-                  AppSpacing.space5,
-                  AppSpacing.space5,
-                  AppSpacing.space8,
+                  AppSpacing.space4,
+                  AppSpacing.space2,
+                  AppSpacing.space4,
+                  AppSpacing.space4,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
@@ -420,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space4),
+                    const SizedBox(height: AppSpacing.space3),
 
                     _SectionCard(
                       child: Column(
@@ -451,7 +451,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   _ApprovalPreviewTile(
                                     approval: entry.value,
-                                    onTap: _openApproval,
+                                    // 미리보기에서 바로 그 문서의 공문 상세로
+                                    onTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => ApprovalDetailScreen(
+                                          approval: entry.value,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ],
@@ -459,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space4),
+                    const SizedBox(height: AppSpacing.space3),
 
                     // 오늘 — 오늘의 일정과 휴무자 요약
                     _buildTodayBriefing(scheduleProvider, vacationProvider),
@@ -520,7 +527,10 @@ class _SectionCard extends StatelessWidget {
 
   const _SectionCard({
     required this.child,
-    this.padding = const EdgeInsets.all(AppSpacing.space5),
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: AppSpacing.space5,
+      vertical: AppSpacing.space3,
+    ),
   });
 
   @override
@@ -599,20 +609,6 @@ class _NoticePreviewTile extends StatelessWidget {
     return '${date.month}월 ${date.day}일';
   }
 
-  String _previewText(String content) {
-    // 서식 공지만 태그를 걷어낸다 — 평문 공지의 '<중요>' 같은 표기는 그대로 둔다
-    final plain =
-        containsHtmlTags(content) ? stripHtmlToPlainText(content) : content;
-    final normalized = plain.replaceAll('\n', ' ').trim();
-    if (normalized.isEmpty) {
-      return '본문 미리보기가 없습니다.';
-    }
-    if (normalized.length <= 56) {
-      return normalized;
-    }
-    return '${normalized.substring(0, 56)}...';
-  }
-
   @override
   Widget build(BuildContext context) {
     // 구분선 리스트 아이템 — 개별 보더 카드 대신 패딩만으로 아이템을 구분한다.
@@ -621,7 +617,7 @@ class _NoticePreviewTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -676,13 +672,6 @@ class _NoticePreviewTile extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.space2),
-              Text(
-                _previewText(notice.content),
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                ),
-              ),
             ],
           ),
         ),
@@ -722,7 +711,7 @@ class _ApprovalPreviewTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
           child: Row(
             children: [
               Container(

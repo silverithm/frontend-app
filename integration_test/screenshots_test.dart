@@ -12,32 +12,50 @@ import 'package:frontend_app/main.dart' as app;
 ///   --target=integration_test/screenshots_test.dart \
 ///   --dart-define=SHOT_EMAIL=... --dart-define=SHOT_PASSWORD=... -d <sim>
 void main() {
-  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   const email = String.fromEnvironment('SHOT_EMAIL');
   const password = String.fromEnvironment('SHOT_PASSWORD');
 
-  /// 네트워크·무한 애니메이션이 있어 pumpAndSettle 대신 시간 기반 펌프를 쓴다
+  /// 네트워크·무한 애니메이션이 있어 pumpAndSettle 대신 시간 기반 펌프를 쓴다.
+  /// Future.delayed로 실제 시간이 흘러야 main()의 비동기 초기화·네트워크가 진행된다.
   Future<void> settle(WidgetTester tester, {double seconds = 4}) async {
     final end = DateTime.now().add(
       Duration(milliseconds: (seconds * 1000).round()),
     );
     while (DateTime.now().isBefore(end)) {
-      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 100));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
     }
   }
 
+  /// [text]가 화면에 나타날 때까지 최대 [maxSeconds] 기다린다
+  Future<bool> waitForText(WidgetTester tester, String text,
+      {int maxSeconds = 30}) async {
+    final end = DateTime.now().add(Duration(seconds: maxSeconds));
+    while (DateTime.now().isBefore(end)) {
+      await tester.pump(const Duration(milliseconds: 100));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (find.text(text).evaluate().isNotEmpty) return true;
+    }
+    return false;
+  }
+
+  /// 호스트(simctl)가 캡처할 수 있게 마커를 찍고 화면에 머문다.
+  /// iOS의 binding.takeScreenshot은 두 번째 호출부터 불안정해 쓰지 않는다.
   Future<void> shot(WidgetTester tester, String name) async {
     await tester.pump(const Duration(milliseconds: 300));
-    await binding.takeScreenshot(name);
+    debugPrint('[SHOT] $name');
+    await settle(tester, seconds: 6);
   }
 
   testWidgets('개편 화면 캡처', (tester) async {
     app.main();
-    await settle(tester, seconds: 6);
+    // main()의 비동기 초기화가 끝나고 로그인 화면이 뜰 때까지 기다린다
+    final loginShown = await waitForText(tester, '로그인', maxSeconds: 40);
+    expect(loginShown, isTrue, reason: '로그인 화면이 40초 안에 뜨지 않았다');
+    await settle(tester, seconds: 1);
 
-    // iOS는 스크린샷 전에 surface 전환이 필요하다
-    await binding.convertFlutterSurfaceToImage();
     await shot(tester, '01_login');
 
     // 관리자 로그인
@@ -52,7 +70,9 @@ void main() {
     await tester.enterText(fields.at(1), password);
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('로그인').last);
-    await settle(tester, seconds: 10);
+    // 홈 진입(하단 탭 등장) 대기
+    await waitForText(tester, '전자결재', maxSeconds: 25);
+    await settle(tester, seconds: 4);
     await shot(tester, '02_home');
 
     Future<void> goTab(String label, String name,

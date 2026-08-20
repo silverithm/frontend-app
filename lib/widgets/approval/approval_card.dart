@@ -91,6 +91,13 @@ class ApprovalCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.space2),
+        // 카드를 누르면 공문 상세를 볼 수 있다는 신호
+        Icon(
+          Icons.visibility_outlined,
+          size: 18,
+          color: AppSemanticColors.textTertiary,
+        ),
+        const SizedBox(width: AppSpacing.space2),
         ApprovalStatusBadge(status: approval.status),
       ],
     );
