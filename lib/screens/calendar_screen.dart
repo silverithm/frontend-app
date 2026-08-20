@@ -14,6 +14,7 @@ import '../widgets/vacation_planning_banner.dart';
 import '../widgets/vacation_request_dialog.dart';
 import '../widgets/admin_vacation_add_dialog.dart';
 import '../services/analytics_service.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -1459,9 +1460,13 @@ class _CalendarScreenState extends State<CalendarScreen>
     final titleController = TextEditingController();
     final contentController = TextEditingController();
     final locationController = TextEditingController();
+    // 기본 4종은 카테고리 코드, 커스텀 구분은 'label:<id>' 형식 — 웹과 같은 컨벤션.
     String selectedCategory = 'MEETING';
     // 색상 없음(빈 문자열)이 기본값 — 카테고리 기본색으로 자동 폴백된다.
     String selectedColorHex = '';
+    // 기관이 만든 커스텀 일정 구분. 시트가 뜬 뒤 비동기로 합류한다.
+    List<ScheduleLabel> customLabels = [];
+    void Function(VoidCallback)? modalSetState;
     DateTime startDate = _scheduleSelectedDate ?? DateTime.now();
     DateTime endDate = _scheduleSelectedDate ?? DateTime.now();
     bool isAllDay = true;
@@ -1478,6 +1483,21 @@ class _CalendarScreenState extends State<CalendarScreen>
       adminProvider.loadCompanyMembers(companyId.toString());
     }
 
+    // 커스텀 일정 구분 로드 — 실패해도 기본 4종으로 등록은 계속 가능해야 한다
+    ApiService()
+        .getScheduleLabels(companyId: companyId.toString())
+        .then((data) {
+          final list = data['labels'];
+          if (list is! List) return;
+          final labels = list
+              .whereType<Map<String, dynamic>>()
+              .map(ScheduleLabel.fromJson)
+              .toList();
+          customLabels = labels;
+          modalSetState?.call(() {});
+        })
+        .catchError((_) {});
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1490,6 +1510,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       builder: (bottomSheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            modalSetState = setModalState;
             return Padding(
               padding: EdgeInsets.only(
                 left: AppSpacing.space4,
@@ -1557,28 +1578,106 @@ class _CalendarScreenState extends State<CalendarScreen>
                     ),
                     const SizedBox(height: AppSpacing.space3),
 
-                    // 카테고리
-                    DropdownButtonFormField<String>(
-                      value: selectedCategory,
-                      decoration: InputDecoration(
-                        labelText: '카테고리',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.lg,
+                    // 일정 구분 — 기본 4종 + 기관 커스텀 구분. 커스텀 구분을
+                    // 고르면 그 구분의 색이 아래 색상에 바로 적용된다.
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: selectedCategory,
+                            decoration: InputDecoration(
+                              labelText: '일정 구분',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.lg,
+                                ),
+                              ),
+                            ),
+                            items: [
+                              const DropdownMenuItem(
+                                value: 'MEETING',
+                                child: Text('회의'),
+                              ),
+                              const DropdownMenuItem(
+                                value: 'EVENT',
+                                child: Text('행사'),
+                              ),
+                              const DropdownMenuItem(
+                                value: 'TRAINING',
+                                child: Text('교육'),
+                              ),
+                              const DropdownMenuItem(
+                                value: 'OTHER',
+                                child: Text('기타'),
+                              ),
+                              for (final label in customLabels)
+                                DropdownMenuItem(
+                                  value: 'label:${label.id}',
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: colorFromHex(label.color) ??
+                                              AppSemanticColors
+                                                  .interactivePrimaryDefault,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        width: AppSpacing.space2,
+                                      ),
+                                      Text(label.name),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                            onChanged: (value) {
+                              setModalState(() {
+                                selectedCategory = value ?? 'MEETING';
+                                if (value != null &&
+                                    value.startsWith('label:')) {
+                                  final id = int.tryParse(
+                                    value.substring(6),
+                                  );
+                                  for (final label in customLabels) {
+                                    if (label.id == id) {
+                                      selectedColorHex = label.color;
+                                      break;
+                                    }
+                                  }
+                                }
+                              });
+                            },
                           ),
                         ),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'MEETING', child: Text('회의')),
-                        DropdownMenuItem(value: 'EVENT', child: Text('행사')),
-                        DropdownMenuItem(value: 'TRAINING', child: Text('교육')),
-                        DropdownMenuItem(value: 'OTHER', child: Text('기타')),
+                        const SizedBox(width: AppSpacing.space2),
+                        SeedButton(
+                          label: '구분 관리',
+                          variant: SeedButtonVariant.neutralOutline,
+                          size: SeedButtonSize.small,
+                          onPressed: () {
+                            _showScheduleLabelManageSheet(
+                              companyId: companyId.toString(),
+                              onLabelsChanged: (labels) {
+                                customLabels = labels;
+                                // 고른 구분이 삭제됐으면 기본값으로 되돌린다
+                                if (selectedCategory.startsWith('label:') &&
+                                    !labels.any(
+                                      (l) =>
+                                          'label:${l.id}' == selectedCategory,
+                                    )) {
+                                  selectedCategory = 'MEETING';
+                                }
+                                modalSetState?.call(() {});
+                              },
+                            );
+                          },
+                        ),
                       ],
-                      onChanged: (value) {
-                        setModalState(() {
-                          selectedCategory = value ?? 'MEETING';
-                        });
-                      },
                     ),
                     const SizedBox(height: AppSpacing.space3),
 
@@ -1939,12 +2038,23 @@ class _CalendarScreenState extends State<CalendarScreen>
                           final endDateStr =
                               '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
 
+                          // 커스텀 구분은 category 대신 labelId로 보낸다
+                          // (서버 category는 OTHER로 채움 — 웹과 같은 계약)
+                          final isCustomLabel = selectedCategory.startsWith(
+                            'label:',
+                          );
                           final scheduleData = <String, dynamic>{
                             'title': titleController.text.trim(),
                             'content': contentController.text.trim().isEmpty
                                 ? null
                                 : contentController.text.trim(),
-                            'category': selectedCategory,
+                            'category': isCustomLabel
+                                ? 'OTHER'
+                                : selectedCategory,
+                            if (isCustomLabel)
+                              'labelId': int.tryParse(
+                                selectedCategory.substring(6),
+                              ),
                             'color': selectedColorHex,
                             'location': locationController.text.trim().isEmpty
                                 ? null
@@ -1984,6 +2094,334 @@ class _CalendarScreenState extends State<CalendarScreen>
                           }
                         },
                       ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// 일정 구분 관리 시트 — 기관 커스텀 구분(이름+색)의 추가·수정·삭제.
+  /// 웹 관리자 화면의 '구분 관리' 다이얼로그와 같은 기능이다.
+  /// 변경이 있을 때마다 [onLabelsChanged]로 최신 목록을 돌려준다.
+  void _showScheduleLabelManageSheet({
+    required String companyId,
+    required void Function(List<ScheduleLabel>) onLabelsChanged,
+  }) {
+    final nameController = TextEditingController();
+    String colorHex = ScheduleColorPalette.values.first.hex;
+    int? editingId; // null이면 추가 모드
+    List<ScheduleLabel> labels = [];
+    bool isLoading = true;
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> reload() async {
+              try {
+                final data = await ApiService().getScheduleLabels(
+                  companyId: companyId,
+                );
+                final list = data['labels'];
+                labels = list is List
+                    ? list
+                          .whereType<Map<String, dynamic>>()
+                          .map(ScheduleLabel.fromJson)
+                          .toList()
+                    : [];
+                onLabelsChanged(labels);
+              } catch (_) {
+                // 목록 로드 실패 — 빈 목록으로 두고 추가는 계속 시도할 수 있게 한다
+              }
+              if (sheetContext.mounted) {
+                setSheetState(() => isLoading = false);
+              }
+            }
+
+            if (isLoading && labels.isEmpty) {
+              reload();
+            }
+
+            void resetForm() {
+              nameController.clear();
+              editingId = null;
+              colorHex = ScheduleColorPalette.values.first.hex;
+            }
+
+            Future<void> save() async {
+              final name = nameController.text.trim();
+              if (name.isEmpty) {
+                AppSnackBar.showWarning(context, message: '구분 이름을 입력해주세요');
+                return;
+              }
+              setSheetState(() => isSaving = true);
+              try {
+                if (editingId == null) {
+                  await ApiService().createScheduleLabel(
+                    companyId: companyId,
+                    name: name,
+                    color: colorHex,
+                  );
+                } else {
+                  await ApiService().updateScheduleLabel(
+                    companyId: companyId,
+                    labelId: editingId!,
+                    name: name,
+                    color: colorHex,
+                  );
+                }
+                resetForm();
+                await reload();
+              } catch (_) {
+                if (sheetContext.mounted) {
+                  AppSnackBar.showError(context, message: '구분 저장에 실패했습니다');
+                }
+              }
+              if (sheetContext.mounted) {
+                setSheetState(() => isSaving = false);
+              }
+            }
+
+            Future<void> remove(ScheduleLabel label) async {
+              final confirmed = await AppDialog.showConfirm(
+                context,
+                title: '구분 삭제',
+                message:
+                    "'${label.name}' 구분을 삭제하시겠습니까?\n이 구분을 쓰던 일정은 구분만 지워집니다.",
+                confirmText: '삭제',
+                cancelText: '취소',
+                confirmVariant: SeedButtonVariant.critical,
+              );
+              if (confirmed != true) return;
+              setSheetState(() => isSaving = true);
+              try {
+                await ApiService().deleteScheduleLabel(
+                  companyId: companyId,
+                  labelId: label.id,
+                );
+                if (editingId == label.id) resetForm();
+                await reload();
+              } catch (_) {
+                if (sheetContext.mounted) {
+                  AppSnackBar.showError(context, message: '구분 삭제에 실패했습니다');
+                }
+              }
+              if (sheetContext.mounted) {
+                setSheetState(() => isSaving = false);
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: AppSpacing.space4,
+                right: AppSpacing.space4,
+                top: AppSpacing.space4,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom +
+                    AppSpacing.space4,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: AppSpacing.space10,
+                        height: AppSpacing.space1,
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.borderDefault,
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.sm,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '일정 구분 관리',
+                          style: AppTypography.heading5.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: Icon(
+                            Icons.close,
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '구분을 고르면 일정에 그 색이 자동으로 적용됩니다',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 기존 구분 목록
+                    if (isLoading)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(AppSpacing.space4),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (labels.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.space3,
+                        ),
+                        child: Text(
+                          '아직 만든 구분이 없습니다. 아래에서 추가해보세요.',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                      )
+                    else
+                      for (final label in labels)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.space1,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 14,
+                                height: 14,
+                                decoration: BoxDecoration(
+                                  color: colorFromHex(label.color) ??
+                                      AppSemanticColors
+                                          .interactivePrimaryDefault,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.space3),
+                              Expanded(
+                                child: Text(
+                                  label.name,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textPrimary,
+                                    fontWeight: editingId == label.id
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: isSaving
+                                    ? null
+                                    : () {
+                                        setSheetState(() {
+                                          editingId = label.id;
+                                          nameController.text = label.name;
+                                          colorHex = label.color;
+                                        });
+                                      },
+                                icon: Icon(
+                                  Icons.edit_outlined,
+                                  size: 20,
+                                  color: AppSemanticColors
+                                      .interactivePrimaryDefault,
+                                ),
+                                tooltip: '수정',
+                              ),
+                              IconButton(
+                                onPressed: isSaving
+                                    ? null
+                                    : () => remove(label),
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  size: 20,
+                                  color: AppSemanticColors.statusErrorIcon,
+                                ),
+                                tooltip: '삭제',
+                              ),
+                            ],
+                          ),
+                        ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 추가/수정 폼
+                    SeedTextField(
+                      label: editingId == null ? '새 구분 이름' : '구분 이름 수정',
+                      controller: nameController,
+                      placeholder: '예: 운영, 인사, 회계, 사업',
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+                    Text(
+                      '색상',
+                      style: AppTypography.labelLarge.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                    Wrap(
+                      spacing: AppSpacing.space2,
+                      runSpacing: AppSpacing.space2,
+                      children: [
+                        for (final option in ScheduleColorPalette.values)
+                          _buildScheduleColorSwatch(
+                            color: option.color,
+                            isSelected: colorHex == option.hex,
+                            tooltip: option.name,
+                            onTap: () {
+                              setSheetState(() {
+                                colorHex = option.hex;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    Row(
+                      children: [
+                        if (editingId != null) ...[
+                          Expanded(
+                            child: SeedButton(
+                              label: '취소',
+                              variant: SeedButtonVariant.neutralOutline,
+                              size: SeedButtonSize.large,
+                              onPressed: isSaving
+                                  ? null
+                                  : () => setSheetState(resetForm),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.space2),
+                        ],
+                        Expanded(
+                          child: SeedButton(
+                            label: editingId == null ? '추가' : '수정 저장',
+                            variant: SeedButtonVariant.brandSolid,
+                            size: SeedButtonSize.large,
+                            isLoading: isSaving,
+                            onPressed: isSaving ? null : save,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.space2),
                   ],

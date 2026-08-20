@@ -132,8 +132,14 @@ class Schedule {
     );
   }
 
-  /// 카테고리 표시 텍스트
-  String get categoryText => categoryDisplayName ?? _getCategoryDisplayName(category);
+  /// 카테고리 표시 텍스트 — 커스텀 구분(label)이 있으면 그 이름을 우선한다.
+  /// 구분 없는 일정도 서버가 색 폴백용 shim(label.name == '')을 내려주므로
+  /// 빈 이름은 걸러야 기본 카테고리명이 나온다.
+  String get categoryText {
+    final labelName = label?.name;
+    if (labelName != null && labelName.isNotEmpty) return labelName;
+    return categoryDisplayName ?? _getCategoryDisplayName(category);
+  }
 
   String _getCategoryDisplayName(String cat) {
     switch (cat) {

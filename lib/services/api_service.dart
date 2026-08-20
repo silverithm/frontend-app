@@ -3194,6 +3194,75 @@ class ApiService {
     });
   }
 
+  // ================== 일정 구분(라벨) API ==================
+  // 기관이 직접 만드는 일정 구분(이름+색). 웹 관리자와 같은 schedule-labels API를 쓴다.
+
+  // 일정 구분 목록 조회 — 응답: { labels: [...] }
+  Future<Map<String, dynamic>> getScheduleLabels({
+    required String companyId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedule-labels?companyId=$companyId',
+      );
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 일정 구분 생성
+  Future<Map<String, dynamic>> createScheduleLabel({
+    required String companyId,
+    required String name,
+    required String color,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedule-labels?companyId=$companyId',
+      );
+      final headers = await _getHeaders();
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode({'name': name, 'color': color}),
+      );
+    });
+  }
+
+  // 일정 구분 수정
+  Future<Map<String, dynamic>> updateScheduleLabel({
+    required String companyId,
+    required int labelId,
+    required String name,
+    required String color,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedule-labels/$labelId?companyId=$companyId',
+      );
+      final headers = await _getHeaders();
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'name': name, 'color': color}),
+      );
+    });
+  }
+
+  // 일정 구분 삭제 — 이 구분을 쓰던 일정은 서버가 구분만 떼어낸다
+  Future<Map<String, dynamic>> deleteScheduleLabel({
+    required String companyId,
+    required int labelId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/schedule-labels/$labelId?companyId=$companyId',
+      );
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
   // 일정 등록
   Future<Map<String, dynamic>> createSchedule({
     required String companyId,
