@@ -73,6 +73,12 @@ void main() {
     // 홈 진입(하단 탭 등장) 대기
     await waitForText(tester, '전자결재', maxSeconds: 25);
     await settle(tester, seconds: 4);
+    // 오늘 일정 팝업이 홈을 가리면 닫는다
+    final todayClose = find.text('닫기');
+    if (todayClose.evaluate().isNotEmpty) {
+      await tester.tap(todayClose.first, warnIfMissed: false);
+      await settle(tester, seconds: 2);
+    }
     await shot(tester, '02_home');
 
     Future<void> goTab(String label, String name,

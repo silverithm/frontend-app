@@ -222,6 +222,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppSemanticColors.textTertiary,
               ),
             ),
+          // 카드가 화면 비율대로 늘어나므로 남는 공간은 여기서 흡수하고
+          // 휴무자 줄은 카드 바닥에 앵커한다
+          const Spacer(),
           const SizedBox(height: AppSpacing.space2),
           Divider(height: 1, color: AppSemanticColors.borderSubtle),
           const SizedBox(height: AppSpacing.space3),
@@ -298,14 +301,20 @@ class _HomeScreenState extends State<HomeScreen> {
       body: RefreshIndicator(
         onRefresh: _loadDashboardData,
         color: AppSemanticColors.interactivePrimaryDefault,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              // 플랫한 표면 헤더 — 스크롤 본문과 같은 backgroundPrimary를 써서
+        // 세 칸이 내용과 무관하게 화면을 비율대로 꽉 채운다 — 내용이 비어도
+        // 카드가 화면을 나눠 갖고, 내용이 넘치는 작은 화면에서만 스크롤된다.
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+            SafeArea(
+              // 플랫한 표면 헤더 — 본문과 같은 backgroundPrimary를 써서
               // 이질적인 대면적 브랜드 블록 없이 콘텐츠와 자연스럽게 이어지도록 한다.
-              // 브랜드 색은 오늘의 한마디 카드(소면적)에만 강조로 사용한다.
-              child: SafeArea(
                 bottom: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -349,10 +358,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-            ),
             if (_isLoading)
-              SliverFillRemaining(
-                hasScrollBody: false,
+              Expanded(
                 child: Center(
                   child: CircularProgressIndicator(
                     color: AppSemanticColors.interactivePrimaryDefault,
@@ -360,18 +367,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
             else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space4,
-                  AppSpacing.space2,
-                  AppSpacing.space4,
-                  AppSpacing.space4,
-                ),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space4,
+                    AppSpacing.space2,
+                    AppSpacing.space4,
+                    AppSpacing.space4,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     // 홈은 세 칸만 — 공지사항(2건) · 전자결재(2건) · 오늘(일정+휴무자).
                     // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
-                    _SectionCard(
+                    Expanded(child: _SectionCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -419,10 +428,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                         ],
                       ),
-                    ),
+                    )),
                     const SizedBox(height: AppSpacing.space3),
 
-                    _SectionCard(
+                    Expanded(child: _SectionCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -465,15 +474,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                         ],
                       ),
-                    ),
+                    )),
                     const SizedBox(height: AppSpacing.space3),
 
                     // 오늘 — 오늘의 일정과 휴무자 요약
-                    _buildTodayBriefing(scheduleProvider, vacationProvider),
+                    Expanded(
+                      child: _buildTodayBriefing(
+                        scheduleProvider,
+                        vacationProvider,
+                      ),
+                    ),
                   ]),
                 ),
               ),
-          ],
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
