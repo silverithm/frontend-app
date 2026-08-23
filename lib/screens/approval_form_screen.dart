@@ -142,13 +142,15 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
         final file = File(image.path);
         final size = await file.length();
 
-        setState(() {
-          _selectedFile = _SelectedFileInfo(
-            path: image.path,
-            name: image.name,
-            size: size,
-          );
-        });
+        if (mounted) {
+          setState(() {
+            _selectedFile = _SelectedFileInfo(
+              path: image.path,
+              name: image.name,
+              size: size,
+            );
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -169,13 +171,15 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
         final file = File(result.path);
         final size = await file.length();
 
-        setState(() {
-          _selectedFile = _SelectedFileInfo(
-            path: result.path,
-            name: result.name,
-            size: size,
-          );
-        });
+        if (mounted) {
+          setState(() {
+            _selectedFile = _SelectedFileInfo(
+              path: result.path,
+              name: result.name,
+              size: size,
+            );
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -302,8 +306,8 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
         }
       } catch (e) {
         print('[ApprovalForm] 파일 업로드 에러: $e');
-        setState(() => _isSubmitting = false);
         if (mounted) {
+          setState(() => _isSubmitting = false);
           AppSnackBar.showError(context, message: '파일 업로드에 실패했습니다: $e');
         }
         return;
@@ -331,7 +335,9 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
           .toList(),
     );
 
-    setState(() => _isSubmitting = false);
+    if (mounted) {
+      setState(() => _isSubmitting = false);
+    }
 
     if (success && mounted) {
       AppSnackBar.showSuccess(context, message: '결재 요청이 제출되었습니다');

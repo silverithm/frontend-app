@@ -82,9 +82,12 @@ class _AdminVacationManagementScreenState
         if (requestsList.isNotEmpty) {
           print('[AdminVacationManagement] 첫 번째 요청 샘플: ${requestsList.first}');
         }
-        setState(() {
-          _vacationRequests = requestsList;
-        });
+        // 화면을 벗어난 뒤 응답이 오면 dispose된 State에 setState하게 되어 크래시한다
+        if (mounted) {
+          setState(() {
+            _vacationRequests = requestsList;
+          });
+        }
         print(
           '[AdminVacationManagement] setState 완료, _vacationRequests.length: ${_vacationRequests.length}',
         );
@@ -100,13 +103,15 @@ class _AdminVacationManagementScreenState
           companyId: companyId,
         );
         final positionsList = (positionsResult['positions'] as List?) ?? [];
-        setState(() {
-          _positions = positionsList
-              .whereType<Map>()
-              .map((position) => position['name']?.toString() ?? '')
-              .where((name) => name.isNotEmpty)
-              .toList();
-        });
+        if (mounted) {
+          setState(() {
+            _positions = positionsList
+                .whereType<Map>()
+                .map((position) => position['name']?.toString() ?? '')
+                .where((name) => name.isNotEmpty)
+                .toList();
+          });
+        }
       } catch (e) {
         print('[AdminVacationManagement] 역할 목록 로드 실패: $e');
       }
@@ -122,7 +127,7 @@ class _AdminVacationManagementScreenState
         companyId: companyId,
       );
 
-      if (limitsResult['success'] == true) {
+      if (limitsResult['success'] == true && mounted) {
         setState(() {
           _vacationLimits = limitsResult['data'] ?? {};
         });
@@ -132,7 +137,10 @@ class _AdminVacationManagementScreenState
         AppSnackBar.showError(context, message: '데이터 로드 실패: $e');
       }
     } finally {
-      setState(() => _isLoading = false);
+      // 로드 중 화면을 벗어나면(탭 전환 등) dispose 뒤 setState로 크래시한다
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -1206,9 +1214,12 @@ class _AdminVacationManagementScreenState
 
     if (confirmed != true) return;
 
-    setState(() {
-      _isBulkProcessing = true;
-    });
+    // 확인 대화상자가 떠 있는 동안 화면을 벗어났을 수 있다
+    if (mounted) {
+      setState(() {
+        _isBulkProcessing = true;
+      });
+    }
 
     try {
       print('[AdminVacation] 일괄 승인 요청 시작 - ${selectedList.length}개');
@@ -1274,9 +1285,12 @@ class _AdminVacationManagementScreenState
 
     if (confirmed != true) return;
 
-    setState(() {
-      _isBulkProcessing = true;
-    });
+    // 확인 대화상자가 떠 있는 동안 화면을 벗어났을 수 있다
+    if (mounted) {
+      setState(() {
+        _isBulkProcessing = true;
+      });
+    }
 
     try {
       print('[AdminVacation] 일괄 거절 요청 시작 - ${selectedList.length}개');

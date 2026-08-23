@@ -756,14 +756,43 @@ class VacationProvider with ChangeNotifier {
 
         print('[VacationProvider] API 응답 limits 개수: ${limitsList.length}');
 
+        // 특정 직종 필터일 때는 그 직종 한도와 전체(all) 한도를 따로 모아뒀다가 합친다.
+        // 서버(VacationService.validateDailyVacationLimit)는 직종별 한도와 전체 한도를
+        // 독립적으로 모두 검사하므로, 특정 직종을 보고 있어도 전체 한도는 여전히 유효한 상한이다.
+        final Map<DateTime, int> roleSpecificLimits = {};
+        final Map<DateTime, int> generalLimits = {};
+
         for (final limitItem in limitsList) {
           try {
             final dateStr = limitItem['date'] as String;
             final maxPeople = limitItem['maxPeople'] as int? ?? 3;
             final itemRole = limitItem['role']?.toString();
+            final isAllRow = (itemRole ?? '').toLowerCase() == 'all';
 
-            // 특정 역할을 보고 있으면 그 역할의 상한만, 전체 모드면 역할별 상한 중 최댓값
-            if (!RoleUtils.matches(itemRole, _roleFilter)) {
+            if (_roleFilter == RoleUtils.allRole) {
+              // 전체 보기: 역할별 상한 중 최댓값을 쓰되, 관리자가 '전체(all)' 한도를
+              // 직접 건 날짜는 그 값이 정답 — 직종별 최댓값 누적으로 덮이지 않게 확정 기록한다
+              final date = DateTime.parse(dateStr);
+              final dateKey = DateTime(date.year, date.month, date.day);
+              if (isAllRow) {
+                _vacationLimits[dateKey] = maxPeople;
+                _allLimitDates.add(dateKey);
+              } else if (!_allLimitDates.contains(dateKey)) {
+                final currentLimit = _vacationLimits[dateKey];
+                _vacationLimits[dateKey] =
+                    currentLimit == null || maxPeople > currentLimit
+                    ? maxPeople
+                    : currentLimit;
+              }
+
+              print(
+                '[VacationProvider] 역할 일치 - 날짜: $dateStr, 역할: $itemRole, 제한: $maxPeople',
+              );
+              continue;
+            }
+
+            // 특정 직종 필터: 그 직종 행과 전체(all) 행만 모은다 — 다른 직종 행은 무관하다
+            if (!isAllRow && !RoleUtils.matches(itemRole, _roleFilter)) {
               print(
                 '[VacationProvider] 역할 불일치 - 필터: $_roleFilter, 실제: $itemRole',
               );
@@ -772,18 +801,10 @@ class VacationProvider with ChangeNotifier {
 
             final date = DateTime.parse(dateStr);
             final dateKey = DateTime(date.year, date.month, date.day);
-            // 관리자가 '전체(all)' 한도를 직접 건 날짜는 그 값이 정답 —
-            // 직종별 최댓값 누적으로 덮이지 않게 확정 기록한다
-            final isAllRow = (itemRole ?? '').toLowerCase() == 'all';
             if (isAllRow) {
-              _vacationLimits[dateKey] = maxPeople;
-              _allLimitDates.add(dateKey);
-            } else if (!_allLimitDates.contains(dateKey)) {
-              final currentLimit = _vacationLimits[dateKey];
-              _vacationLimits[dateKey] =
-                  currentLimit == null || maxPeople > currentLimit
-                  ? maxPeople
-                  : currentLimit;
+              generalLimits[dateKey] = maxPeople;
+            } else {
+              roleSpecificLimits[dateKey] = maxPeople;
             }
 
             print(
@@ -791,6 +812,21 @@ class VacationProvider with ChangeNotifier {
             );
           } catch (e) {
             print('[VacationProvider] limit 파싱 오류: $limitItem - $e');
+          }
+        }
+
+        if (_roleFilter != RoleUtils.allRole) {
+          // 직종별 한도와 전체 한도가 모두 있으면 더 낮은 쪽을, 하나만 있으면 그 값을 상한으로 기록
+          final dateKeys = {...roleSpecificLimits.keys, ...generalLimits.keys};
+          for (final dateKey in dateKeys) {
+            final roleLimit = roleSpecificLimits[dateKey];
+            final generalLimit = generalLimits[dateKey];
+            if (roleLimit != null && generalLimit != null) {
+              _vacationLimits[dateKey] =
+                  roleLimit < generalLimit ? roleLimit : generalLimit;
+            } else {
+              _vacationLimits[dateKey] = roleLimit ?? generalLimit!;
+            }
           }
         }
 
