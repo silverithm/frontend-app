@@ -18,6 +18,18 @@ class VacationProvider with ChangeNotifier {
   List<String> _roleFilters = [];
   List<String> _availableRoles = [];
 
+  // 마지막으로 받은 companyId — 필터 변경처럼 화면이 companyId를 다시 안 넘기는
+  // 내부 재조회에서 쓴다. '1' 고정 폴백은 타 기관 조회가 되어 서버가 차단한다
+  // (운영에서 실제 발생: 직종 필터 변경 → 휴무 제한이 조용히 사라짐)
+  String? _companyId;
+
+  String _resolveCompanyId(String? companyId) {
+    if (companyId != null && companyId.isNotEmpty) {
+      _companyId = companyId;
+    }
+    return _companyId ?? '1';
+  }
+
   // 휴무 입력 마감일 설정 (다음 달만 받기 포함) — 기관당 한 벌, 자주 바뀌지 않아 세션 중 1회만 로드
   VacationDeadlineSetting _deadlineSetting = VacationDeadlineSetting.disabled;
   bool _planningSettingsLoaded = false;
@@ -177,20 +189,17 @@ class VacationProvider with ChangeNotifier {
         notifyListeners();
       });
     } else if (newRole == RoleUtils.allRole && oldRole != RoleUtils.allRole) {
-      // 특정 역할 -> 전체: vacation limits 기본값 설정
+      // 특정 역할 -> 전체: 서버 한도로 재로드 — 기본값 3으로 채우면
+      // 관리자가 실제로 건 한도(전체 행 포함)가 가짜 값으로 덮인다
       final startDate = DateTime(_selectedDate.year, _selectedDate.month, 1);
       final endDate = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
 
-      _vacationLimits.clear();
-      for (
-        var date = startDate;
-        date.isBefore(endDate.add(const Duration(days: 1)));
-        date = date.add(const Duration(days: 1))
-      ) {
-        _vacationLimits[DateTime(date.year, date.month, date.day)] = 3;
-      }
-      print('[VacationProvider] 전체 모드로 변경 - 기본값 설정 완료');
-      notifyListeners();
+      loadVacationLimits(startDate, endDate).then((_) {
+        print(
+          '[VacationProvider] 전체 모드 한도 재로드 완료 - limits: ${_vacationLimits.length}개',
+        );
+        notifyListeners();
+      });
     } else if (newRole != RoleUtils.allRole &&
         oldRole != RoleUtils.allRole &&
         newRole != oldRole) {
@@ -227,7 +236,7 @@ class VacationProvider with ChangeNotifier {
       final response = await ApiService().getVacationCalendar(
         startDate: _formatDate(startDate),
         endDate: _formatDate(endDate),
-        companyId: companyId ?? '1', // 기본값 1 사용
+        companyId: _resolveCompanyId(companyId),
         roleFilter: 'all', // 모든 역할의 데이터를 가져옴
       );
 
@@ -291,7 +300,7 @@ class VacationProvider with ChangeNotifier {
     bool forceReload = false,
   }) async {
     if (_planningSettingsLoaded && !forceReload) return;
-    final id = companyId ?? '1';
+    final id = _resolveCompanyId(companyId);
 
     try {
       final response = await ApiService().getVacationDeadlineSetting(
@@ -333,7 +342,7 @@ class VacationProvider with ChangeNotifier {
       final start = DateTime(month.year, month.month, 1);
       final end = DateTime(month.year, month.month + 2, 0);
       final response = await ApiService().getVacationEvents(
-        companyId: companyId ?? '1',
+        companyId: _resolveCompanyId(companyId),
         startDate: _formatDate(start),
         endDate: _formatDate(end),
       );
@@ -460,7 +469,7 @@ class VacationProvider with ChangeNotifier {
         reason: reason ?? '',
         role: userRole,
         password: password ?? '',
-        companyId: companyId ?? '1', // 기본값 1 사용
+        companyId: _resolveCompanyId(companyId),
         userId: userId,
         duration: durationString, // 변환된 duration 전송
       );
@@ -612,7 +621,7 @@ class VacationProvider with ChangeNotifier {
     try {
       final response = await ApiService().getVacationForDate(
         date: _formatDate(date),
-        companyId: companyId ?? '1', // 기본값 1 사용
+        companyId: _resolveCompanyId(companyId),
         role: _roleFilter,
       );
 
@@ -690,7 +699,7 @@ class VacationProvider with ChangeNotifier {
 
     try {
       final response = await ApiService().getPositions(
-        companyId: companyId ?? '1',
+        companyId: _resolveCompanyId(companyId),
       );
       final positions = (response['positions'] as List?) ?? [];
       for (final position in positions) {
@@ -732,7 +741,7 @@ class VacationProvider with ChangeNotifier {
       final response = await ApiService().getVacationLimits(
         start: _formatDate(start),
         end: _formatDate(end),
-        companyId: companyId ?? '1',
+        companyId: _resolveCompanyId(companyId),
         role: _roleFilter,
       );
 
