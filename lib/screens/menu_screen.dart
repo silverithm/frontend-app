@@ -23,6 +23,7 @@ import 'notification_settings_screen.dart';
 import 'plaza_screen.dart';
 import 'profile_screen.dart';
 import 'signature_manage_screen.dart';
+import 'meeting_minutes_list_screen.dart';
 import 'voice_box_screen.dart';
 
 /// 전체 메뉴 탭 — 흩어져 있던 기능들을 역할별 그룹으로 모은 허브.
@@ -94,6 +95,12 @@ class MenuScreen extends StatelessWidget {
                 label: '결재 서명 관리',
                 description: '전자결재에 사용할 서명 등록',
                 onTap: () => _push(context, const SignatureManageScreen()),
+              ),
+              _MenuItem(
+                icon: Icons.groups_outlined,
+                label: '회의록',
+                description: '회의 내용 확인과 서명',
+                onTap: () => _push(context, const MeetingMinutesListScreen()),
               ),
             ],
           ),

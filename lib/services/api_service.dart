@@ -3966,6 +3966,47 @@ class ApiService {
       return await http.delete(uri, headers: headers);
     });
   }
+
+  // ================== 회의록 ==================
+
+  /// 회의록 목록 — 관리자는 기관 전체, 직원은 본인이 작성·참석한 것만 온다
+  Future<List<dynamic>> getMeetingMinutesList({required String companyId}) async {
+    final data = await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/meeting-minutes')
+          .replace(queryParameters: {'companyId': companyId});
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+    return data['items'] as List<dynamic>? ?? [];
+  }
+
+  Future<Map<String, dynamic>> getMeetingMinutesDetail({required int minutesId}) async {
+    final data = await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/meeting-minutes/$minutesId');
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+    return data['minutes'] as Map<String, dynamic>? ?? {};
+  }
+
+  /// 회의록 서명 — signatureBase64가 있으면 즉석 서명, 없으면 등록 서명 자동 사용
+  /// (결재 승인과 같은 계약)
+  Future<Map<String, dynamic>> signMeetingMinutes({
+    required int minutesId,
+    required int attendeeId,
+    String? signatureBase64,
+  }) async {
+    final data = await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+          '$_baseUrl/v1/meeting-minutes/$minutesId/attendees/$attendeeId/sign');
+      final headers = await _getHeaders();
+      final body = signatureBase64 != null && signatureBase64.isNotEmpty
+          ? json.encode({'signatureBase64': signatureBase64})
+          : json.encode({});
+      return await http.post(uri, headers: headers, body: body);
+    });
+    return data['minutes'] as Map<String, dynamic>? ?? {};
+  }
 }
 
 // API 예외 클래스

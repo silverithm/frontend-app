@@ -14,6 +14,7 @@ import '../screens/admin_user_management_screen.dart';
 import '../screens/notice_detail_screen.dart';
 import '../screens/chat_room_list_screen.dart';
 import '../screens/calendar_screen.dart';
+import '../screens/meeting_minutes_detail_screen.dart';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -492,6 +493,16 @@ class FCMService {
           builder: (_) => CalendarScreen(initialScheduleDate: date),
         ),
       );
+    } else if (type == 'meeting_minutes') {
+      // 회의록 서명 요청 — 바로 그 회의록 상세(서명 화면)로 보낸다
+      final minutesId = int.tryParse(data['minutesId']?.toString() ?? '');
+      if (minutesId != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MeetingMinutesDetailScreen(minutesId: minutesId),
+          ),
+        );
+      }
     } else if (type == 'member_join_requested' || type == 'member_withdrawal') {
       // 가입 요청·탈퇴는 관리자에게 오는 알림 — 예전엔 매핑이 없어 눌러도
       // 아무 데도 안 갔다. 회원관리(가입 승인 목록)로 보낸다.
