@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../utils/form_field_width.dart';
 import 'package:intl/intl.dart';
 
+import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../seed/seed_chip.dart';
 import '../seed/seed_text_field.dart';
+import 'approval_image_value.dart';
 
 /// 결재 양식(formSchema)의 필드를 "공문 표" 레이아웃(라벨 셀 + 입력 셀, 섹션 구획)으로
 /// 렌더링한다.
@@ -201,6 +204,11 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           style: AppTypography.bodySmall
               .copyWith(color: AppSemanticColors.textTertiary));
     }
+    if (type == 'image') {
+      return Text('이미지 첨부 영역',
+          style: AppTypography.bodySmall
+              .copyWith(color: AppSemanticColors.textTertiary));
+    }
     return Container(
       height: 1,
       color: AppSemanticColors.borderDefault,
@@ -329,6 +337,25 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           '아래 첨부파일 영역에서 올려주세요',
           style: AppTypography.caption
               .copyWith(color: AppSemanticColors.textTertiary),
+        );
+
+      case 'image':
+        final raw = widget.values[id];
+        final imageValue =
+            raw is Map ? Map<String, dynamic>.from(raw) : null;
+        return _ImageFieldControl(
+          field: field,
+          value: imageValue,
+          onChanged: (val) {
+            setState(() {
+              if (val == null) {
+                widget.values.remove(id);
+              } else {
+                widget.values[id] = val;
+              }
+            });
+            widget.onChanged?.call();
+          },
         );
 
       default: // text
@@ -476,6 +503,166 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// '이미지' 필드 입력 — 고르면 바로 업로드하고, 문서에 그려질 저장 경로만
+/// formValues에 남긴다(웹 FormRenderer의 ImageFieldControl과 같은 동작).
+class _ImageFieldControl extends StatefulWidget {
+  final Map<String, dynamic> field;
+  final Map<String, dynamic>? value;
+  final ValueChanged<Map<String, dynamic>?> onChanged;
+
+  const _ImageFieldControl({
+    required this.field,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  State<_ImageFieldControl> createState() => _ImageFieldControlState();
+}
+
+class _ImageFieldControlState extends State<_ImageFieldControl> {
+  static const List<String> _allowedExtensions = ['jpg', 'jpeg', 'png'];
+
+  bool _isUploading = false;
+  String? _error;
+
+  Future<void> _pickAndUpload() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked == null) return;
+
+      final ext = picked.name.contains('.')
+          ? picked.name.split('.').last.toLowerCase()
+          : '';
+      if (!_allowedExtensions.contains(ext)) {
+        setState(() => _error = 'jpg 또는 png 이미지만 올릴 수 있습니다.');
+        return;
+      }
+
+      setState(() {
+        _isUploading = true;
+        _error = null;
+      });
+
+      final result = await ApiService().uploadFileToServer(
+        filePath: picked.path,
+        category: 'approvals',
+      );
+
+      widget.onChanged({
+        'fileUrl': result['filePath']?.toString() ?? '',
+        'fileName': result['fileName']?.toString() ?? picked.name,
+        if (result['fileSize'] != null) 'fileSize': result['fileSize'],
+      });
+    } catch (e) {
+      setState(() => _error = '이미지 업로드에 실패했습니다: $e');
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = widget.value;
+    final hasValue = value != null &&
+        (value['fileUrl']?.toString() ?? '').isNotEmpty;
+
+    if (hasValue) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ApprovalImageFieldValue(
+            fileUrl: value['fileUrl']?.toString(),
+            fileName: value['fileName']?.toString(),
+            maxWidth: 200,
+            maxHeight: 200,
+          ),
+          const SizedBox(height: AppSpacing.space1_5),
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  value['fileName']?.toString() ?? '',
+                  style: AppTypography.caption
+                      .copyWith(color: AppSemanticColors.textTertiary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.space2),
+              GestureDetector(
+                onTap: _isUploading ? null : _pickAndUpload,
+                child: Text(
+                  _isUploading ? '업로드 중...' : '다른 이미지로 바꾸기',
+                  style: AppTypography.caption.copyWith(
+                    color: AppSemanticColors.interactivePrimaryDefault,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: _isUploading ? null : _pickAndUpload,
+          borderRadius: BorderRadius.circular(AppBorderRadius.md),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.space4,
+              horizontal: AppSpacing.space3,
+            ),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppSemanticColors.borderDefault),
+              borderRadius: BorderRadius.circular(AppBorderRadius.md),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isUploading)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Icon(Icons.add_photo_alternate_outlined,
+                      size: 18, color: AppSemanticColors.textSecondary),
+                const SizedBox(width: AppSpacing.space2),
+                Text(
+                  _isUploading
+                      ? '업로드 중...'
+                      : (widget.field['placeholder']?.toString() ??
+                          '클릭해서 jpg·png 이미지 첨부'),
+                  style: AppTypography.bodySmall
+                      .copyWith(color: AppSemanticColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpacing.space1),
+          Text(
+            _error!,
+            style: AppTypography.caption
+                .copyWith(color: AppSemanticColors.statusErrorIcon),
+          ),
+        ],
+      ],
     );
   }
 }

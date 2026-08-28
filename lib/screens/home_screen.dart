@@ -64,14 +64,17 @@ class _HomeScreenState extends State<HomeScreen> {
           DateTime.now(),
           companyId: companyId,
         ),
+        // 관리자·직원 모두 결재함(열람 범위 문서)을 받아둔다 — 홈 "전자결재" 칸에서
+        // "내 차례" 문서를 우선 보여주는 데 쓴다(직원은 아래에서 내가 기안한 문서도
+        // 별도로 받아 두 목록을 합친다).
+        context.read<ApprovalProvider>().loadApprovalRequests(
+          companyId: companyId,
+          refresh: true,
+        ),
       ];
 
       if (isAdmin) {
         futures.addAll([
-          context.read<ApprovalProvider>().loadApprovalRequests(
-            companyId: companyId,
-            refresh: true,
-          ),
           context.read<NoticeProvider>().loadNotices(
             companyId: companyId,
             refresh: true,
@@ -255,7 +258,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openApproval() {
+  /// 전자결재 칸 "전체보기" — 지금 내 차례인 문서가 있으면 결재관리(받은 결재) 탭으로
+  /// 바로 연다. 없으면 기존처럼 하단 탭 전환 또는 기본 탭(결재 신청)으로 이동한다.
+  void _openApproval({required bool hasMyTurn}) {
+    if (hasMyTurn) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const ApprovalHubScreen(initialTab: 1)),
+      );
+      return;
+    }
     if (widget.onNavigateToTab != null) {
       widget.onNavigateToTab!(MainTabs.approval);
       return;
@@ -287,12 +298,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final vacationProvider = context.watch<VacationProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
 
+    // 지금 내 차례인 결재 건수 — 기존 "전자결재" 칸 안에서 강조하는 데 쓴다
+    // (새 영역을 만들지 않는다 — 알림을 놓치면 메뉴 깊숙이 숨어 안 보이던 것을
+    // 홈의 전자결재 칸에서 바로 드러낸다).
+    final myTurnApprovals = approvalProvider.myTurnCount(
+      myId: user.id,
+      isAdmin: isAdmin,
+    );
+
     final recentNotices = _getRecentNotices(
       isAdmin: isAdmin,
       noticeProvider: noticeProvider,
     );
     final recentApprovals = _getRecentApprovals(
       isAdmin: isAdmin,
+      myId: user.id,
       approvalProvider: approvalProvider,
     );
 
@@ -436,10 +456,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _SectionHeader(
-                            title: '전자결재',
-                            subtitle: isAdmin ? '승인이 필요한 문서' : '내 결재 진행 상황',
+                            // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
+                            // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
+                            title: myTurnApprovals > 0
+                                ? '전자결재 ($myTurnApprovals)'
+                                : '전자결재',
+                            subtitle: myTurnApprovals > 0
+                                ? '지금 내가 처리할 결재 $myTurnApprovals건'
+                                : (isAdmin ? '승인이 필요한 문서' : '내 결재 진행 상황'),
                             actionLabel: '전체보기',
-                            onAction: _openApproval,
+                            onAction: () => _openApproval(hasMyTurn: myTurnApprovals > 0),
                           ),
                           const SizedBox(height: AppSpacing.space3),
                           if (recentApprovals.isEmpty)
@@ -516,18 +542,35 @@ class _HomeScreenState extends State<HomeScreen> {
     return notices.take(2).toList();
   }
 
-  /// 홈 전자결재 칸의 두 건 — 대기 문서를 먼저, 그 다음 최신순.
-  /// 관리자는 회사 결재함, 직원은 내가 기안한 문서 기준이다.
+  /// 홈 전자결재 칸의 두 건 — 내 차례인 문서를 최우선, 그다음 대기 문서, 그다음 최신순.
+  /// 관리자는 회사 결재함 기준, 직원은 "내가 기안한 문서"에 "내 차례인 문서"(결재함에서)를
+  /// 합쳐서 본다 — 내가 기안한 것만 보이면 정작 내가 서명해야 할 문서를 놓친다.
   List<ApprovalRequest> _getRecentApprovals({
     required bool isAdmin,
+    required String? myId,
     required ApprovalProvider approvalProvider,
   }) {
-    final source = List<ApprovalRequest>.from(
-      isAdmin
-          ? approvalProvider.approvalRequests
-          : approvalProvider.myApprovalRequests,
-    );
+    final List<ApprovalRequest> source;
+    if (isAdmin) {
+      source = List<ApprovalRequest>.from(approvalProvider.approvalRequests);
+    } else {
+      final merged = <int, ApprovalRequest>{};
+      // 내 차례인 문서를 먼저 넣어 우선순위를 보장한다
+      for (final r in approvalProvider.approvalRequests) {
+        if (approvalProvider.isMyTurn(r, myId: myId, isAdmin: isAdmin)) {
+          merged[r.id] = r;
+        }
+      }
+      for (final r in approvalProvider.myApprovalRequests) {
+        merged.putIfAbsent(r.id, () => r);
+      }
+      source = merged.values.toList();
+    }
+
     source.sort((a, b) {
+      final aMyTurn = approvalProvider.isMyTurn(a, myId: myId, isAdmin: isAdmin) ? 0 : 1;
+      final bMyTurn = approvalProvider.isMyTurn(b, myId: myId, isAdmin: isAdmin) ? 0 : 1;
+      if (aMyTurn != bMyTurn) return aMyTurn - bMyTurn;
       final aPending = a.status == ApprovalStatus.pending ? 0 : 1;
       final bPending = b.status == ApprovalStatus.pending ? 0 : 1;
       if (aPending != bPending) return aPending - bPending;

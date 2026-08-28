@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../models/approval.dart';
 import '../../utils/form_field_width.dart';
 import '../../theme/app_colors.dart';
+import 'approval_image_value.dart';
 
 /// 표준 기안문(공문) 형태의 결재 문서 뷰.
 ///
@@ -479,6 +480,25 @@ class OfficialDocumentView extends StatelessWidget {
           usedKeys.addAll(['${id}_start', '${id}_end']);
         }
         usedKeys.add(id);
+
+        // 이미지 필드는 formData에 {fileUrl, fileName, fileSize?}가 들어있다 —
+        // 텍스트로 찍으면 Map이 그대로 문자열화되므로 문서 안에 실제 이미지를 그린다.
+        if (type == 'image' && value is Map) {
+          final imageValue = Map<String, dynamic>.from(value);
+          entries.add(_DocFieldEntry(
+            label,
+            '',
+            fieldWidthSpan(field['width']),
+            valueWidget: ApprovalImageFieldValue(
+              fileUrl: imageValue['fileUrl']?.toString(),
+              fileName: imageValue['fileName']?.toString(),
+              maxWidth: 200,
+              maxHeight: 200,
+            ),
+          ));
+          continue;
+        }
+
         entries.add(_DocFieldEntry(
             label, formatValue(field, value), fieldWidthSpan(field['width'])));
       }
@@ -585,8 +605,9 @@ class OfficialDocumentView extends StatelessWidget {
             ),
           ),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-          child: Text(entry.value,
-              style: const TextStyle(fontSize: 13, color: _ink)),
+          child: entry.valueWidget ??
+              Text(entry.value,
+                  style: const TextStyle(fontSize: 13, color: _ink)),
         ),
       ));
     }
@@ -596,12 +617,16 @@ class OfficialDocumentView extends StatelessWidget {
 
 /// 공문 본문 한 칸 — 라벨과 값, 그리고 한 줄에서 차지할 폭
 class _DocFieldEntry {
-  const _DocFieldEntry(this.label, this.value, this.span, {this.isSection = false});
+  const _DocFieldEntry(this.label, this.value, this.span,
+      {this.isSection = false, this.valueWidget});
 
   final String label;
   final String value;
   final int span;
   final bool isSection;
+
+  /// 텍스트 대신 그릴 값(이미지 필드 등). 있으면 [value] 대신 이걸 그린다.
+  final Widget? valueWidget;
 }
 
 enum _BoxState { approved, rejected, skipped, inProgress, waiting }

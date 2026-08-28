@@ -174,6 +174,9 @@ class _AdminApprovalManagementScreenState
             return r.status == ApprovalStatus.approved;
           case 'rejected':
             return r.status == ApprovalStatus.rejected;
+          // 내 차례 — 대기중이면서 지금 내가 처리해야 하는 문서만
+          case 'my_turn':
+            return r.status == ApprovalStatus.pending && _isMyTurn(r);
           default:
             return true;
         }
@@ -193,6 +196,25 @@ class _AdminApprovalManagementScreenState
     filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return filtered;
+  }
+
+  /// 필터 결과가 비었을 때의 안내문.
+  ///
+  /// 열람 범위 문서함 자체(unfiltered)가 비어 있으면 정말 아무것도 없는 것이지만,
+  /// "내 차례"·"승인 대기" 필터만 비어 있고 전체 문서함(unfiltered)엔 처리된 문서가
+  /// 있는 경우 — "여긴 없지만 어딘가엔 있다"를 알려줘야 한다. 그렇지 않으면 직원이
+  /// 자기가 볼 수 있는 문서가 애초에 없다고 오해한다.
+  String _emptyStateMessage(List<ApprovalRequest> unfiltered) {
+    if (unfiltered.isEmpty) {
+      return '결재 요청이 없습니다';
+    }
+    if (_statusFilter == 'my_turn' || _statusFilter == 'pending') {
+      return '지금 결재할 문서가 없습니다.\n완료된 문서는 위 상태 필터에서 볼 수 있어요';
+    }
+    if (_searchQuery.isNotEmpty) {
+      return '검색 결과가 없습니다';
+    }
+    return '결재 요청이 없습니다';
   }
 
   Future<void> _approveRequest(int requestId, {bool force = false}) async {
@@ -433,14 +455,25 @@ class _AdminApprovalManagementScreenState
       builder: (context, approvalProvider, child) {
         final filteredRequests =
             _getFilteredRequests(approvalProvider.approvalRequests);
+        final currentUser = context.watch<AuthProvider>().currentUser;
+        final myTurnCount = approvalProvider.myTurnCount(
+          myId: currentUser?.id,
+          isAdmin: _canManage,
+        );
 
         return RefreshIndicator(
           onRefresh: _loadData,
           child: CustomScrollView(
             slivers: [
+              // "내 차례" 배너 — 지금 처리해야 할 문서가 있으면 눈에 띄게
+              if (myTurnCount > 0 && _statusFilter != 'my_turn')
+                SliverToBoxAdapter(
+                  child: _buildMyTurnBanner(myTurnCount),
+                ),
+
               // 필터 섹션
               SliverToBoxAdapter(
-                child: _buildFilterSection(),
+                child: _buildFilterSection(myTurnCount),
               ),
 
               // 일괄 처리 버튼 — 기관 관리자 전용
@@ -466,7 +499,8 @@ class _AdminApprovalManagementScreenState
                         ),
                         const SizedBox(height: AppSpacing.space4),
                         Text(
-                          '결재 요청이 없습니다',
+                          _emptyStateMessage(approvalProvider.approvalRequests),
+                          textAlign: TextAlign.center,
                           style: AppTypography.bodyMedium.copyWith(
                             color: AppSemanticColors.textSecondary,
                           ),
@@ -498,7 +532,49 @@ class _AdminApprovalManagementScreenState
     );
   }
 
-  Widget _buildFilterSection() {
+  /// 지금 처리해야 할 문서가 있음을 알리는 배너 — 누르면 "내 차례" 필터로 바로 간다.
+  Widget _buildMyTurnBanner(int count) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space4,
+        AppSpacing.space4,
+        AppSpacing.space4,
+        0,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        onTap: () => setState(() => _statusFilter = 'my_turn'),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.space3),
+          decoration: BoxDecoration(
+            color: AppSemanticColors.statusInfoBackground,
+            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.notifications_active,
+                  size: 18, color: AppSemanticColors.statusInfoIcon),
+              const SizedBox(width: AppSpacing.space2),
+              Expanded(
+                child: Text(
+                  '지금 내가 처리할 결재 $count건이 있습니다',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.statusInfoText,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right,
+                  size: 18, color: AppSemanticColors.statusInfoIcon),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterSection(int myTurnCount) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.space4),
       decoration: BoxDecoration(
@@ -525,6 +601,13 @@ class _AdminApprovalManagementScreenState
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
+                if (myTurnCount > 0) ...[
+                  _buildStatusFilterChip(
+                    '내 차례 ($myTurnCount)',
+                    'my_turn',
+                  ),
+                  const SizedBox(width: AppSpacing.space2),
+                ],
                 _buildStatusFilterChip('전체', 'all'),
                 const SizedBox(width: AppSpacing.space2),
                 _buildStatusFilterChip('승인 대기', 'pending'),

@@ -49,6 +49,28 @@ class ApprovalProvider with ChangeNotifier {
       .where((r) => r.status == ApprovalStatus.pending)
       .length;
 
+  /// 이 문서가 지금 "내 차례"인지 — 결재선이 있으면 현재 단계의 결재자가 나인
+  /// 대기 문서만, 결재선이 없는 legacy 문서는 관리자만 처리할 수 있으므로
+  /// 관리자일 때만 그렇다고 본다.
+  /// 결재선의 approverId는 직원이면 memberId, 관리자면 'admin_<id>' 형식이라
+  /// 두 형태를 모두 내 id로 인정해야 관리자형 단계도 내 차례로 잡힌다.
+  bool isMyTurn(ApprovalRequest r, {required String? myId, required bool isAdmin}) {
+    if (myId == null || myId.isEmpty) return false;
+    if (r.status != ApprovalStatus.pending) return false;
+    final ids = <String>{myId, if (isAdmin) 'admin_$myId'};
+    if (r.approvalLine.isEmpty) return isAdmin;
+    final step = r.currentStep;
+    return step != null && ids.contains(step.approverId);
+  }
+
+  /// "내 차례"인 결재 문서 개수 — 결재함(approvalRequests) 기준.
+  int myTurnCount({required String? myId, required bool isAdmin}) {
+    if (myId == null || myId.isEmpty) return 0;
+    return _approvalRequests.where((r) {
+      return isMyTurn(r, myId: myId, isAdmin: isAdmin);
+    }).length;
+  }
+
   void setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();

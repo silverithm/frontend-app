@@ -3858,6 +3858,28 @@ class ApiService {
     return '$_baseUrl/v1/files/download?$query';
   }
 
+  /// 저장 경로의 파일을 메모리로 바로 내려받는다.
+  /// 결재 문서 안에 그려야 하는 이미지 필드처럼, 별도 저장 없이 화면에
+  /// 바로 그릴 값이 필요할 때 쓴다(웹의 인증 blob fetch와 같은 역할).
+  Future<List<int>> downloadFileBytes(String path) async {
+    final token = StorageService().getToken();
+    final dioClient = dio.Dio();
+
+    final response = await dioClient.get<List<int>>(
+      fileDownloadUrl(path, path.split('/').last),
+      options: dio.Options(
+        responseType: dio.ResponseType.bytes,
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
+      ),
+    );
+
+    final data = response.data;
+    if (data == null) {
+      throw ApiException('파일을 불러오지 못했습니다', response.statusCode ?? 500);
+    }
+    return data;
+  }
+
   // ===== 고충·신고 / 건의함 (VoiceBox) =====
 
   // 고충·신고 또는 건의 제출 (익명 여부 포함) — 같은 기관 인증 사용자 누구나 가능

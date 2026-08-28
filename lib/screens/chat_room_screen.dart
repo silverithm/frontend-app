@@ -11,9 +11,11 @@ import 'package:dio/dio.dart' as dio;
 import 'package:open_filex/open_filex.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import '../providers/schedule_provider.dart';
 import '../models/chat_room.dart';
 import '../models/chat_message.dart';
 import '../models/chat_participant.dart';
+import '../models/schedule_colors.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -352,68 +354,87 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // 10MB 상수 (바이트)
   static const int _maxFileSize = 10 * 1024 * 1024; // 10MB
 
+  /// 갤러리에서 사진을 여러 장 골라 한 번에 보낸다.
+  /// 각 사진은 독립된 메시지 버블로 즉시 올라가 각자 전송중 표시가 붙으므로
+  /// 진행 상황은 그 버블들로 보이고, 한 장이 실패해도 나머지는 계속 전송된다.
   Future<void> _pickAndSendPhoto() async {
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      final List<XFile> images = await picker.pickMultiImage();
 
-      if (image != null) {
-        File file = File(image.path);
-        final fileSize = await file.length();
+      if (images.isEmpty) return;
 
-        print(
-          '[ChatRoomScreen] 선택된 파일: ${image.name}, 크기: ${_formatFileSize(fileSize)} ($fileSize bytes)',
-        );
+      if (images.length > 1 && mounted) {
+        AppSnackBar.showInfo(context, message: '사진 ${images.length}장 전송 중...');
+      }
 
-        // 10MB 초과시 압축
-        if (fileSize > _maxFileSize) {
-          if (mounted) {
-            AppSnackBar.showInfo(context,
-                message: '파일 크기가 ${_formatFileSize(fileSize)}입니다. 자동으로 압축 중...');
-          }
+      int successCount = 0;
+      int failCount = 0;
 
-          final compressedFile = await _compressImage(file, fileSize);
-          if (compressedFile != null) {
-            file = compressedFile;
-            final compressedSize = await file.length();
-            if (mounted) {
-              AppSnackBar.showSuccess(
-                context,
-                message:
-                    '압축 완료: ${_formatFileSize(fileSize)} → ${_formatFileSize(compressedSize)}',
-              );
-            }
-          } else {
-            if (mounted) {
-              AppSnackBar.showError(
-                context,
-                message: '이미지 압축에 실패했습니다. 다른 이미지를 선택해주세요.',
-              );
-            }
-            return;
-          }
+      for (final image in images) {
+        final ok = await _sendPhotoFile(image);
+        if (ok) {
+          successCount++;
+        } else {
+          failCount++;
         }
+      }
 
-        // 전송 전 최종 파일 크기 확인
-        final finalSize = await file.length();
-        print(
-          '[ChatRoomScreen] 전송할 파일 크기: ${_formatFileSize(finalSize)} ($finalSize bytes)',
-        );
-
-        final chatProvider = context.read<ChatProvider>();
-        final authProvider = context.read<AuthProvider>();
-        await chatProvider.sendFileMessage(
-          widget.room.id,
-          file,
-          senderId: authProvider.currentUser?.chatUserId ?? '',
-          senderName: authProvider.currentUser?.name ?? '',
-        );
+      if (images.length > 1 && mounted) {
+        if (failCount == 0) {
+          AppSnackBar.showSuccess(context, message: '사진 $successCount장 전송 완료');
+        } else {
+          AppSnackBar.showError(
+            context,
+            message: '사진 전송 완료 $successCount장 / 실패 $failCount장',
+          );
+        }
       }
     } catch (e) {
       print('[ChatRoomScreen] 사진 선택 에러: $e');
       if (mounted) {
         AppSnackBar.showError(context, message: '사진 선택에 실패했습니다: $e');
       }
+    }
+  }
+
+  /// 사진 한 장을 (필요하면 압축 후) 전송한다. 성공하면 true.
+  Future<bool> _sendPhotoFile(XFile image) async {
+    try {
+      File file = File(image.path);
+      final fileSize = await file.length();
+
+      print(
+        '[ChatRoomScreen] 선택된 파일: ${image.name}, 크기: ${_formatFileSize(fileSize)} ($fileSize bytes)',
+      );
+
+      // 10MB 초과시 압축
+      if (fileSize > _maxFileSize) {
+        final compressedFile = await _compressImage(file, fileSize);
+        if (compressedFile != null) {
+          file = compressedFile;
+        } else {
+          if (mounted) {
+            AppSnackBar.showError(
+              context,
+              message: '${image.name} 압축에 실패해 전송하지 못했습니다.',
+            );
+          }
+          return false;
+        }
+      }
+
+      final chatProvider = context.read<ChatProvider>();
+      final authProvider = context.read<AuthProvider>();
+      return await chatProvider.sendFileMessage(
+        widget.room.id,
+        file,
+        senderId: authProvider.currentUser?.chatUserId ?? '',
+        senderName: authProvider.currentUser?.name ?? '',
+      );
+    } catch (e) {
+      print('[ChatRoomScreen] 사진 전송 에러: $e');
+      return false;
     }
   }
 
@@ -515,6 +536,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  /// 문서 파일을 여러 개 골라 한 번에 보낸다. 사진과 마찬가지로 각 파일은
+  /// 독립된 버블로 올라가고, 한 개가 실패해도 나머지는 계속 전송한다.
   Future<void> _pickAndSendFile() async {
     try {
       // 문서 파일만 허용 (SAF API 사용 - 권한 불필요)
@@ -522,38 +545,75 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         label: 'documents',
         extensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx'],
       );
-      final XFile? result = await openFile(acceptedTypeGroups: [typeGroup]);
+      final List<XFile> results = await openFiles(
+        acceptedTypeGroups: [typeGroup],
+      );
 
-      if (result != null) {
-        File file = File(result.path);
-        final fileSize = await file.length();
+      if (results.isEmpty) return;
 
-        // 문서 파일은 10MB 초과시 업로드 불가
-        if (fileSize > _maxFileSize) {
-          if (mounted) {
-            AppSnackBar.showError(
-              context,
-              message:
-                  '파일 크기가 너무 큽니다 (${_formatFileSize(fileSize)}). 최대 10MB까지 업로드 가능합니다.',
-            );
-          }
-          return;
+      if (results.length > 1 && mounted) {
+        AppSnackBar.showInfo(context, message: '파일 ${results.length}개 전송 중...');
+      }
+
+      int successCount = 0;
+      int failCount = 0;
+
+      for (final result in results) {
+        final ok = await _sendDocumentFile(result);
+        if (ok) {
+          successCount++;
+        } else {
+          failCount++;
         }
+      }
 
-        final chatProvider = context.read<ChatProvider>();
-        final authProvider = context.read<AuthProvider>();
-        await chatProvider.sendFileMessage(
-          widget.room.id,
-          file,
-          senderId: authProvider.currentUser?.chatUserId ?? '',
-          senderName: authProvider.currentUser?.name ?? '',
-        );
+      if (results.length > 1 && mounted) {
+        if (failCount == 0) {
+          AppSnackBar.showSuccess(context, message: '파일 $successCount개 전송 완료');
+        } else {
+          AppSnackBar.showError(
+            context,
+            message: '파일 전송 완료 $successCount개 / 실패 $failCount개',
+          );
+        }
       }
     } catch (e) {
       print('[ChatRoomScreen] 파일 선택 에러: $e');
       if (mounted) {
         AppSnackBar.showError(context, message: '파일 선택에 실패했습니다: $e');
       }
+    }
+  }
+
+  /// 문서 파일 하나를 전송한다. 성공하면 true.
+  Future<bool> _sendDocumentFile(XFile result) async {
+    try {
+      final file = File(result.path);
+      final fileSize = await file.length();
+
+      // 문서 파일은 10MB 초과시 업로드 불가
+      if (fileSize > _maxFileSize) {
+        if (mounted) {
+          AppSnackBar.showError(
+            context,
+            message:
+                '${result.name} 크기가 너무 큽니다 (${_formatFileSize(fileSize)}). 최대 10MB까지 업로드 가능합니다.',
+          );
+        }
+        return false;
+      }
+
+      final chatProvider = context.read<ChatProvider>();
+      final authProvider = context.read<AuthProvider>();
+      return await chatProvider.sendFileMessage(
+        widget.room.id,
+        file,
+        senderId: authProvider.currentUser?.chatUserId ?? '',
+        senderName: authProvider.currentUser?.name ?? '',
+      );
+    } catch (e) {
+      print('[ChatRoomScreen] 파일 전송 에러: $e');
+      return false;
     }
   }
 
@@ -643,6 +703,510 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } else {
       AppSnackBar.showError(context, message: '공지를 내리지 못했습니다');
     }
+  }
+
+  // ===================== 채팅 → 일정 등록 =====================
+
+  /// 메시지를 기반으로 일정 등록 시트를 연다. 메시지 텍스트가 제목에
+  /// 미리 채워지고(수정 가능), 그 외 항목은 캘린더 화면의 일정 등록과 동일한
+  /// 4개 기본 구분 + 날짜/시간/알림 흐름을 그대로 따른다. 등록은
+  /// ScheduleProvider.createSchedule을 그대로 호출하므로 월간 화면과
+  /// 같은 데이터로 즉시 반영된다.
+  void _showAddScheduleFromMessage(ChatMessage message) {
+    final defaultTitle = message.type == MessageType.text
+        ? (message.content ?? '')
+        : (message.fileName ?? message.displayContent.replaceAll(
+            RegExp(r'^\[[^\]]*\]\s*'),
+            '',
+          ));
+
+    final titleController = TextEditingController(text: defaultTitle);
+    final contentController = TextEditingController();
+    final locationController = TextEditingController();
+    String selectedCategory = 'MEETING';
+    String selectedColorHex = '';
+    DateTime startDate = DateTime.now();
+    DateTime endDate = DateTime.now();
+    bool isAllDay = true;
+    TimeOfDay startTime = const TimeOfDay(hour: 9, minute: 0);
+    TimeOfDay endTime = const TimeOfDay(hour: 18, minute: 0);
+    bool sendNotification = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppSemanticColors.surfaceDefault,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppBorderRadius.xl2),
+        ),
+      ),
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: AppSpacing.space4,
+                right: AppSpacing.space4,
+                top: AppSpacing.space4,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom +
+                    AppSpacing.space4,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: AppSpacing.space10,
+                        height: AppSpacing.space1,
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.borderDefault,
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.sm,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '일정 등록',
+                          style: AppTypography.heading5.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: '닫기',
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(
+                            Icons.close,
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+
+                    // 제목 — 채팅 메시지 내용이 기본값이며 자유롭게 수정 가능
+                    SeedTextField(
+                      label: '제목 *',
+                      controller: titleController,
+                      placeholder: '일정 제목을 입력하세요',
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    SeedTextField(
+                      label: '내용',
+                      controller: contentController,
+                      placeholder: '일정 내용을 입력하세요',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    // 일정 구분 (기본 4종)
+                    DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      decoration: InputDecoration(
+                        labelText: '일정 구분',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.lg,
+                          ),
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'MEETING', child: Text('회의')),
+                        DropdownMenuItem(value: 'EVENT', child: Text('행사')),
+                        DropdownMenuItem(
+                          value: 'TRAINING',
+                          child: Text('교육'),
+                        ),
+                        DropdownMenuItem(value: 'OTHER', child: Text('기타')),
+                      ],
+                      onChanged: (value) {
+                        setModalState(() {
+                          selectedCategory = value ?? 'MEETING';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    Text(
+                      '색상',
+                      style: AppTypography.labelLarge.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                    Wrap(
+                      spacing: AppSpacing.space2,
+                      runSpacing: AppSpacing.space2,
+                      children: [
+                        _buildScheduleSwatch(
+                          color: null,
+                          isSelected: selectedColorHex.isEmpty,
+                          tooltip: '색상 없음',
+                          onTap: () {
+                            setModalState(() {
+                              selectedColorHex = '';
+                            });
+                          },
+                        ),
+                        for (final option in ScheduleColorPalette.values)
+                          _buildScheduleSwatch(
+                            color: option.color,
+                            isSelected: selectedColorHex == option.hex,
+                            tooltip: option.name,
+                            onTap: () {
+                              setModalState(() {
+                                selectedColorHex = option.hex;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    SeedTextField(
+                      label: '장소',
+                      controller: locationController,
+                      placeholder: '장소를 입력하세요',
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '종일',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                        Switch(
+                          value: isAllDay,
+                          onChanged: (value) {
+                            setModalState(() {
+                              isAllDay = value;
+                            });
+                          },
+                          activeTrackColor:
+                              AppSemanticColors.interactivePrimaryDefault,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: startDate,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setModalState(() {
+                                  startDate = picked;
+                                  if (endDate.isBefore(startDate)) {
+                                    endDate = startDate;
+                                  }
+                                });
+                              }
+                            },
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: '시작일',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.lg,
+                                  ),
+                                ),
+                                suffixIcon: const Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                ),
+                              ),
+                              child: Text(
+                                '${startDate.month}/${startDate.day}',
+                                style: AppTypography.bodyMedium,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: endDate,
+                                firstDate: startDate,
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setModalState(() {
+                                  endDate = picked;
+                                });
+                              }
+                            },
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                labelText: '종료일',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.lg,
+                                  ),
+                                ),
+                                suffixIcon: const Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                ),
+                              ),
+                              child: Text(
+                                '${endDate.month}/${endDate.day}',
+                                style: AppTypography.bodyMedium,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    if (!isAllDay) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: startTime,
+                                );
+                                if (picked != null) {
+                                  setModalState(() {
+                                    startTime = picked;
+                                  });
+                                }
+                              },
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: '시작 시간',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.lg,
+                                    ),
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.access_time,
+                                    size: 18,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
+                                  style: AppTypography.bodyMedium,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.space3),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () async {
+                                final picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: endTime,
+                                );
+                                if (picked != null) {
+                                  setModalState(() {
+                                    endTime = picked;
+                                  });
+                                }
+                              },
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: '종료 시간',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.lg,
+                                    ),
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.access_time,
+                                    size: 18,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
+                                  style: AppTypography.bodyMedium,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                    ],
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '알림 발송',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                        Switch(
+                          value: sendNotification,
+                          onChanged: (value) {
+                            setModalState(() {
+                              sendNotification = value;
+                            });
+                          },
+                          activeTrackColor:
+                              AppSemanticColors.interactivePrimaryDefault,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: SeedButton(
+                        label: '등록',
+                        variant: SeedButtonVariant.brandSolid,
+                        size: SeedButtonSize.large,
+                        onPressed: () async {
+                          if (titleController.text.trim().isEmpty) {
+                            AppSnackBar.showWarning(
+                              context,
+                              message: '제목을 입력해주세요',
+                            );
+                            return;
+                          }
+
+                          final authProvider = context.read<AuthProvider>();
+                          final scheduleProvider = context
+                              .read<ScheduleProvider>();
+                          final companyId =
+                              authProvider.currentUser?.company?.id ?? '1';
+
+                          final startDateStr =
+                              '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+                          final endDateStr =
+                              '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+
+                          final scheduleData = <String, dynamic>{
+                            'title': titleController.text.trim(),
+                            'content': contentController.text.trim().isEmpty
+                                ? null
+                                : contentController.text.trim(),
+                            'category': selectedCategory,
+                            'color': selectedColorHex,
+                            'location': locationController.text.trim().isEmpty
+                                ? null
+                                : locationController.text.trim(),
+                            'startDate': startDateStr,
+                            'endDate': endDateStr,
+                            'isAllDay': isAllDay,
+                            'sendNotification': sendNotification,
+                          };
+
+                          if (!isAllDay) {
+                            scheduleData['startTime'] =
+                                '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}:00';
+                            scheduleData['endTime'] =
+                                '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}:00';
+                          }
+
+                          Navigator.pop(context);
+
+                          final success = await scheduleProvider
+                              .createSchedule(
+                                companyId: companyId.toString(),
+                                scheduleData: scheduleData,
+                              );
+
+                          if (mounted) {
+                            if (success) {
+                              AppSnackBar.showSuccess(
+                                context,
+                                message: '일정이 등록되었습니다',
+                              );
+                            } else {
+                              AppSnackBar.showError(
+                                context,
+                                message: '일정 등록에 실패했습니다',
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildScheduleSwatch({
+    required Color? color,
+    required bool isSelected,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: color ?? AppSemanticColors.surfaceDefault,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSelected
+                  ? AppSemanticColors.interactivePrimaryDefault
+                  : AppSemanticColors.borderDefault,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: color == null
+              ? Icon(
+                  Icons.block,
+                  size: 16,
+                  color: AppSemanticColors.textTertiary,
+                )
+              : (isSelected
+                    ? Icon(
+                        Icons.check,
+                        size: 16,
+                        color: AppSemanticColors.textInverse,
+                      )
+                    : null),
+        ),
+      ),
+    );
   }
 
   /// 방 상단에 붙는 공지 띠. 눌러서 펼치면 전체 내용이 보인다.
@@ -1206,6 +1770,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   _setAsNotice(message);
+                },
+              ),
+            if (message.type != MessageType.system && !message.isDeleted)
+              SeedListCell(
+                leadingIcon: Icons.event_available_outlined,
+                title: '일정 등록',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAddScheduleFromMessage(message);
                 },
               ),
             if (isMyMessage && !message.isDeleted)

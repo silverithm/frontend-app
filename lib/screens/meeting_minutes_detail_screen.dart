@@ -151,6 +151,35 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
               : ListView(
                   padding: const EdgeInsets.all(AppSpacing.space4),
                   children: [
+                    // 서명 필요 배너 — 아래로 스크롤하면 하단 서명 버튼을 놓치기 쉬워
+                    // 진입 즉시 눈에 띄게 알려준다.
+                    if (canSign) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppSpacing.space3),
+                        decoration: BoxDecoration(
+                          color: AppColors.teal50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.draw_outlined,
+                                size: 18, color: AppColors.teal700),
+                            const SizedBox(width: AppSpacing.space2),
+                            Expanded(
+                              child: Text(
+                                '내 서명이 필요한 회의록이에요. 내용을 확인한 뒤 하단 버튼으로 서명해주세요.',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.teal800,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                    ],
                     // 머리 정보
                     _card(
                       child: Column(
@@ -261,6 +290,8 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                 child: SeedButton(
                   label: _isSigning ? '서명 중...' : '확인했습니다 · 서명하기',
                   onPressed: _isSigning ? null : _sign,
+                  isLoading: _isSigning,
+                  prefixIcon: Icons.draw_outlined,
                 ),
               ),
             )
