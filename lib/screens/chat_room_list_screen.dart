@@ -7,6 +7,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../widgets/common/app_action_sheet.dart';
+import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/chat/chat_member_list.dart';
@@ -263,9 +266,84 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     );
   }
 
+  /// 목록에서 방을 길게 누르면 뜨는 액션 시트 — 카카오톡처럼 여기서 바로
+  /// 나가기(+관리자면 삭제)까지 갈 수 있어야 한다. 채팅방에 들어가서 정보
+  /// 화면까지 열어야만 나갈 수 있으면 사용자가 "기능이 없다"고 느낀다.
+  void _showRoomActions(ChatRoom room, bool isAdmin) {
+    showAppActionSheet(
+      context,
+      title: room.name,
+      actions: [
+        AppSheetAction(
+          icon: Icons.logout,
+          label: '채팅방 나가기',
+          onSelected: () => _confirmLeaveRoom(room),
+        ),
+        if (isAdmin)
+          AppSheetAction(
+            icon: Icons.delete_outline,
+            label: '채팅방 삭제',
+            isDestructive: true,
+            onSelected: () => _confirmDeleteRoom(room),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _confirmLeaveRoom(ChatRoom room) async {
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '채팅방 나가기',
+      message: '이 채팅방을 나가시겠습니까?\n나가면 대화 내용을 더 이상 볼 수 없습니다.',
+      confirmText: '나가기',
+      cancelText: '취소',
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    final userId = authProvider.currentUser?.chatUserId ?? '';
+
+    final success = await chatProvider.leaveRoom(room.id, userId);
+    if (!mounted) return;
+
+    if (!success) {
+      final errorMessage = chatProvider.errorMessage.isNotEmpty
+          ? chatProvider.errorMessage
+          : '채팅방 나가기에 실패했습니다.';
+      AppSnackBar.showError(context, message: errorMessage);
+    }
+  }
+
+  Future<void> _confirmDeleteRoom(ChatRoom room) async {
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '채팅방 삭제',
+      message: '이 채팅방을 삭제하시겠습니까?\n삭제 후에는 채팅방을 다시 열 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
+      confirmVariant: SeedButtonVariant.critical,
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final chatProvider = context.read<ChatProvider>();
+    final success = await chatProvider.deleteChatRoom(room.id);
+    if (!mounted) return;
+
+    if (!success) {
+      final errorMessage = chatProvider.errorMessage.isNotEmpty
+          ? chatProvider.errorMessage
+          : '채팅방 삭제에 실패했습니다.';
+      AppSnackBar.showError(context, message: errorMessage);
+    }
+  }
+
   Widget _buildChatRoomTile(ChatRoom room, bool isAdmin) {
     return InkWell(
       onTap: () => _navigateToChatRoom(room),
+      onLongPress: () => _showRoomActions(room, isAdmin),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.space4,

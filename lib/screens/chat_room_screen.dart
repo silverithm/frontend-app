@@ -33,7 +33,7 @@ import '../widgets/seed/seed_text_field.dart';
 import '../widgets/chat/chat_image_viewer.dart';
 import '../widgets/common/app_action_sheet.dart';
 
-enum _ChatRoomMenuAction { info, search, files, delete }
+enum _ChatRoomMenuAction { info, search, files, leave, delete }
 
 class ChatRoomScreen extends StatefulWidget {
   final ChatRoom room;
@@ -651,6 +651,38 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     AppSnackBar.showError(context, message: errorMessage);
   }
 
+  /// 상단 ⋯ 메뉴에서 바로 나가기 — 채팅방 정보 화면까지 들어가지 않아도
+  /// 되게 한다(정보 화면 안의 나가기는 그대로 두되, 여기서도 도달 가능해야 한다).
+  Future<void> _confirmLeaveChatRoom() async {
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '채팅방 나가기',
+      message: '이 채팅방을 나가시겠습니까?\n나가면 대화 내용을 더 이상 볼 수 없습니다.',
+      confirmText: '나가기',
+      cancelText: '취소',
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    final userId = authProvider.currentUser?.chatUserId ?? '';
+
+    final success = await chatProvider.leaveRoom(widget.room.id, userId);
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final errorMessage = chatProvider.errorMessage.isNotEmpty
+        ? chatProvider.errorMessage
+        : '채팅방 나가기에 실패했습니다.';
+    AppSnackBar.showError(context, message: errorMessage);
+  }
+
   Future<void> _handleRoomMenuAction(_ChatRoomMenuAction action) async {
     switch (action) {
       case _ChatRoomMenuAction.info:
@@ -661,6 +693,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         return;
       case _ChatRoomMenuAction.files:
         await _showFileDrawer();
+        return;
+      case _ChatRoomMenuAction.leave:
+        await _confirmLeaveChatRoom();
         return;
       case _ChatRoomMenuAction.delete:
         await _confirmDeleteChatRoom();
@@ -1688,7 +1723,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   // 자주 사용하는 이모지 목록
-  static const List<String> _quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+  // 웹(ChatManagement.tsx/FloatingChatMessages.tsx)과 같은 세트 — 한쪽에서
+  // 단 반응이 다른 쪽에서도 같은 이모지로 보여야 한다. 순서도 맞춰둔다.
+  static const List<String> _quickEmojis = ['❤️', '👍', '😂', '😮', '😢', '✅'];
 
   void _showMessageOptions(ChatMessage message) {
     final authProvider = context.read<AuthProvider>();
@@ -2229,6 +2266,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     label: '주고받은 파일',
                     onSelected: () =>
                         _handleRoomMenuAction(_ChatRoomMenuAction.files),
+                  ),
+                  AppSheetAction(
+                    icon: Icons.logout,
+                    label: '채팅방 나가기',
+                    onSelected: () =>
+                        _handleRoomMenuAction(_ChatRoomMenuAction.leave),
                   ),
                   if (isAdmin)
                     AppSheetAction(
