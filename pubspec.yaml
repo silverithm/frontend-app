@@ -104,6 +104,7 @@ dependencies:
 
   # 커뮤니티 게시글 리치텍스트(HTML) 렌더링을 위한 패키지 (표시 전용, webview 불필요)
   flutter_html: ^3.0.0
+  share_plus: ^12.0.2
 
 dev_dependencies:
   flutter_test:

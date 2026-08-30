@@ -1,6 +1,12 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../models/dispatch.dart';
 import '../../providers/dispatch_provider.dart';
@@ -27,6 +33,10 @@ class DispatchBoardView extends StatefulWidget {
 class _DispatchBoardViewState extends State<DispatchBoardView> {
   late DateTime _date;
   String _routeType = RouteType.toWork;
+
+  /// 이미지로 내보낼 영역. 조작 줄은 빼고 표만 담는다.
+  final GlobalKey _captureKey = GlobalKey();
+  bool _isCapturing = false;
 
   @override
   void initState() {
@@ -65,6 +75,42 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     );
   }
 
+  /// 배차표를 그림으로 만들어 공유 시트로 넘긴다.
+  /// 카톡방에 올리는 것이 목적이라 앨범 저장이 아니라 바로 공유로 간다.
+  Future<void> _shareImage() async {
+    if (_isCapturing) return;
+    setState(() => _isCapturing = true);
+
+    try {
+      final boundary =
+          _captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) throw StateError('캡처할 화면을 찾지 못했습니다');
+
+      // 화면 배율보다 조금 크게 떠야 카톡에서 글자가 뭉개지지 않는다
+      final image = await boundary.toImage(pixelRatio: 3);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (bytes == null) throw StateError('이미지를 만들지 못했습니다');
+
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/배차표_${formatDate(_date)}_$_routeType.png');
+      await file.writeAsBytes(bytes.buffer.asUint8List());
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: '${formatBoardDate(formatDate(_date))} $_routeType 배차표',
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미지를 만들지 못했습니다. 텍스트 복사를 이용해 주세요')),
+      );
+    } finally {
+      if (mounted) setState(() => _isCapturing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DispatchProvider>();
@@ -78,30 +124,47 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildControls(daily),
-        _buildHeader(daily, personal),
         Expanded(
-          child: dispatches.isEmpty
-              ? Center(
-                  child: Text(
-                    '$_routeType 노선이 없습니다',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.space4,
-                    0,
-                    AppSpacing.space4,
-                    AppSpacing.space4,
-                  ),
-                  itemCount: dispatches.length,
-                  itemBuilder: (_, index) =>
-                      _RouteBlock(dispatch: dispatches[index]),
-                ),
+          child: RepaintBoundary(
+            key: _captureKey,
+            child: Container(
+              // 캡처본 배경을 명시하지 않으면 투명 PNG가 나와 글자가 안 보인다
+              color: AppSemanticColors.backgroundSecondary,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildHeader(daily, personal),
+                  Expanded(child: _buildRouteList(dispatches)),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildRouteList(List<RouteDispatch> dispatches) {
+    if (dispatches.isEmpty) {
+      return Center(
+        child: Text(
+          '$_routeType 노선이 없습니다',
+          style: AppTypography.bodySmall.copyWith(
+            color: AppSemanticColors.textTertiary,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space4,
+        0,
+        AppSpacing.space4,
+        AppSpacing.space4,
+      ),
+      itemCount: dispatches.length,
+      itemBuilder: (_, index) => _RouteBlock(dispatch: dispatches[index]),
     );
   }
 
@@ -132,6 +195,17 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             onPressed: () => _copyText(daily),
             icon: const Icon(Icons.copy_outlined),
             tooltip: '텍스트 복사',
+          ),
+          IconButton(
+            onPressed: _isCapturing ? null : _shareImage,
+            icon: _isCapturing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.ios_share),
+            tooltip: '이미지로 공유',
           ),
         ],
       ),

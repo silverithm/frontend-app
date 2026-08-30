@@ -20,6 +20,11 @@ class DispatchCalendarView extends StatelessWidget {
   final VoidCallback onNextMonth;
   final VoidCallback onToday;
 
+  /// 펼쳐보기. 접었을 때는 달력이 한 화면에 들어오는 것이 먼저라 이름을 숨기고,
+  /// 펼치면 그날 나오는 사람을 칸 안에 다 적는다.
+  final bool isExpanded;
+  final VoidCallback onToggleExpanded;
+
   const DispatchCalendarView({
     super.key,
     required this.month,
@@ -28,7 +33,12 @@ class DispatchCalendarView extends StatelessWidget {
     required this.onPreviousMonth,
     required this.onNextMonth,
     required this.onToday,
+    this.isExpanded = false,
+    required this.onToggleExpanded,
   });
+
+  /// 접었을 때는 날짜와 점만, 펼치면 이름까지 들어가야 하므로 칸이 커진다.
+  double get _cellHeight => isExpanded ? 96 : 52;
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +50,11 @@ class DispatchCalendarView extends StatelessWidget {
         _buildWeekdayRow(),
         const SizedBox(height: AppSpacing.space1),
         _buildGrid(),
-        const SizedBox(height: AppSpacing.space4),
-        _buildLegend(),
+        // 범례는 색 뜻을 처음 볼 때만 필요하다. 접힌 상태에서는 한 화면을 지키는 쪽이 낫다.
+        if (isExpanded) ...[
+          const SizedBox(height: AppSpacing.space3),
+          _buildLegend(),
+        ],
       ],
     );
   }
@@ -64,6 +77,12 @@ class DispatchCalendarView extends StatelessWidget {
           size: SeedButtonSize.xsmall,
         ),
         const Spacer(),
+        IconButton(
+          onPressed: onToggleExpanded,
+          icon: Icon(isExpanded ? Icons.unfold_less : Icons.unfold_more, size: 20),
+          tooltip: isExpanded ? '접기' : '펼쳐보기',
+          color: AppSemanticColors.textSecondary,
+        ),
         IconButton(
           onPressed: onPreviousMonth,
           icon: const Icon(Icons.chevron_left),
@@ -121,7 +140,7 @@ class DispatchCalendarView extends StatelessWidget {
             final day = cellIndex - leadingBlanks + 1;
 
             if (day < 1 || day > daysInMonth) {
-              return const Expanded(child: SizedBox(height: 86));
+              return Expanded(child: SizedBox(height: _cellHeight));
             }
 
             final date = DateTime(month.year, month.month, day);
@@ -129,6 +148,8 @@ class DispatchCalendarView extends StatelessWidget {
               child: _DayCell(
                 date: date,
                 summary: summary[formatDate(date)],
+                height: _cellHeight,
+                showNames: isExpanded,
                 onTap: () => onDateSelected(date),
               ),
             );
@@ -155,9 +176,17 @@ class DispatchCalendarView extends StatelessWidget {
 class _DayCell extends StatelessWidget {
   final DateTime date;
   final DispatchDaySummary? summary;
+  final double height;
+  final bool showNames;
   final VoidCallback onTap;
 
-  const _DayCell({required this.date, required this.summary, required this.onTap});
+  const _DayCell({
+    required this.date,
+    required this.summary,
+    required this.height,
+    required this.showNames,
+    required this.onTap,
+  });
 
   bool get _isToday {
     final now = DateTime.now();
@@ -184,7 +213,7 @@ class _DayCell extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppBorderRadius.lg),
           child: Container(
-            height: 86,
+            height: height,
             padding: const EdgeInsets.symmetric(
               vertical: AppSpacing.space1,
               horizontal: AppSpacing.space1,
@@ -224,8 +253,10 @@ class _DayCell extends StatelessWidget {
                     ),
                   )
                 else ...[
-                  _buildDriverNames(),
-                  const SizedBox(height: 1),
+                  if (showNames) ...[
+                    _buildDriverNames(),
+                    const SizedBox(height: 1),
+                  ],
                   _buildDots(),
                 ],
               ],
@@ -236,12 +267,15 @@ class _DayCell extends StatelessWidget {
     );
   }
 
-  /// 그날 운전자 이름. 칸이 좁아 두 명까지만 적고 나머지는 +N으로 접는다.
+  /// 그날 운전자 이름. 칸이 좁아 세 명까지 적고 나머지는 +N으로 접는다.
+  ///
+  /// 이름 뒤 직책("이광성팀장")까지 넣으면 칸 폭을 넘겨 "이광성…"으로 잘렸다.
+  /// 달력에서 알아야 할 것은 누가 나오는지이지 직책이 아니므로 이름만 남긴다.
   Widget _buildDriverNames() {
-    final names = summary?.driverNames ?? const <String>[];
+    final names = (summary?.driverNames ?? const <String>[]).map(_stripTitle).toList();
     if (names.isEmpty) return const SizedBox(height: 24);
 
-    const visible = 2;
+    const visible = 3;
     final shown = names.take(visible).toList();
     final rest = names.length - shown.length;
 
@@ -272,6 +306,18 @@ class _DayCell extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  /// "이광성팀장" -> "이광성". 이름만 남기고 흔한 직책 꼬리를 뗀다.
+  static String _stripTitle(String name) {
+    const titles = ['팀장', '실장', '부장', '과장', '차장', '대리', '주임', '반장', '소장', '원장', '센터장'];
+    for (final t in titles) {
+      // 이름이 통째로 직책인 경우까지 지우지 않도록 남는 글자가 두 자 이상일 때만 뗀다
+      if (name.endsWith(t) && name.length - t.length >= 2) {
+        return name.substring(0, name.length - t.length);
+      }
+    }
+    return name;
   }
 
   Widget _buildDots() {

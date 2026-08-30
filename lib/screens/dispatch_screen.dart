@@ -32,6 +32,9 @@ class _DispatchScreenState extends State<DispatchScreen> {
   int _tabIndex = 0;
   late DateTime _month;
 
+  /// 달력 펼쳐보기. 접힌 상태가 기본이라 한 달이 한 화면에 들어온다.
+  bool _calendarExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -178,8 +181,10 @@ class _DispatchScreenState extends State<DispatchScreen> {
               AppSpacing.space6,
             ),
             children: [
-              _buildSummaryRow(provider),
-              const SizedBox(height: AppSpacing.space4),
+              // 노선·어르신 수는 카드 두 장을 차지할 만큼 자주 보는 값이 아니다.
+              // 달력이 한 화면에 들어오는 쪽이 먼저라 한 줄로 줄였다.
+              _buildSummaryLine(provider),
+              const SizedBox(height: AppSpacing.space2),
               DispatchCalendarView(
                 month: _month,
                 summary: provider.summaryForMonth(_month.year, _month.month),
@@ -198,6 +203,9 @@ class _DispatchScreenState extends State<DispatchScreen> {
                   final now = DateTime.now();
                   setState(() => _month = DateTime(now.year, now.month));
                 },
+                isExpanded: _calendarExpanded,
+                onToggleExpanded: () =>
+                    setState(() => _calendarExpanded = !_calendarExpanded),
               ),
             ],
           ),
@@ -205,23 +213,13 @@ class _DispatchScreenState extends State<DispatchScreen> {
     }
   }
 
-  Widget _buildSummaryRow(DispatchProvider provider) {
-    return Row(
-      children: [
-        Expanded(
-          child: _SummaryTile(
-            value: '${provider.routes.length}',
-            label: '노선',
-          ),
-        ),
-        const SizedBox(width: AppSpacing.space3),
-        Expanded(
-          child: _SummaryTile(
-            value: '${provider.seniors.length}',
-            label: '어르신',
-          ),
-        ),
-      ],
+  /// 노선 N · 어르신 N — 한 줄이면 충분하다
+  Widget _buildSummaryLine(DispatchProvider provider) {
+    return Text(
+      '노선 ${provider.routes.length} · 어르신 ${provider.seniors.length}',
+      style: AppTypography.bodySmall.copyWith(
+        color: AppSemanticColors.textTertiary,
+      ),
     );
   }
 
@@ -265,39 +263,3 @@ class _DispatchScreenState extends State<DispatchScreen> {
   }
 }
 
-class _SummaryTile extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _SummaryTile({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderSubtle),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: AppTypography.heading5.copyWith(
-              color: AppSemanticColors.textPrimary,
-              fontWeight: AppTypography.fontWeightBold,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space0_5),
-          Text(
-            label,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textTertiary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
