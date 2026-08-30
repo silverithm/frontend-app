@@ -121,7 +121,7 @@ class DispatchCalendarView extends StatelessWidget {
             final day = cellIndex - leadingBlanks + 1;
 
             if (day < 1 || day > daysInMonth) {
-              return const Expanded(child: SizedBox(height: 62));
+              return const Expanded(child: SizedBox(height: 86));
             }
 
             final date = DateTime(month.year, month.month, day);
@@ -184,7 +184,7 @@ class _DayCell extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppBorderRadius.lg),
           child: Container(
-            height: 62,
+            height: 86,
             padding: const EdgeInsets.symmetric(
               vertical: AppSpacing.space1,
               horizontal: AppSpacing.space1,
@@ -214,7 +214,7 @@ class _DayCell extends StatelessWidget {
                         : AppTypography.fontWeightMedium,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.space1),
+                const SizedBox(height: 1),
                 if (isHoliday)
                   Text(
                     '휴무',
@@ -223,13 +223,54 @@ class _DayCell extends StatelessWidget {
                       color: AppSemanticColors.textDisabled,
                     ),
                   )
-                else
+                else ...[
+                  _buildDriverNames(),
+                  const SizedBox(height: 1),
                   _buildDots(),
+                ],
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// 그날 운전자 이름. 칸이 좁아 두 명까지만 적고 나머지는 +N으로 접는다.
+  Widget _buildDriverNames() {
+    final names = summary?.driverNames ?? const <String>[];
+    if (names.isEmpty) return const SizedBox(height: 24);
+
+    const visible = 2;
+    final shown = names.take(visible).toList();
+    final rest = names.length - shown.length;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final name in shown)
+          Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: 9,
+              height: 1.2,
+              color: AppSemanticColors.textSecondary,
+            ),
+          ),
+        if (rest > 0)
+          Text(
+            '+$rest',
+            style: AppTypography.bodySmall.copyWith(
+              fontSize: 9,
+              height: 1.2,
+              fontWeight: AppTypography.fontWeightSemibold,
+              color: AppSemanticColors.interactivePrimaryDefault,
+            ),
+          ),
+      ],
     );
   }
 

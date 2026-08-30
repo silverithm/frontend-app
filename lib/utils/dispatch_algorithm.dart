@@ -340,6 +340,14 @@ DispatchDaySummary dispatchDaySummary(
     }
   }
 
+  // 이름은 중복 없이, 노선 순서대로 (한 사람이 두 노선을 몰면 한 번만 적는다)
+  final driverNames = <String>[];
+  for (final rd in dispatch.routeDispatches) {
+    final name = rd.driver?.driverName;
+    if (name == null || name.isEmpty) continue;
+    if (!driverNames.contains(name)) driverNames.add(name);
+  }
+
   return DispatchDaySummary(
     date: dateStr,
     normalCount: normal,
@@ -347,6 +355,7 @@ DispatchDaySummary dispatchDaySummary(
     noServiceCount: noService,
     totalRoutes: settings.routes.length,
     isHoliday: false,
+    driverNames: driverNames,
   );
 }
 

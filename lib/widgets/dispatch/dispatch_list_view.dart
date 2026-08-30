@@ -8,6 +8,7 @@ import '../../theme/app_typography.dart';
 import '../../utils/dispatch_algorithm.dart';
 import '../seed/seed_button.dart';
 import 'dispatch_route_card.dart';
+import 'dispatch_status_style.dart';
 
 /// 기간을 정해 날짜별 배차를 쭉 훑어보는 화면.
 ///
@@ -36,6 +37,10 @@ class _DispatchListViewState extends State<DispatchListView> {
   late DateTime _end;
   String _routeFilter = 'all';
   String _statusFilter = 'all';
+
+  /// 간소 보기. 한 달치를 훑을 때 카드가 크면 스크롤만 하다 끝나서,
+  /// 한 줄로 접어 한 화면에 많이 담을 수 있게 한다.
+  bool _compact = true;
 
   @override
   void initState() {
@@ -122,14 +127,28 @@ class _DispatchListViewState extends State<DispatchListView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: SeedButton(
-            label: '${_label(_start)} ~ ${_label(_end)}',
-            onPressed: _pickRange,
-            variant: SeedButtonVariant.neutralOutline,
-            prefixIcon: Icons.date_range_outlined,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: SeedButton(
+                label: '${_label(_start)} ~ ${_label(_end)}',
+                onPressed: _pickRange,
+                variant: SeedButtonVariant.neutralOutline,
+                prefixIcon: Icons.date_range_outlined,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.space2),
+            // 한 달치를 훑을 땐 접어서, 한 건을 자세히 볼 땐 펼쳐서 본다
+            IconButton(
+              onPressed: () => setState(() => _compact = !_compact),
+              icon: Icon(
+                _compact ? Icons.unfold_more : Icons.unfold_less,
+                size: 20,
+              ),
+              tooltip: _compact ? '자세히 보기' : '간소하게 보기',
+              color: AppSemanticColors.textSecondary,
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.space2),
         Row(
@@ -216,6 +235,62 @@ class _DispatchListViewState extends State<DispatchListView> {
     );
   }
 
+  /// 한 줄 요약: 노선 · 차량/운전자 · 상태
+  Widget _buildCompactRow(RouteDispatch rd) {
+    final style = DispatchStatusStyle.of(rd.status);
+    final vehicle = rd.driver?.vehicleName.trim();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space2,
+      ),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.surfaceDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        border: Border.all(color: AppSemanticColors.borderSubtle),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              [
+                (vehicle != null && vehicle.isNotEmpty) ? vehicle : rd.routeName,
+                if (rd.driver != null) rd.driver!.driverName,
+              ].join('/'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textPrimary,
+                fontWeight: AppTypography.fontWeightMedium,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space2),
+          Text(
+            rd.routeType,
+            style: AppTypography.caption.copyWith(
+              color: AppSemanticColors.textTertiary,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space2),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: style.background,
+              borderRadius: BorderRadius.circular(AppBorderRadius.sm),
+            ),
+            child: Text(
+              style.label,
+              style: AppTypography.caption.copyWith(color: style.foreground),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDaySection(DailyDispatch daily) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,9 +308,12 @@ class _DispatchListViewState extends State<DispatchListView> {
             ),
           ),
         ),
-        ...daily.routeDispatches.map(
-          (rd) => DispatchRouteCard(dispatch: rd, showPassengers: false),
-        ),
+        if (_compact)
+          ...daily.routeDispatches.map(_buildCompactRow)
+        else
+          ...daily.routeDispatches.map(
+            (rd) => DispatchRouteCard(dispatch: rd, showPassengers: false),
+          ),
       ],
     );
   }

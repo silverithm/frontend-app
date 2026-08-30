@@ -396,6 +396,10 @@ class DispatchDaySummary {
   final bool isHoliday;
   final String? holidayName;
 
+  /// 그날 운전대를 잡는 사람들. 달력 칸에 이름을 몇 개 보여주고 나머지는 +N으로 접는다.
+  /// 점 색깔만으로는 "오늘 누가 나오나"를 알 수 없어 현장에서 달력을 열어봐도 소용없었다.
+  final List<String> driverNames;
+
   const DispatchDaySummary({
     required this.date,
     required this.normalCount,
@@ -404,6 +408,7 @@ class DispatchDaySummary {
     required this.totalRoutes,
     required this.isHoliday,
     this.holidayName,
+    this.driverNames = const [],
   });
 }
 
