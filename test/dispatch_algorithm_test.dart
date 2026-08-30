@@ -41,9 +41,10 @@ void main() {
     routeDrivers: const [main1, sub1, sub2],
   );
 
+  // 출결은 elderlyId로 맞춘다(동명이인 때문에 이름으로 맞추지 않는다)
   final seniors = [
-    const Senior(id: 's1', name: '어르신1', routeId: 'r1', boardingOrder: 1),
-    const Senior(id: 's2', name: '어르신2', routeId: 'r1', boardingOrder: 2),
+    const Senior(id: 's1', name: '어르신1', routeId: 'r1', boardingOrder: 1, elderlyId: 1),
+    const Senior(id: 's2', name: '어르신2', routeId: 'r1', boardingOrder: 2, elderlyId: 2),
   ];
 
   DispatchSettings settingsWith({List<SeniorAbsence> absences = const []}) {
@@ -155,14 +156,20 @@ void main() {
     });
   });
 
-  group('어르신 결석', () {
+  group('어르신 출결', () {
+    // 결석은 배차설정 JSON이 아니라 백엔드 출결(elder_attendance)에서 온다
+    ElderDayAttendance absent(int elderlyId, DateTime date) => ElderDayAttendance(
+      elderlyId: elderlyId,
+      date: formatDate(date),
+      status: '결석',
+    );
+
     test('결석한 어르신은 탑승 명단에서 빠진다', () {
       final result = dailyDispatch(
         thursday,
-        settingsWith(
-          absences: [SeniorAbsence(seniorId: 's1', date: formatDate(thursday))],
-        ),
+        settingsWith(),
         [],
+        attendances: [absent(1, thursday)],
       );
       final rd = result.routeDispatches.single;
 
@@ -173,13 +180,122 @@ void main() {
     test('결석은 그날 하루만 적용된다', () {
       final result = dailyDispatch(
         DateTime(2026, 8, 14),
-        settingsWith(
-          absences: [SeniorAbsence(seniorId: 's1', date: formatDate(thursday))],
-        ),
+        settingsWith(),
         [],
+        attendances: [absent(1, thursday)],
       );
 
       expect(result.routeDispatches.single.passengers.length, 2);
+    });
+
+    test('개인등원은 등원에서만 빠지고 하원은 그대로 탄다', () {
+      final downRoute = DispatchRoute(
+        id: 'r1d',
+        name: 'A코스',
+        type: RouteType.toHome,
+        routeDrivers: const [main1],
+      );
+      final settings = DispatchSettings(
+        routes: [routeA, downRoute],
+        seniors: [
+          ...seniors,
+          const Senior(id: 's1d', name: '어르신1', routeId: 'r1d', boardingOrder: 1, elderlyId: 1),
+        ],
+      );
+
+      final result = dailyDispatch(
+        thursday,
+        settings,
+        [],
+        attendances: [
+          ElderDayAttendance(
+            elderlyId: 1,
+            date: formatDate(thursday),
+            personalPickup: true,
+          ),
+        ],
+      );
+
+      final up = result.routeDispatches.firstWhere((rd) => rd.routeType == RouteType.toWork);
+      final down = result.routeDispatches.firstWhere((rd) => rd.routeType == RouteType.toHome);
+
+      expect(up.passengers.map((s) => s.name), ['어르신2']);
+      expect(down.passengers.map((s) => s.name), ['어르신1']);
+      expect(result.personalPickupSeniors.map((s) => s.name), ['어르신1']);
+      expect(result.personalDropoffSeniors, isEmpty);
+    });
+
+    test('한 어르신이 등원·하원 두 곳에 있어도 개인등원 명단엔 한 번만 나온다', () {
+      final downRoute = DispatchRoute(
+        id: 'r1d',
+        name: 'A코스',
+        type: RouteType.toHome,
+        routeDrivers: const [main1],
+      );
+      final settings = DispatchSettings(
+        routes: [routeA, downRoute],
+        seniors: [
+          ...seniors,
+          const Senior(id: 's1d', name: '어르신1', routeId: 'r1d', boardingOrder: 1, elderlyId: 1),
+        ],
+      );
+
+      final result = dailyDispatch(
+        thursday,
+        settings,
+        [],
+        attendances: [
+          ElderDayAttendance(
+            elderlyId: 1,
+            date: formatDate(thursday),
+            personalPickup: true,
+          ),
+        ],
+      );
+
+      expect(result.personalPickupSeniors.length, 1);
+    });
+
+    test('그날 출결이 없으면 어르신의 고정 설정을 따른다', () {
+      final settings = DispatchSettings(
+        routes: [routeA],
+        seniors: const [
+          Senior(id: 's1', name: '어르신1', routeId: 'r1', boardingOrder: 1, elderlyId: 1, personalPickup: true),
+          Senior(id: 's2', name: '어르신2', routeId: 'r1', boardingOrder: 2, elderlyId: 2),
+        ],
+      );
+
+      final result = dailyDispatch(thursday, settings, []);
+
+      expect(result.routeDispatches.single.passengers.map((s) => s.name), ['어르신2']);
+      expect(result.personalPickupSeniors.map((s) => s.name), ['어르신1']);
+    });
+  });
+
+  group('회차', () {
+    test('아무도 회차를 지정하지 않으면 한 덩어리로 묶는다', () {
+      final result = dailyDispatch(thursday, settingsWith(), []);
+      final groups = result.routeDispatches.single.tripGroups;
+
+      expect(groups.length, 1);
+      expect(groups.single.tripOrder, isNull);
+      expect(groups.single.seniors.length, 2);
+    });
+
+    test('1차·2차로 나눠 탑승순서대로 묶는다', () {
+      final settings = DispatchSettings(
+        routes: [routeA],
+        seniors: const [
+          Senior(id: 's1', name: '어르신1', routeId: 'r1', boardingOrder: 1, elderlyId: 1, tripOrder: 2),
+          Senior(id: 's2', name: '어르신2', routeId: 'r1', boardingOrder: 2, elderlyId: 2, tripOrder: 1),
+        ],
+      );
+
+      final groups = dailyDispatch(thursday, settings, []).routeDispatches.single.tripGroups;
+
+      expect(groups.map((g) => g.tripOrder), [1, 2]);
+      expect(groups.first.seniors.single.name, '어르신2');
+      expect(groups.last.seniors.single.name, '어르신1');
     });
   });
 
