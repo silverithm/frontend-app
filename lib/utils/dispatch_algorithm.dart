@@ -6,7 +6,7 @@
 /// - 주운전자가 그날 쉬면 부1 → 부2 … 순서로 대체
 /// - 모두 쉬면 운행 없음
 /// - 일요일은 운행 없음(휴일)
-/// - 결석한 어르신은 탑승 명단에서 빠진다
+/// - 결석/개인등하원인 어르신은 해당 방향 탑승 명단에서 빠진다
 library;
 
 import '../models/dispatch.dart';
@@ -42,28 +42,126 @@ bool isDriverOnVacation(
   );
 }
 
-bool isSeniorAbsent(
+/// 그날 그 어르신의 출결 기록. elderlyId로만 맞춘다 — 이름은 동명이인이 있다.
+ElderDayAttendance? findAttendance(
   Senior senior,
   String dateStr,
-  List<SeniorAbsence> absences,
+  List<ElderDayAttendance> attendances,
 ) {
-  return absences.any((a) => a.seniorId == senior.id && a.date == dateStr);
+  if (senior.elderlyId == null) return null;
+  for (final a in attendances) {
+    if (a.elderlyId == senior.elderlyId && a.date == dateStr) return a;
+  }
+  return null;
 }
 
-/// 그날 그 노선에 타는 어르신 (결석자 제외, 탑승 순서대로)
+/// 그날 그 어르신이 그 방향(등원/하원) 차량을 타는가?
+///
+/// 1) 그날 출결 기록이 있으면 그것이 우선 (결석이면 양방향 제외)
+/// 2) 없으면 Senior의 고정 설정으로 판정
+///
+/// 웹의 isSeniorRiding(src/lib/dispatchAlgorithm.ts)과 같은 규칙이다.
+bool isSeniorRiding(
+  Senior senior,
+  String dateStr,
+  String routeType,
+  List<ElderDayAttendance> attendances,
+) {
+  final record = findAttendance(senior, dateStr, attendances);
+
+  if (record != null) {
+    if (record.isAbsent) return false;
+    return routeType == RouteType.toWork
+        ? !record.personalPickup
+        : !record.personalDropoff;
+  }
+
+  return routeType == RouteType.toWork
+      ? !senior.personalPickup
+      : !senior.personalDropoff;
+}
+
+/// 그날 개인등하원인 어르신 (배차표 헤더용).
+/// 어르신 한 명이 등원용·하원용 Senior 두 레코드로 존재하므로 사람 단위로 합친다.
+List<Senior> personalTransportSeniors(
+  String dateStr,
+  String routeType,
+  List<Senior> seniors,
+  List<ElderDayAttendance> attendances,
+) {
+  final unique = <String, Senior>{};
+
+  for (final s in seniors) {
+    final record = findAttendance(s, dateStr, attendances);
+    final bool isPersonal;
+    if (record != null) {
+      if (record.isAbsent) continue;
+      isPersonal = routeType == RouteType.toWork
+          ? record.personalPickup
+          : record.personalDropoff;
+    } else {
+      isPersonal = routeType == RouteType.toWork
+          ? s.personalPickup
+          : s.personalDropoff;
+    }
+    if (!isPersonal) continue;
+
+    final key = s.elderlyId != null ? 'id:${s.elderlyId}' : 'name:${s.name}';
+    unique.putIfAbsent(key, () => s);
+  }
+
+  final list = unique.values.toList()..sort((a, b) => a.name.compareTo(b.name));
+  return list;
+}
+
+/// 회차 우선, 그 다음 탑승순서
+int _compareByTripThenBoarding(Senior a, Senior b) {
+  final at = a.tripOrder ?? 0;
+  final bt = b.tripOrder ?? 0;
+  if (at != bt) return at.compareTo(bt);
+  return a.boardingOrder.compareTo(b.boardingOrder);
+}
+
+/// 그날 그 노선에 타는 어르신 (결석·개인등하원 제외, 회차-탑승순서대로)
 List<Senior> seniorsForRoute(
   String routeId,
+  String routeType,
   String dateStr,
   List<Senior> seniors,
-  List<SeniorAbsence> absences,
+  List<ElderDayAttendance> attendances,
 ) {
   final list =
       seniors
           .where((s) => s.routeId == routeId)
-          .where((s) => !isSeniorAbsent(s, dateStr, absences))
+          .where((s) => isSeniorRiding(s, dateStr, routeType, attendances))
           .toList()
-        ..sort((a, b) => a.boardingOrder.compareTo(b.boardingOrder));
+        ..sort(_compareByTripThenBoarding);
   return list;
+}
+
+/// 탑승 명단을 회차별로 묶는다.
+/// 아무도 회차를 지정하지 않은 노선은 그룹 하나(tripOrder null)로 돌려준다.
+List<TripGroup> groupPassengersByTrip(List<Senior> passengers) {
+  final hasTrip = passengers.any((s) => s.tripOrder != null);
+  if (!hasTrip) {
+    if (passengers.isEmpty) return const [];
+    final sorted = [...passengers]..sort(_compareByTripThenBoarding);
+    return [TripGroup(seniors: sorted)];
+  }
+
+  final groups = <int, List<Senior>>{};
+  for (final s in passengers) {
+    // 회차를 쓰는 노선에서 미지정 어르신은 1차로 본다
+    final trip = s.tripOrder ?? 1;
+    groups.putIfAbsent(trip, () => []).add(s);
+  }
+
+  final keys = groups.keys.toList()..sort();
+  return keys.map((trip) {
+    final list = groups[trip]!
+      ..sort((a, b) => a.boardingOrder.compareTo(b.boardingOrder));
+    return TripGroup(tripOrder: trip, seniors: list);
+  }).toList();
 }
 
 /// routeDrivers 내 위치를 사람이 읽는 역할명으로 (0 = 주운전자)
@@ -77,8 +175,9 @@ RouteDispatch routeDispatchForDate(
   DispatchRoute route,
   String dateStr,
   DispatchSettings settings,
-  List<VacationRequest> vacations,
-) {
+  List<VacationRequest> vacations, {
+  List<ElderDayAttendance> attendances = const [],
+}) {
   if (route.routeDrivers.isEmpty) {
     return RouteDispatch(
       routeId: route.id,
@@ -92,10 +191,16 @@ RouteDispatch routeDispatchForDate(
   final mainDriver = route.routeDrivers.first;
   final passengers = seniorsForRoute(
     route.id,
+    route.type,
     dateStr,
     settings.seniors,
-    settings.seniorAbsences,
+    attendances,
   );
+  final tripGroups = groupPassengersByTrip(passengers);
+  // 그날 그 차에 실제로 타는 인력 (주운전자든 동승 팀장이든 휴무가 아닌 사람 전원)
+  final crew = route.routeDrivers
+      .where((d) => !isDriverOnVacation(d, dateStr, vacations))
+      .toList();
 
   if (!isDriverOnVacation(mainDriver, dateStr, vacations)) {
     return RouteDispatch(
@@ -106,6 +211,8 @@ RouteDispatch routeDispatchForDate(
       driverRole: '주운전자',
       status: DispatchStatus.normal,
       passengers: passengers,
+      crew: crew,
+      tripGroups: tripGroups,
       reason: '주운전자 ${mainDriver.driverName} 정상 운행',
     );
   }
@@ -125,6 +232,8 @@ RouteDispatch routeDispatchForDate(
         driverRole: role,
         status: DispatchStatus.substitute,
         passengers: passengers,
+        crew: crew,
+        tripGroups: tripGroups,
         originalMainDriver: mainDriver,
         reason:
             '주운전자 ${mainDriver.driverName} 휴무 → $role ${sub.driverName} 대체 운행',
@@ -146,8 +255,9 @@ RouteDispatch routeDispatchForDate(
 DailyDispatch dailyDispatch(
   DateTime date,
   DispatchSettings settings,
-  List<VacationRequest> vacations,
-) {
+  List<VacationRequest> vacations, {
+  List<ElderDayAttendance> attendances = const [],
+}) {
   final dateStr = formatDate(date);
 
   if (isNonWorkingDay(date)) {
@@ -169,16 +279,37 @@ DailyDispatch dailyDispatch(
   return DailyDispatch(
     date: dateStr,
     routeDispatches: settings.routes
-        .map((route) => routeDispatchForDate(route, dateStr, settings, vacations))
+        .map(
+          (route) => routeDispatchForDate(
+            route,
+            dateStr,
+            settings,
+            vacations,
+            attendances: attendances,
+          ),
+        )
         .toList(),
+    personalPickupSeniors: personalTransportSeniors(
+      dateStr,
+      RouteType.toWork,
+      settings.seniors,
+      attendances,
+    ),
+    personalDropoffSeniors: personalTransportSeniors(
+      dateStr,
+      RouteType.toHome,
+      settings.seniors,
+      attendances,
+    ),
   );
 }
 
 DispatchDaySummary dispatchDaySummary(
   DateTime date,
   DispatchSettings settings,
-  List<VacationRequest> vacations,
-) {
+  List<VacationRequest> vacations, {
+  List<ElderDayAttendance> attendances = const [],
+}) {
   final dateStr = formatDate(date);
 
   if (isNonWorkingDay(date)) {
@@ -193,7 +324,7 @@ DispatchDaySummary dispatchDaySummary(
     );
   }
 
-  final dispatch = dailyDispatch(date, settings, vacations);
+  final dispatch = dailyDispatch(date, settings, vacations, attendances: attendances);
 
   var normal = 0;
   var substitute = 0;
@@ -224,14 +355,15 @@ Map<String, DispatchDaySummary> monthlyDispatchSummary(
   int year,
   int month,
   DispatchSettings settings,
-  List<VacationRequest> vacations,
-) {
+  List<VacationRequest> vacations, {
+  List<ElderDayAttendance> attendances = const [],
+}) {
   final result = <String, DispatchDaySummary>{};
   final lastDay = DateTime(year, month + 1, 0).day;
 
   for (var day = 1; day <= lastDay; day++) {
     final date = DateTime(year, month, day);
-    final summary = dispatchDaySummary(date, settings, vacations);
+    final summary = dispatchDaySummary(date, settings, vacations, attendances: attendances);
     result[summary.date] = summary;
   }
 

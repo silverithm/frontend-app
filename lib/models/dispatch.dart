@@ -126,21 +126,42 @@ class Senior {
   /// 회원관리의 Elderly 엔티티 id (연동된 경우)
   final int? elderlyId;
 
+  /// 회차(1차/2차). null이면 회차를 나누지 않는 노선이다.
+  final int? tripOrder;
+
+  /// 고정 설정: 항상 보호자가 데려온다(개인등원) / 데려간다(개인하원).
+  /// 날짜별 예외는 백엔드 출결(elder_attendance)이 우선한다.
+  final bool personalPickup;
+  final bool personalDropoff;
+
   const Senior({
     required this.id,
     required this.name,
     required this.routeId,
     required this.boardingOrder,
     this.elderlyId,
+    this.tripOrder,
+    this.personalPickup = false,
+    this.personalDropoff = false,
   });
 
-  Senior copyWith({String? name, String? routeId, int? boardingOrder}) {
+  Senior copyWith({
+    String? name,
+    String? routeId,
+    int? boardingOrder,
+    int? tripOrder,
+    bool? personalPickup,
+    bool? personalDropoff,
+  }) {
     return Senior(
       id: id,
       name: name ?? this.name,
       routeId: routeId ?? this.routeId,
       boardingOrder: boardingOrder ?? this.boardingOrder,
       elderlyId: elderlyId,
+      tripOrder: tripOrder ?? this.tripOrder,
+      personalPickup: personalPickup ?? this.personalPickup,
+      personalDropoff: personalDropoff ?? this.personalDropoff,
     );
   }
 
@@ -151,6 +172,9 @@ class Senior {
       routeId: json['routeId']?.toString() ?? '',
       boardingOrder: _asInt(json['boardingOrder']),
       elderlyId: json['elderlyId'] == null ? null : _asInt(json['elderlyId']),
+      tripOrder: json['tripOrder'] == null ? null : _asInt(json['tripOrder']),
+      personalPickup: json['personalPickup'] == true,
+      personalDropoff: json['personalDropoff'] == true,
     );
   }
 
@@ -160,10 +184,68 @@ class Senior {
     'routeId': routeId,
     'boardingOrder': boardingOrder,
     if (elderlyId != null) 'elderlyId': elderlyId,
+    if (tripOrder != null) 'tripOrder': tripOrder,
+    if (personalPickup) 'personalPickup': true,
+    if (personalDropoff) 'personalDropoff': true,
   };
 }
 
+/// 어르신 하루치 출결. 백엔드 elder_attendance가 원본이다.
+///
+/// 결석과 개인등하원은 별개다 — 개인등원하고 차량으로 하원하는 경우가 흔하다.
+class ElderDayAttendance {
+  /// '출석' / '결석'
+  final String status;
+  final int elderlyId;
+  final String date;
+  final bool personalPickup;
+  final bool personalDropoff;
+  final String? note;
+
+  const ElderDayAttendance({
+    required this.elderlyId,
+    required this.date,
+    this.status = '출석',
+    this.personalPickup = false,
+    this.personalDropoff = false,
+    this.note,
+  });
+
+  bool get isAbsent => status == '결석';
+
+  factory ElderDayAttendance.fromJson(Map<String, dynamic> json) {
+    return ElderDayAttendance(
+      elderlyId: _asInt(json['elderlyId']),
+      date: json['date']?.toString() ?? '',
+      status: json['status']?.toString() == 'ABSENT' ? '결석' : '출석',
+      personalPickup: json['personalPickup'] == true,
+      personalDropoff: json['personalDropoff'] == true,
+      note: json['note']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'elderlyId': elderlyId,
+    'date': date,
+    'status': isAbsent ? 'ABSENT' : 'PRESENT',
+    'personalPickup': personalPickup,
+    'personalDropoff': personalDropoff,
+    if (note != null) 'note': note,
+  };
+}
+
+/// 회차별 탑승 명단. tripOrder가 null이면 회차 구분 없는 노선이다.
+class TripGroup {
+  final int? tripOrder;
+  final List<Senior> seniors;
+
+  const TripGroup({this.tripOrder, this.seniors = const []});
+}
+
 /// 어르신 결석 (yyyy-MM-dd)
+///
+/// @deprecated 출결은 백엔드 elder_attendance로 통합됐다(ElderDayAttendance).
+/// 구버전 앱이 이 JSON 필드를 아직 읽고 있어 모양만 유지한다.
 class SeniorAbsence {
   final String seniorId;
   final String date;
@@ -262,6 +344,12 @@ class RouteDispatch {
   final String status;
   final List<Senior> passengers;
 
+  /// 그날 그 차에 함께 타는 배정 인력 전원(휴무자 제외). 공지 헤드라인용
+  final List<RouteDriver> crew;
+
+  /// 회차별 탑승 명단
+  final List<TripGroup> tripGroups;
+
   /// 대체 운행일 때 원래 주운전자
   final RouteDriver? originalMainDriver;
   final String? reason;
@@ -274,6 +362,8 @@ class RouteDispatch {
     this.driver,
     this.driverRole,
     this.passengers = const [],
+    this.crew = const [],
+    this.tripGroups = const [],
     this.originalMainDriver,
     this.reason,
   });
@@ -284,7 +374,16 @@ class DailyDispatch {
   final String date;
   final List<RouteDispatch> routeDispatches;
 
-  const DailyDispatch({required this.date, required this.routeDispatches});
+  /// 그날 개인등원/개인하원인 어르신 (배차표 헤더에 표시, 차량에서는 빠진다)
+  final List<Senior> personalPickupSeniors;
+  final List<Senior> personalDropoffSeniors;
+
+  const DailyDispatch({
+    required this.date,
+    required this.routeDispatches,
+    this.personalPickupSeniors = const [],
+    this.personalDropoffSeniors = const [],
+  });
 }
 
 /// 달력 한 칸에 표시할 요약

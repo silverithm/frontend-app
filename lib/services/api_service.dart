@@ -975,13 +975,14 @@ class ApiService {
   }
 
   /// 기관에 등록된 어르신 목록 (배차에 태울 대상 고르기용)
+  ///
+  /// companyId는 경로에 넣는다. 예전에는 쿼리(?companyId=)로 보냈는데
+  /// 백엔드 라우트는 /elders/company/{companyId}뿐이라 404가 났다.
   Future<Map<String, dynamic>> getCompanyElders({
     required String companyId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse(
-        '$_baseUrl/v1/elders/company',
-      ).replace(queryParameters: {'companyId': companyId});
+      final uri = Uri.parse('$_baseUrl/v1/elders/company/$companyId');
 
       print('[API] 어르신 목록 조회: $uri');
 
@@ -989,6 +990,70 @@ class ApiService {
       headers['ngrok-skip-browser-warning'] = 'true';
 
       return await http.get(uri, headers: headers);
+    });
+  }
+
+  // ================== 어르신 출결 ==================
+
+  /// 기간 출결 조회. 배차표·달력이 한 달치를 한 번에 읽는다.
+  Future<Map<String, dynamic>> getElderAttendanceRange({
+    required String companyId,
+    required String startDate,
+    required String endDate,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/attendance/elder/range').replace(
+        queryParameters: {
+          'companyId': companyId,
+          'startDate': startDate,
+          'endDate': endDate,
+        },
+      );
+
+      print('[API] 어르신 출결 기간 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  /// 어르신 출결 체크 (한 명)
+  Future<Map<String, dynamic>> checkElderAttendance({
+    required String companyId,
+    required Map<String, dynamic> request,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/attendance/elder',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(uri, headers: headers, body: json.encode(request));
+    });
+  }
+
+  /// 어르신 출결 일괄 체크
+  Future<Map<String, dynamic>> bulkCheckElderAttendance({
+    required String companyId,
+    required List<Map<String, dynamic>> requests,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/attendance/elder/bulk',
+      ).replace(queryParameters: {'companyId': companyId});
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(
+        uri,
+        headers: headers,
+        body: json.encode(requests),
+      );
     });
   }
 

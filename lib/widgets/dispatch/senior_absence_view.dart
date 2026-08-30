@@ -9,10 +9,13 @@ import '../../theme/app_typography.dart';
 import '../../utils/dispatch_algorithm.dart';
 import '../seed/seed_button.dart';
 
-/// 어르신 결석 관리.
+/// 어르신 출결 관리.
 ///
-/// 날짜를 고르고 그날 안 오시는 분을 체크한다. 결석으로 잡히면 그날 탑승 명단에서
-/// 빠지므로, 기사님이 헛걸음하지 않는다.
+/// 날짜를 고르고 그날 안 오시는 분(결석)과 보호자가 직접 데려오는 분(개인등하원)을
+/// 체크한다. 결석은 등원·하원 모두에서, 개인등원/개인하원은 그 방향에서만 빠지므로
+/// 기사님이 헛걸음하지 않는다.
+///
+/// 저장은 백엔드 elder_attendance로 간다 — 관리자 웹의 출결관리와 같은 데이터다.
 class SeniorAbsenceView extends StatefulWidget {
   const SeniorAbsenceView({super.key});
 
@@ -73,7 +76,16 @@ class _SeniorAbsenceViewState extends State<SeniorAbsenceView> {
       grouped.putIfAbsent(senior.routeId, () => []).add(senior);
     }
 
-    final absentCount = provider.absencesOn(dateStr).length;
+    // 결석 수는 백엔드 출결 기준으로 센다 (배차표와 같은 데이터를 봐야 한다)
+    final absentIds = <int>{};
+    for (final senior in seniors) {
+      final id = senior.elderlyId;
+      if (id == null) continue;
+      if (provider.attendanceOf(id, dateStr)?.isAbsent ?? false) {
+        absentIds.add(id);
+      }
+    }
+    final absentCount = absentIds.length;
 
     return ListView(
       padding: const EdgeInsets.only(bottom: AppSpacing.space6),
@@ -111,11 +123,86 @@ class _SeniorAbsenceViewState extends State<SeniorAbsenceView> {
     );
   }
 
+  /// 그날 그 어르신의 출결 상태.
+  /// 저장된 기록이 없으면 출석 + 어르신 고정 설정(항상 개인등하원)을 기본으로 본다.
+  ElderDayAttendance _stateOf(
+    DispatchProvider provider,
+    Senior senior,
+    String dateStr,
+  ) {
+    final elderlyId = senior.elderlyId;
+    if (elderlyId == null) {
+      return ElderDayAttendance(elderlyId: -1, date: dateStr);
+    }
+
+    final saved = provider.attendanceOf(elderlyId, dateStr);
+    if (saved != null) return saved;
+
+    return ElderDayAttendance(
+      elderlyId: elderlyId,
+      date: dateStr,
+      personalPickup: senior.personalPickup,
+      personalDropoff: senior.personalDropoff,
+    );
+  }
+
+  Future<void> _apply(
+    DispatchProvider provider,
+    ElderDayAttendance next,
+  ) async {
+    final ok = await provider.saveAttendances([next]);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('출결 저장에 실패했습니다')),
+      );
+    }
+  }
+
   Widget _buildTile(DispatchProvider provider, Senior senior, String dateStr) {
-    final isAbsent = provider.isAbsent(senior.id, dateStr);
+    // 회원관리와 연결되지 않은 옛 데이터는 출결을 저장할 곳이 없다
+    if (senior.elderlyId == null) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+        padding: const EdgeInsets.all(AppSpacing.space3),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.surfaceDefault,
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          border: Border.all(color: AppSemanticColors.borderSubtle),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                senior.name,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
+              ),
+            ),
+            Text(
+              '회원관리 연결 필요',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final state = _stateOf(provider, senior, dateStr);
+    final isAbsent = state.isAbsent;
+    final isPickupRoute = _routeTypeOf(provider, senior) == RouteType.toWork;
+    final personalChecked = isPickupRoute
+        ? state.personalPickup
+        : state.personalDropoff;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space2,
+      ),
       decoration: BoxDecoration(
         color: isAbsent
             ? AppSemanticColors.statusWarningBackground
@@ -127,35 +214,86 @@ class _SeniorAbsenceViewState extends State<SeniorAbsenceView> {
               : AppSemanticColors.borderSubtle,
         ),
       ),
-      child: CheckboxListTile(
-        value: isAbsent,
-        onChanged: (checked) {
-          if (checked == true) {
-            provider.addAbsence(
-              SeniorAbsence(seniorId: senior.id, date: dateStr),
-            );
-          } else {
-            provider.removeAbsence(senior.id, dateStr);
-          }
-        },
-        controlAffinity: ListTileControlAffinity.leading,
-        dense: true,
-        title: Text(
-          senior.name,
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppSemanticColors.textPrimary,
-            decoration: isAbsent ? TextDecoration.lineThrough : null,
+      child: Row(
+        children: [
+          Checkbox(
+            value: isAbsent,
+            onChanged: (checked) => _apply(
+              provider,
+              ElderDayAttendance(
+                elderlyId: state.elderlyId,
+                date: dateStr,
+                status: checked == true ? '결석' : '출석',
+                personalPickup: state.personalPickup,
+                personalDropoff: state.personalDropoff,
+              ),
+            ),
+            activeColor: AppSemanticColors.statusWarningIcon,
           ),
-        ),
-        subtitle: Text(
-          '탑승 ${senior.boardingOrder}번',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppSemanticColors.textTertiary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  senior.name,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                    decoration: isAbsent ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                Text(
+                  '결석 · 탑승 ${senior.boardingOrder}번',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        activeColor: AppSemanticColors.statusWarningIcon,
+          // 보호자가 직접 데려오는 날은 그 방향 차량에서만 빠진다
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isPickupRoute ? '개인등원' : '개인하원',
+                style: AppTypography.bodySmall.copyWith(
+                  color: isAbsent
+                      ? AppSemanticColors.textDisabled
+                      : AppSemanticColors.textSecondary,
+                ),
+              ),
+              Checkbox(
+                value: personalChecked,
+                onChanged: isAbsent
+                    ? null
+                    : (checked) => _apply(
+                        provider,
+                        ElderDayAttendance(
+                          elderlyId: state.elderlyId,
+                          date: dateStr,
+                          status: state.status,
+                          personalPickup: isPickupRoute
+                              ? checked == true
+                              : state.personalPickup,
+                          personalDropoff: isPickupRoute
+                              ? state.personalDropoff
+                              : checked == true,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
+  }
+
+  /// 이 어르신이 배정된 노선의 방향 (등원/하원)
+  String _routeTypeOf(DispatchProvider provider, Senior senior) {
+    for (final route in provider.routes) {
+      if (route.id == senior.routeId) return route.type;
+    }
+    return RouteType.toWork;
   }
 
   Widget _buildEmpty() {

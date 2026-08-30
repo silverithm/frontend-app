@@ -19,6 +19,8 @@ class DispatchProvider with ChangeNotifier {
 
   DispatchSettings _settings = const DispatchSettings();
   List<VacationRequest> _vacations = [];
+  // 출결은 백엔드 elder_attendance가 원본이다 (배차설정 JSON의 결석은 레거시)
+  List<ElderDayAttendance> _attendances = [];
   bool _isLoading = false;
   bool _isSaving = false;
   String? _error;
@@ -29,6 +31,7 @@ class DispatchProvider with ChangeNotifier {
   List<DispatchRoute> get routes => _settings.routes;
   List<Senior> get seniors => _settings.seniors;
   List<SeniorAbsence> get absences => _settings.seniorAbsences;
+  List<ElderDayAttendance> get attendances => _attendances;
   List<VacationRequest> get vacations => _vacations;
   bool get isLoading => _isLoading;
   bool get isSaving => _isSaving;
@@ -53,6 +56,7 @@ class DispatchProvider with ChangeNotifier {
       final results = await Future.wait([
         _apiService.getDispatchSettings(companyId: companyId),
         _loadVacations(companyId),
+        _loadAttendances(companyId, DateTime.now()),
       ]);
 
       final settingsJson = results[0] as Map<String, dynamic>;
@@ -88,6 +92,77 @@ class DispatchProvider with ChangeNotifier {
     }
   }
 
+  /// 그 달의 출결을 한 번에 받는다.
+  /// 날짜별로 부르면 한 달에 30번 왕복하게 된다.
+  Future<void> _loadAttendances(String companyId, DateTime month) async {
+    final first = DateTime(month.year, month.month, 1);
+    final last = DateTime(month.year, month.month + 1, 0);
+
+    try {
+      final response = await _apiService.getElderAttendanceRange(
+        companyId: companyId,
+        startDate: formatDate(first),
+        endDate: formatDate(last),
+      );
+      final raw = response['attendances'] ?? response['records'] ?? response['data'];
+      if (raw is List) {
+        _attendances = raw
+            .whereType<Map>()
+            .map((e) => ElderDayAttendance.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      } else {
+        _attendances = [];
+      }
+    } catch (e) {
+      // 출결을 못 받아도 노선은 보여준다. 결석·개인등하원 반영만 빠진다.
+      debugPrint('[DispatchProvider] 출결 조회 실패: $e');
+      _attendances = [];
+    }
+  }
+
+  /// 달을 넘길 때 그 달 출결을 받아온다
+  Future<void> loadAttendancesForMonth(DateTime month) async {
+    final companyId = _companyId;
+    if (companyId == null) return;
+    await _loadAttendances(companyId, month);
+    notifyListeners();
+  }
+
+  /// 어르신 출결을 바꾼다 (낙관적 반영 후 저장, 실패하면 되돌린다)
+  Future<bool> saveAttendances(List<ElderDayAttendance> changes) async {
+    final companyId = _companyId;
+    if (companyId == null || changes.isEmpty) return false;
+
+    final before = [..._attendances];
+    final merged = {
+      for (final a in _attendances) '${a.elderlyId}@${a.date}': a,
+      for (final c in changes) '${c.elderlyId}@${c.date}': c,
+    };
+    _attendances = merged.values.toList();
+    notifyListeners();
+
+    try {
+      await _apiService.bulkCheckElderAttendance(
+        companyId: companyId,
+        requests: changes.map((c) => c.toJson()).toList(),
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[DispatchProvider] 출결 저장 실패: $e');
+      _attendances = before;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// 그날 그 어르신의 출결 기록 (없으면 null)
+  ElderDayAttendance? attendanceOf(int elderlyId, String date) {
+    for (final a in _attendances) {
+      if (a.elderlyId == elderlyId && a.date == date) return a;
+    }
+    return null;
+  }
+
   /// 서버에서 다시 읽어온다 (당겨서 새로고침)
   Future<void> refresh() async {
     final companyId = _companyId;
@@ -98,10 +173,16 @@ class DispatchProvider with ChangeNotifier {
   // ================== 조회 ==================
 
   DailyDispatch dispatchForDate(DateTime date) =>
-      dailyDispatch(date, _settings, _vacations);
+      dailyDispatch(date, _settings, _vacations, attendances: _attendances);
 
   Map<String, DispatchDaySummary> summaryForMonth(int year, int month) =>
-      monthlyDispatchSummary(year, month, _settings, _vacations);
+      monthlyDispatchSummary(
+        year,
+        month,
+        _settings,
+        _vacations,
+        attendances: _attendances,
+      );
 
   List<Senior> seniorsOfRoute(String routeId) {
     final list = _settings.seniors.where((s) => s.routeId == routeId).toList()

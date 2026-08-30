@@ -17,10 +17,14 @@ class DispatchListView extends StatefulWidget {
   final DispatchSettings settings;
   final List<VacationRequest> vacations;
 
+  /// 그 기간의 어르신 출결. 결석·개인등하원이 탑승 명단에 반영된다.
+  final List<ElderDayAttendance> attendances;
+
   const DispatchListView({
     super.key,
     required this.settings,
     required this.vacations,
+    this.attendances = const [],
   });
 
   @override
@@ -47,7 +51,14 @@ class _DispatchListViewState extends State<DispatchListView> {
     final last = DateTime(_end.year, _end.month, _end.day);
 
     while (!cursor.isAfter(last)) {
-      result.add(dailyDispatch(cursor, widget.settings, widget.vacations));
+      result.add(
+        dailyDispatch(
+          cursor,
+          widget.settings,
+          widget.vacations,
+          attendances: widget.attendances,
+        ),
+      );
       cursor = cursor.add(const Duration(days: 1));
     }
     return result;

@@ -6,6 +6,7 @@ import '../providers/dispatch_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/dispatch/dispatch_board_view.dart';
 import '../widgets/dispatch/dispatch_calendar_view.dart';
 import '../widgets/dispatch/dispatch_day_sheet.dart';
 import '../widgets/dispatch/dispatch_list_view.dart';
@@ -13,7 +14,10 @@ import '../widgets/dispatch/senior_absence_view.dart';
 import '../widgets/seed/seed_button.dart';
 import 'dispatch_settings_screen.dart';
 
-/// 배차관리 — 달력 / 목록 / 결석 세 화면과 설정 진입.
+/// 배차관리 — 배차표 / 달력 / 목록 / 출결 네 화면과 설정 진입.
+///
+/// 기본은 배차표다. 선생님들이 가장 자주 확인하는 것이 "오늘 우리 차 명단"이라
+/// 앱을 열면 그것부터 보이게 한다. 나머지 화면은 그대로 남겨 뒀다.
 ///
 /// 관리자 웹의 배차관리 탭과 같은 구성이다. 설정은 서버 한 곳에 있어서
 /// 웹에서 짠 노선이 앱에 그대로 보이고, 앱에서 고치면 웹에도 반영된다.
@@ -95,7 +99,7 @@ class _DispatchScreenState extends State<DispatchScreen> {
   }
 
   Widget _buildTabs() {
-    const labels = ['달력', '목록', '결석'];
+    const labels = ['배차표', '달력', '목록', '출결'];
 
     return Container(
       margin: const EdgeInsets.fromLTRB(
@@ -147,15 +151,18 @@ class _DispatchScreenState extends State<DispatchScreen> {
 
   Widget _buildBody(DispatchProvider provider) {
     switch (_tabIndex) {
-      case 1:
+      case 0:
+        return const DispatchBoardView();
+      case 2:
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
           child: DispatchListView(
             settings: provider.settings,
             vacations: provider.vacations,
+            attendances: provider.attendances,
           ),
         );
-      case 2:
+      case 3:
         return const Padding(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.space4),
           child: SeniorAbsenceView(),
