@@ -112,8 +112,10 @@ class DispatchCalendarView extends StatelessWidget {
 
     return Column(
       children: List.generate(rows, (row) {
+        // 세로로 늘리라고(stretch) 하면 안 된다. 이 달력은 스크롤 목록 안에 들어가
+        // 높이가 무한대라, 늘리려는 순간 칸이 무한 높이를 받아 레이아웃이 통째로
+        // 무너지고 화면이 빈 채로 남았다. 칸(_DayCell)은 스스로 62의 높이를 가진다.
         return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: List.generate(7, (col) {
             final cellIndex = row * 7 + col;
             final day = cellIndex - leadingBlanks + 1;
