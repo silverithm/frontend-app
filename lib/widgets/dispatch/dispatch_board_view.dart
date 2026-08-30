@@ -1,11 +1,10 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../models/dispatch.dart';
@@ -34,8 +33,6 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
   late DateTime _date;
   String _routeType = RouteType.toWork;
 
-  /// 이미지로 내보낼 영역. 조작 줄은 빼고 표만 담는다.
-  final GlobalKey _captureKey = GlobalKey();
   bool _isCapturing = false;
 
   @override
@@ -77,23 +74,44 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
 
   /// 배차표를 그림으로 만들어 공유 시트로 넘긴다.
   /// 카톡방에 올리는 것이 목적이라 앨범 저장이 아니라 바로 공유로 간다.
-  Future<void> _shareImage() async {
+  ///
+  /// 화면에 보이는 부분만 떠서는 안 된다. 차가 열세 대면 리스트는 여섯 대만
+  /// 그려 두므로, 화면을 그대로 찍으면 나머지가 잘린 그림이 나간다.
+  /// 그래서 화면과 별개로 표 전체를 한 번 그려서(captureFromLongWidget) 찍는다.
+  Future<void> _shareImage(DailyDispatch daily, List<RouteDispatch> dispatches,
+      List<Senior> personal) async {
     if (_isCapturing) return;
     setState(() => _isCapturing = true);
 
     try {
-      final boundary =
-          _captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) throw StateError('캡처할 화면을 찾지 못했습니다');
-
-      // 화면 배율보다 조금 크게 떠야 카톡에서 글자가 뭉개지지 않는다
-      final image = await boundary.toImage(pixelRatio: 3);
-      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (bytes == null) throw StateError('이미지를 만들지 못했습니다');
+      final bytes = await ScreenshotController().captureFromLongWidget(
+        MediaQuery(
+          data: MediaQuery.of(context),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Container(
+              width: 720,
+              // 배경을 주지 않으면 투명 PNG가 나와 카톡에서 글자가 안 보인다
+              color: AppSemanticColors.backgroundSecondary,
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildHeader(daily, personal),
+                  for (final rd in dispatches) _RouteBlock(dispatch: rd),
+                ],
+              ),
+            ),
+          ),
+        ),
+        pixelRatio: 2,
+        context: context,
+      );
 
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/배차표_${formatDate(_date)}_$_routeType.png');
-      await file.writeAsBytes(bytes.buffer.asUint8List());
+      await file.writeAsBytes(bytes);
 
       await SharePlus.instance.share(
         ShareParams(
@@ -102,6 +120,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
         ),
       );
     } catch (e) {
+      debugPrint('[배차표] 이미지 공유 실패: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이미지를 만들지 못했습니다. 텍스트 복사를 이용해 주세요')),
@@ -123,23 +142,9 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildControls(daily),
-        Expanded(
-          child: RepaintBoundary(
-            key: _captureKey,
-            child: Container(
-              // 캡처본 배경을 명시하지 않으면 투명 PNG가 나와 글자가 안 보인다
-              color: AppSemanticColors.backgroundSecondary,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildHeader(daily, personal),
-                  Expanded(child: _buildRouteList(dispatches)),
-                ],
-              ),
-            ),
-          ),
-        ),
+        _buildControls(daily, dispatches, personal),
+        _buildHeader(daily, personal),
+        Expanded(child: _buildRouteList(dispatches)),
       ],
     );
   }
@@ -168,7 +173,11 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     );
   }
 
-  Widget _buildControls(DailyDispatch daily) {
+  Widget _buildControls(
+    DailyDispatch daily,
+    List<RouteDispatch> dispatches,
+    List<Senior> personal,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.space4,
@@ -197,7 +206,9 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             tooltip: '텍스트 복사',
           ),
           IconButton(
-            onPressed: _isCapturing ? null : _shareImage,
+            onPressed: _isCapturing
+                ? null
+                : () => _shareImage(daily, dispatches, personal),
             icon: _isCapturing
                 ? const SizedBox(
                     width: 18,
