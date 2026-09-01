@@ -1126,6 +1126,12 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
+  /// [insertPendingFileMessage]로 띄워둔 버블을, 업로드를 시도조차 하지 못한
+  /// 경우(예: 동영상 압축 실패 + 용량 초과로 건너뜀)에 실패 상태로 바꾼다.
+  void markPendingFileMessageFailed(String localId) {
+    _updatePendingMessageStatus(localId, MessageSendingStatus.failed);
+  }
+
   void _updatePendingMessageStatus(
     String localId,
     MessageSendingStatus status,
@@ -1147,24 +1153,36 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> sendFileMessage(
+  // insertPendingFileMessage가 같은 밀리초 안에 여러 번 불려도(사진 여러 장을
+  // 한 번에 고를 때) localId가 겹치지 않도록 붙이는 일련번호.
+  int _pendingLocalIdSeq = 0;
+
+  static const List<String> _imageExtensions = [
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp',
+  ];
+
+  /// 파일 업로드를 시작하기 전, 화면에 바로 보일 "전송 중" 버블부터 만들어
+  /// 목록 맨 앞에 끼워 넣고 그 localId를 돌려준다.
+  ///
+  /// 사진 여러 장을 한 번에 골라 동시 업로드할 때, 업로드는 동시 개수를
+  /// 제한하더라도 버블만은 선택 즉시 전부 보이게 하기 위해
+  /// [uploadPendingFileMessage]와 분리했다.
+  String insertPendingFileMessage(
     int roomId,
-    File file, {
+    String fileName, {
     required String senderId,
     required String senderName,
-  }) async {
-    // 로컬 임시 ID 생성
-    final localId = 'local_file_${DateTime.now().millisecondsSinceEpoch}';
-    final fileName = file.path.split('/').last;
-    final isImage = [
-      'jpg',
-      'jpeg',
-      'png',
-      'gif',
-      'webp',
-    ].any((ext) => fileName.toLowerCase().endsWith('.$ext'));
+  }) {
+    final localId =
+        'local_file_${DateTime.now().millisecondsSinceEpoch}_${_pendingLocalIdSeq++}';
+    final isImage = _imageExtensions.any(
+      (ext) => fileName.toLowerCase().endsWith('.$ext'),
+    );
 
-    // 임시 메시지 생성 (전송 중 상태)
     final pendingMessage = ChatMessage(
       id: -DateTime.now().millisecondsSinceEpoch, // 음수 임시 ID
       chatRoomId: roomId,
@@ -1182,6 +1200,19 @@ class ChatProvider with ChangeNotifier {
     _messages.insert(0, pendingMessage);
     notifyListeners();
 
+    return localId;
+  }
+
+  /// [insertPendingFileMessage]로 이미 목록에 끼워 넣은 버블의 실제 업로드를
+  /// 수행한다. 성공하면 서버가 준 메시지로 교체하고, 실패하면 그 버블만
+  /// 실패 상태로 바꾼다(다른 버블 전송에는 영향 없음).
+  Future<bool> uploadPendingFileMessage(
+    int roomId,
+    File file, {
+    required String localId,
+    required String senderId,
+    required String senderName,
+  }) async {
     try {
       final response = await ApiService().uploadChatFile(
         roomId: roomId,
@@ -1208,6 +1239,31 @@ class ChatProvider with ChangeNotifier {
       setError('파일 전송에 실패했습니다: ${e.toString()}');
       return false;
     }
+  }
+
+  /// 파일 하나를 곧바로 만들고 업로드한다(버블을 미리 띄워둘 필요가 없는
+  /// 단건 전송용). 여러 장을 동시 업로드하려면 [insertPendingFileMessage] +
+  /// [uploadPendingFileMessage]를 따로 쓴다.
+  Future<bool> sendFileMessage(
+    int roomId,
+    File file, {
+    required String senderId,
+    required String senderName,
+  }) async {
+    final fileName = file.path.split('/').last;
+    final localId = insertPendingFileMessage(
+      roomId,
+      fileName,
+      senderId: senderId,
+      senderName: senderName,
+    );
+    return uploadPendingFileMessage(
+      roomId,
+      file,
+      localId: localId,
+      senderId: senderId,
+      senderName: senderName,
+    );
   }
 
   Future<bool> deleteMessage(int roomId, int messageId) async {

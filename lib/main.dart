@@ -101,6 +101,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {
           return shadcn.ShadcnApp(
+            navigatorKey: FCMService.navigatorKey,
             title: 'Frontend App',
             // shadcn 위젯도 앱 테마(Seed 그레이 + 케어브이 틸)와 색을 맞춘다
             theme: shadcn.ThemeData(
@@ -169,8 +170,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
     // 앱 시작 시 버전 체크 및 로그인 상태 확인
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // ApiService에 글로벌 context 설정
+      // (FCM 알림 이동은 더 이상 이 context를 캐싱하지 않고, ShadcnApp에 물린
+      // FCMService.navigatorKey로 직접 처리한다 — 화면 스택이 바뀌어도 안전하다)
       ApiService().setGlobalContext(context);
-      FCMService().setGlobalContext(context);
 
       // 앱 버전 체크
       final appVersionProvider = context.read<AppVersionProvider>();

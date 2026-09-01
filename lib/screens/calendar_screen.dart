@@ -33,7 +33,15 @@ class CalendarScreen extends StatefulWidget {
   /// 일정은 별도 상세 화면이 없고 날짜를 고르면 아래에 펼쳐지는 구조라, 날짜가 곧 목적지다.
   final DateTime? initialScheduleDate;
 
-  const CalendarScreen({super.key, this.initialScheduleDate});
+  /// 알림으로 들어온 경우 강조해서 보여줄 일정 id. 날짜 목록에서 눈에 띄게
+  /// 테두리를 강조하고, 할 일이 있으면 체크리스트도 펼쳐 둔다.
+  final int? highlightedScheduleId;
+
+  const CalendarScreen({
+    super.key,
+    this.initialScheduleDate,
+    this.highlightedScheduleId,
+  });
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
@@ -65,6 +73,11 @@ class _CalendarScreenState extends State<CalendarScreen>
       _scheduleCurrentDate = DateTime(target.year, target.month);
       _scheduleSelectedDate = DateTime(target.year, target.month, target.day);
       _tabController.index = 1; // 0=휴무 달력, 1=일정 달력
+    }
+    // 강조할 일정에 할 일이 있다면 체크리스트를 펼쳐서 바로 보이게 한다
+    final highlightId = widget.highlightedScheduleId;
+    if (highlightId != null) {
+      _expandedTaskScheduleIds.add(highlightId);
     }
     _fabAnimationController = AnimationController(
       duration: AppTransitions.slow,
@@ -710,6 +723,8 @@ class _CalendarScreenState extends State<CalendarScreen>
         taskItems.isNotEmpty ? taskItems.where((t) => t.isCompleted).length : schedule.taskCompleted;
     final taskTotalCount = taskItems.isNotEmpty ? taskItems.length : schedule.taskTotal;
     final isTaskListExpanded = _expandedTaskScheduleIds.contains(schedule.id);
+    // 알림을 눌러 들어온 그 일정이면 테두리를 강조해 눈에 띄게 한다
+    final isHighlighted = widget.highlightedScheduleId == schedule.id;
 
     return GestureDetector(
       onLongPress: isMySchedule
@@ -722,8 +737,10 @@ class _CalendarScreenState extends State<CalendarScreen>
           color: AppSemanticColors.surfaceDefault,
           borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
           border: Border.all(
-            color: scheduleColor.withValues(alpha: 0.2),
-            width: 1,
+            color: isHighlighted
+                ? scheduleColor
+                : scheduleColor.withValues(alpha: 0.2),
+            width: isHighlighted ? 2 : 1,
           ),
         ),
         child: Column(

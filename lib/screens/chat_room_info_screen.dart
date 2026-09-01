@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -10,6 +11,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/chat_image_url.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -451,12 +453,15 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                         onTap: () => _openMedia(image),
                         child: ClipRRect(
                         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                        child: Image.network(
-                          image.fileUrl ?? '',
+                        // 그리드는 목록 표시이므로 서버 썸네일이 있으면 그걸 쓰고
+                        // (chat_room_screen.dart와 같은 단일 지점), 탭했을 때
+                        // 열리는 전체화면(_openMedia)은 계속 원본 fileUrl을 쓴다.
+                        child: CachedNetworkImage(
+                          imageUrl: resolveChatImageUrl(image) ?? '',
                           fit: BoxFit.cover,
                           // 3열 그리드 썸네일 크기에 맞춰 원본 디코드를 제한
-                          cacheWidth: 300,
-                          errorBuilder: (_, __, ___) => Container(
+                          memCacheWidth: 300,
+                          errorWidget: (_, __, ___) => Container(
                             color: AppSemanticColors.backgroundTertiary,
                             child: Icon(
                               Icons.broken_image,

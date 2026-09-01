@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
@@ -6,6 +7,8 @@ import '../../theme/app_typography.dart';
 
 /// 채팅에서 보낸 사진을 앱 안에서 바로 크게 본다.
 /// 확대·축소만 하고, 저장은 호출하는 쪽의 [onDownload]에 맡긴다.
+/// 디스크 캐시가 있어(cached_network_image) 목록 썸네일에서 이미 받아둔
+/// 사진이면 방을 다시 열거나 풀스크린을 다시 열 때 즉시 뜬다.
 class ChatImageViewer extends StatelessWidget {
   final String imageUrl;
   final String fileName;
@@ -63,14 +66,15 @@ class ChatImageViewer extends StatelessWidget {
         child: InteractiveViewer(
           minScale: 1,
           maxScale: 4,
-          child: Image.network(
-            imageUrl,
+          child: CachedNetworkImage(
+            imageUrl: imageUrl,
             fit: BoxFit.contain,
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
-              return const CircularProgressIndicator(color: AppColors.white);
-            },
-            errorBuilder: (context, error, stackTrace) {
+            progressIndicatorBuilder: (context, url, progress) =>
+                CircularProgressIndicator(
+                  color: AppColors.white,
+                  value: progress.progress,
+                ),
+            errorWidget: (context, url, error) {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

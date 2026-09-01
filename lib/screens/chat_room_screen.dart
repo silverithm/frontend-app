@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:video_compress/video_compress.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:open_filex/open_filex.dart';
 import '../providers/auth_provider.dart';
@@ -21,6 +23,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/chat_image_url.dart';
+import '../utils/chat_message_grouping.dart';
 import 'chat_room_info_screen.dart';
 import 'document_viewer_screen.dart';
 import 'hwp_editor_screen.dart';
@@ -31,6 +35,7 @@ import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../widgets/chat/chat_image_viewer.dart';
+import '../widgets/chat/chat_sender_header.dart';
 import '../widgets/common/app_action_sheet.dart';
 
 enum _ChatRoomMenuAction { info, search, files, leave, delete }
@@ -326,8 +331,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             children: [
               SeedListCell(
                 leadingIcon: Icons.photo_library,
-                title: '사진',
-                description: '갤러리에서 사진 선택',
+                title: '사진·동영상',
+                description: '갤러리에서 사진·동영상 선택',
                 showChevron: false,
                 onTap: () {
                   Navigator.pop(context);
@@ -351,91 +356,244 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  // 10MB 상수 (바이트)
-  static const int _maxFileSize = 10 * 1024 * 1024; // 10MB
+  // 왼쪽 열(아바타 아래 이름·직종) 폭. "사회복지사"·"요양보호사"·"간호조무사" 같은
+  // 흔한 5글자 직종명이 labelSmall(11px)에서 한 줄에 들어가도록 잡았다.
+  // (기존 32px는 아바타만 겨우 들어가고 이름·직종은 거의 다 잘렸다.)
+  static const double _senderColumnWidth = 64;
 
-  /// 갤러리에서 사진을 여러 장 골라 한 번에 보낸다.
-  /// 각 사진은 독립된 메시지 버블로 즉시 올라가 각자 전송중 표시가 붙으므로
-  /// 진행 상황은 그 버블들로 보이고, 한 장이 실패해도 나머지는 계속 전송된다.
+  // 왼쪽 열이 넓어진 만큼 말풍선 최대 폭에서 그대로 빼서, 버블이 부자연스럽게
+  // 좁아지지 않으면서도 두 영역이 겹치지 않게 한다.
+  double _bubbleMaxWidth(BuildContext context) {
+    final extra = _senderColumnWidth - AppSpacing.space8;
+    return MediaQuery.of(context).size.width * 0.7 - extra;
+  }
+
+  // 10MB 상수 (바이트) — 사진·문서
+  static const int _maxFileSize = 10 * 1024 * 1024; // 10MB
+  // 동영상은 압축을 거치므로 좀 더 넉넉하게 허용 (압축 실패 시 원본 기준)
+  static const int _maxVideoFileSize = 100 * 1024 * 1024; // 100MB
+
+  // 사진 여러 장을 고를 때 실제 업로드(네트워크)는 한 번에 이만큼만 동시에
+  // 내보낸다. 현장 회선이 좁아 전부 동시에 밀면 오히려 느려지고 타임아웃 난다.
+  static const int _maxConcurrentUploads = 3;
+
+  static const Set<String> _videoExtensions = {
+    'mp4', 'mov', 'm4v', 'avi', 'mkv', 'webm', '3gp',
+  };
+
+  bool _isVideoFileName(String fileName) {
+    final ext = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : '';
+    return _videoExtensions.contains(ext);
+  }
+
+  // video_compress는 네이티브 쪽 압축기가 한 번에 하나만 돌아간다
+  // (동시에 부르면 StateError). 동영상 여러 개를 골라도 압축만은 순서대로
+  // 한 개씩 처리되도록 이 체인으로 직렬화한다. 사진 압축·업로드는 이 제약이
+  // 없으므로 그대로 동시 처리된다.
+  Future<void> _videoCompressChain = Future.value();
+
+  Future<T> _serializeVideoCompress<T>(Future<T> Function() action) {
+    final result = _videoCompressChain.then((_) => action());
+    _videoCompressChain = result.then((_) {}, onError: (_) {});
+    return result;
+  }
+
+  /// [items]를 최대 [limit]개씩 동시에 처리한다(작업자 풀 방식).
+  Future<void> _runWithConcurrencyLimit<T>(
+    List<T> items,
+    int limit,
+    Future<void> Function(T item) action,
+  ) async {
+    final iterator = items.iterator;
+
+    Future<void> worker() async {
+      while (iterator.moveNext()) {
+        await action(iterator.current);
+      }
+    }
+
+    await Future.wait(List.generate(limit, (_) => worker()));
+  }
+
+  /// 갤러리에서 사진·동영상을 여러 개 골라 한 번에 보낸다.
+  /// 고르는 즉시 전부 "전송 중" 버블부터 띄우고, 실제 업로드(네트워크)만
+  /// [_maxConcurrentUploads]개씩 동시에 내보낸다. 한 개가 실패해도 나머지는
+  /// 계속 전송되고, 실패한 것만 따로 알린다.
   Future<void> _pickAndSendPhoto() async {
     try {
       final ImagePicker picker = ImagePicker();
-      final List<XFile> images = await picker.pickMultiImage();
+      final List<XFile> picked = await picker.pickMultipleMedia();
 
-      if (images.isEmpty) return;
+      if (picked.isEmpty) return;
 
-      if (images.length > 1 && mounted) {
-        AppSnackBar.showInfo(context, message: '사진 ${images.length}장 전송 중...');
+      final chatProvider = context.read<ChatProvider>();
+      final authProvider = context.read<AuthProvider>();
+      final senderId = authProvider.currentUser?.chatUserId ?? '';
+      final senderName = authProvider.currentUser?.name ?? '';
+
+      if (picked.length > 1 && mounted) {
+        AppSnackBar.showInfo(context, message: '${picked.length}개 전송 중...');
       }
+
+      // 선택 즉시 전부 "전송 중" 버블을 띄운다 — 실제 업로드는 아래에서
+      // 동시 개수를 제한해 진행하지만, 진행 상황은 버블로 바로 보인다.
+      final pending = picked.map((xfile) {
+        final isVideo = _isVideoFileName(xfile.name);
+        final localId = chatProvider.insertPendingFileMessage(
+          widget.room.id,
+          xfile.name,
+          senderId: senderId,
+          senderName: senderName,
+        );
+        return (xfile: xfile, localId: localId, isVideo: isVideo);
+      }).toList();
 
       int successCount = 0;
       int failCount = 0;
 
-      for (final image in images) {
-        final ok = await _sendPhotoFile(image);
+      await _runWithConcurrencyLimit(pending, _maxConcurrentUploads, (item) async {
+        final ok = await _prepareAndUploadMedia(
+          item.xfile,
+          localId: item.localId,
+          isVideo: item.isVideo,
+          senderId: senderId,
+          senderName: senderName,
+        );
         if (ok) {
           successCount++;
         } else {
           failCount++;
         }
-      }
+      });
 
-      if (images.length > 1 && mounted) {
+      if (picked.length > 1 && mounted) {
         if (failCount == 0) {
-          AppSnackBar.showSuccess(context, message: '사진 $successCount장 전송 완료');
+          AppSnackBar.showSuccess(context, message: '$successCount개 전송 완료');
         } else {
           AppSnackBar.showError(
             context,
-            message: '사진 전송 완료 $successCount장 / 실패 $failCount장',
+            message: '전송 완료 $successCount개 / 실패 $failCount개',
           );
         }
       }
     } catch (e) {
-      print('[ChatRoomScreen] 사진 선택 에러: $e');
+      print('[ChatRoomScreen] 사진·동영상 선택 에러: $e');
       if (mounted) {
-        AppSnackBar.showError(context, message: '사진 선택에 실패했습니다: $e');
+        AppSnackBar.showError(context, message: '사진·동영상 선택에 실패했습니다: $e');
       }
     }
   }
 
-  /// 사진 한 장을 (필요하면 압축 후) 전송한다. 성공하면 true.
-  Future<bool> _sendPhotoFile(XFile image) async {
+  /// 이미 버블(localId)이 떠 있는 사진/동영상 한 개를 (필요하면 압축 후)
+  /// 업로드한다. 성공하면 true. 실패해도 이 버블만 실패 상태가 되고
+  /// 다른 버블 전송에는 영향을 주지 않는다.
+  Future<bool> _prepareAndUploadMedia(
+    XFile original, {
+    required String localId,
+    required bool isVideo,
+    required String senderId,
+    required String senderName,
+  }) async {
+    final chatProvider = context.read<ChatProvider>();
     try {
-      File file = File(image.path);
+      File file = File(original.path);
       final fileSize = await file.length();
 
       print(
-        '[ChatRoomScreen] 선택된 파일: ${image.name}, 크기: ${_formatFileSize(fileSize)} ($fileSize bytes)',
+        '[ChatRoomScreen] 선택된 파일: ${original.name}, 크기: ${_formatFileSize(fileSize)} ($fileSize bytes), video=$isVideo',
       );
 
-      // 10MB 초과시 압축
-      if (fileSize > _maxFileSize) {
+      if (isVideo) {
+        final prepared = await _prepareVideoFile(file, fileSize, original.name);
+        if (prepared == null) {
+          chatProvider.markPendingFileMessageFailed(localId);
+          return false;
+        }
+        file = prepared;
+      } else if (fileSize > _maxFileSize) {
+        // 사진은 10MB 초과 시 압축
         final compressedFile = await _compressImage(file, fileSize);
         if (compressedFile != null) {
           file = compressedFile;
         } else {
+          chatProvider.markPendingFileMessageFailed(localId);
           if (mounted) {
             AppSnackBar.showError(
               context,
-              message: '${image.name} 압축에 실패해 전송하지 못했습니다.',
+              message: '${original.name} 압축에 실패해 전송하지 못했습니다.',
             );
           }
           return false;
         }
       }
 
-      final chatProvider = context.read<ChatProvider>();
-      final authProvider = context.read<AuthProvider>();
-      return await chatProvider.sendFileMessage(
+      return await chatProvider.uploadPendingFileMessage(
         widget.room.id,
         file,
-        senderId: authProvider.currentUser?.chatUserId ?? '',
-        senderName: authProvider.currentUser?.name ?? '',
+        localId: localId,
+        senderId: senderId,
+        senderName: senderName,
       );
     } catch (e) {
-      print('[ChatRoomScreen] 사진 전송 에러: $e');
+      print('[ChatRoomScreen] 사진·동영상 전송 에러: $e');
+      chatProvider.markPendingFileMessageFailed(localId);
       return false;
     }
+  }
+
+  /// 동영상을 업로드 전에 720p 정도로 압축한다(보통 원본의 1/5~1/10).
+  /// 압축에 실패하면 원본을 그대로 쓰되, 원본이 100MB를 넘으면 안내만 하고
+  /// null을 돌려줘 이 파일만 건너뛴다. 압축은 한 번에 하나씩만 진행된다
+  /// (video_compress 네이티브 제약).
+  Future<File?> _prepareVideoFile(
+    File file,
+    int originalSize,
+    String displayName,
+  ) async {
+    if (mounted) {
+      AppSnackBar.showInfo(context, message: '$displayName 압축 중...');
+    }
+
+    try {
+      final info = await _serializeVideoCompress(
+        () => VideoCompress.compressVideo(
+          file.path,
+          quality: VideoQuality.Res1280x720Quality,
+          deleteOrigin: false,
+          includeAudio: true,
+        ),
+      );
+
+      final compressedPath = info?.path;
+      if (compressedPath != null) {
+        final compressedFile = File(compressedPath);
+        final compressedSize = await compressedFile.length();
+        print(
+          '[ChatRoomScreen] 동영상 압축 완료: ${_formatFileSize(originalSize)} → ${_formatFileSize(compressedSize)}',
+        );
+        return compressedFile;
+      }
+
+      print('[ChatRoomScreen] 동영상 압축 실패, 원본으로 대체 시도: $displayName');
+    } catch (e) {
+      print('[ChatRoomScreen] 동영상 압축 에러: $e, 원본으로 대체 시도: $displayName');
+    }
+
+    // 압축 실패 — 원본이 100MB 이내면 원본을 그대로 올리고, 넘으면 건너뛴다
+    if (originalSize <= _maxVideoFileSize) {
+      return file;
+    }
+
+    if (mounted) {
+      AppSnackBar.showError(
+        context,
+        message:
+            '$displayName 압축에 실패했고 용량이 커서(${_formatFileSize(originalSize)}) 건너뛰었습니다.',
+      );
+    }
+    return null;
   }
 
   /// 이미지 압축 메서드 - 10MB 미만이 될 때까지 압축
@@ -1608,22 +1766,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         itemBuilder: (context, index) {
                           final file = files[index];
                           final isImage = file.type == MessageType.image;
+                          final thumbUrl = resolveChatImageUrl(file);
 
                           return SeedListCell(
-                            leading: isImage && file.fileUrl != null
+                            leading: isImage && thumbUrl != null
                                 ? ClipRRect(
                                     borderRadius: BorderRadius.circular(
                                       AppBorderRadius.md,
                                     ),
-                                    child: Image.network(
-                                      file.fileUrl!,
+                                    child: CachedNetworkImage(
+                                      imageUrl: thumbUrl,
                                       width: 44,
                                       height: 44,
                                       fit: BoxFit.cover,
                                       // 44dp 썸네일에 원본 해상도를 그대로 디코드하지 않도록 제한
-                                      cacheWidth: 88,
-                                      cacheHeight: 88,
-                                      errorBuilder: (_, __, ___) =>
+                                      memCacheWidth: 88,
+                                      memCacheHeight: 88,
+                                      errorWidget: (_, __, ___) =>
                                           const Icon(Icons.image_outlined),
                                     ),
                                   )
@@ -2334,36 +2493,50 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       padding: const EdgeInsets.all(AppSpacing.space4),
                       itemCount: chatProvider.messages.length,
                       itemBuilder: (context, index) {
-                        final message = chatProvider.messages[index];
+                        final messages = chatProvider.messages;
+                        final message = messages[index];
                         // localId → id 순으로 안정된 키를 준다. 전송 중(sending) 메시지가
                         // 서버 확정 메시지로 교체돼도 같은 자리로 인식되게 한다.
                         final itemKey = ValueKey(
                           message.localId ?? message.id,
                         );
 
+                        // 날짜가 바뀌는 지점(또는 가장 오래된 메시지 위)에 구분선을 끼워넣는다.
+                        final showDateSeparator =
+                            shouldShowDateSeparatorAbove(messages, index);
+
                         // 시스템 메시지는 가운데 정렬로 별도 처리
                         if (message.type == MessageType.system) {
                           return KeyedSubtree(
                             key: itemKey,
-                            child: _buildSystemMessage(message),
+                            child: Column(
+                              children: [
+                                if (showDateSeparator)
+                                  _buildDateSeparator(message.createdAt),
+                                _buildSystemMessage(message),
+                              ],
+                            ),
                           );
                         }
 
                         final isMyMessage = message.senderId == currentUserId;
                         final showSenderName =
-                            !isMyMessage &&
-                            (index == chatProvider.messages.length - 1 ||
-                                chatProvider.messages[index + 1].senderId !=
-                                    message.senderId);
+                            !isMyMessage && isSenderGroupStart(messages, index);
 
                         return KeyedSubtree(
                           key: itemKey,
-                          child: _buildMessageBubble(
-                            message,
-                            isMyMessage,
-                            showSenderName,
-                            isAdmin,
-                            chatProvider.participants,
+                          child: Column(
+                            children: [
+                              if (showDateSeparator)
+                                _buildDateSeparator(message.createdAt),
+                              _buildMessageBubble(
+                                message,
+                                isMyMessage,
+                                showSenderName,
+                                isAdmin,
+                                chatProvider.participants,
+                              ),
+                            ],
                           ),
                         );
                       },
@@ -2408,6 +2581,39 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       ),
     );
   }
+
+  /// 날짜 구분선 — 가운데 정렬, 옅은 배경의 알약 모양.
+  /// 시스템 메시지 알약(_buildSystemMessage)과 톤을 맞추되 글자 스타일로 구분한다.
+  Widget _buildDateSeparator(DateTime date) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+      alignment: Alignment.center,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space3,
+          vertical: AppSpacing.space1,
+        ),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.backgroundTertiary,
+          borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        ),
+        child: Text(
+          formatDateSeparatorLabel(date),
+          style: AppTypography.labelSmall.copyWith(
+            color: AppSemanticColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 채팅 버블·파일함 썸네일에 그릴 이미지 URL을 고르는 단일 지점.
+  /// 썸네일(thumbnailUrl)이 있으면 그걸, 없으면 원본(fileUrl)을 쓴다
+  /// (로직은 utils/chat_image_url.dart의 순수 함수로 분리해 단위 테스트한다).
+  /// 전체화면 보기(_openAttachment)는 이 함수를 쓰지 않고 계속 원본
+  /// fileUrl을 그대로 쓴다.
+  String? _chatImageUrl(ChatMessage message) => resolveChatImageUrl(message);
 
   /// senderId로 참가자 목록에서 프로필 사진 URL을 찾는다 (없으면 null → 이니셜 표시).
   String? _findSenderProfileImageUrl(
@@ -2459,21 +2665,27 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           mainAxisAlignment: isMyMessage
               ? MainAxisAlignment.end
               : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: isMyMessage
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             if (!isMyMessage) ...[
               const SizedBox(width: AppSpacing.space1),
-              // 상대방 아바타 — 연속 메시지 그룹의 이름 표시 시점(showSenderName)에만 노출
-              showSenderName
-                  ? SeedAvatar(
-                      name: message.senderName,
-                      imageUrl: _findSenderProfileImageUrl(
-                        message.senderId,
-                        participants,
-                      ),
-                      size: SeedAvatarSize.small,
-                    )
-                  : const SizedBox(width: AppSpacing.space8),
+              // 왼쪽 열: 아바타 → 이름 → 직종을 세로로 쌓는다(카톡 배치).
+              // 연속 메시지 그룹의 첫 메시지(showSenderName)에만 내용을 그리고,
+              // 이어지는 메시지는 같은 폭(_senderColumnWidth)만 차지해 버블이
+              // 세로로 정렬되게 한다. 잘림 판정은 위젯 자체가 항상 같은 너비를
+              // 쓰도록 만들어 보장한다(test/chat_sender_header_test.dart 참고).
+              ChatSenderHeader(
+                visible: showSenderName,
+                senderName: message.senderName,
+                senderPosition: message.senderPosition,
+                imageUrl: _findSenderProfileImageUrl(
+                  message.senderId,
+                  participants,
+                ),
+                width: _senderColumnWidth,
+              ),
               const SizedBox(width: AppSpacing.space2),
             ],
 
@@ -2520,37 +2732,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     ? CrossAxisAlignment.end
                     : CrossAxisAlignment.start,
                 children: [
-                  if (showSenderName && !isMyMessage)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: AppSpacing.space2,
-                        bottom: AppSpacing.space1,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            message.senderName,
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                          if (message.senderPosition?.trim().isNotEmpty ??
-                              false)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: AppSpacing.space0_5,
-                              ),
-                              child: Text(
-                                message.senderPosition!.trim(),
-                                style: AppTypography.labelSmall.copyWith(
-                                  color: AppSemanticColors.textTertiary,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.space3,
@@ -2577,7 +2758,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       ),
                     ),
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.7,
+                      maxWidth: _bubbleMaxWidth(context),
                     ),
                     child: message.type == MessageType.system
                         ? Text(
@@ -2678,35 +2859,43 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (message.fileUrl != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  child: Image.network(
-                    message.fileUrl!,
-                    fit: BoxFit.cover,
-                    // 말풍선 최대 폭(화면의 70%)보다 큰 원본을 그대로 디코드하지 않도록 제한
-                    cacheWidth:
-                        (MediaQuery.of(context).size.width * 0.7 * 2).round(),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const SizedBox(
-                        width: 100,
-                        height: 100,
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 100,
-                        height: 100,
-                        color: AppSemanticColors.backgroundTertiary,
-                        child: Icon(
-                          Icons.broken_image,
-                          color: AppSemanticColors.textTertiary,
+              if (_chatImageUrl(message) != null)
+                Builder(
+                  builder: (context) {
+                    // 말풍선 최대 폭과 같은 가로/세로 4:3 자리를 로딩 중에도
+                    // 미리 잡아둬 이미지가 뜨며 스크롤이 튀지 않게 한다.
+                    final placeholderWidth = _bubbleMaxWidth(context);
+                    final placeholderHeight = placeholderWidth * 0.75;
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                      child: CachedNetworkImage(
+                        imageUrl: _chatImageUrl(message)!,
+                        fit: BoxFit.cover,
+                        // 말풍선 최대 폭보다 큰 원본을 그대로 디코드하지 않도록 제한
+                        memCacheWidth: (placeholderWidth * 2).round(),
+                        placeholder: (context, url) => SizedBox(
+                          width: placeholderWidth,
+                          height: placeholderHeight,
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
                         ),
-                      );
-                    },
-                  ),
+                        errorWidget: (context, url, error) {
+                          return SizedBox(
+                            width: placeholderWidth,
+                            height: placeholderHeight,
+                            child: Container(
+                              color: AppSemanticColors.backgroundTertiary,
+                              child: Icon(
+                                Icons.broken_image,
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
             ],
           ),
@@ -2714,16 +2903,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
 
       case MessageType.file:
+        // 동영상은 백엔드가 아직 별도 타입이 없어 file 메시지로 온다.
+        // 확장자로 구분해 재생 아이콘 + "동영상" 표시로 보여주고, 탭하면
+        // 기기 기본 플레이어로 열린다(_openAttachment → _downloadAndOpenFile).
+        final isVideo = _isVideoFileName(message.fileName ?? '');
         return GestureDetector(
           onTap: () => _openAttachment(message),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.attach_file, color: textColor, size: 18),
+              Icon(
+                isVideo ? Icons.play_circle_outline : Icons.attach_file,
+                color: textColor,
+                size: 18,
+              ),
               const SizedBox(width: AppSpacing.space1),
               Flexible(
                 child: Text(
-                  message.fileName ?? '파일',
+                  isVideo ? '동영상 · ${message.fileName ?? ''}' : (message.fileName ?? '파일'),
                   style: AppTypography.bodyMedium.copyWith(
                     color: textColor,
                     decoration: TextDecoration.underline,

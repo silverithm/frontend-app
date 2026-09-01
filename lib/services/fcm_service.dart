@@ -15,6 +15,48 @@ import '../screens/notice_detail_screen.dart';
 import '../screens/chat_room_list_screen.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/meeting_minutes_detail_screen.dart';
+import '../screens/profile_screen.dart';
+
+/// 알림 data의 type이 어떤 화면으로 이어져야 하는지를 나타낸다.
+enum FCMDestination {
+  vacation,
+  approval,
+  notice,
+  chat,
+  schedule,
+  meetingMinutes,
+  memberManagement,
+  myProfile,
+  unknown,
+}
+
+/// 알림 type 문자열 → 이동할 화면 종류. Navigator/BuildContext에 의존하지 않는
+/// 순수 함수라 단위 테스트로 매핑 누락을 바로 잡아낼 수 있다.
+FCMDestination resolveFCMDestination(String type) {
+  // 백엔드 타입: vacation_*, chat, schedule, notice, approval 등
+  if (type.startsWith('vacation')) return FCMDestination.vacation;
+
+  switch (type) {
+    case 'approval':
+      return FCMDestination.approval;
+    case 'notice':
+      return FCMDestination.notice;
+    case 'chat':
+      return FCMDestination.chat;
+    case 'schedule':
+      return FCMDestination.schedule;
+    case 'meeting_minutes':
+      return FCMDestination.meetingMinutes;
+    case 'member_join_requested':
+    case 'member_withdrawal':
+      return FCMDestination.memberManagement;
+    case 'member_join_approved':
+    case 'member_join_rejected':
+      return FCMDestination.myProfile;
+    default:
+      return FCMDestination.unknown;
+  }
+}
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -31,22 +73,19 @@ class FCMService {
   String? _currentUserId;
   bool _isAdmin = false;
 
-  BuildContext? _globalContext;
+  /// 알림 탭으로 화면을 이동할 때 쓰는 전역 네비게이터 키.
+  /// 예전엔 AuthWrapper의 BuildContext를 캐싱해 썼는데(`_globalContext`), 화면 스택이
+  /// 바뀌거나 그 위젯이 재구성되는 사이에 `context.mounted`가 false가 되면 조용히
+  /// 실패했다 (회의록 서명 알림을 눌러도 안 열리던 사고의 원인 중 하나).
+  /// MaterialApp(ShadcnApp)에 직접 물린 이 키는 앱이 살아있는 한 항상 유효하다.
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
-  /// 콜드 스타트 시 컨텍스트 준비 전에 도착한 알림 탭 데이터 (컨텍스트 설정 후 처리)
+  /// 네비게이터가 아직 준비되지 않은 시점(콜드 스타트 직후 등)에 도착한 알림 탭 데이터.
+  /// 네비게이터가 붙으면 재시도 타이머가 처리한다.
   Map<String, dynamic>? _pendingNavigationData;
+  Timer? _pendingNavRetryTimer;
   void Function(RemoteMessage)? onForegroundMessage;
-
-  void setGlobalContext(BuildContext context) {
-    _globalContext = context;
-
-    // 앱 종료 상태에서 알림 탭으로 시작한 경우 — 컨텍스트가 없어 보류했던 이동을 지금 실행
-    final pending = _pendingNavigationData;
-    if (pending != null) {
-      _pendingNavigationData = null;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _navigateByType(pending));
-    }
-  }
 
   /// FCM 서비스 초기화
   Future<void> initialize() async {
@@ -448,70 +487,131 @@ class FCMService {
     _navigateByType(message.data);
   }
 
-  /// 타입별 화면 이동 (공통)
+  /// 타입별 화면 이동 (공통).
+  /// 네비게이터가 아직 준비되지 않았으면 보류 큐에 넣고 재시도 타이머를 건다.
   void _navigateByType(Map<String, dynamic> data) {
-    final context = _globalContext;
-    if (context == null || !context.mounted) {
-      // 콜드 스타트 직후 등 컨텍스트 준비 전 — setGlobalContext에서 재시도
+    final type = data['type']?.toString() ?? '';
+    final navigator = navigatorKey.currentState;
+
+    if (navigator == null) {
+      log('[FCM] 네비게이터 미준비 — 알림 이동 보류 (type: $type, data: $data)');
       _pendingNavigationData = data;
+      _scheduleRetryPendingNavigation();
       return;
     }
 
-    final type = data['type']?.toString() ?? '';
+    final destination = resolveFCMDestination(type);
+    log('[FCM] 알림 이동 처리 시작 (type: $type, destination: $destination, data: $data)');
 
-    // 백엔드 타입: vacation_*, chat, schedule, notice, approval
-    if (type.startsWith('vacation')) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const MyVacationScreen()),
-      );
-    } else if (type == 'approval') {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ApprovalHubScreen(initialTab: 1)),
-      );
-    } else if (type == 'notice') {
-      final noticeId = int.tryParse(data['noticeId']?.toString() ?? '');
-      if (noticeId != null) {
-        Navigator.of(context).push(
+    switch (destination) {
+      case FCMDestination.vacation:
+        // 백엔드 타입: vacation_*
+        navigator.push(
+          MaterialPageRoute(builder: (_) => const MyVacationScreen()),
+        );
+        break;
+      case FCMDestination.approval:
+        navigator.push(
+          MaterialPageRoute(builder: (_) => const ApprovalHubScreen(initialTab: 1)),
+        );
+        break;
+      case FCMDestination.notice:
+        final noticeId = int.tryParse(data['noticeId']?.toString() ?? '');
+        if (noticeId != null) {
+          navigator.push(
+            MaterialPageRoute(
+              builder: (_) => NoticeDetailScreen(noticeId: noticeId),
+            ),
+          );
+        } else {
+          log('[FCM] notice 알림에 noticeId가 없어 이동하지 못함 (data: $data)');
+        }
+        break;
+      case FCMDestination.chat:
+        // 백엔드가 roomId를 함께 보내므로 목록에서 멈추지 않고 그 대화까지 연다
+        final roomId = int.tryParse(data['roomId']?.toString() ?? '');
+        navigator.push(
           MaterialPageRoute(
-            builder: (_) => NoticeDetailScreen(noticeId: noticeId),
+            builder: (_) => ChatRoomListScreen(initialRoomId: roomId),
           ),
         );
-      }
-    } else if (type == 'chat') {
-      // 백엔드가 roomId를 함께 보내므로 목록에서 멈추지 않고 그 대화까지 연다
-      final roomId = int.tryParse(data['roomId']?.toString() ?? '');
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ChatRoomListScreen(initialRoomId: roomId),
-        ),
-      );
-    } else if (type == 'schedule') {
-      // 일정은 별도 상세 화면이 없어 그 날짜의 일정 달력을 펴 준다
-      final date = DateTime.tryParse(data['scheduleDate']?.toString() ?? '');
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => CalendarScreen(initialScheduleDate: date),
-        ),
-      );
-    } else if (type == 'meeting_minutes') {
-      // 회의록 서명 요청 — 바로 그 회의록 상세(서명 화면)로 보낸다
-      final minutesId = int.tryParse(data['minutesId']?.toString() ?? '');
-      if (minutesId != null) {
-        Navigator.of(context).push(
+        break;
+      case FCMDestination.schedule:
+        // 일정은 별도 상세 화면이 없어 그 날짜의 일정 달력을 펴 주고, scheduleId가
+        // 있으면 그 일정 카드까지 강조해 준다 (강조 인자를 안 받던 것을 보완)
+        final date = DateTime.tryParse(data['scheduleDate']?.toString() ?? '');
+        final scheduleId = int.tryParse(data['scheduleId']?.toString() ?? '');
+        navigator.push(
           MaterialPageRoute(
-            builder: (_) => MeetingMinutesDetailScreen(minutesId: minutesId),
+            builder: (_) => CalendarScreen(
+              initialScheduleDate: date,
+              highlightedScheduleId: scheduleId,
+            ),
           ),
         );
-      }
-    } else if (type == 'member_join_requested' || type == 'member_withdrawal') {
-      // 가입 요청·탈퇴는 관리자에게 오는 알림 — 예전엔 매핑이 없어 눌러도
-      // 아무 데도 안 갔다. 회원관리(가입 승인 목록)로 보낸다.
-      // (member_join_approved/rejected는 신청자 본인에게 가는 알림이라
-      // 특정 화면 없이 앱만 연다)
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const AdminUserManagementScreen()),
-      );
+        break;
+      case FCMDestination.meetingMinutes:
+        // 회의록 서명 요청 — 바로 그 회의록 상세(서명 화면)로 보낸다.
+        // minutesId 파싱에 실패하면 예전엔 아무 로그 없이 조용히 아무 일도 안 일어났다
+        // (회의록 알람을 눌러도 안 열리던 사고의 유력한 원인 — 아래 처리 참고).
+        final minutesId = int.tryParse(data['minutesId']?.toString() ?? '');
+        if (minutesId != null) {
+          navigator.push(
+            MaterialPageRoute(
+              builder: (_) => MeetingMinutesDetailScreen(minutesId: minutesId),
+            ),
+          );
+        } else {
+          log('[FCM] meeting_minutes 알림에 minutesId가 없어 이동하지 못함 (data: $data)');
+        }
+        break;
+      case FCMDestination.memberManagement:
+        // 가입 요청·탈퇴는 관리자에게 오는 알림 — 회원관리(가입 승인 목록)로 보낸다.
+        navigator.push(
+          MaterialPageRoute(builder: (_) => const AdminUserManagementScreen()),
+        );
+        break;
+      case FCMDestination.myProfile:
+        // 가입 승인/거절은 신청자 본인에게 오는 알림 — 특정 상세 화면이 없어
+        // 자기 계정·소속 상태를 확인할 수 있는 내 정보 화면으로 보낸다.
+        navigator.push(
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        );
+        break;
+      case FCMDestination.unknown:
+        log('[FCM] 알 수 없는 알림 type — 이동하지 않음 (type: "$type", data: $data)');
+        break;
     }
+  }
+
+  /// 네비게이터 준비 전 보류된 알림 이동을 짧은 간격으로 재시도한다.
+  /// (콜드 스타트 시 FCMService.initialize()가 runApp보다 먼저 끝나 알림이 먼저 도착할 수 있다)
+  void _scheduleRetryPendingNavigation() {
+    _pendingNavRetryTimer?.cancel();
+    var attempts = 0;
+    const maxAttempts = 20; // 300ms * 20 = 최대 6초 대기
+    _pendingNavRetryTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
+      final pending = _pendingNavigationData;
+      if (pending == null) {
+        timer.cancel();
+        return;
+      }
+
+      attempts++;
+      if (navigatorKey.currentState != null) {
+        timer.cancel();
+        _pendingNavigationData = null;
+        log('[FCM] 네비게이터 준비 완료 — 보류된 알림 이동 재개 (시도 $attempts회차)');
+        _navigateByType(pending);
+        return;
+      }
+
+      if (attempts >= maxAttempts) {
+        timer.cancel();
+        _pendingNavigationData = null;
+        log('[FCM] 네비게이터 준비 대기 시간 초과 — 알림 이동 포기 (data: $pending)');
+      }
+    });
   }
   
   /// 현재 FCM 토큰 반환

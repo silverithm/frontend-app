@@ -29,7 +29,7 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 [bundle exec] fastlane android release
 ```
 
-프로덕션 20% 단계적 출시
+프로덕션 출시 (기본 20% 단계적 — rollout:1.0 으로 전체 출시)
 
 ### android complete_rollout
 

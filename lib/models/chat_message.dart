@@ -62,6 +62,10 @@ class ChatMessage {
   final MessageType type;
   final String? content;
   final String? fileUrl;
+  // 서버가 만들어 내려주는 축소본 URL. 목록에서 이미지를 빠르게 띄우는 용도이고,
+  // 전체화면 보기는 항상 fileUrl(원본)을 쓴다. 예전 메시지엔 이 값이 없을 수
+  // 있으므로(백엔드가 나중에 붙인 필드) 항상 null 가능성을 열어둔다.
+  final String? thumbnailUrl;
   final String? fileName;
   final int? fileSize;
   final String? mimeType;
@@ -81,6 +85,7 @@ class ChatMessage {
     this.type = MessageType.text,
     this.content,
     this.fileUrl,
+    this.thumbnailUrl,
     this.fileName,
     this.fileSize,
     this.mimeType,
@@ -102,6 +107,7 @@ class ChatMessage {
       type: _parseMessageType(json['type']?.toString()),
       content: json['content']?.toString(),
       fileUrl: json['fileUrl']?.toString(),
+      thumbnailUrl: json['thumbnailUrl']?.toString(),
       fileName: json['fileName']?.toString(),
       fileSize: json['fileSize'] as int?,
       mimeType: json['mimeType']?.toString(),
@@ -130,6 +136,7 @@ class ChatMessage {
       'type': type.name.toUpperCase(),
       'content': content,
       'fileUrl': fileUrl,
+      'thumbnailUrl': thumbnailUrl,
       'fileName': fileName,
       'fileSize': fileSize,
       'mimeType': mimeType,
@@ -193,6 +200,7 @@ class ChatMessage {
     MessageType? type,
     String? content,
     String? fileUrl,
+    String? thumbnailUrl,
     String? fileName,
     int? fileSize,
     String? mimeType,
@@ -212,6 +220,7 @@ class ChatMessage {
       type: type ?? this.type,
       content: content ?? this.content,
       fileUrl: fileUrl ?? this.fileUrl,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       fileName: fileName ?? this.fileName,
       fileSize: fileSize ?? this.fileSize,
       mimeType: mimeType ?? this.mimeType,
