@@ -1,4 +1,5 @@
 import 'company.dart';
+import '../utils/permissions.dart';
 
 class User {
   final String id;
@@ -25,6 +26,10 @@ class User {
   final DateTime? lastLoginAt;
   final TokenInfo? tokenInfo;
 
+  /// 서버가 내려준 세부 권한 목록(NOTICE_MANAGE 등). 관리자 계정은 비어 있어도
+  /// 모든 권한을 가진 것으로 취급한다(PermissionUtils 참고).
+  final List<String> permissions;
+
   User({
     required this.id,
     required this.email,
@@ -42,6 +47,7 @@ class User {
     this.lastLoginAt,
     this.tokenInfo,
     this.isAdminAccount = false,
+    this.permissions = const [],
   });
 
   /// 채팅에서 나를 가리키는 값.
@@ -78,6 +84,7 @@ class User {
           ? TokenInfo.fromJson(json['tokenInfo'])
           : null,
       isAdminAccount: json['isAdminAccount'] ?? false,
+      permissions: PermissionUtils.sanitize(json['permissions']),
     );
   }
 
@@ -99,6 +106,7 @@ class User {
       'isActive': isActive,
       'tokenInfo': tokenInfo?.toJson(),
       'isAdminAccount': isAdminAccount,
+      'permissions': permissions,
     };
   }
 
@@ -119,6 +127,7 @@ class User {
     bool? isActive,
     TokenInfo? tokenInfo,
     bool? isAdminAccount,
+    List<String>? permissions,
   }) {
     return User(
       id: id ?? this.id,
@@ -137,6 +146,7 @@ class User {
       isActive: isActive ?? this.isActive,
       tokenInfo: tokenInfo ?? this.tokenInfo,
       isAdminAccount: isAdminAccount ?? this.isAdminAccount,
+      permissions: permissions ?? this.permissions,
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/auth_provider.dart';
 import '../providers/app_version_provider.dart';
 import '../providers/subscription_provider.dart';
+import '../models/position_option.dart';
 import '../models/user.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
@@ -323,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 AppPasswordInput(
                   label: '새 비밀번호',
                   controller: newPasswordController,
-                  helperText: '6자 이상 입력하세요',
+                  helperText: '8자 이상 입력하세요',
                 ),
                 const SizedBox(height: AppSpacing.space4),
                 AppPasswordInput(
@@ -344,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       const SizedBox(width: AppSpacing.space2),
                       Expanded(
                         child: Text(
-                          '비밀번호는 영문, 숫자, 특수문자를 포함하여 6자 이상으로 설정하는 것을 권장합니다.',
+                          '비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상으로 설정하는 것을 권장합니다.',
                           style: AppTypography.bodySmall.copyWith(
                             color: AppSemanticColors.textSecondary,
                           ),
@@ -390,11 +391,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                             return;
                           }
 
-                          if (newPasswordController.text.length < 6) {
+                          if (newPasswordController.text.length < 8) {
                             if (!context.mounted) return;
                             AppSnackBar.showError(
                               context,
-                              message: '비밀번호는 6자 이상이어야 합니다',
+                              message: '비밀번호는 8자 이상이어야 합니다',
                             );
                             return;
                           }
@@ -1085,8 +1086,83 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         ],
                                       ),
 
-                                    // 직책 (있는 경우)
-                                    if (user.position != null &&
+                                    // 직책 — 관리자는 여기서 바로 바꾼다 (웹 기관정보의 '내 직책'과 같은 자리).
+                                    // 직원은 관리자가 배정하므로 값이 있을 때만 읽기로 보여준다.
+                                    if (AdminUtils.isAdmin(user))
+                                      Column(
+                                        children: [
+                                          InkWell(
+                                            onTap: _isSavingPosition
+                                                ? null
+                                                : () => _showPositionPicker(user),
+                                            borderRadius: BorderRadius.circular(
+                                              AppBorderRadius.lg,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: _buildInfoRow(
+                                                    icon: Icons.work,
+                                                    iconColor: AppSemanticColors
+                                                        .textSecondary,
+                                                    title: '직책',
+                                                    value: user.position
+                                                                ?.isNotEmpty ==
+                                                            true
+                                                        ? user.position!
+                                                        : '직책 없음 (관리자로 표시)',
+                                                  ),
+                                                ),
+                                                if (_isSavingPosition)
+                                                  const SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                                  )
+                                                else
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            AppSpacing.space1),
+                                                    decoration: BoxDecoration(
+                                                      color: AppSemanticColors
+                                                          .backgroundTertiary,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              AppBorderRadius
+                                                                  .lg),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.edit,
+                                                      size: 16,
+                                                      color: AppSemanticColors
+                                                          .textSecondary,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: AppSpacing.space1),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: AppSpacing.space7,
+                                            ),
+                                            child: Text(
+                                              '결재선과 채팅에 이 직책으로 표시됩니다',
+                                              style: AppTypography.caption
+                                                  .copyWith(
+                                                color: AppSemanticColors
+                                                    .textTertiary,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: AppSpacing.space4),
+                                        ],
+                                      )
+                                    else if (user.position != null &&
                                         user.position!.isNotEmpty)
                                       Column(
                                         children: [
@@ -1569,6 +1645,99 @@ class _ProfileScreenState extends State<ProfileScreen>
       trailing: trailing,
       onTap: onTap,
     );
+  }
+
+  bool _isSavingPosition = false;
+
+  /// 관리자 본인 직책 고르기. 웹 기관정보 화면의 '내 직책' Selector와 같은 동작 —
+  /// 고르는 즉시 저장하고, 비우면 '관리자'로 표시된다.
+  Future<void> _showPositionPicker(User user) async {
+    final companyId = user.company?.id?.toString() ?? '';
+    if (companyId.isEmpty) {
+      AppSnackBar.showError(context, message: '기관 정보를 찾을 수 없습니다');
+      return;
+    }
+
+    List<PositionOption> positions = const [];
+    try {
+      final result = await ApiService().getPositions(companyId: companyId);
+      final raw = result['positions'];
+      if (raw is List) {
+        positions = raw
+            .whereType<Map<String, dynamic>>()
+            .map(PositionOption.fromJson)
+            .toList();
+      }
+    } catch (e) {
+      print('[Profile] 직책 목록 조회 실패: $e');
+      if (mounted) {
+        AppSnackBar.showError(context, message: '직책 목록을 불러오지 못했습니다');
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    if (positions.isEmpty) {
+      AppSnackBar.showInfo(context, message: '먼저 직원 관리에서 직책을 등록해주세요');
+      return;
+    }
+
+    await showAppActionSheet(
+      context,
+      title: '내 직책',
+      actions: [
+        for (final position in positions)
+          AppSheetAction(
+            icon: Icons.work_outline,
+            label: position.name,
+            onSelected: () => _applyPosition(
+              positionId: int.tryParse(position.id),
+              positionName: position.name,
+            ),
+          ),
+        AppSheetAction(
+          icon: Icons.remove_circle_outline,
+          label: '직책 없음 (관리자로 표시)',
+          onSelected: () => _applyPosition(positionId: null, positionName: ''),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _applyPosition({
+    required int? positionId,
+    required String positionName,
+  }) async {
+    setState(() => _isSavingPosition = true);
+
+    try {
+      final response = await ApiService().updateMyPosition(positionId: positionId);
+      // 서버가 확정한 이름을 쓴다 — 직책명이 그새 바뀌었을 수 있다
+      final savedName = response['position']?.toString() ?? positionName;
+
+      if (!mounted) return;
+      final authProvider = context.read<AuthProvider>();
+      final currentUser = authProvider.currentUser;
+      if (currentUser != null) {
+        // 직책을 해제하면 빈 문자열 — 화면들이 isNotEmpty로 '직책 없음'을 판단한다
+        authProvider.updateUser(currentUser.copyWith(position: savedName));
+      }
+
+      AppSnackBar.showSuccess(
+        context,
+        message: positionId == null ? '직책을 해제했습니다' : '직책이 변경되었습니다',
+      );
+    } catch (e) {
+      print('[Profile] 직책 변경 실패: $e');
+      if (mounted) {
+        AppSnackBar.showError(context, message: '직책을 바꾸지 못했습니다. 잠시 후 다시 시도해주세요');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingPosition = false);
+      }
+    }
   }
 
   Widget _buildInfoRow({

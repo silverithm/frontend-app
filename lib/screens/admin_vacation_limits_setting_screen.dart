@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../models/position_option.dart';
 import '../models/vacation_limit.dart';
+import '../utils/role_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -20,49 +22,77 @@ class AdminVacationLimitsSettingScreen extends StatefulWidget {
 
 class _AdminVacationLimitsSettingScreenState
     extends State<AdminVacationLimitsSettingScreen> {
+  static const int _defaultMaxPeople = 3;
+
   DateTime _selectedDate = DateTime.now();
-  String _selectedRole = 'CAREGIVER'; // 'CAREGIVER', 'OFFICE', 'all'
+
+  /// 기관이 등록한 직책에서 만들어지는 탭. 웹(AdminPanel)과 같은 목록이어야 한다.
+  List<String> _roleNames = [];
+  String _selectedRole = '';
   Map<String, Map<String, VacationLimit>> _limitsData =
       {}; // date -> role -> limit
   bool _isLoading = false;
   bool _isSaving = false;
-  final Map<String, TextEditingController> _controllers = {};
+
+  /// date -> role -> controller. 역할 이름이 기관마다 자유 문자열이라
+  /// 'date_role' 한 줄로 합치면 이름에 '_'가 들어갈 때 갈라지므로 중첩 맵으로 둔다.
+  final Map<String, Map<String, TextEditingController>> _controllers = {};
 
   @override
   void initState() {
     super.initState();
-    _initializeControllersForCurrentMonth();
     _loadVacationLimits();
   }
 
-  void _initializeControllersForCurrentMonth() {
+  void _disposeControllers() {
+    for (final byRole in _controllers.values) {
+      for (final controller in byRole.values) {
+        controller.dispose();
+      }
+    }
+    _controllers.clear();
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  List<DateTime> _daysOfSelectedMonth() {
     final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
     final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-
+    final days = <DateTime>[];
     for (
       var date = firstDay;
       !date.isAfter(lastDay);
       date = date.add(const Duration(days: 1))
     ) {
-      final dateKey = _formatDate(date);
-
-      // CAREGIVER 컨트롤러 - 기본값 3으로 설정 (API에서 로드될 때까지)
-      final caregiverKey = '${dateKey}_CAREGIVER';
-      _controllers[caregiverKey] = TextEditingController(text: '3');
-
-      // OFFICE 컨트롤러 - 기본값 3으로 설정 (API에서 로드될 때까지)
-      final officeKey = '${dateKey}_OFFICE';
-      _controllers[officeKey] = TextEditingController(text: '3');
+      days.add(date);
     }
+    return days;
   }
 
-  @override
-  void dispose() {
-    // TextEditingController들 정리
-    for (final controller in _controllers.values) {
-      controller.dispose();
+  /// 기관이 등록한 직책 목록을 받아온다. 실패하거나 한 곳도 등록이 없으면
+  /// 저장된 한도에 남아 있는 역할로, 그것도 없으면 예전 두 분류로 되돌린다.
+  Future<List<PositionOption>> _loadPositions(String companyId) async {
+    if (companyId.isEmpty) {
+      return const [];
     }
-    super.dispose();
+    try {
+      final result = await ApiService().getPositions(companyId: companyId);
+      final raw = result['positions'];
+      if (raw is! List) {
+        return const [];
+      }
+      return raw
+          .whereType<Map<String, dynamic>>()
+          .map(PositionOption.fromJson)
+          .toList();
+    } catch (e) {
+      print('[VacationLimits] 직책 목록 로드 실패: $e');
+      return const [];
+    }
   }
 
   Future<void> _loadVacationLimits() async {
@@ -76,28 +106,39 @@ class _AdminVacationLimitsSettingScreenState
       final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
       final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
 
-      final result = await ApiService().getVacationLimits(
-        start: _formatDate(firstDay),
-        end: _formatDate(lastDay),
-        companyId: companyId,
-      );
+      final results = await Future.wait([
+        ApiService().getVacationLimits(
+          start: _formatDate(firstDay),
+          end: _formatDate(lastDay),
+          companyId: companyId,
+        ),
+        _loadPositions(companyId),
+      ]);
+
+      final result = results[0] as Map<String, dynamic>;
+      final positions = results[1] as List<PositionOption>;
 
       print('[VacationLimits] API 응답: $result');
 
-      if (result['limits'] != null) {
-        final limitsData = <String, Map<String, VacationLimit>>{};
-        final limitsList = result['limits'] as List<dynamic>;
+      final limitsData = <String, Map<String, VacationLimit>>{};
+      final rolesInLimits = <String>[];
 
+      final limitsList = result['limits'];
+      if (limitsList is List) {
         // 응답 데이터 파싱 - 배열 형태의 데이터를 날짜별로 그룹화
         for (final limitItem in limitsList) {
-          final limitMap = limitItem as Map<String, dynamic>;
-          final date = limitMap['date'] as String;
-          final role = (limitMap['role'] as String).toUpperCase();
+          if (limitItem is! Map) continue;
+          final limitMap = Map<String, dynamic>.from(limitItem);
+          final date = limitMap['date']?.toString();
+          if (date == null || date.isEmpty) continue;
 
-          if (limitsData[date] == null) {
-            limitsData[date] = {};
-          }
+          // 대문자로 올리지 않는다 — 기관이 만든 직책 이름은 원문 그대로가 키다.
+          final role = RoleUtils.normalize(limitMap['role']?.toString());
+          if (role.isEmpty) continue;
 
+          rolesInLimits.add(role);
+
+          limitsData.putIfAbsent(date, () => {});
           limitsData[date]![role] = VacationLimit.fromJson({
             'id': limitMap['id'],
             'date': date,
@@ -105,53 +146,45 @@ class _AdminVacationLimitsSettingScreenState
             'maxPeople': limitMap['maxPeople'],
           });
         }
-
-        setState(() {
-          _limitsData = limitsData;
-          _initializeControllers();
-        });
       }
+
+      final roleNames = RoleUtils.buildRoleNames(
+        positions: positions,
+        extraRoles: rolesInLimits,
+      );
+
+      setState(() {
+        _limitsData = limitsData;
+        _roleNames = roleNames;
+        if (!roleNames.contains(_selectedRole)) {
+          _selectedRole = roleNames.isEmpty ? '' : roleNames.first;
+        }
+        _initializeControllers();
+      });
     } catch (e) {
       print('[VacationLimits] 로드 실패: $e');
       if (mounted) {
         AppSnackBar.showError(context, message: '휴무 제한 데이터 로드 실패: $e');
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   void _initializeControllers() {
-    // 기존 컨트롤러들 정리
-    for (final controller in _controllers.values) {
-      controller.dispose();
-    }
-    _controllers.clear();
+    _disposeControllers();
 
-    // 새 컨트롤러들 생성
-    final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
-    final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-
-    for (
-      var date = firstDay;
-      !date.isAfter(lastDay);
-      date = date.add(const Duration(days: 1))
-    ) {
+    for (final date in _daysOfSelectedMonth()) {
       final dateKey = _formatDate(date);
-
-      // CAREGIVER 컨트롤러
-      final caregiverKey = '${dateKey}_CAREGIVER';
-      final caregiverLimit = _limitsData[dateKey]?['CAREGIVER']?.maxPeople ?? 3;
-      _controllers[caregiverKey] = TextEditingController(
-        text: caregiverLimit.toString(),
-      );
-
-      // OFFICE 컨트롤러
-      final officeKey = '${dateKey}_OFFICE';
-      final officeLimit = _limitsData[dateKey]?['OFFICE']?.maxPeople ?? 3;
-      _controllers[officeKey] = TextEditingController(
-        text: officeLimit.toString(),
-      );
+      final byRole = <String, TextEditingController>{};
+      for (final role in _roleNames) {
+        final maxPeople =
+            _limitsData[dateKey]?[role]?.maxPeople ?? _defaultMaxPeople;
+        byRole[role] = TextEditingController(text: maxPeople.toString());
+      }
+      _controllers[dateKey] = byRole;
     }
   }
 
@@ -165,15 +198,15 @@ class _AdminVacationLimitsSettingScreenState
       // 변경된 데이터 수집
       final limitsToSave = <Map<String, dynamic>>[];
 
-      for (final entry in _controllers.entries) {
-        final parts = entry.key.split('_');
-        if (parts.length != 2) continue;
-
-        final date = parts[0];
-        final role = parts[1];
-        final maxPeople = int.tryParse(entry.value.text) ?? 0;
-
-        limitsToSave.add({'date': date, 'maxPeople': maxPeople, 'role': role});
+      for (final dateEntry in _controllers.entries) {
+        for (final roleEntry in dateEntry.value.entries) {
+          final maxPeople = int.tryParse(roleEntry.value.text) ?? 0;
+          limitsToSave.add({
+            'date': dateEntry.key,
+            'maxPeople': maxPeople,
+            'role': roleEntry.key,
+          });
+        }
       }
 
       print('[VacationLimits] 저장할 데이터: $limitsToSave');
@@ -211,30 +244,18 @@ class _AdminVacationLimitsSettingScreenState
   }
 
   void _previousMonth() {
-    // 기존 컨트롤러 정리
-    for (final controller in _controllers.values) {
-      controller.dispose();
-    }
-    _controllers.clear();
-
     setState(() {
+      _disposeControllers();
       _selectedDate = DateTime(_selectedDate.year, _selectedDate.month - 1);
     });
-    _initializeControllersForCurrentMonth();
     _loadVacationLimits();
   }
 
   void _nextMonth() {
-    // 기존 컨트롤러 정리
-    for (final controller in _controllers.values) {
-      controller.dispose();
-    }
-    _controllers.clear();
-
     setState(() {
+      _disposeControllers();
       _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + 1);
     });
-    _initializeControllersForCurrentMonth();
     _loadVacationLimits();
   }
 
@@ -298,12 +319,16 @@ class _AdminVacationLimitsSettingScreenState
                       bottom: BorderSide(color: AppSemanticColors.borderSubtle),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(child: _buildRoleTab('요양보호사', 'CAREGIVER')),
-                      const SizedBox(width: AppSpacing.space2),
-                      Expanded(child: _buildRoleTab('사무실', 'OFFICE')),
-                    ],
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final role in _roleNames) ...[
+                          _buildRoleTab(RoleUtils.displayName(role), role),
+                          const SizedBox(width: AppSpacing.space2),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
 
@@ -348,16 +373,21 @@ class _AdminVacationLimitsSettingScreenState
   }
 
   Widget _buildLimitsTable() {
-    final firstDay = DateTime(_selectedDate.year, _selectedDate.month, 1);
-    final lastDay = DateTime(_selectedDate.year, _selectedDate.month + 1, 0);
-    final days = <DateTime>[];
+    final days = _daysOfSelectedMonth();
 
-    for (
-      var date = firstDay;
-      !date.isAfter(lastDay);
-      date = date.add(const Duration(days: 1))
-    ) {
-      days.add(date);
+    if (_roleNames.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Text(
+            '설정할 역할이 없습니다.\n회원관리의 역할관리에서 역할을 먼저 등록해주세요.',
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textSecondary,
+            ),
+          ),
+        ),
+      );
     }
 
     return SingleChildScrollView(
@@ -395,7 +425,7 @@ class _AdminVacationLimitsSettingScreenState
           ),
 
           // 날짜별 카드 리스트
-          ...days.map((date) => _buildDateCard(date)).toList(),
+          ...days.map(_buildDateCard),
         ],
       ),
     );
@@ -408,9 +438,6 @@ class _AdminVacationLimitsSettingScreenState
     final isWeekend = isSunday || isSaturday;
     final weekdayNames = ['', '월', '화', '수', '목', '금', '토', '일'];
     final weekdayName = weekdayNames[date.weekday];
-
-    print('[_buildDateCard] dateKey: $dateKey, selectedRole: $_selectedRole');
-    print('[_buildDateCard] controllers: ${_controllers.keys.toList()}');
 
     // 색상 결정
     Color borderColor;
@@ -500,25 +527,36 @@ class _AdminVacationLimitsSettingScreenState
             const SizedBox(height: AppSpacing.space3),
 
             // 인원 수 설정 — 카드중첩 없이 구분선 아래 평면 레이아웃 (Seed 레이아웃 원칙)
-            if (_selectedRole == 'CAREGIVER') ...[
-              // 요양보호사 모드
-              _buildLimitInputCard(
-                '요양보호사',
-                '${dateKey}_CAREGIVER',
-                Icons.favorite,
-              ),
-            ] else if (_selectedRole == 'OFFICE') ...[
-              // 사무실 모드
-              _buildLimitInputCard('사무실', '${dateKey}_OFFICE', Icons.business),
-            ],
+            _buildLimitInputCard(
+              RoleUtils.displayName(_selectedRole),
+              dateKey,
+              _selectedRole,
+              _roleIcon(_selectedRole),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLimitInputCard(String title, String key, IconData icon) {
-    final controller = _controllers[key];
+  IconData _roleIcon(String role) {
+    switch (role) {
+      case 'caregiver':
+        return Icons.favorite;
+      case 'office':
+        return Icons.business;
+      default:
+        return Icons.badge_outlined;
+    }
+  }
+
+  Widget _buildLimitInputCard(
+    String title,
+    String dateKey,
+    String role,
+    IconData icon,
+  ) {
+    final controller = _controllers[dateKey]?[role];
     if (controller == null) return const SizedBox.shrink();
 
     return Column(

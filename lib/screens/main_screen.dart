@@ -9,8 +9,10 @@ import '../providers/chat_provider.dart';
 import '../providers/admin_provider.dart';
 import '../models/vacation_request.dart';
 import '../services/fcm_service.dart';
+import '../services/permission_sync_service.dart';
 import '../services/subscription_guard.dart';
 import '../utils/admin_utils.dart';
+import '../utils/permissions.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -70,6 +72,10 @@ class _MainScreenState extends State<MainScreen>
       debugPrint('[MainScreen] currentUser: ${authProvider.currentUser}');
 
       if (authProvider.currentUser != null) {
+        // 웹에서 바뀐 세부 권한을 재로그인 없이 반영한다(실패해도 저장된 권한 유지).
+        await PermissionSyncService.refresh(authProvider);
+        if (!mounted) return;
+
         final userId = authProvider.currentUser!.id;
         final companyId = authProvider.currentUser!.company?.id ?? '1';
         final isAdmin = AdminUtils.canAccessAdminPages(
@@ -186,11 +192,14 @@ class _MainScreenState extends State<MainScreen>
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        final isAdmin = AdminUtils.canAccessAdminPages(
+        // 전자결재 탭의 기본 화면·뱃지는 '결재 관리' 권한 기준이다.
+        // 관리자는 PermissionUtils가 모든 권한을 가진 것으로 보므로 지금과 동일하다.
+        final canManageApprovals = PermissionUtils.has(
           authProvider.currentUser,
+          AppPermission.approvalManage,
         );
-        final screens = _buildScreens(isAdmin);
-        final navItems = _buildNavItems(isAdmin);
+        final screens = _buildScreens(canManageApprovals);
+        final navItems = _buildNavItems(canManageApprovals);
         final safeIndex = _currentIndex.clamp(0, screens.length - 1);
 
         return Scaffold(
@@ -292,27 +301,27 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  List<Widget> _buildScreens(bool isAdmin) {
+  List<Widget> _buildScreens(bool canManageApprovals) {
     // MainTabs 순서와 반드시 일치해야 한다: 홈·채팅·일정·전자결재·전체
     return [
       HomeScreen(onNavigateToTab: _onItemTapped),
       const ChatRoomListScreen(),
       const CalendarScreen(),
-      // 관리자는 승인할 문서(결재 관리)가 기본, 직원은 신청이 기본
-      isAdmin
+      // 결재 관리 권한자(관리자 포함)는 승인할 문서가 기본, 그 외는 신청이 기본
+      canManageApprovals
           ? const ApprovalHubScreen(initialTab: 1)
           : const ApprovalHubScreen(),
       const MenuScreen(),
     ];
   }
 
-  List<BottomNavigationBarItem> _buildNavItems(bool isAdmin) {
+  List<BottomNavigationBarItem> _buildNavItems(bool canManageApprovals) {
     // 미확인 건수 뱃지 — 전자결재는 결재+휴무+가입 대기 합산, 채팅은 미읽음
     final approvalProvider = context.watch<ApprovalProvider>();
     final chatProvider = context.watch<ChatProvider>();
     final vacationProvider = context.watch<VacationProvider>();
     final adminProvider = context.watch<AdminProvider>();
-    final approvalBadge = isAdmin
+    final approvalBadge = canManageApprovals
         ? approvalProvider.pendingCount +
             vacationProvider.vacationRequests
                 .where((r) => r.status == VacationStatus.pending)

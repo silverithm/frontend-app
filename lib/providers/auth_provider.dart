@@ -203,6 +203,7 @@ class AuthProvider with ChangeNotifier {
     String? positionId,
     String? companyName, // 관리자용
     String? companyAddress, // 관리자용
+    String? phoneNumber, // 직원용 선택 입력 (웹 가입 화면과 동일)
   }) async {
     try {
       setLoading(true);
@@ -240,6 +241,7 @@ class AuthProvider with ChangeNotifier {
           companyCode: companyCode,
           position: position,
           positionId: positionId,
+          phoneNumber: phoneNumber,
         );
 
         // Spring Boot API 응답에서 id 필드가 있으면 성공
@@ -591,12 +593,17 @@ class AuthProvider with ChangeNotifier {
         print('[AuthProvider] 복원된 사용자 상태: ${_currentUser!.status}');
         print('[AuthProvider] 복원된 사용자 회사: ${_currentUser!.company?.name}');
 
-        // Analytics 사용자 속성 설정
-        await AnalyticsService().setUserProperties(
-          userId: _currentUser!.id.toString(),
-          userRole: _currentUser!.role,
-          companyId: _currentUser!.company?.id,
-        );
+        // Analytics 사용자 속성 설정.
+        // 부가 기능이므로 실패해도 로그인 세션을 지워선 안 된다.
+        try {
+          await AnalyticsService().setUserProperties(
+            userId: _currentUser!.id.toString(),
+            userRole: _currentUser!.role,
+            companyId: _currentUser!.company?.id,
+          );
+        } catch (e) {
+          print('[AuthProvider] Analytics 사용자 속성 설정 실패(무시): $e');
+        }
 
         _isInitialized = true;
         notifyListeners();

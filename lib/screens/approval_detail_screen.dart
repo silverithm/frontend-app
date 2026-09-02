@@ -18,6 +18,7 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../utils/document_open.dart';
 import '../widgets/seed/seed_button.dart';
+import 'approval_form_screen.dart';
 import 'hwp_editor_screen.dart';
 
 class ApprovalDetailScreen extends StatefulWidget {
@@ -71,6 +72,31 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       }
     } catch (e) {
       debugPrint('양식 정보 로드 실패(공문 라벨 없이 표시): $e');
+    }
+  }
+
+  /// 이 임시저장이 내가 쓰던 문서인지. 서버도 기안자 본인만 이어쓰게 막지만
+  /// (ApprovalRequestService.requireOwnDraft) 버튼을 헛되이 보여주지 않는다.
+  bool get _isMyDraft {
+    if (_approval.status != ApprovalStatus.draft) return false;
+    final currentUser = context.read<AuthProvider>().currentUser;
+    if (currentUser == null) return false;
+    final myId = currentUser.id;
+    final requesterId = _approval.requesterId;
+    return requesterId == myId || requesterId == 'admin_$myId';
+  }
+
+  /// 임시저장 이어쓰기 — 작성 화면을 그대로 다시 열고, 거기서 저장/상신한다
+  Future<void> _continueDraft() async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ApprovalFormScreen(draft: _approval),
+      ),
+    );
+
+    if (updated == true && mounted) {
+      // 상신됐다면 이 화면의 상태도 바뀌므로 목록까지 갱신되게 돌려보낸다
+      Navigator.pop(context, true);
     }
   }
 
@@ -363,7 +389,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
 
             const SizedBox(height: AppSpacing.space4),
 
-            // 임시저장 안내 — 앱에서는 이어쓰기를 구현하지 않으므로 웹으로 안내만 한다
+            // 임시저장 안내 — 기안자 본인이면 이어쓰기·상신까지 여기서 한다 (웹과 동일)
             if (_approval.status == ApprovalStatus.draft) ...[
               Container(
                 padding: const EdgeInsets.all(AppSpacing.space4),
@@ -385,7 +411,9 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                     const SizedBox(width: AppSpacing.space2),
                     Expanded(
                       child: Text(
-                        '이 문서는 아직 상신되지 않은 임시저장 상태입니다. 웹에서 이어서 작성할 수 있습니다.',
+                        _isMyDraft
+                            ? '이 문서는 아직 상신되지 않은 임시저장 상태입니다. 이어서 작성한 뒤 상신할 수 있습니다.'
+                            : '이 문서는 아직 상신되지 않은 임시저장 상태입니다.',
                         style: AppTypography.bodyMedium.copyWith(
                           color: AppSemanticColors.statusInfoText,
                         ),
@@ -394,6 +422,19 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                   ],
                 ),
               ),
+              if (_isMyDraft) ...[
+                const SizedBox(height: AppSpacing.space3),
+                SizedBox(
+                  width: double.infinity,
+                  child: SeedButton(
+                    label: '이어서 작성하기',
+                    variant: SeedButtonVariant.brandSolid,
+                    size: SeedButtonSize.large,
+                    prefixIcon: Icons.edit_outlined,
+                    onPressed: _continueDraft,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.space4),
             ],
 

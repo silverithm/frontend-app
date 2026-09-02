@@ -8,7 +8,7 @@ import '../models/vacation_request.dart';
 import '../models/schedule.dart';
 import '../models/schedule_colors.dart';
 import '../models/user.dart';
-import '../utils/admin_utils.dart';
+import '../utils/permissions.dart';
 import '../widgets/vacation_calendar_widget.dart';
 import '../widgets/vacation_planning_banner.dart';
 import '../widgets/vacation_request_dialog.dart';
@@ -183,8 +183,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                 preferredSize: const Size.fromHeight(48),
                 child: Builder(
                   builder: (context) {
-                    final isAdmin = AdminUtils.canAccessAdminPages(
+                    // 일정 탭 상단 탭바 — '일정 관리' 권한 기준(관리자는 항상 true)
+                    final isAdmin = PermissionUtils.has(
                       context.read<AuthProvider>().currentUser,
+                      AppPermission.scheduleManage,
                     );
                     final accentColor =
                         AppSemanticColors.interactivePrimaryDefault;
@@ -1412,9 +1414,10 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
             ),
 
-          // 하단 통계 섹션 (관리자만)
-          if (AdminUtils.canAccessAdminPages(
+          // 하단 통계 섹션 (일정/휴무를 관리하는 사람만)
+          if (PermissionUtils.hasAny(
             context.read<AuthProvider>().currentUser,
+            const [AppPermission.scheduleManage, AppPermission.workManage],
           ))
             Consumer<VacationProvider>(
               builder: (context, vacationProvider, child) {
@@ -1638,7 +1641,11 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   Widget _buildFab() {
     final authProvider = context.read<AuthProvider>();
-    final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
+    // 일정을 만들 수 있는 사람(관리자 또는 '일정 관리' 위임자)에게만 관리자용 FAB
+    final isAdmin = PermissionUtils.has(
+      authProvider.currentUser,
+      AppPermission.scheduleManage,
+    );
 
     if (isAdmin) {
       return ScaleTransition(

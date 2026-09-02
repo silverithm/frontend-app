@@ -151,15 +151,17 @@ class ApiService {
           // 새 토큰으로 재요청
           final retryResponse = await requestFunction();
           return _handleResponse(retryResponse);
-        } else {
-          print('[API] 토큰 refresh 실패 - 로그아웃 처리');
-
-          // refresh token이 만료되었거나 없는 경우 강제 로그아웃
+        } else if (refreshResult.shouldLogout) {
+          // refresh token이 실제로 만료됐거나 아예 없는 경우에만 로그아웃한다.
           print('[API] Refresh token 만료 또는 없음 - 강제 로그아웃');
-          // AuthProvider를 통한 일관된 로그아웃 처리를 위해 콜백 호출
           await _performGlobalLogout();
 
           throw ApiException('로그인이 필요합니다', 401);
+        } else {
+          // 네트워크 오류·타임아웃 등 일시적 실패다.
+          // 여기서 로그아웃하면 멀쩡한 세션이 지워지고 로그인 화면으로 튕긴다.
+          print('[API] 토큰 refresh 일시 실패(네트워크 등) - 로그인 상태 유지');
+          throw ApiException('일시적인 네트워크 오류입니다. 잠시 후 다시 시도해주세요', 503);
         }
       }
 
@@ -183,6 +185,7 @@ class ApiService {
     String? companyCode,
     String? position,
     String? positionId,
+    String? phoneNumber,
   }) async {
     try {
       final normalizedCompanyCode = companyCode
@@ -198,6 +201,9 @@ class ApiService {
         'password': password,
         if (position != null && position.trim().isNotEmpty)
           'position': position.trim(),
+        // 선택 입력 — 비워두면 아예 보내지 않는다 (웹 가입과 동일)
+        if (phoneNumber != null && phoneNumber.trim().isNotEmpty)
+          'phoneNumber': phoneNumber.trim(),
         if (positionId != null && positionId.isNotEmpty)
           'positionId': int.parse(positionId),
         if (companyId != null && companyId.isNotEmpty)
@@ -276,6 +282,26 @@ class ApiService {
     }
   }
 
+  /// 관리자 본인 직책 변경 — PUT /v1/users/position (웹 apiService.updateMyPosition과 같다)
+  /// positionId가 null이면 직책 없음으로 되돌아가고 화면에는 '관리자'로 보인다.
+  /// 응답: { positionId, position }
+  Future<Map<String, dynamic>> updateMyPosition({int? positionId}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/users/position');
+
+      print('[API] 내 직책 변경: $uri (positionId=$positionId)');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'positionId': positionId}),
+      );
+    });
+  }
+
   // 로그인 (새로운 signin 엔드포인트)
   Future<Map<String, dynamic>> signin({
     required String username,
@@ -292,6 +318,25 @@ class ApiService {
     } catch (e) {
       throw Exception('로그인 실패: $e');
     }
+  }
+
+  /// 직원 세부 권한 조회 (GET /v1/members/{id}/permissions)
+  /// 응답: { "permissions": ["NOTICE_MANAGE", ...] }
+  /// 웹(frontend-admin)이 로그인 이후 최신 권한을 다시 받아오는 것과 같은 엔드포인트.
+  Future<List<String>> getMemberPermissions(String memberId) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/v1/members/$memberId/permissions'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('권한 조회 실패 (Status: ${response.statusCode})');
+    }
+
+    final decoded = json.decode(utf8.decode(response.bodyBytes));
+    final raw = decoded is Map ? decoded['permissions'] : decoded;
+    if (raw is! List) return const [];
+    return raw.map((e) => e.toString()).toList();
   }
 
   // 관리자 로그인
@@ -2207,6 +2252,8 @@ class ApiService {
     Map<String, dynamic>? formData,
     List<Map<String, dynamic>>?
     approvalLine, // [{approverType, approverId}] 순서=결재 순서
+    // true면 상신하지 않고 임시저장만 한다 (결재함에 뜨지 않고 알림도 안 나간다)
+    bool draft = false,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approvals').replace(
@@ -2231,9 +2278,112 @@ class ApiService {
       if (approvalLine != null && approvalLine.isNotEmpty) {
         body['approvalLine'] = approvalLine;
       }
+      if (draft) body['draft'] = true;
 
       print('[API] 결재 요청 생성: $uri');
       print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.post(uri, headers: headers, body: json.encode(body));
+    });
+  }
+
+  /// 임시저장 문서 본문 — 이어쓰기와 상신이 같은 모양을 보낸다.
+  /// 서버(ApprovalRequestService.updateDraft/submitDraft)는 받은 내용으로 통째로 덮어쓰므로
+  /// 화면에 있는 값을 빠짐없이 실어야 한다.
+  Map<String, dynamic> _approvalDraftBody({
+    required int templateId,
+    required String title,
+    String? attachmentUrl,
+    String? attachmentFileName,
+    int? attachmentFileSize,
+    Map<String, dynamic>? formData,
+    List<Map<String, dynamic>>? approvalLine,
+    required bool draft,
+  }) {
+    final body = <String, dynamic>{
+      'templateId': templateId,
+      'title': title,
+      'draft': draft,
+    };
+    if (attachmentUrl != null) body['attachmentUrl'] = attachmentUrl;
+    if (attachmentFileName != null) {
+      body['attachmentFileName'] = attachmentFileName;
+    }
+    if (attachmentFileSize != null) {
+      body['attachmentFileSize'] = attachmentFileSize;
+    }
+    // 백엔드 DTO의 formData는 String(JSON) 타입
+    if (formData != null && formData.isNotEmpty) {
+      body['formData'] = json.encode(formData);
+    }
+    if (approvalLine != null && approvalLine.isNotEmpty) {
+      body['approvalLine'] = approvalLine;
+    }
+    return body;
+  }
+
+  /// 임시저장 문서 이어쓰기 (기안자 본인) — PUT /v1/approvals/{id}/draft
+  Future<Map<String, dynamic>> updateApprovalDraft({
+    required int approvalId,
+    required int templateId,
+    required String title,
+    String? attachmentUrl,
+    String? attachmentFileName,
+    int? attachmentFileSize,
+    Map<String, dynamic>? formData,
+    List<Map<String, dynamic>>? approvalLine,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/draft');
+      final body = _approvalDraftBody(
+        templateId: templateId,
+        title: title,
+        attachmentUrl: attachmentUrl,
+        attachmentFileName: attachmentFileName,
+        attachmentFileSize: attachmentFileSize,
+        formData: formData,
+        approvalLine: approvalLine,
+        draft: true,
+      );
+
+      print('[API] 임시저장 이어쓰기: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers, body: json.encode(body));
+    });
+  }
+
+  /// 임시저장 문서 상신 (기안자 본인) — POST /v1/approvals/{id}/submit
+  /// 이 시점에 결재선이 검증되고 결재자에게 알림이 간다.
+  Future<Map<String, dynamic>> submitApprovalDraft({
+    required int approvalId,
+    required int templateId,
+    required String title,
+    String? attachmentUrl,
+    String? attachmentFileName,
+    int? attachmentFileSize,
+    Map<String, dynamic>? formData,
+    List<Map<String, dynamic>>? approvalLine,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/submit');
+      final body = _approvalDraftBody(
+        templateId: templateId,
+        title: title,
+        attachmentUrl: attachmentUrl,
+        attachmentFileName: attachmentFileName,
+        attachmentFileSize: attachmentFileSize,
+        formData: formData,
+        approvalLine: approvalLine,
+        draft: false,
+      );
+
+      print('[API] 임시저장 상신: $uri');
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
@@ -3978,6 +4128,78 @@ class ApiService {
       ).replace(queryParameters: {'scope': 'mine'});
       final headers = await _getHeaders();
       return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 기관 관리자용 접수 목록 (scope=admin). 관리자가 아니면 서버가 403을 준다.
+  // 익명 글의 작성자 가림(authorName='익명')은 서버(VoiceMessageService.toDTO)가
+  // 처리한다 — 앱은 내려온 authorName을 그대로 쓰고 따로 조회하지 않는다.
+  Future<Map<String, dynamic>> getVoiceBoxMessagesForAdmin({String? type}) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/voice-box').replace(
+        queryParameters: {
+          'scope': 'admin',
+          if (type != null && type.isNotEmpty) 'type': type,
+        },
+      );
+      final headers = await _getHeaders();
+      return await http.get(uri, headers: headers);
+    });
+  }
+
+  // 상태 변경 · 답변 저장 (기관 관리자 전용)
+  Future<Map<String, dynamic>> updateVoiceBoxMessage({
+    required int id,
+    String? status,
+    String? adminReply,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/voice-box/$id');
+      final headers = await _getHeaders();
+      return await http.patch(
+        uri,
+        headers: headers,
+        body: json.encode({
+          if (status != null) 'status': status,
+          if (adminReply != null) 'adminReply': adminReply,
+        }),
+      );
+    });
+  }
+
+  // ===== AI 글쓰기 도우미 =====
+
+  // 이 API만 Spring(silverithm.site)이 아니라 웹(carev.kr)의 Next.js 라우트에 있다.
+  // GEMINI_API_KEY가 Vercel 환경변수라 서버가 그쪽에만 있기 때문이다.
+  // 키는 그 서버에만 있고 앱에는 들어오지 않는다. 라우트는 받은 Bearer 토큰을
+  // Spring의 /api/v1/users/info로 되물어 검증하므로, 이 기능은 기관 관리자
+  // 토큰에서만 통과한다(직원 토큰은 그 엔드포인트에서 404).
+  static const String aiPostUrl = 'https://carev.kr/api/v1/ai-post';
+
+  /// 사진(base64 JPEG)으로 밴드·블로그 글을 생성한다.
+  /// [images]는 `{'mimeType': 'image/jpeg', 'data': '<base64 문자열>'}` 목록.
+  Future<Map<String, dynamic>> generateAiPost({
+    required String channel, // 'band' | 'blog'
+    required List<Map<String, String>> images,
+    String? description,
+    String? companyName,
+    String? date,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final headers = await _getHeaders();
+      return await http.post(
+        Uri.parse(aiPostUrl),
+        headers: headers,
+        body: json.encode({
+          'channel': channel,
+          'images': images,
+          if (description != null && description.isNotEmpty)
+            'description': description,
+          if (companyName != null && companyName.isNotEmpty)
+            'companyName': companyName,
+          if (date != null && date.isNotEmpty) 'date': date,
+        }),
+      );
     });
   }
 

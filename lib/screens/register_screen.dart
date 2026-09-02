@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/company_provider.dart';
 import '../models/company.dart';
 import '../services/api_service.dart';
+import '../utils/signup_validation.dart';
 import '../widgets/common/index.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
@@ -31,6 +32,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
+  // 전화번호는 선택 입력 — 웹 가입 화면에는 있는데 앱에만 없어서 앱 가입자는 연락처가 비어 있었다
+  final _phoneController = TextEditingController();
   String _fallbackRole = 'CAREGIVER';
   String _userType = 'employee'; // 'admin' 또는 'employee'
   String _employeeJoinMethod = 'code'; // 'code' 또는 'company'
@@ -68,6 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _nameController.dispose();
+    _phoneController.dispose();
     _companyCodeController.dispose();
     _companyNameController.dispose();
     _companyAddressController.dispose();
@@ -515,6 +519,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             : null,
         position: _selectedPosition?.name,
         positionId: _selectedPosition?.id,
+        phoneNumber: _phoneController.text.trim(),
       );
     }
 
@@ -884,15 +889,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         placeholder: '홍길동',
                         prefixIcon: Icons.person_outline,
                         size: SeedTextFieldSize.large,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '이름을 입력해주세요';
-                          }
-                          if (value.length < 2) {
-                            return '이름은 2자 이상이어야 합니다';
-                          }
-                          return null;
-                        },
+                        // 웹과 같은 기준 — 외자 이름도 통과한다
+                        validator: SignupValidation.validateName,
                       ),
                       const SizedBox(height: AppSpacing.space4),
 
@@ -904,19 +902,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         placeholder: 'example@company.com',
                         prefixIcon: Icons.email_outlined,
                         size: SeedTextFieldSize.large,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '이메일을 입력해주세요';
-                          }
-                          if (!RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                          ).hasMatch(value)) {
-                            return '올바른 이메일 형식을 입력해주세요';
-                          }
-                          return null;
-                        },
+                        // 웹과 같은 기준 — .online·.center 같은 긴 TLD도 통과한다
+                        validator: SignupValidation.validateEmail,
                       ),
                       const SizedBox(height: AppSpacing.space4),
+
+                      // 전화번호 (선택) — 웹 직원 가입 화면과 같은 자리·같은 선택 입력
+                      if (_userType == 'employee') ...[
+                        SeedTextField(
+                          label: '전화번호 (선택)',
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          placeholder: '010-0000-0000',
+                          prefixIcon: Icons.phone_outlined,
+                          size: SeedTextFieldSize.large,
+                          validator: SignupValidation.validatePhoneNumber,
+                        ),
+                        const SizedBox(height: AppSpacing.space4),
+                      ],
 
                       if (_userType == 'employee' &&
                           _hasEmployeeCompanyContext) ...[
@@ -1462,16 +1465,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           placeholder: '케어브이 센터',
                           prefixIcon: Icons.business,
                           size: SeedTextFieldSize.large,
-                          validator: (value) {
-                            if (_userType == 'admin' &&
-                                (value == null || value.isEmpty)) {
-                              return '회사명을 입력해주세요';
-                            }
-                            if (_userType == 'admin' && value!.length < 2) {
-                              return '회사명은 2자 이상이어야 합니다';
-                            }
-                            return null;
-                          },
+                          validator: (value) => _userType == 'admin'
+                              ? SignupValidation.validateCompanyName(value)
+                              : null,
                         ),
                         const SizedBox(height: AppSpacing.space4),
 
@@ -1509,8 +1505,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           if (value == null || value.isEmpty) {
                             return '비밀번호를 입력해주세요';
                           }
-                          if (value.length < 6) {
-                            return '비밀번호는 6자 이상이어야 합니다';
+                          if (value.length < 8) {
+                            return '비밀번호는 8자 이상이어야 합니다';
                           }
                           return null;
                         },

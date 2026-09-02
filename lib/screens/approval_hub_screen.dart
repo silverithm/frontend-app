@@ -5,7 +5,7 @@ import '../providers/approval_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
-import '../utils/admin_utils.dart';
+import '../utils/permissions.dart';
 import 'admin_approval_management_screen.dart';
 import 'approval_list_screen.dart';
 
@@ -71,7 +71,10 @@ class _ApprovalHubScreenState extends State<ApprovalHubScreen>
             child: Consumer2<ApprovalProvider, AuthProvider>(
               builder: (context, approvalProvider, authProvider, child) {
                 final currentUser = authProvider.currentUser;
-                final isAdmin = AdminUtils.hasAdminPermission(currentUser);
+                final isAdmin = PermissionUtils.has(
+                  currentUser,
+                  AppPermission.approvalManage,
+                );
                 // 지금 내가 처리할 차례인 결재 건수 — 관리자·직원 모두 "내가" 처리할
                 // 건수만 센다(결재선에서 내가 현재 단계인 문서, 결재선 없는 legacy는
                 // 관리자만 처리 가능하므로 그때만). 회사 전체 대기 건수가 아니다.

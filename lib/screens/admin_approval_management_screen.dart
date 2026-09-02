@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/permissions.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
@@ -256,8 +257,10 @@ class _AdminApprovalManagementScreenState
   /// 기관 관리자 여부 — 일괄 처리·legacy 문서 직접 승인은 관리자 전용.
   /// 이 화면은 직원 문서함(결재선·열람 대상 문서)으로도 쓰이므로
   /// 관리자 전용 UI는 전부 이 값으로 가드한다.
-  bool get _canManage =>
-      AdminUtils.hasAdminPermission(context.read<AuthProvider>().currentUser);
+  bool get _canManage => PermissionUtils.has(
+        context.read<AuthProvider>().currentUser,
+        AppPermission.approvalManage,
+      );
 
   /// 결재선이 있으면 내 차례일 때만 처리 가능
   bool _isMyTurn(ApprovalRequest request) {
@@ -271,7 +274,7 @@ class _AdminApprovalManagementScreenState
     // 결재선의 approverId는 직원이면 memberId, 관리자면 'admin_<id>' 형식이다.
     // 원시 id로만 비교하면 관리자형 단계가 내 차례로 인식되지 못해
     // 정상 승인 대신 직권 승인(전결)으로 빠져 뒤 단계가 스킵된다.
-    final ids = <String>{myId, if (AdminUtils.hasAdminPermission(user)) 'admin_$myId'};
+    final ids = <String>{myId, if (AdminUtils.hasAdminPermission(user)) 'admin_$myId'};  // 결재선 id 규약은 계정 종류(관리자 계정) 문제라 권한과 무관하다
     return ids.contains(currentStep.approverId);
   }
 
@@ -994,8 +997,9 @@ class _AdminApprovalManagementScreenState
                       ),
                     ],
                   )
-                else if (AdminUtils.hasAdminPermission(
-                    context.read<AuthProvider>().currentUser))
+                else if (PermissionUtils.has(
+                    context.read<AuthProvider>().currentUser,
+                    AppPermission.approvalManage))
                   // 내 차례가 아니어도 기관 관리자는 직권 승인(전결)·직권 반려 가능
                   // (실제 권한 재검증은 서버가 하므로 여기서는 노출 조건만 담당)
                   Row(

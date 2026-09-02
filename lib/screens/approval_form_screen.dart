@@ -20,7 +20,11 @@ import 'approval_template_list_screen.dart';
 import 'hwp_editor_screen.dart';
 
 class ApprovalFormScreen extends StatefulWidget {
-  const ApprovalFormScreen({super.key});
+  /// 이어쓰는 중인 임시저장 문서. null이면 새로 쓰는 중이다.
+  /// 웹(EmployeeApproval)의 editingDraftId와 같은 역할.
+  final ApprovalRequest? draft;
+
+  const ApprovalFormScreen({super.key, this.draft});
 
   @override
   State<ApprovalFormScreen> createState() => _ApprovalFormScreenState();
@@ -41,17 +45,59 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
   _SelectedFileInfo? _selectedFile;
   bool _isSubmitting = false;
+  bool _isSavingDraft = false;
   bool _isLoadingTemplates = true;
+
+  /// 임시저장에 이미 붙어 있던 첨부. 새로 고르지 않으면 이 값을 그대로 다시 보낸다
+  /// (서버가 받은 내용으로 통째로 덮어쓰므로 안 보내면 첨부가 사라진다).
+  String? _keptAttachmentUrl;
+  String? _keptAttachmentFileName;
+  int? _keptAttachmentFileSize;
   ApprovalTemplate? _selectedTemplate;
   // 결재선 (순서=결재 순서, 마지막=최종 결재자)
   final List<ApproverCandidate> _approvalLine = [];
   // 온라인 양식 입력값
   final Map<String, dynamic> _formValues = {};
 
+  bool get _isEditingDraft => widget.draft != null;
+
   @override
   void initState() {
     super.initState();
+
+    final draft = widget.draft;
+    if (draft != null) {
+      _titleController.text = draft.title;
+      _keptAttachmentUrl = draft.attachmentUrl;
+      _keptAttachmentFileName = draft.attachmentFileName;
+      _keptAttachmentFileSize = draft.attachmentFileSize;
+      if (draft.formData != null) {
+        _formValues.addAll(draft.formData!);
+      }
+      _approvalLine.addAll(_candidatesFromSteps(draft.approvalLine));
+    }
+
     _loadTemplates();
+  }
+
+  /// 저장된 결재선(단계)을 다시 후보 모양으로 되돌린다.
+  /// approverId는 legacy 문자열('admin_3' 또는 '12')이라 숫자만 떼어낸다.
+  List<ApproverCandidate> _candidatesFromSteps(List<ApprovalStepModel> steps) {
+    final sorted = steps.toList()
+      ..sort((a, b) => a.stepOrder.compareTo(b.stepOrder));
+
+    final candidates = <ApproverCandidate>[];
+    for (final step in sorted) {
+      final rawId = step.approverId.replaceFirst(RegExp(r'^admin_'), '');
+      final approverId = int.tryParse(rawId);
+      if (approverId == null) continue;
+      candidates.add(ApproverCandidate(
+        approverType: step.approverType,
+        approverId: approverId,
+        name: step.approverName,
+      ));
+    }
+    return candidates;
   }
 
   Future<void> _loadTemplates() async {
@@ -63,11 +109,42 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       await approvalProvider.loadActiveTemplates(companyId: companyId);
     }
 
+    final draft = widget.draft;
+    ApprovalTemplate? draftTemplate;
+    if (draft != null) {
+      // 임시저장에 박혀 있는 양식을 되찾는다. 목록에 없으면(비활성으로 내려간 양식)
+      // 상세로 한 번 더 물어본다 — 못 찾으면 이어쓰기 자체가 막힌다.
+      for (final template in approvalProvider.activeTemplates) {
+        if (template.id == draft.templateId) {
+          draftTemplate = template;
+          break;
+        }
+      }
+      draftTemplate ??= await _fetchTemplateDetail(draft.templateId);
+    }
+
     if (mounted) {
       setState(() {
+        if (draftTemplate != null) {
+          _selectedTemplate = draftTemplate;
+        }
         _isLoadingTemplates = false;
       });
     }
+  }
+
+  Future<ApprovalTemplate?> _fetchTemplateDetail(int templateId) async {
+    try {
+      final response =
+          await ApiService().getApprovalTemplateDetail(templateId: templateId);
+      final raw = response['template'] ?? response['data'];
+      if (raw is Map) {
+        return ApprovalTemplate.fromJson(Map<String, dynamic>.from(raw));
+      }
+    } catch (e) {
+      print('[ApprovalForm] 양식 상세 조회 실패: $e');
+    }
+    return null;
   }
 
   @override
@@ -226,6 +303,9 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
   void _removeFile() {
     setState(() {
       _selectedFile = null;
+      _keptAttachmentUrl = null;
+      _keptAttachmentFileName = null;
+      _keptAttachmentFileSize = null;
     });
   }
 
@@ -252,7 +332,13 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     }
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit() => _save(asDraft: false);
+
+  Future<void> _saveDraft() => _save(asDraft: true);
+
+  /// 상신과 임시저장은 같은 내용을 보낸다 — 임시저장일 때만 첨부·필수항목 검사를 건너뛴다
+  /// (웹 EmployeeApproval도 임시저장은 제목만 있으면 저장된다).
+  Future<void> _save({required bool asDraft}) async {
     if (!_formKey.currentState!.validate()) return;
 
     // 양식 선택 확인
@@ -262,25 +348,42 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     }
 
     final templateType = _selectedTemplate!.templateType;
+    final hasAttachment = _selectedFile != null || _keptAttachmentUrl != null;
 
-    // 파일 첨부 확인 (온라인 폼 전용 양식은 첨부 선택사항)
-    if (templateType != 'form' && _selectedFile == null) {
-      AppSnackBar.showError(context, message: '첨부파일을 선택해주세요');
-      return;
-    }
-
-    // 온라인 양식 필수 필드 확인
-    if (templateType != 'file' && _selectedTemplate!.formFields.isNotEmpty) {
-      final missingLabel = DocumentFormFields.validateRequired(
-          _selectedTemplate!.formFields, _formValues);
-      if (missingLabel != null) {
-        AppSnackBar.showError(context, message: '\'$missingLabel\' 항목을 입력해주세요');
+    if (!asDraft) {
+      // 파일 첨부 확인 (온라인 폼 전용 양식은 첨부 선택사항)
+      if (templateType != 'form' && !hasAttachment) {
+        AppSnackBar.showError(context, message: '첨부파일을 선택해주세요');
         return;
+      }
+
+      // 온라인 양식 필수 필드 확인
+      if (templateType != 'file' && _selectedTemplate!.formFields.isNotEmpty) {
+        final missingLabel = DocumentFormFields.validateRequired(
+            _selectedTemplate!.formFields, _formValues);
+        if (missingLabel != null) {
+          AppSnackBar.showError(context, message: '\'$missingLabel\' 항목을 입력해주세요');
+          return;
+        }
       }
     }
 
     // 결재선은 양식의 기본 결재선을 그대로 따른다. 비어 있으면 관리자 단일 승인(legacy).
-    setState(() => _isSubmitting = true);
+    setState(() {
+      if (asDraft) {
+        _isSavingDraft = true;
+      } else {
+        _isSubmitting = true;
+      }
+    });
+
+    void stopBusy() {
+      if (!mounted) return;
+      setState(() {
+        _isSavingDraft = false;
+        _isSubmitting = false;
+      });
+    }
 
     final authProvider = context.read<AuthProvider>();
     final approvalProvider = context.read<ApprovalProvider>();
@@ -289,7 +392,10 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     final requesterId = currentUser.id;
     final requesterName = currentUser.name;
 
-    String? attachmentUrl;
+    // 새로 고른 파일이 없으면 임시저장에 붙어 있던 첨부를 그대로 다시 보낸다
+    String? attachmentUrl = _keptAttachmentUrl;
+    String? attachmentFileName = _keptAttachmentFileName;
+    int? attachmentFileSize = _keptAttachmentFileSize;
 
     // 파일 업로드
     if (_selectedFile != null) {
@@ -300,6 +406,8 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
         if (uploadResponse['success'] == true) {
           attachmentUrl = uploadResponse['fileUrl'];
+          attachmentFileName = _selectedFile!.name;
+          attachmentFileSize = _selectedFile!.size;
           print('[ApprovalForm] 파일 업로드 성공: $attachmentUrl');
         } else {
           throw Exception(uploadResponse['error'] ?? '파일 업로드 실패');
@@ -307,47 +415,92 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       } catch (e) {
         print('[ApprovalForm] 파일 업로드 에러: $e');
         if (mounted) {
-          setState(() => _isSubmitting = false);
+          stopBusy();
           AppSnackBar.showError(context, message: '파일 업로드에 실패했습니다: $e');
         }
         return;
       }
     }
 
-    // 결재 요청 생성
-    final success = await approvalProvider.createApprovalRequest(
-      companyId: companyId,
-      requesterId: requesterId,
-      requesterName: requesterName,
-      templateId: _selectedTemplate!.id,
-      title: _titleController.text.trim(),
-      attachmentUrl: attachmentUrl,
-      attachmentFileName: _selectedFile?.name,
-      attachmentFileSize: _selectedFile?.size,
-      formData: templateType != 'file' && _formValues.isNotEmpty
-          ? Map<String, dynamic>.from(_formValues)
-          : null,
-      approvalLine: _approvalLine
-          .map((c) => {
-                'approverType': c.approverType,
-                'approverId': c.approverId,
-              })
-          .toList(),
-    );
+    final formData = templateType != 'file' && _formValues.isNotEmpty
+        ? Map<String, dynamic>.from(_formValues)
+        : null;
+    final approvalLine = _approvalLine
+        .map((c) => {
+              'approverType': c.approverType,
+              'approverId': c.approverId,
+            })
+        .toList();
 
-    if (mounted) {
-      setState(() => _isSubmitting = false);
+    final draft = widget.draft;
+    bool success;
+
+    if (draft != null) {
+      // 이미 임시저장된 문서 — 이어쓰기(PUT /draft) 또는 상신(POST /submit)
+      try {
+        if (asDraft) {
+          await ApiService().updateApprovalDraft(
+            approvalId: draft.id,
+            templateId: _selectedTemplate!.id,
+            title: _titleController.text.trim(),
+            attachmentUrl: attachmentUrl,
+            attachmentFileName: attachmentFileName,
+            attachmentFileSize: attachmentFileSize,
+            formData: formData,
+            approvalLine: approvalLine,
+          );
+        } else {
+          await ApiService().submitApprovalDraft(
+            approvalId: draft.id,
+            templateId: _selectedTemplate!.id,
+            title: _titleController.text.trim(),
+            attachmentUrl: attachmentUrl,
+            attachmentFileName: attachmentFileName,
+            attachmentFileSize: attachmentFileSize,
+            formData: formData,
+            approvalLine: approvalLine,
+          );
+        }
+        await approvalProvider.loadMyApprovalRequests(
+          requesterId: requesterId,
+          refresh: true,
+        );
+        success = true;
+      } catch (e) {
+        print('[ApprovalForm] 임시저장 처리 실패: $e');
+        approvalProvider.setError(e.toString());
+        success = false;
+      }
+    } else {
+      success = await approvalProvider.createApprovalRequest(
+        companyId: companyId,
+        requesterId: requesterId,
+        requesterName: requesterName,
+        templateId: _selectedTemplate!.id,
+        title: _titleController.text.trim(),
+        attachmentUrl: attachmentUrl,
+        attachmentFileName: attachmentFileName,
+        attachmentFileSize: attachmentFileSize,
+        formData: formData,
+        approvalLine: approvalLine,
+        draft: asDraft,
+      );
     }
 
+    stopBusy();
+
     if (success && mounted) {
-      AppSnackBar.showSuccess(context, message: '결재 요청이 제출되었습니다');
+      AppSnackBar.showSuccess(
+        context,
+        message: asDraft ? '임시저장했습니다' : '결재 요청이 제출되었습니다',
+      );
       Navigator.pop(context, true);
     } else if (mounted) {
       AppSnackBar.showError(
         context,
         message: approvalProvider.errorMessage.isNotEmpty
             ? approvalProvider.errorMessage
-            : '결재 요청에 실패했습니다',
+            : (asDraft ? '임시저장에 실패했습니다' : '결재 요청에 실패했습니다'),
       );
     }
   }
@@ -360,7 +513,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
         backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text(
-          '결재 요청',
+          _isEditingDraft ? '임시저장 이어쓰기' : '결재 요청',
           style: AppTypography.heading6.copyWith(
             color: AppSemanticColors.textInverse,
           ),
@@ -663,6 +816,70 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                     ],
                   ),
                 )
+              // 임시저장에 이미 붙어 있던 첨부 — 새로 고르면 이 자리를 대체한다
+              else if (_keptAttachmentFileName != null)
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.space4),
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.surfaceDefault,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    border: Border.all(
+                      color: AppSemanticColors.borderDefault,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.space2),
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.backgroundTertiary,
+                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        ),
+                        child: Icon(
+                          _getFileIcon(_keptAttachmentFileName!),
+                          size: 24,
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _keptAttachmentFileName!,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              _keptAttachmentFileSize != null
+                                  ? '${_formatFileSize(_keptAttachmentFileSize!)} · 저장된 첨부'
+                                  : '저장된 첨부',
+                              style: AppTypography.caption.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _showFilePickOptions,
+                        child: const Text('변경'),
+                      ),
+                      IconButton(
+                        tooltip: '첨부 제거',
+                        onPressed: _removeFile,
+                        icon: Icon(
+                          Icons.close,
+                          color: AppSemanticColors.statusErrorIcon,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               else
                 InkWell(
                   onTap: _showFilePickOptions,
@@ -714,15 +931,29 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
               const SizedBox(height: AppSpacing.space8),
 
-              // 제출 버튼
+              // 임시저장 / 제출 버튼 — 웹과 같이 상신 전에 저장해 둘 수 있다
               SizedBox(
                 width: double.infinity,
                 child: SeedButton(
-                  label: '결재 요청',
+                  label: '임시저장',
+                  variant: SeedButtonVariant.neutralOutline,
+                  size: SeedButtonSize.large,
+                  isLoading: _isSavingDraft,
+                  isDisabled: _isSubmitting || _isSavingDraft,
+                  onPressed: _saveDraft,
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.space3),
+
+              SizedBox(
+                width: double.infinity,
+                child: SeedButton(
+                  label: _isEditingDraft ? '상신하기' : '결재 요청',
                   variant: SeedButtonVariant.brandSolid,
                   size: SeedButtonSize.large,
                   isLoading: _isSubmitting,
-                  isDisabled: _isSubmitting,
+                  isDisabled: _isSubmitting || _isSavingDraft,
                   onPressed: _submit,
                 ),
               ),

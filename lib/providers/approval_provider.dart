@@ -267,6 +267,8 @@ class ApprovalProvider with ChangeNotifier {
     int? attachmentFileSize,
     Map<String, dynamic>? formData,
     List<Map<String, dynamic>>? approvalLine,
+    // true면 상신하지 않고 임시저장만 한다
+    bool draft = false,
   }) async {
     try {
       setLoading(true);
@@ -283,6 +285,7 @@ class ApprovalProvider with ChangeNotifier {
         attachmentUrl: attachmentUrl,
         attachmentFileName: attachmentFileName,
         attachmentFileSize: attachmentFileSize,
+        draft: draft,
       );
 
       print('[ApprovalProvider] 결재 요청 생성 응답: $response');

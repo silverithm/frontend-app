@@ -6,14 +6,17 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/permissions.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import 'admin_company_settings_screen.dart';
+import 'admin_voice_box_screen.dart';
 import 'admin_notice_management_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_vacation_management_screen.dart';
 import 'admin_approval_template_screen.dart';
 import 'admin_vacation_limits_setting_screen.dart';
+import 'ai_post_writer_screen.dart';
 import 'company_library_screen.dart';
 import 'dispatch_screen.dart';
 import 'login_screen.dart';
@@ -60,6 +63,76 @@ class MenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
     final isAdmin = AdminUtils.canAccessAdminPages(user);
+
+    // 세부 권한 — 관리자는 모두 true라 기존 화면이 그대로 유지된다.
+    final canManageNotice =
+        PermissionUtils.has(user, AppPermission.noticeManage);
+    final canViewMembers = PermissionUtils.hasAny(
+      user,
+      const [AppPermission.memberView, AppPermission.memberManage],
+    );
+    final canManageWork = PermissionUtils.has(user, AppPermission.workManage);
+    final canManageTemplate =
+        PermissionUtils.has(user, AppPermission.approvalTemplate);
+    final canDispatch =
+        PermissionUtils.has(user, AppPermission.scheduleDispatch);
+
+    // '기관 관리' 그룹은 보여줄 항목이 하나라도 있을 때만 낸다.
+    // 권한이 없으면 감춘다 — 웹도 권한 없는 탭은 아예 렌더하지 않는다.
+    final adminItems = <_MenuItem>[
+      if (canViewMembers)
+        _MenuItem(
+          icon: Icons.people_outline,
+          label: '회원관리',
+          description: '가입 승인 · 직원 목록',
+          onTap: () => _push(context, const AdminUserManagementScreen()),
+        ),
+      // 전자결재 탭이 신청/관리 둘로 단순해지면서(2026-08 개편)
+      // 예전 승인함의 휴무 승인·양식 관리는 여기로 옮겼다
+      if (canManageWork)
+        _MenuItem(
+          icon: Icons.beach_access_outlined,
+          label: '휴무 승인',
+          description: '직원 휴무 신청 승인·반려',
+          onTap: () => _push(context, const AdminVacationManagementScreen()),
+        ),
+      if (canManageTemplate)
+        _MenuItem(
+          icon: Icons.description_outlined,
+          label: '결재 양식 관리',
+          onTap: () => _push(context, const AdminApprovalTemplateScreen()),
+        ),
+      if (canManageWork)
+        _MenuItem(
+          icon: Icons.event_busy_outlined,
+          label: '휴무 한도 설정',
+          onTap: () =>
+              _push(context, const AdminVacationLimitsSettingScreen()),
+        ),
+      if (canDispatch)
+        _MenuItem(
+          icon: Icons.directions_bus_outlined,
+          label: '배차관리',
+          description: '노선 · 운전자 · 어르신 탑승',
+          onTap: () => _push(context, const DispatchScreen()),
+        ),
+      // 고충·건의함 처리 — AppPermission 9종에 대응하는 권한이 아직 없어서
+      // 세부 권한으로 나누지 못하고 기관 관리자에게만 연다(웹도 관리자 전용이다).
+      if (isAdmin)
+        _MenuItem(
+          icon: Icons.mark_email_read_outlined,
+          label: '고충·건의함 관리',
+          description: '접수 확인 · 상태 변경 · 답변',
+          onTap: () => _push(context, const AdminVoiceBoxScreen()),
+        ),
+      // 회사 정보·구독(결제)은 세부 권한으로 위임하지 않는다 — 기관 계정 소유자만.
+      if (isAdmin)
+        _MenuItem(
+          icon: Icons.business_outlined,
+          label: '회사 정보 · 구독',
+          onTap: () => _push(context, const AdminCompanySettingsScreen()),
+        ),
+    ];
 
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundSecondary,
@@ -114,7 +187,7 @@ class MenuScreen extends StatelessWidget {
                 label: '공지사항',
                 onTap: () => _push(
                   context,
-                  isAdmin
+                  canManageNotice
                       ? const AdminNoticeManagementScreen()
                       : const NoticeListScreen(),
                 ),
@@ -140,52 +213,29 @@ class MenuScreen extends StatelessWidget {
             ],
           ),
 
-          if (isAdmin) ...[
+          // 웹의 '편의기능' 탭에 대응하는 자리. 본 업무 흐름에 속하지 않는 부가 도구를 모은다.
+          // 배차관리·회의록은 앱에선 이미 다른 그룹에 있어서 여기엔 AI 글쓰기만 둔다.
+          //
+          // 관리자 전용이 아니다 — 사진을 찍는 사람이 선생님이라 직원이 못 쓰면 의미가 없다.
+          // (carev.kr의 ai-post 라우트가 직원 토큰도 검증하도록 함께 고쳤다.)
+          const SizedBox(height: AppSpacing.space4),
+          _MenuGroup(
+            title: '편의기능',
+            items: [
+              _MenuItem(
+                icon: Icons.auto_awesome_outlined,
+                label: 'AI 글쓰기',
+                description: '사진으로 밴드 · 블로그 글 자동 작성',
+                onTap: () => _push(context, const AiPostWriterScreen()),
+              ),
+            ],
+          ),
+
+          if (adminItems.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.space4),
             _MenuGroup(
               title: '기관 관리',
-              items: [
-                _MenuItem(
-                  icon: Icons.people_outline,
-                  label: '회원관리',
-                  description: '가입 승인 · 직원 목록',
-                  onTap: () =>
-                      _push(context, const AdminUserManagementScreen()),
-                ),
-                // 전자결재 탭이 신청/관리 둘로 단순해지면서(2026-08 개편)
-                // 예전 승인함의 휴무 승인·양식 관리는 여기로 옮겼다
-                _MenuItem(
-                  icon: Icons.beach_access_outlined,
-                  label: '휴무 승인',
-                  description: '직원 휴무 신청 승인·반려',
-                  onTap: () =>
-                      _push(context, const AdminVacationManagementScreen()),
-                ),
-                _MenuItem(
-                  icon: Icons.description_outlined,
-                  label: '결재 양식 관리',
-                  onTap: () =>
-                      _push(context, const AdminApprovalTemplateScreen()),
-                ),
-                _MenuItem(
-                  icon: Icons.event_busy_outlined,
-                  label: '휴무 한도 설정',
-                  onTap: () =>
-                      _push(context, const AdminVacationLimitsSettingScreen()),
-                ),
-                _MenuItem(
-                  icon: Icons.directions_bus_outlined,
-                  label: '배차관리',
-                  description: '노선 · 운전자 · 어르신 탑승',
-                  onTap: () => _push(context, const DispatchScreen()),
-                ),
-                _MenuItem(
-                  icon: Icons.business_outlined,
-                  label: '회사 정보 · 구독',
-                  onTap: () =>
-                      _push(context, const AdminCompanySettingsScreen()),
-                ),
-              ],
+              items: adminItems,
             ),
           ],
 

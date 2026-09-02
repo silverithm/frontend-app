@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +26,7 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/chat_image_url.dart';
 import '../utils/chat_message_grouping.dart';
+import '../utils/chat_message_pagination.dart';
 import 'chat_room_info_screen.dart';
 import 'document_viewer_screen.dart';
 import 'hwp_editor_screen.dart';
@@ -119,12 +121,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      final chatProvider = context.read<ChatProvider>();
-      if (!chatProvider.isLoading && chatProvider.hasMoreMessages) {
-        chatProvider.loadMessages(roomId: widget.room.id);
-      }
+    if (!_scrollController.hasClients) return;
+    final chatProvider = context.read<ChatProvider>();
+
+    // 목록이 reverse:true라 maxScrollExtent 쪽이 가장 오래된 끝이다.
+    // 판단 자체는 순수 함수로 빼서 단위 테스트로 고정해 뒀다
+    // (test/chat_message_pagination_test.dart).
+    //
+    // 막는 조건으로 provider 전체의 isLoading이 아니라 옛 대화 전용 플래그를
+    // 쓴다 — isLoading은 방 목록 조회도 함께 켜기 때문에, 그걸 보면 마침
+    // 목록이 갱신되는 순간의 스크롤이 통째로 무시된다.
+    if (shouldLoadOlderMessages(
+      pixels: _scrollController.position.pixels,
+      maxScrollExtent: _scrollController.position.maxScrollExtent,
+      hasMore: chatProvider.hasMoreMessages,
+      isLoadingOlder: chatProvider.isLoadingOlderMessages,
+    )) {
+      chatProvider.loadMessages(roomId: widget.room.id);
     }
   }
 
@@ -356,16 +369,31 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  // 왼쪽 열(아바타 아래 이름·직종) 폭. "사회복지사"·"요양보호사"·"간호조무사" 같은
-  // 흔한 5글자 직종명이 labelSmall(11px)에서 한 줄에 들어가도록 잡았다.
-  // (기존 32px는 아바타만 겨우 들어가고 이름·직종은 거의 다 잘렸다.)
-  static const double _senderColumnWidth = 64;
+  // 위에서부터 채우는 분기를 쓸 최대 메시지 수.
+  //
+  // 그 분기는 항목을 한 번에 다 만든다(ListView.builder의 지연 생성이 없다).
+  // 그래서 상한이 필요하다 — 옛 대화를 끝까지 불러온 방은 hasMore가 false라도
+  // 수백 건일 수 있고, 그걸 통째로 만들면 느려진다.
+  // 한 화면에 들어가는 말풍선은 많아야 스무 개 남짓이라, 40이면 "화면보다
+  // 짧을 수 있는" 경우를 모두 덮으면서 만드는 비용은 무시할 만하다.
+  static const int _topAlignMaxMessages = 40;
 
-  // 왼쪽 열이 넓어진 만큼 말풍선 최대 폭에서 그대로 빼서, 버블이 부자연스럽게
-  // 좁아지지 않으면서도 두 영역이 겹치지 않게 한다.
+  // 시각·읽음 표시 열이 실제로 차지하는 대략적 폭("오후 12:34" 기준).
+  // 말풍선 최대 폭을 계산할 때 미리 빼두는 용도다.
+  static const double _metaColumnWidth = 56;
+
+  // 말풍선 최대 폭. 화면의 70%를 기본으로 하되, 좌우 고정 요소(목록 좌우 패딩,
+  // 아바타 열, 사이 여백, 시각 열)를 뺀 실제 여유 폭을 넘지 않게 한다.
+  // 이미지 자리표시자가 이 값을 그대로 쓰므로 넘치면 오버플로가 난다.
   double _bubbleMaxWidth(BuildContext context) {
-    final extra = _senderColumnWidth - AppSpacing.space8;
-    return MediaQuery.of(context).size.width * 0.7 - extra;
+    const reserved = AppSpacing.space4 * 2 + // ListView 좌우 패딩
+        AppSpacing.space1 + // 아바타 앞 여백
+        ChatAvatarSlot.width +
+        AppSpacing.space2 + // 아바타와 본문 사이
+        AppSpacing.space1 + // 말풍선과 시각 열 사이
+        _metaColumnWidth;
+    final width = MediaQuery.of(context).size.width;
+    return math.min(width * 0.7, width - reserved);
   }
 
   // 10MB 상수 (바이트) — 사진·문서
@@ -382,10 +410,35 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   };
 
   bool _isVideoFileName(String fileName) {
-    final ext = fileName.contains('.')
+    return _videoExtensions.contains(_fileExtension(fileName));
+  }
+
+  // JPEG로 바꾸면 안 되는 이미지 포맷 — 원본 그대로 올린다.
+  //
+  //  - gif: 변환하면 움직임이 사라진다.
+  //  - png: 투명 배경이 검게 칠해진다. 이건 되돌릴 수 없는 손실인데,
+  //         서버가 PNG를 이미 제대로 처리하고 어디서나 보이므로
+  //         변환해서 얻을 것이 없다.
+  //
+  // 기본값은 어디까지나 '변환'이다 — 목록에 없는 포맷(새로 나오는 것 포함)은
+  // 전부 JPEG로 정규화된다.
+  static const Set<String> _keepAsIsImageExtensions = {'gif', 'png'};
+
+  static String _fileExtension(String fileName) {
+    return fileName.contains('.')
         ? fileName.split('.').last.toLowerCase()
         : '';
-    return _videoExtensions.contains(ext);
+  }
+
+  /// 사진은 포맷과 무관하게 JPEG로 정규화해 올리므로(_prepareImageFile),
+  /// "전송 중" 버블에 쓸 이름도 미리 .jpg로 맞춘다. 그래야 사진 버블로 뜨고,
+  /// 서버가 확장자로 정하는 content-type도 image/jpeg가 된다.
+  static String _plannedUploadFileName(String fileName) {
+    if (_keepAsIsImageExtensions.contains(_fileExtension(fileName))) {
+      return fileName;
+    }
+    final dot = fileName.lastIndexOf('.');
+    return '${dot > 0 ? fileName.substring(0, dot) : fileName}.jpg';
   }
 
   // video_compress는 네이티브 쪽 압축기가 한 번에 하나만 돌아간다
@@ -443,7 +496,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         final isVideo = _isVideoFileName(xfile.name);
         final localId = chatProvider.insertPendingFileMessage(
           widget.room.id,
-          xfile.name,
+          isVideo ? xfile.name : _plannedUploadFileName(xfile.name),
           senderId: senderId,
           senderName: senderName,
         );
@@ -512,12 +565,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           return false;
         }
         file = prepared;
-      } else if (fileSize > _maxFileSize) {
-        // 사진은 10MB 초과 시 압축
-        final compressedFile = await _compressImage(file, fileSize);
-        if (compressedFile != null) {
-          file = compressedFile;
-        } else {
+      } else {
+        final prepared = await _prepareImageFile(file, fileSize, original.name);
+        if (prepared == null) {
           chatProvider.markPendingFileMessageFailed(localId);
           if (mounted) {
             AppSnackBar.showError(
@@ -526,6 +576,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             );
           }
           return false;
+        }
+        file = prepared.file;
+        // 변환에 실패해 원본을 그대로 올리는 경우 — 조용히 넘어가지 않는다.
+        if (prepared.warning != null && mounted) {
+          AppSnackBar.showError(context, message: prepared.warning!);
         }
       }
 
@@ -596,7 +651,54 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return null;
   }
 
-  /// 이미지 압축 메서드 - 10MB 미만이 될 때까지 압축
+  /// 사진 한 장을 업로드할 수 있는 형태로 다듬는다 — **포맷과 무관하게
+  /// JPEG로 정규화한다.**
+  ///
+  /// 현장에서는 아이폰 HEIC, 안드로이드 JPEG, 카톡 저장본, 화면 캡처(PNG),
+  /// 스캔 앱 결과물(WEBP/TIFF 등)이 뒤섞여 들어온다. "HEIC만 변환"으로는
+  /// 새 포맷이 나올 때마다 또 막히므로, 아예 올리기 전에 한 포맷으로
+  /// 맞춰버린다. 파일 이름 확장자도 .jpg가 된다(서버가 확장자로
+  /// content-type을 정한다).
+  ///
+  /// 예외는 GIF뿐이다 — JPEG로 바꾸면 움직임이 사라지고, GIF는 서버·브라우저
+  /// 모두 표준 지원이라 원본 그대로 올려도 문제가 없다.
+  ///
+  /// 돌려주는 `warning`이 있으면 변환에 실패해 원본을 그대로 올린다는 뜻이다
+  /// (호출부가 사용자에게 알린다 — 조용히 실패하지 않는 것이 요점이다).
+  /// 아예 올릴 수 없으면 null을 돌려준다.
+  ///
+  /// 동영상은 이 경로를 타지 않는다(_prepareVideoFile / video_compress).
+  Future<({File file, String? warning})?> _prepareImageFile(
+    File file,
+    int fileSize,
+    String originalName,
+  ) async {
+    // GIF·PNG — 움직임과 투명 배경을 살리려고 원본 그대로 둔다.
+    // 10MB를 넘으면 올릴 수 없다.
+    if (_keepAsIsImageExtensions.contains(_fileExtension(originalName))) {
+      if (fileSize > _maxFileSize) return null;
+      return (file: file, warning: null);
+    }
+
+    print(
+      '[ChatRoomScreen] 사진 JPEG 정규화: $originalName (${_formatFileSize(fileSize)})',
+    );
+    final converted = await _compressImage(file, fileSize);
+    if (converted != null) {
+      return (file: converted, warning: null);
+    }
+
+    // 변환 실패. 원본이라도 올려보되 반드시 알린다 —
+    // 지금까지 "사진이 안 올라간다"의 정체가 이 조용한 실패였다.
+    if (fileSize > _maxFileSize) return null;
+    return (
+      file: file,
+      warning: '$originalName을(를) JPEG로 바꾸지 못해 원본 그대로 보냅니다. '
+          '기기에 따라 사진이 안 보일 수 있습니다.',
+    );
+  }
+
+  /// 이미지 압축 메서드 - 10MB 미만이 될 때까지 압축(출력은 항상 JPEG)
   Future<File?> _compressImage(File file, int originalSize) async {
     try {
       final tempDir = await getTemporaryDirectory();
@@ -607,8 +709,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       // 목표 크기: 9MB (여유분 확보)
       const int targetSize = 9 * 1024 * 1024;
 
-      // 압축 품질 계산 (파일 크기에 따라 조절)
-      int quality = 85;
+      // 압축 품질 계산 (파일 크기에 따라 조절).
+      // 10MB 이하(= 대부분의 사진, 정규화만 하는 경우)는 화질을 우선해 90.
+      // 어르신 상태를 남기는 기록 사진이라 흐려지면 쓸모가 없어진다.
+      int quality = 90;
       if (originalSize > 30 * 1024 * 1024) {
         quality = 40; // 30MB 초과: 품질 40%
       } else if (originalSize > 20 * 1024 * 1024) {
@@ -623,12 +727,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         '[ChatRoomScreen] 이미지 압축 시작: ${_formatFileSize(originalSize)}, 품질: $quality%',
       );
 
+      // format을 명시해 어떤 입력 포맷(HEIC/PNG/WEBP/…)이 들어와도 결과는
+      // 항상 JPEG가 되게 한다. minWidth/minHeight는 "짧은 변이 이보다
+      // 작아지지 않게" 축소하는 값이라, 아이폰 12MP 사진(4032x3024)은
+      // 2560x1920으로 줄어든다 — 눈으로 화질 저하를 느끼지 않으면서
+      // 업로드는 크게 가벼워지는 선이다.
       XFile? compressedXFile = await FlutterImageCompress.compressAndGetFile(
         file.absolute.path,
         targetPath,
         quality: quality,
         minWidth: 1920,
         minHeight: 1920,
+        format: CompressFormat.jpeg,
       );
 
       if (compressedXFile == null) {
@@ -656,6 +766,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           quality: quality,
           minWidth: 1280,
           minHeight: 1280,
+          format: CompressFormat.jpeg,
         );
 
         if (compressedXFile == null) break;
@@ -2487,59 +2598,78 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       );
                     }
 
+                    final messages = chatProvider.messages;
+                    final hasStatusRow =
+                        chatProvider.isLoadingOlderMessages ||
+                        !chatProvider.hasMoreMessages;
+                    // 목록의 가장 오래된 끝(reverse:true라 화면 위쪽)에 상태
+                    // 한 줄을 덧붙인다. 불러오는 중인지 끝에 닿은 건지
+                    // 구분이 안 되면 느린 페이지네이션이 "고장난 것"처럼
+                    // 보인다. 문구는 웹(관리자 채팅)과 같게 맞춘다.
+                    final itemCount = messages.length + (hasStatusRow ? 1 : 0);
+
+                    // 대화가 화면보다 짧으면 위에서부터 채운다.
+                    //
+                    // reverse:true 목록은 내용이 적으면 아래에 붙고 위가 텅 빈다.
+                    // 새로 만든 방·이제 막 시작한 1:1 대화가 늘 그 모습이라
+                    // "왜 중간에서 시작하냐"가 된다. reverse를 상황에 따라 끄는
+                    // 방식은 항목 순서까지 뒤집혀 위험하므로 쓰지 않는다.
+                    // 대신 스크롤뷰에 "내용 최소 높이 = 화면 높이"만 준다.
+                    //
+                    // 경계에서 튀지 않는 이유: 내용이 화면보다 길어지는 순간
+                    // minHeight는 아무 일도 하지 않는다(이미 더 크므로).
+                    // 남는 공간이 0으로 연속적으로 줄어들 뿐이라 튀는 지점이
+                    // 아예 생기지 않는다. reverse:true도 그대로라 스크롤은
+                    // 계속 최신(아래)에 붙어 시작한다.
+                    if (!chatProvider.hasMoreMessages &&
+                        messages.length <= _topAlignMaxMessages) {
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          const padding = EdgeInsets.all(AppSpacing.space4);
+                          final minHeight = math.max(
+                            0.0,
+                            constraints.maxHeight - padding.vertical,
+                          );
+                          return SingleChildScrollView(
+                            controller: _scrollController,
+                            reverse: true,
+                            padding: padding,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: minHeight,
+                              ),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.stretch,
+                                children: [
+                                  // Column은 위→아래, 목록 index는 reverse
+                                  // (0 = 최신)라 거꾸로 훑는다.
+                                  for (int i = itemCount - 1; i >= 0; i--)
+                                    _buildMessageListItem(
+                                      chatProvider,
+                                      i,
+                                      currentUserId: currentUserId,
+                                      isAdmin: isAdmin,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }
+
                     return ListView.builder(
                       controller: _scrollController,
                       reverse: true,
                       padding: const EdgeInsets.all(AppSpacing.space4),
-                      itemCount: chatProvider.messages.length,
-                      itemBuilder: (context, index) {
-                        final messages = chatProvider.messages;
-                        final message = messages[index];
-                        // localId → id 순으로 안정된 키를 준다. 전송 중(sending) 메시지가
-                        // 서버 확정 메시지로 교체돼도 같은 자리로 인식되게 한다.
-                        final itemKey = ValueKey(
-                          message.localId ?? message.id,
-                        );
-
-                        // 날짜가 바뀌는 지점(또는 가장 오래된 메시지 위)에 구분선을 끼워넣는다.
-                        final showDateSeparator =
-                            shouldShowDateSeparatorAbove(messages, index);
-
-                        // 시스템 메시지는 가운데 정렬로 별도 처리
-                        if (message.type == MessageType.system) {
-                          return KeyedSubtree(
-                            key: itemKey,
-                            child: Column(
-                              children: [
-                                if (showDateSeparator)
-                                  _buildDateSeparator(message.createdAt),
-                                _buildSystemMessage(message),
-                              ],
-                            ),
-                          );
-                        }
-
-                        final isMyMessage = message.senderId == currentUserId;
-                        final showSenderName =
-                            !isMyMessage && isSenderGroupStart(messages, index);
-
-                        return KeyedSubtree(
-                          key: itemKey,
-                          child: Column(
-                            children: [
-                              if (showDateSeparator)
-                                _buildDateSeparator(message.createdAt),
-                              _buildMessageBubble(
-                                message,
-                                isMyMessage,
-                                showSenderName,
-                                isAdmin,
-                                chatProvider.participants,
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                      itemCount: itemCount,
+                      itemBuilder: (context, index) => _buildMessageListItem(
+                        chatProvider,
+                        index,
+                        currentUserId: currentUserId,
+                        isAdmin: isAdmin,
+                      ),
                     );
                   },
                 ),
@@ -2553,6 +2683,90 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 메시지 목록 항목 하나.
+  ///
+  /// 짧은 방(위에서부터 채우는 Column)과 긴 방(ListView.builder)이 같은 코드를
+  /// 쓰도록 뽑아냈다. [index]는 두 경우 모두 **reverse 기준**이다 —
+  /// 0이 가장 최신이고, messages.length가 가장 오래된 끝의 상태 줄이다.
+  Widget _buildMessageListItem(
+    ChatProvider chatProvider,
+    int index, {
+    required String currentUserId,
+    required bool isAdmin,
+  }) {
+    final messages = chatProvider.messages;
+
+    // 가장 오래된 끝의 상태 줄
+    if (index >= messages.length) {
+      final isLoadingOlder = chatProvider.isLoadingOlderMessages;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoadingOlder) ...[
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: AppSpacing.space2),
+              ],
+              Text(
+                isLoadingOlder ? '이전 대화를 불러오는 중...' : '대화의 시작입니다',
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppSemanticColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final message = messages[index];
+    // localId → id 순으로 안정된 키를 준다. 전송 중(sending) 메시지가
+    // 서버 확정 메시지로 교체돼도 같은 자리로 인식되게 한다.
+    final itemKey = ValueKey(message.localId ?? message.id);
+
+    // 날짜가 바뀌는 지점(또는 가장 오래된 메시지 위)에 구분선을 끼워넣는다.
+    final showDateSeparator = shouldShowDateSeparatorAbove(messages, index);
+
+    // 시스템 메시지는 가운데 정렬로 별도 처리
+    if (message.type == MessageType.system) {
+      return KeyedSubtree(
+        key: itemKey,
+        child: Column(
+          children: [
+            if (showDateSeparator) _buildDateSeparator(message.createdAt),
+            _buildSystemMessage(message),
+          ],
+        ),
+      );
+    }
+
+    final isMyMessage = message.senderId == currentUserId;
+    final showSenderName =
+        !isMyMessage && isSenderGroupStart(messages, index);
+
+    return KeyedSubtree(
+      key: itemKey,
+      child: Column(
+        children: [
+          if (showDateSeparator) _buildDateSeparator(message.createdAt),
+          _buildMessageBubble(
+            message,
+            isMyMessage,
+            showSenderName,
+            isAdmin,
+            chatProvider.participants,
+          ),
+        ],
       ),
     );
   }
@@ -2657,155 +2871,153 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               )
               .length;
 
+    // 말풍선(+리액션) 본체 — 내/남 메시지 공통.
+    final bubble = Column(
+      crossAxisAlignment: isMyMessage
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space3,
+            vertical: AppSpacing.space2,
+          ),
+          decoration: BoxDecoration(
+            color: message.sendingStatus == MessageSendingStatus.sending
+                ? bubbleColor.withValues(alpha: 0.7)
+                : bubbleColor,
+            // 배경(gray50)과 남의 말풍선(흰색)은 명도차가 거의 없어 그냥 두면
+            // 경계가 안 보인다. 검은 테두리는 앱 톤에서 튀므로 옅은 회색
+            // 실선(borderDefault) 한 겹으로만 경계를 만든다.
+            border: isMyMessage
+                ? null
+                : Border.all(
+                    color: AppSemanticColors.borderDefault,
+                    width: 1,
+                  ),
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(AppBorderRadius.xl),
+              topRight: const Radius.circular(AppBorderRadius.xl),
+              bottomLeft: Radius.circular(
+                isMyMessage ? AppBorderRadius.xl : AppBorderRadius.base,
+              ),
+              bottomRight: Radius.circular(
+                isMyMessage ? AppBorderRadius.base : AppBorderRadius.xl,
+              ),
+            ),
+          ),
+          constraints: BoxConstraints(maxWidth: _bubbleMaxWidth(context)),
+          child: message.type == MessageType.system
+              ? Text(
+                  message.displayContent,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                )
+              : _buildMessageContent(message, textColor),
+        ),
+        // 리액션 표시
+        if (message.reactions.isNotEmpty)
+          _buildReactionDisplay(message, isMyMessage),
+      ],
+    );
+
+    // 시각·읽음 표시 열.
+    // 읽음 표시는 누가 보냈든 똑같이 뜬다 — 내 메시지에만 두면
+    // 상대 메시지를 아직 누가 안 봤는지 알 수 없다.
+    Widget metaColumn({required bool alignEnd}) {
+      return Column(
+        crossAxisAlignment: alignEnd
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          if (unreadCount > 0 &&
+              message.sendingStatus != MessageSendingStatus.failed)
+            Text(
+              '$unreadCount',
+              style: AppTypography.labelSmall.copyWith(
+                color: isAdmin
+                    ? AppSemanticColors.textSecondary
+                    : AppSemanticColors.interactivePrimaryDefault,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isMyMessage) ...[
+                _buildSendingStatusIcon(message.sendingStatus, isAdmin),
+                const SizedBox(width: 2),
+              ],
+              Text(
+                _formatMessageTime(message.createdAt),
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppSemanticColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
     return GestureDetector(
       onLongPress: () => _showMessageOptions(message),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-        child: Row(
-          mainAxisAlignment: isMyMessage
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
-          crossAxisAlignment: isMyMessage
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
-          children: [
-            if (!isMyMessage) ...[
-              const SizedBox(width: AppSpacing.space1),
-              // 왼쪽 열: 아바타 → 이름 → 직종을 세로로 쌓는다(카톡 배치).
-              // 연속 메시지 그룹의 첫 메시지(showSenderName)에만 내용을 그리고,
-              // 이어지는 메시지는 같은 폭(_senderColumnWidth)만 차지해 버블이
-              // 세로로 정렬되게 한다. 잘림 판정은 위젯 자체가 항상 같은 너비를
-              // 쓰도록 만들어 보장한다(test/chat_sender_header_test.dart 참고).
-              ChatSenderHeader(
-                visible: showSenderName,
-                senderName: message.senderName,
-                senderPosition: message.senderPosition,
-                imageUrl: _findSenderProfileImageUrl(
-                  message.senderId,
-                  participants,
-                ),
-                width: _senderColumnWidth,
-              ),
-              const SizedBox(width: AppSpacing.space2),
-            ],
-
-            // 내 메시지: 전송 상태 + 안읽은 수 + 시간
-            if (isMyMessage) ...[
-              Column(
+        child: isMyMessage
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // 안 읽은 사람 수 (0보다 클 때만, 실패 상태 제외)
-                  if (unreadCount > 0 &&
-                      message.sendingStatus != MessageSendingStatus.failed)
-                    Text(
-                      '$unreadCount',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: isAdmin
-                            ? AppSemanticColors.textSecondary
-                            : AppSemanticColors.interactivePrimaryDefault,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 전송 상태 아이콘
-                      _buildSendingStatusIcon(message.sendingStatus, isAdmin),
-                      const SizedBox(width: 2),
-                      Text(
-                        _formatMessageTime(message.createdAt),
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
+                  metaColumn(alignEnd: true),
+                  const SizedBox(width: AppSpacing.space1),
+                  Flexible(child: bubble),
                 ],
-              ),
-              const SizedBox(width: AppSpacing.space1),
-            ],
-
-            // 메시지 버블
-            Flexible(
-              child: Column(
-                crossAxisAlignment: isMyMessage
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space3,
-                      vertical: AppSpacing.space2,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          message.sendingStatus == MessageSendingStatus.sending
-                          ? bubbleColor.withValues(alpha: 0.7)
-                          : bubbleColor,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(AppBorderRadius.xl),
-                        topRight: const Radius.circular(AppBorderRadius.xl),
-                        bottomLeft: Radius.circular(
-                          isMyMessage
-                              ? AppBorderRadius.xl
-                              : AppBorderRadius.base,
-                        ),
-                        bottomRight: Radius.circular(
-                          isMyMessage
-                              ? AppBorderRadius.base
-                              : AppBorderRadius.xl,
-                        ),
-                      ),
-                    ),
-                    constraints: BoxConstraints(
-                      maxWidth: _bubbleMaxWidth(context),
-                    ),
-                    child: message.type == MessageType.system
-                        ? Text(
-                            message.displayContent,
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          )
-                        : _buildMessageContent(message, textColor),
-                  ),
-                  // 리액션 표시
-                  if (message.reactions.isNotEmpty)
-                    _buildReactionDisplay(message, isMyMessage),
-                ],
-              ),
-            ),
-
-            // 상대 메시지: 안읽은 수 + 시간
-            // 읽음 표시는 누가 보냈든 똑같이 뜬다 — 내 메시지에만 두면
-            // 상대 메시지를 아직 누가 안 봤는지 알 수 없다
-            if (!isMyMessage) ...[
-              const SizedBox(width: AppSpacing.space1),
-              Column(
+              )
+            // 남의 메시지 — 카톡 배치.
+            //   [아바타]  이름 (직종)
+            //             [말풍선]
+            // 아바타는 그룹 첫 메시지에만 그리고, 이어지는 메시지는 같은 폭
+            // (ChatAvatarSlot.width)만 차지해 말풍선이 세로로 정렬된다.
+            // 이름·직종은 아바타 오른쪽 한 줄에 놓여 남는 가로폭을 전부 쓴다.
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (unreadCount > 0)
-                    Text(
-                      '$unreadCount',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: isAdmin
-                            ? AppSemanticColors.textSecondary
-                            : AppSemanticColors.interactivePrimaryDefault,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const SizedBox(width: AppSpacing.space1),
+                  ChatAvatarSlot(
+                    visible: showSenderName,
+                    senderName: message.senderName,
+                    imageUrl: _findSenderProfileImageUrl(
+                      message.senderId,
+                      participants,
                     ),
-                  Text(
-                    _formatMessageTime(message.createdAt),
-                    style: AppTypography.labelSmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
+                  ),
+                  const SizedBox(width: AppSpacing.space2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (showSenderName)
+                          ChatSenderHeader(
+                            senderName: message.senderName,
+                            senderPosition: message.senderPosition,
+                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Flexible(child: bubble),
+                            const SizedBox(width: AppSpacing.space1),
+                            metaColumn(alignEnd: false),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ],
-          ],
-        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import '../models/chat_message.dart';
 import '../models/chat_participant.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+import '../utils/chat_message_pagination.dart';
 
 class ChatProvider with ChangeNotifier {
   // State
@@ -32,6 +33,11 @@ class ChatProvider with ChangeNotifier {
   StompUnsubscribe? _presenceSubscription;
 
   // Pagination for messages
+  // 옛 대화를 이어 붙이는 중인지 — 화면 전체 로딩(_isLoading)과 따로 둔다.
+  // _isLoading은 방 목록 조회 등 다른 작업도 같이 쓰기 때문에, 그걸로 무한
+  // 스크롤을 막으면 마침 방 목록이 갱신되는 순간의 스크롤이 통째로 무시된다
+  // (= "위로 올려도 아무 일도 안 일어난다"의 한 원인).
+  bool _isLoadingOlderMessages = false;
   int _currentPage = 0;
   int _totalPages = 0;
   bool _hasMoreMessages = true;
@@ -70,6 +76,7 @@ class ChatProvider with ChangeNotifier {
   bool get isConnected => _isConnected;
   Set<String> get typingUsers => _typingUsers;
   bool get hasMoreMessages => _hasMoreMessages;
+  bool get isLoadingOlderMessages => _isLoadingOlderMessages;
   Set<String> get onlineUserIds => _onlineUserIds;
 
   bool isOnline(String userId) => _onlineUserIds.contains(userId);
@@ -984,15 +991,28 @@ class ChatProvider with ChangeNotifier {
   // ===================== 메시지 관리 =====================
 
   Future<void> loadMessages({required int roomId, bool refresh = false}) async {
+    if (refresh) {
+      _currentPage = 0;
+      _messages.clear();
+      _hasMoreMessages = true;
+    }
+
+    if (!_hasMoreMessages && !refresh) return;
+
+    // 스크롤 이벤트는 화면이 다시 그려지는 것보다 훨씬 빨리 연달아 오므로
+    // 재진입은 호출부가 아니라 여기서 막는다 — 같은 페이지를 두 번 받아
+    // 페이지 번호만 건너뛰는 일(= 대화 구멍)을 없앤다.
+    //
+    // 이 판정과 플래그 세팅은 try 밖에 있어야 한다. 안에 두면 "이미 불러오는
+    // 중이라 그냥 빠져나온" 두 번째 호출까지 finally를 지나면서 남의 잠금을
+    // 풀어버린다(그러면 재진입 방지가 사실상 없는 것과 같다).
+    if (_isLoadingOlderMessages) return;
+    if (!refresh) {
+      _isLoadingOlderMessages = true;
+      notifyListeners();
+    }
+
     try {
-      if (refresh) {
-        _currentPage = 0;
-        _messages.clear();
-        _hasMoreMessages = true;
-      }
-
-      if (!_hasMoreMessages && !refresh) return;
-
       setLoading(true);
       clearError();
 
@@ -1012,7 +1032,7 @@ class ChatProvider with ChangeNotifier {
         if (refresh) {
           _messages = newMessages;
         } else {
-          _messages.addAll(newMessages);
+          appendOlderMessages(_messages, newMessages);
         }
 
         _hasMoreMessages =
@@ -1030,7 +1050,7 @@ class ChatProvider with ChangeNotifier {
         if (refresh) {
           _messages = newMessages;
         } else {
-          _messages.addAll(newMessages);
+          appendOlderMessages(_messages, newMessages);
         }
 
         _hasMoreMessages =
@@ -1052,6 +1072,7 @@ class ChatProvider with ChangeNotifier {
       print('[ChatProvider] 메시지 목록 로드 에러: $e');
       setError('메시지를 불러오는데 실패했습니다: ${e.toString()}');
     } finally {
+      _isLoadingOlderMessages = false;
       setLoading(false);
     }
   }
@@ -1491,6 +1512,7 @@ class ChatProvider with ChangeNotifier {
     _currentPage = 0;
     _totalPages = 0;
     _hasMoreMessages = true;
+    _isLoadingOlderMessages = false;
     notifyListeners();
   }
 

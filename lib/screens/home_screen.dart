@@ -16,6 +16,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/permissions.dart';
 import '../utils/daily_greeting.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/notification_bell.dart';
@@ -56,6 +57,10 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     final isAdmin = AdminUtils.canAccessAdminPages(user);
+    // 공지 전체(미게시 포함)·회원 목록은 해당 권한이 있어야 의미가 있다.
+    // 관리자는 PermissionUtils가 전부 true라 기존과 동일하게 동작한다.
+    final canManageNotice =
+        PermissionUtils.has(user, AppPermission.noticeManage);
     final companyId = user.company?.id ?? '1';
 
     try {
@@ -93,10 +98,17 @@ class _HomeScreenState extends State<HomeScreen> {
             requesterId: user.id,
             refresh: true,
           ),
-          context.read<NoticeProvider>().loadPublishedNotices(
-            companyId: companyId,
-            refresh: true,
-          ),
+          // 공지 관리 권한을 위임받은 직원은 관리자와 같은 목록(미게시 포함)을 본다.
+          if (canManageNotice)
+            context.read<NoticeProvider>().loadNotices(
+              companyId: companyId,
+              refresh: true,
+            )
+          else
+            context.read<NoticeProvider>().loadPublishedNotices(
+              companyId: companyId,
+              refresh: true,
+            ),
         ]);
       }
 
@@ -292,7 +304,11 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final isAdmin = AdminUtils.canAccessAdminPages(user);
+    // 홈의 공지/결재 칸은 세부 권한을 따른다(관리자는 전부 true).
+    final canManageNotice =
+        PermissionUtils.has(user, AppPermission.noticeManage);
+    final canManageApprovals =
+        PermissionUtils.has(user, AppPermission.approvalManage);
     final approvalProvider = context.watch<ApprovalProvider>();
     final noticeProvider = context.watch<NoticeProvider>();
     final vacationProvider = context.watch<VacationProvider>();
@@ -303,15 +319,15 @@ class _HomeScreenState extends State<HomeScreen> {
     // 홈의 전자결재 칸에서 바로 드러낸다).
     final myTurnApprovals = approvalProvider.myTurnCount(
       myId: user.id,
-      isAdmin: isAdmin,
+      isAdmin: canManageApprovals,
     );
 
     final recentNotices = _getRecentNotices(
-      isAdmin: isAdmin,
+      isAdmin: canManageNotice,
       noticeProvider: noticeProvider,
     );
     final recentApprovals = _getRecentApprovals(
-      isAdmin: isAdmin,
+      isAdmin: canManageApprovals,
       myId: user.id,
       approvalProvider: approvalProvider,
     );
@@ -410,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             actionLabel: '전체보기',
                             onAction: () => Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => isAdmin
+                                builder: (_) => canManageNotice
                                     ? const AdminNoticeManagementScreen()
                                     : const NoticeListScreen(),
                               ),
@@ -463,7 +479,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 : '전자결재',
                             subtitle: myTurnApprovals > 0
                                 ? '지금 내가 처리할 결재 $myTurnApprovals건'
-                                : (isAdmin ? '승인이 필요한 문서' : '내 결재 진행 상황'),
+                                : (canManageApprovals
+                                    ? '승인이 필요한 문서'
+                                    : '내 결재 진행 상황'),
                             actionLabel: '전체보기',
                             onAction: () => _openApproval(hasMyTurn: myTurnApprovals > 0),
                           ),
@@ -471,7 +489,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (recentApprovals.isEmpty)
                             _EmptySectionState(
                               icon: Icons.fact_check_outlined,
-                              title: isAdmin ? '승인 대기 문서가 없습니다' : '진행 중인 결재가 없습니다',
+                              title: canManageApprovals
+                                  ? '승인 대기 문서가 없습니다'
+                                  : '진행 중인 결재가 없습니다',
                               subtitle: '새 결재가 생기면 이곳에 표시됩니다.',
                             )
                           else

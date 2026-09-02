@@ -1,5 +1,6 @@
 import 'user.dart';
 import 'company.dart';
+import '../utils/permissions.dart';
 
 class MemberSigninResponse {
   final String memberId;
@@ -15,6 +16,10 @@ class MemberSigninResponse {
   final String? lastLoginAt;
   final TokenInfo tokenInfo;
 
+  /// 서버(MemberSigninResponseDTO.permissions)가 로그인 응답에 실어주는 세부 권한.
+  /// 구버전 응답이나 권한 미설정 계정에서는 비어 있을 수 있다.
+  final List<String> permissions;
+
   MemberSigninResponse({
     required this.memberId,
     required this.username,
@@ -28,6 +33,7 @@ class MemberSigninResponse {
     required this.company,
     this.lastLoginAt,
     required this.tokenInfo,
+    this.permissions = const [],
   });
 
   factory MemberSigninResponse.fromJson(Map<String, dynamic> json) {
@@ -44,6 +50,7 @@ class MemberSigninResponse {
       company: CompanyListDTO.fromJson(json['company']),
       lastLoginAt: json['lastLoginAt'],
       tokenInfo: TokenInfo.fromJson(json['tokenInfo']),
+      permissions: PermissionUtils.sanitize(json['permissions']),
     );
   }
 
@@ -72,6 +79,7 @@ class MemberSigninResponse {
           ? DateTime.tryParse(lastLoginAt!)
           : null,
       tokenInfo: tokenInfo,
+      permissions: permissions,
     );
   }
 }

@@ -4,6 +4,7 @@ import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user.dart';
 import '../utils/admin_utils.dart';
+import '../utils/permissions.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -51,14 +52,24 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        if (!AdminUtils.canManageUsers(authProvider.currentUser)) {
+        // 회원 조회/관리 권한 — 관리자는 언제나 통과한다
+        if (!PermissionUtils.hasAny(authProvider.currentUser, const [
+          AppPermission.memberView,
+          AppPermission.memberManage,
+        ])) {
           return _buildNoPermissionView();
         }
 
         // 슬림 상단: 타이틀 1개(AppBar) + 탭바만. 배지·서브텍스트로
         // 제목을 반복하지 않는다 (Seed 레이아웃 원칙 — 중복 레이어 금지).
+        // 회원 '조회'만 위임받은 직원에게는 가입 승인 탭과 상태변경·삭제 버튼을 감춘다.
+        final canManageMembers = PermissionUtils.has(
+          authProvider.currentUser,
+          AppPermission.memberManage,
+        );
+
         return DefaultTabController(
-          length: 2,
+          length: canManageMembers ? 2 : 1,
           child: Scaffold(
             backgroundColor: AppSemanticColors.backgroundPrimary,
             appBar: AppBar(
@@ -104,19 +115,26 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     ),
                     unselectedLabelStyle: AppTypography.labelMedium,
                     dividerColor: AppColors.transparent,
-                    tabs: const [
-                      Tab(
-                        icon: Icon(Icons.pending_actions, size: 20),
-                        text: '승인 대기',
+                    tabs: [
+                      if (canManageMembers)
+                        const Tab(
+                          icon: Icon(Icons.pending_actions, size: 20),
+                          text: '승인 대기',
+                        ),
+                      const Tab(
+                        icon: Icon(Icons.people, size: 20),
+                        text: '전체 회원',
                       ),
-                      Tab(icon: Icon(Icons.people, size: 20), text: '전체 회원'),
                     ],
                   ),
                 ),
               ),
             ),
             body: TabBarView(
-              children: [const AdminPendingUsersTab(), _buildAllMembersTab()],
+              children: [
+                if (canManageMembers) const AdminPendingUsersTab(),
+                _buildAllMembersTab(),
+              ],
             ),
           ),
         );
@@ -354,6 +372,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               ],
             ),
             const SizedBox(height: AppSpacing.space3),
+            // 상태 변경·삭제는 '회원 관리' 권한자만 (조회 권한자는 목록만 본다)
+            if (PermissionUtils.has(
+              context.read<AuthProvider>().currentUser,
+              AppPermission.memberManage,
+            ))
             Row(
               children: [
                 Expanded(
