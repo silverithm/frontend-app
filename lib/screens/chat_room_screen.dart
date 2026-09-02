@@ -25,6 +25,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/chat_image_url.dart';
+import '../utils/chat_media.dart' as chat_media;
 import '../utils/chat_message_grouping.dart';
 import '../utils/chat_message_pagination.dart';
 import 'chat_room_info_screen.dart';
@@ -37,6 +38,7 @@ import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../widgets/chat/chat_image_viewer.dart';
+import '../widgets/chat/chat_photo_group.dart';
 import '../widgets/chat/chat_sender_header.dart';
 import '../widgets/common/app_action_sheet.dart';
 
@@ -396,6 +398,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return math.min(width * 0.7, width - reserved);
   }
 
+  /// 말풍선 **안쪽**에서 실제로 그릴 수 있는 폭.
+  ///
+  /// 좌우 안쪽 여백(space3)을 빼고, 남의 말풍선은 1px 테두리가 좌우로 한 겹 더
+  /// 있으므로(내 말풍선은 border: null) 그 2px까지 뺀다. 이걸 빼먹으면 격자의
+  /// 오른쪽 칸이 딱 2px 잘린다 — 사진처럼 폭을 꽉 채우는 자식에서만 드러난다.
+  double _bubbleContentWidth(BuildContext context, bool isMyMessage) {
+    final borderWidth = isMyMessage ? 0.0 : 2.0;
+    return _bubbleMaxWidth(context) - AppSpacing.space3 * 2 - borderWidth;
+  }
+
   // 10MB 상수 (바이트) — 사진·문서
   static const int _maxFileSize = 10 * 1024 * 1024; // 10MB
   // 동영상은 압축을 거치므로 좀 더 넉넉하게 허용 (압축 실패 시 원본 기준)
@@ -405,12 +417,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // 내보낸다. 현장 회선이 좁아 전부 동시에 밀면 오히려 느려지고 타임아웃 난다.
   static const int _maxConcurrentUploads = 3;
 
-  static const Set<String> _videoExtensions = {
-    'mp4', 'mov', 'm4v', 'avi', 'mkv', 'webm', '3gp',
-  };
-
+  // 동영상 확장자 목록은 utils/chat_media.dart 한 곳에만 둔다 —
+  // 모델(ChatMessage.mediaKind)과 화면이 같은 기준으로 판정해야 하기 때문이다.
   bool _isVideoFileName(String fileName) {
-    return _videoExtensions.contains(_fileExtension(fileName));
+    return chat_media.isVideoFileName(fileName);
   }
 
   // JPEG로 바꾸면 안 되는 이미지 포맷 — 원본 그대로 올린다.
@@ -1898,7 +1908,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                     ),
                                   )
                                 : Icon(
-                                    Icons.insert_drive_file_outlined,
+                                    // 파일함에서도 동영상은 한눈에 알아보게 한다
+                                    file.isVideoMessage
+                                        ? Icons.videocam_outlined
+                                        : Icons.insert_drive_file_outlined,
                                     color: AppSemanticColors.textSecondary,
                                   ),
                             title: file.fileName ?? '파일',
@@ -1940,7 +1953,29 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _openFile(
       url: message.fileUrl,
       name: message.fileName ?? '파일',
-      isImage: message.type == MessageType.image,
+      // 동영상이 사진 뷰어로 들어가지 않도록 파생 판정(mediaKind)을 쓴다.
+      isImage: message.isPhotoMessage,
+    );
+  }
+
+  /// 사진 묶음의 [index]번째를 전체화면으로 연다. 좌우로 넘기면 같은 묶음의
+  /// 다른 사진이 보인다. **목록은 축소본, 여기는 언제나 원본(fileUrl)이다.**
+  void _openPhotoGroup(List<ChatMessage> group, int index) {
+    final items = <ChatImageItem>[];
+    for (final message in group) {
+      final url = message.fileUrl;
+      if (url == null || url.isEmpty) continue;
+      items.add(
+        ChatImageItem(imageUrl: url, fileName: message.fileName ?? '사진'),
+      );
+    }
+    if (items.isEmpty) return;
+
+    ChatImageViewer.openGallery(
+      context,
+      items: items,
+      initialIndex: index.clamp(0, items.length - 1),
+      onDownload: (item) => _downloadAndOpenFile(item.imageUrl, item.fileName),
     );
   }
 
@@ -2599,6 +2634,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     }
 
                     final messages = chatProvider.messages;
+                    // 사진 묶음은 목록 전체를 한 번 훑어야 정해지므로 여기서 한 번만 만든다.
+                    final photoGroups = buildPhotoGroupMap(messages);
                     final hasStatusRow =
                         chatProvider.isLoadingOlderMessages ||
                         !chatProvider.hasMoreMessages;
@@ -2650,6 +2687,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                       i,
                                       currentUserId: currentUserId,
                                       isAdmin: isAdmin,
+                                      photoGroups: photoGroups,
                                     ),
                                 ],
                               ),
@@ -2669,6 +2707,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         index,
                         currentUserId: currentUserId,
                         isAdmin: isAdmin,
+                        photoGroups: photoGroups,
                       ),
                     );
                   },
@@ -2697,6 +2736,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     int index, {
     required String currentUserId,
     required bool isAdmin,
+    required Map<int, List<int>> photoGroups,
   }) {
     final messages = chatProvider.messages;
 
@@ -2754,17 +2794,32 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final showSenderName =
         !isMyMessage && isSenderGroupStart(messages, index);
 
+    // 사진 묶음은 **가장 오래된 사진의 자리**(group.first)에서 한 번에 그린다.
+    // 날짜 구분선과 발신자 헤더 판정이 모두 그 자리를 기준으로 이미 맞게 나오므로
+    // 기존 규칙을 손대지 않고 그대로 얹을 수 있다. 나머지 자리는 비워 둔다
+    // (목록의 인덱스 수는 그대로라 스크롤·페이지네이션 계산이 흔들리지 않는다).
+    final groupIndices = photoGroups[index];
+    if (groupIndices != null && index != groupIndices.first) {
+      return KeyedSubtree(key: itemKey, child: const SizedBox.shrink());
+    }
+
+    final groupMessages = groupIndices == null
+        ? null
+        : [for (final i in groupIndices) messages[i]];
+
     return KeyedSubtree(
       key: itemKey,
       child: Column(
         children: [
           if (showDateSeparator) _buildDateSeparator(message.createdAt),
           _buildMessageBubble(
-            message,
+            // 시각·읽음 표시는 묶음의 **가장 최신** 사진 기준으로 보여준다.
+            groupMessages == null ? message : groupMessages.last,
             isMyMessage,
             showSenderName,
             isAdmin,
             chatProvider.participants,
+            photoGroup: groupMessages,
           ),
         ],
       ),
@@ -2847,8 +2902,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     bool isMyMessage,
     bool showSenderName,
     bool isAdmin,
-    List<ChatParticipant> participants,
-  ) {
+    List<ChatParticipant> participants, {
+    /// 사진 묶음(오래된→최신). null이면 지금까지처럼 메시지 한 건짜리 말풍선.
+    List<ChatMessage>? photoGroup,
+  }) {
     final bubbleColor = isMyMessage
         ? AppSemanticColors.interactivePrimaryDefault
         : AppSemanticColors.surfaceDefault;
@@ -2861,15 +2918,40 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     // 보낸 사람 자신은 언제나 읽은 것으로 친다(서버는 전송 시 읽음 행만 남기고
     // 참가자 포인터는 옮기지 않는다).
     // 참가자를 아직 못 받았을 때만 서버가 준 readCount로 대신 센다.
-    final unreadCount = participants.isEmpty
-        ? widget.room.participantCount - message.readCount
-        : participants
-              .where(
-                (p) =>
-                    p.userId != message.senderId &&
-                    (p.lastReadMessageId ?? 0) < message.id,
-              )
-              .length;
+    int unreadCountOf(ChatMessage m) {
+      return participants.isEmpty
+          ? widget.room.participantCount - m.readCount
+          : participants
+                .where(
+                  (p) =>
+                      p.userId != m.senderId &&
+                      (p.lastReadMessageId ?? 0) < m.id,
+                )
+                .length;
+    }
+
+    // 묶음에서는 **가장 덜 읽힌 사진**의 수를 쓴다. 묶음 안에서도 읽음이 서로
+    // 다를 수 있는데, 더 적은 쪽을 보여주면 "다 읽었다"고 잘못 말하게 된다.
+    final unreadCount = photoGroup == null
+        ? unreadCountOf(message)
+        : photoGroup.map(unreadCountOf).reduce((a, b) => a > b ? a : b);
+
+    // 전송 상태도 묶음 전체에서 가장 나쁜 것을 따른다 — 한 장이라도 실패했으면
+    // 실패로 보여야 다시 보낼 수 있다.
+    MessageSendingStatus groupStatus() {
+      if (photoGroup == null) return message.sendingStatus;
+      if (photoGroup.any((m) => m.sendingStatus == MessageSendingStatus.failed)) {
+        return MessageSendingStatus.failed;
+      }
+      if (photoGroup.any(
+        (m) => m.sendingStatus == MessageSendingStatus.sending,
+      )) {
+        return MessageSendingStatus.sending;
+      }
+      return MessageSendingStatus.sent;
+    }
+
+    final sendingStatus = groupStatus();
 
     // 말풍선(+리액션) 본체 — 내/남 메시지 공통.
     final bubble = Column(
@@ -2883,7 +2965,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             vertical: AppSpacing.space2,
           ),
           decoration: BoxDecoration(
-            color: message.sendingStatus == MessageSendingStatus.sending
+            color: sendingStatus == MessageSendingStatus.sending
                 ? bubbleColor.withValues(alpha: 0.7)
                 : bubbleColor,
             // 배경(gray50)과 남의 말풍선(흰색)은 명도차가 거의 없어 그냥 두면
@@ -2907,7 +2989,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ),
           ),
           constraints: BoxConstraints(maxWidth: _bubbleMaxWidth(context)),
-          child: message.type == MessageType.system
+          child: photoGroup != null
+              ? ChatPhotoGroup(
+                  messages: photoGroup,
+                  // 말풍선 좌우 안쪽 여백(space3 * 2)을 뺀 실제 그릴 수 있는 폭
+                  maxWidth: _bubbleContentWidth(context, isMyMessage),
+                  onTap: (i) => _openPhotoGroup(photoGroup, i),
+                  onLongPress: (i) => _showMessageOptions(photoGroup[i]),
+                )
+              : message.type == MessageType.system
               ? Text(
                   message.displayContent,
                   style: AppTypography.bodyMedium.copyWith(
@@ -2915,7 +3005,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     fontStyle: FontStyle.italic,
                   ),
                 )
-              : _buildMessageContent(message, textColor),
+              : _buildMessageContent(message, textColor, isMyMessage),
         ),
         // 리액션 표시
         if (message.reactions.isNotEmpty)
@@ -2933,7 +3023,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             : CrossAxisAlignment.start,
         children: [
           if (unreadCount > 0 &&
-              message.sendingStatus != MessageSendingStatus.failed)
+              sendingStatus != MessageSendingStatus.failed)
             Text(
               '$unreadCount',
               style: AppTypography.labelSmall.copyWith(
@@ -2947,7 +3037,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isMyMessage) ...[
-                _buildSendingStatusIcon(message.sendingStatus, isAdmin),
+                _buildSendingStatusIcon(sendingStatus, isAdmin),
                 const SizedBox(width: 2),
               ],
               Text(
@@ -3050,7 +3140,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Widget _buildMessageContent(ChatMessage message, Color textColor) {
+  Widget _buildMessageContent(
+    ChatMessage message,
+    Color textColor,
+    bool isMyMessage,
+  ) {
     if (message.isDeleted) {
       return Text(
         '삭제된 메시지입니다',
@@ -3115,9 +3209,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
 
       case MessageType.file:
-        // 동영상은 백엔드가 아직 별도 타입이 없어 file 메시지로 온다.
-        // 확장자로 구분해 재생 아이콘 + "동영상" 표시로 보여주고, 탭하면
-        // 기기 기본 플레이어로 열린다(_openAttachment → _downloadAndOpenFile).
+        // 동영상은 저장 타입이 여전히 FILE로 온다(구버전 앱이 모르는 타입을
+        // 글로 떨어뜨리기 때문 — utils/chat_media.dart 주석 참고).
+        // 대신 서버가 준 mediaType(없으면 mimeType·확장자)으로 알아보고,
+        // 첨부 한 줄이 아니라 눌러서 재생하는 타일로 그린다.
+        // 탭하면 기기 기본 플레이어로 열린다(_openAttachment → _downloadAndOpenFile).
+        if (message.isVideoMessage) {
+          return ChatVideoBubble(
+            message: message,
+            maxWidth: _bubbleContentWidth(context, isMyMessage),
+            onTap: () => _openAttachment(message),
+          );
+        }
+
         final isVideo = _isVideoFileName(message.fileName ?? '');
         return GestureDetector(
           onTap: () => _openAttachment(message),

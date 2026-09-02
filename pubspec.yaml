@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.7.0+40
+version: 1.7.0+41
 
 environment:
   sdk: ^3.9.0-128.0.dev
@@ -108,6 +108,12 @@ dependencies:
   screenshot: ^3.0.0
   cached_network_image: ^3.4.1
   video_compress: ^3.1.4
+  # 동영상 말풍선의 첫 프레임을 '재생 시점에' 뽑는다(서버에 저장하지 않는다).
+  # video_compress로는 못 한다 — iOS 구현이 URL(fileURLWithPath:)라 로컬 파일만 받고,
+  # 게다가 플랫폼 스레드에서 동기로 디코딩해 목록이 멈춘다(getFileThumbnail은 원본까지 지운다).
+  # video_thumbnail은 iOS AVAssetImageGenerator / Android MediaMetadataRetriever를 쓰는데
+  # 둘 다 원격 URL을 '범위 요청'으로 앞부분만 읽어 데이터도 아낀다.
+  video_thumbnail: ^0.5.6
 
 dev_dependencies:
   flutter_test:

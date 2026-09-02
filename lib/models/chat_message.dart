@@ -1,4 +1,10 @@
+import '../utils/chat_media.dart';
+
 enum MessageType { text, image, file, system }
+
+/// 첨부를 화면에서 어떻게 그릴지. 저장된 [MessageType]과 달리 **파생** 값이다.
+/// (왜 서버 type에 video를 넣지 않았는지는 chat_media.dart 주석 참고)
+enum ChatMediaKind { image, video, file }
 
 enum MessageSendingStatus { sending, sent, failed }
 
@@ -69,6 +75,9 @@ class ChatMessage {
   final String? fileName;
   final int? fileSize;
   final String? mimeType;
+  /// 서버가 내려주는 파생 값 — 'IMAGE' | 'VIDEO' | 'FILE'.
+  /// 아직 새 서버가 배포되지 않았으면 null이고, 그때는 mimeType·확장자로 판정한다.
+  final String? mediaType;
   final int readCount;
   final DateTime createdAt;
   final bool isDeleted;
@@ -89,6 +98,7 @@ class ChatMessage {
     this.fileName,
     this.fileSize,
     this.mimeType,
+    this.mediaType,
     this.readCount = 0,
     required this.createdAt,
     this.isDeleted = false,
@@ -111,6 +121,7 @@ class ChatMessage {
       fileName: json['fileName']?.toString(),
       fileSize: json['fileSize'] as int?,
       mimeType: json['mimeType']?.toString(),
+      mediaType: json['mediaType']?.toString(),
       readCount: json['readCount'] as int? ?? 0,
       createdAt:
           DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
@@ -143,6 +154,7 @@ class ChatMessage {
       'readCount': readCount,
       'createdAt': createdAt.toIso8601String(),
       'isDeleted': isDeleted,
+      'mediaType': mediaType,
       'reactions': reactions.map((e) => e.toJson()).toList(),
     };
   }
@@ -177,6 +189,44 @@ class ChatMessage {
   bool get isFileMessage =>
       type == MessageType.image || type == MessageType.file;
 
+  /// 첨부를 어떻게 그릴지. 첨부가 아닌 메시지(글·시스템)면 null.
+  ///
+  /// 판정 순서와 이유:
+  ///  1. 서버가 준 [mediaType] — 이미 서버가 내용까지 보고 정한 값이라 가장 믿을 만하다.
+  ///  2. [mimeType] — 새 서버가 아직 안 올라갔을 때. api-server는 수동 배포라
+  ///     앱이 먼저 나가는 일이 실제로 있다.
+  ///  3. 파일명 확장자 — mimeType이 비었거나 application/octet-stream인 옛 메시지 구제.
+  ChatMediaKind? get mediaKind {
+    if (type != MessageType.image && type != MessageType.file) return null;
+
+    switch (mediaType?.toUpperCase()) {
+      case 'VIDEO':
+        return ChatMediaKind.video;
+      case 'IMAGE':
+        return ChatMediaKind.image;
+      case 'FILE':
+        return ChatMediaKind.file;
+    }
+
+    final mime = mimeType?.toLowerCase();
+    if (mime != null) {
+      if (mime.startsWith('video/')) return ChatMediaKind.video;
+      if (mime.startsWith('image/')) return ChatMediaKind.image;
+      // 회의 녹음(webm/m4a)이 확장자 표를 타고 동영상으로 둔갑하지 않게 여기서 끊는다.
+      if (mime.startsWith('audio/')) return ChatMediaKind.file;
+    }
+
+    if (isVideoFileName(fileName)) return ChatMediaKind.video;
+
+    return type == MessageType.image ? ChatMediaKind.image : ChatMediaKind.file;
+  }
+
+  /// 동영상 첨부인지.
+  bool get isVideoMessage => mediaKind == ChatMediaKind.video;
+
+  /// 사진 첨부인지(동영상은 제외).
+  bool get isPhotoMessage => mediaKind == ChatMediaKind.image;
+
   String get displayContent {
     if (isDeleted) return '삭제된 메시지입니다.';
     switch (type) {
@@ -185,6 +235,7 @@ class ChatMessage {
       case MessageType.image:
         return '[사진]';
       case MessageType.file:
+        if (isVideoMessage) return '[동영상]';
         return '[파일] ${fileName ?? ''}';
       case MessageType.system:
         return content ?? '';
@@ -204,6 +255,7 @@ class ChatMessage {
     String? fileName,
     int? fileSize,
     String? mimeType,
+    String? mediaType,
     int? readCount,
     DateTime? createdAt,
     bool? isDeleted,
@@ -224,6 +276,7 @@ class ChatMessage {
       fileName: fileName ?? this.fileName,
       fileSize: fileSize ?? this.fileSize,
       mimeType: mimeType ?? this.mimeType,
+      mediaType: mediaType ?? this.mediaType,
       readCount: readCount ?? this.readCount,
       createdAt: createdAt ?? this.createdAt,
       isDeleted: isDeleted ?? this.isDeleted,
