@@ -159,6 +159,13 @@ class ChatVideoBubble extends StatefulWidget {
 class _ChatVideoBubbleState extends State<ChatVideoBubble> {
   Uint8List? _thumbnail;
 
+  /// 첫 프레임을 못 뽑은 것이 확정된 상태.
+  ///
+  /// **"아직 안 나온 것"·"원래 첫 프레임이 검은 영상"과 반드시 구분해야 한다.**
+  /// 페이드인으로 시작하는 영상은 첫 프레임이 정상적으로 새까맣다. 추출 실패도
+  /// 까맣게 두면 둘이 똑같아 보여서, 멀쩡한 영상을 고장으로 오해하게 된다.
+  bool _failed = false;
+
   @override
   void initState() {
     super.initState();
@@ -170,13 +177,17 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.message.fileUrl != widget.message.fileUrl) {
       _thumbnail = null;
+      _failed = false;
       _resolveThumbnail();
     }
   }
 
   void _resolveThumbnail() {
     final url = widget.message.fileUrl;
-    if (url == null || url.isEmpty) return;
+    if (url == null || url.isEmpty) {
+      _failed = true;
+      return;
+    }
 
     // 이미 뽑아 둔 것이 있으면 프레임 한 번 깜빡이지 않게 그대로 쓴다.
     final cached = VideoThumbnailCache.peek(url);
@@ -184,13 +195,24 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
       _thumbnail = cached;
       return;
     }
-    if (VideoThumbnailCache.isKnownFailure(url)) return;
+    if (VideoThumbnailCache.isKnownFailure(url)) {
+      _failed = true;
+      return;
+    }
+    // 아주 큰 영상은 미리보기 한 장에 수십 MB가 나갈 수 있어 자동으로 뽑지 않는다.
+    // 고장이 아니므로 '미리보기 없음'이 아니라 그냥 재생 타일로 둔다.
+    if (VideoThumbnailCache.isTooLargeToAutoExtract(widget.message.fileSize)) {
+      return;
+    }
 
     // 목록을 막지 않도록 비동기로 맡긴다. 화면에 실제로 그려진 말풍선만
     // 여기 오므로(ListView.builder), 스크롤로 지나친 영상은 뽑지 않는다.
     VideoThumbnailCache.load(url).then((bytes) {
-      if (!mounted || bytes == null) return;
-      setState(() => _thumbnail = bytes);
+      if (!mounted) return;
+      setState(() {
+        _thumbnail = bytes;
+        _failed = bytes == null;
+      });
     });
   }
 
@@ -199,6 +221,7 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
     final message = widget.message;
     final width = widget.maxWidth;
     final thumbnail = _thumbnail;
+    final failed = _failed;
 
     return Semantics(
       button: true,
@@ -213,8 +236,14 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // 썸네일을 못 뽑았거나 아직 오지 않았으면 검은 자리로 둔다.
-                Container(color: AppColors.black),
+                // 바탕색이 곧 상태 표시다.
+                //  - 검정: 첫 프레임을 그렸거나 아직 기다리는 중(정상)
+                //  - 짙은 회색: 미리보기를 못 만들었다(아래 안내와 함께)
+                Container(
+                  color: failed
+                      ? const Color(0xFF3A3A3C)
+                      : AppColors.black,
+                ),
                 if (thumbnail != null)
                   Image.memory(
                     thumbnail,
@@ -237,6 +266,35 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                         ],
                         stops: const [0.0, 0.55, 1.0],
                       ),
+                    ),
+                  ),
+                // 미리보기를 못 만들었을 때만 사유를 적는다. 재생은 그대로 되므로
+                // 재생 표시는 아래에서 변함없이 그린다.
+                if (failed)
+                  Positioned(
+                    left: 8,
+                    right: 8,
+                    top: 8,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.image_not_supported_outlined,
+                          size: 13,
+                          color: AppColors.white70,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '미리보기 없음',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.white70,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 Center(

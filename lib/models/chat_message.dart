@@ -84,6 +84,7 @@ class ChatMessage {
   final MessageSendingStatus sendingStatus;
   final String? localId; // 로컬에서 생성한 임시 ID
   final List<ReactionSummary> reactions; // 이모지 리액션
+  final DateTime? editedAt; // 수정된 시각. null이면 수정된 적 없음
 
   ChatMessage({
     required this.id,
@@ -105,6 +106,7 @@ class ChatMessage {
     this.sendingStatus = MessageSendingStatus.sent,
     this.localId,
     this.reactions = const [],
+    this.editedAt,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -134,6 +136,7 @@ class ChatMessage {
               ?.map((e) => ReactionSummary.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      editedAt: DateTime.tryParse(json['editedAt']?.toString() ?? ''),
     );
   }
 
@@ -156,6 +159,7 @@ class ChatMessage {
       'isDeleted': isDeleted,
       'mediaType': mediaType,
       'reactions': reactions.map((e) => e.toJson()).toList(),
+      'editedAt': editedAt?.toIso8601String(),
     };
   }
 

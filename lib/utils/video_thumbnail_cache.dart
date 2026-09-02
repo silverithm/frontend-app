@@ -35,9 +35,28 @@ class VideoThumbnailCache {
   /// 뽑아낼 최대 가로 픽셀. 말풍선 폭이 300dp를 넘지 않으므로 이 정도면 충분하다.
   static const int _maxWidth = 640;
 
-  /// 첫 프레임(0ms) 대신 살짝 뒤를 노린다 — 페이드인으로 시작하는 영상이 흔해
-  /// 0ms를 뽑으면 새까만 그림이 나온다. 실패하면 아래에서 0ms로 다시 시도한다.
-  static const int _preferredTimeMs = 500;
+  /// 자동으로 첫 프레임을 뽑을 파일 크기 상한.
+  ///
+  /// 실측: 26MB 영상 하나의 첫 프레임을 뽑는 데 **2.7~8.7MB**가 실제로 오갔다
+  /// (moov가 앞이면 10%대, 아이폰 원본처럼 뒤에 있으면 16~34%). 첫 몇 KB만 받는 게
+  /// 결코 아니다. 100MB 영상이라면 한 장에 수십 MB가 나갈 수 있어서, 현장에서
+  /// 데이터 요금을 쓰는 분들에게는 그대로 두면 안 된다.
+  /// 상한을 넘는 영상은 미리보기를 만들지 않고 재생 타일로만 둔다(고장이 아니다).
+  static const int maxAutoExtractBytes = 40 * 1024 * 1024;
+
+  /// 뽑을 시점. **0ms 그대로 둔다.**
+  ///
+  /// 처음엔 페이드인 영상을 피하려고 500ms를 노렸는데, 실측해 보니 아무 소용이 없었다.
+  /// video_thumbnail의 iOS 구현은 AVAssetImageGenerator의 허용오차를 그대로 두는데
+  /// (기본값이 무한대라) 어떤 시점을 요구하든 가장 가까운 키프레임 — 짧은 영상이면
+  /// 사실상 0번 프레임 — 을 돌려준다. 페이드인 영상으로 확인한 값:
+  ///   ffmpeg 실제 밝기  0.0s→0, 0.5s→20, 1.5s→63
+  ///   허용오차 기본값   0.5s→0,  1.5s→0    (전부 0번 프레임)
+  ///   허용오차 0        0.5s→24, 1.5s→70   (요구한 시점이 실제로 나옴)
+  /// 허용오차를 0으로 두려면 패키지를 포크해야 하는데, 그러면 정확한 프레임을 찾느라
+  /// 디코딩과 데이터가 더 든다. 첫 프레임이 검은 영상은 **재생 표시를 항상 그리는 것**으로
+  /// 대응하는 편이 싸고 확실하다.
+  static const int _extractTimeMs = 0;
 
   /// null 값은 "해봤는데 안 되더라"는 뜻이다(다시 시도하지 않는다).
   static final LinkedHashMap<String, Uint8List?> _memory =
@@ -67,6 +86,10 @@ class VideoThumbnailCache {
       _memory.containsKey(url) && _memory[url] == null;
 
   static bool isCached(String url) => _memory.containsKey(url);
+
+  /// 파일이 너무 커서 자동 추출을 건너뛰는지. (실패가 아니라 '안 하는 것'이다)
+  static bool isTooLargeToAutoExtract(int? fileSize) =>
+      fileSize != null && fileSize > maxAutoExtractBytes;
 
   /// 썸네일을 얻는다. 실패하면 null — **호출부는 null이어도 반드시 재생 표시를 그려야 한다.**
   static Future<Uint8List?> load(String url) {
@@ -100,10 +123,7 @@ class VideoThumbnailCache {
 
     await _acquireSlot();
     try {
-      Uint8List? bytes = await _extract(url, _preferredTimeMs);
-      // 짧은 영상이라 500ms가 끝을 넘었을 수 있다. 그때는 맨 앞을 노린다.
-      bytes ??= await _extract(url, 0);
-
+      final bytes = await _extract(url, _extractTimeMs);
       _remember(url, bytes);
 
       if (bytes != null && file != null) {

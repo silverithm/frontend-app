@@ -59,23 +59,31 @@ void main() {
     };
 
     expect(await VideoThumbnailCache.load('https://x/c.mp4'), isNull);
-    // 500ms 실패 → 0ms 재시도까지 두 번이 정상
-    expect(calls, 2);
+    expect(calls, 1);
 
     expect(await VideoThumbnailCache.load('https://x/c.mp4'), isNull);
-    expect(calls, 2, reason: '스크롤할 때마다 다시 시도하면 안 된다');
+    expect(calls, 1, reason: '스크롤할 때마다 다시 시도하면 안 된다');
     expect(VideoThumbnailCache.isKnownFailure('https://x/c.mp4'), isTrue);
   });
 
-  test('첫 프레임이 안 나오면 맨 앞(0ms)으로 다시 시도한다', () async {
+  test('맨 앞(0ms) 프레임을 뽑는다 — 시점을 옮겨도 키프레임으로 당겨지므로 의미가 없다', () async {
     final tried = <int>[];
     VideoThumbnailCache.extractorOverride = (url, timeMs) async {
       tried.add(timeMs);
-      return timeMs == 0 ? frame : null;
+      return frame;
     };
 
     expect(await VideoThumbnailCache.load('https://x/d.mp4'), frame);
-    expect(tried, [500, 0], reason: '페이드인 영상을 피해 500ms를 먼저 노린다');
+    expect(tried, [0]);
+  });
+
+  test('너무 큰 영상은 자동 추출 대상이 아니다 — 실패와는 다르다', () {
+    expect(VideoThumbnailCache.isTooLargeToAutoExtract(null), isFalse,
+        reason: '크기를 모르면 막지 않는다');
+    expect(VideoThumbnailCache.isTooLargeToAutoExtract(5 * 1024 * 1024), isFalse);
+    expect(VideoThumbnailCache.isTooLargeToAutoExtract(100 * 1024 * 1024), isTrue,
+        reason: '실측상 100MB 영상은 미리보기 한 장에 수십 MB가 나갈 수 있다');
+    expect(VideoThumbnailCache.isKnownFailure('https://x/big.mp4'), isFalse);
   });
 
   test('동시에 도는 디코딩 수가 상한을 넘지 않는다', () async {
