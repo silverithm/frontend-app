@@ -266,6 +266,7 @@ class ChatMessage {
     MessageSendingStatus? sendingStatus,
     String? localId,
     List<ReactionSummary>? reactions,
+    DateTime? editedAt,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -287,6 +288,7 @@ class ChatMessage {
       sendingStatus: sendingStatus ?? this.sendingStatus,
       localId: localId ?? this.localId,
       reactions: reactions ?? this.reactions,
+      editedAt: editedAt ?? this.editedAt,
     );
   }
 }

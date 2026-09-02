@@ -413,6 +413,23 @@ class ChatProvider with ChangeNotifier {
         return;
       }
 
+      // 누가 메시지를 수정했을 때 — 그 자리를 수정된 내용으로 갈아끼운다.
+      if (messageType == 'EDIT' && data['message'] != null) {
+        final edited = ChatMessage.fromJson(
+          data['message'] as Map<String, dynamic>,
+        );
+        final editedRoomId =
+            (data['roomId'] as num?)?.toInt() ?? edited.chatRoomId;
+        if (_selectedRoom != null && editedRoomId == _selectedRoom!.id) {
+          final index = _messages.indexWhere((m) => m.id == edited.id);
+          if (index != -1) {
+            _messages[index] = edited;
+            notifyListeners();
+          }
+        }
+        return;
+      }
+
       ChatMessage? message;
       int? roomId;
 
@@ -1309,6 +1326,38 @@ class ChatProvider with ChangeNotifier {
     } catch (e) {
       print('[ChatProvider] 메시지 삭제 에러: $e');
       setError('메시지 삭제에 실패했습니다: ${e.toString()}');
+      return false;
+    }
+  }
+
+  Future<bool> editMessage(int roomId, int messageId, String content) async {
+    try {
+      final response = await ApiService().editChatMessage(
+        roomId: roomId,
+        messageId: messageId,
+        content: content,
+      );
+
+      print('[ChatProvider] 메시지 수정 응답: $response');
+
+      final messageIndex = _messages.indexWhere((m) => m.id == messageId);
+      if (messageIndex != -1) {
+        final messageData = response['message'];
+        if (messageData is Map<String, dynamic>) {
+          _messages[messageIndex] = ChatMessage.fromJson(messageData);
+        } else {
+          _messages[messageIndex] = _messages[messageIndex].copyWith(
+            content: content,
+            editedAt: DateTime.now(),
+          );
+        }
+        notifyListeners();
+      }
+
+      return true;
+    } catch (e) {
+      print('[ChatProvider] 메시지 수정 에러: $e');
+      setError('메시지 수정에 실패했습니다: ${e.toString()}');
       return false;
     }
   }

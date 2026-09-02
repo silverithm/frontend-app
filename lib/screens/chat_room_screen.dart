@@ -64,6 +64,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   String? _mentionQuery;
   List<ChatParticipant> _mentionCandidates = [];
 
+  // 메시지 수정 중이면 그 메시지, 아니면 null(일반 전송 모드)
+  ChatMessage? _editingMessage;
+
   // dispose 안전을 위해 provider 캐시
   late final ChatProvider _chatProvider;
   late final AuthProvider _authProvider;
@@ -297,8 +300,60 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
+  /// 롱프레스 메뉴에서 '수정'을 고르면 입력창을 그 메시지의 수정 모드로 바꾼다.
+  void _startEditing(ChatMessage message) {
+    final chatProvider = context.read<ChatProvider>();
+    setState(() {
+      _editingMessage = message;
+    });
+
+    final text = message.content ?? '';
+    // 프로그램적으로 텍스트를 채우면 _onTextChanged가 함께 발동한다
+    // (@멘션 삽입 코드와 동일한 방식으로 처리).
+    _messageController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _focusNode.requestFocus();
+
+    // 수정 중엔 타이핑 상태를 굳이 올리지 않는다.
+    if (_isTyping) {
+      _isTyping = false;
+      final authProvider = context.read<AuthProvider>();
+      chatProvider.sendTypingStatus(
+        widget.room.id,
+        false,
+        userId: authProvider.currentUser?.chatUserId ?? '',
+        userName: authProvider.currentUser?.name ?? '',
+      );
+    }
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _editingMessage = null;
+    });
+    _messageController.clear();
+  }
+
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
+
+    if (_editingMessage != null) {
+      final editing = _editingMessage!;
+      final original = (editing.content ?? '').trim();
+      if (content.isEmpty || content == original) {
+        _cancelEditing();
+        return;
+      }
+
+      final chatProvider = context.read<ChatProvider>();
+      await chatProvider.editMessage(widget.room.id, editing.id, content);
+      _messageController.clear();
+      _cancelEditing();
+      return;
+    }
+
     if (content.isEmpty) return;
 
     final chatProvider = context.read<ChatProvider>();
@@ -2124,6 +2179,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   _showAddScheduleFromMessage(message);
                 },
               ),
+            if (isMyMessage &&
+                !message.isDeleted &&
+                message.type == MessageType.text)
+              SeedListCell(
+                leadingIcon: Icons.edit,
+                title: '수정',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  _startEditing(message);
+                },
+              ),
             if (isMyMessage && !message.isDeleted)
               SeedListCell(
                 leadingIcon: Icons.delete,
@@ -3248,6 +3315,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
 
       case MessageType.text:
+        if (message.editedAt != null) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTextWithMentions(message.content ?? '', textColor),
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  '수정됨',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: textColor.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        return _buildTextWithMentions(message.content ?? '', textColor);
       case MessageType.system:
         return _buildTextWithMentions(message.content ?? '', textColor);
     }
@@ -3325,7 +3411,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           top: BorderSide(color: AppSemanticColors.borderSubtle, width: 1),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_editingMessage != null) _buildEditingBanner(),
+          Row(
         children: [
           // 첨부 버튼 (사진/파일)
           IconButton(
@@ -3385,7 +3476,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 height: AppSpacing.space10,
                 child: Center(
                   child: Icon(
-                    Icons.send_rounded,
+                    _editingMessage != null
+                        ? Icons.check_rounded
+                        : Icons.send_rounded,
                     color: AppSemanticColors.textInverse,
                     size: AppSpacing.space5,
                   ),
@@ -3393,6 +3486,68 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
               ),
             ),
+          ),
+        ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 입력창 위에 뜨는 '메시지 수정 중' 배너.
+  Widget _buildEditingBanner() {
+    final editing = _editingMessage!;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space2,
+      ),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.backgroundSecondary,
+        borderRadius: BorderRadius.circular(AppBorderRadius.base),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.edit,
+            size: AppSpacing.space4,
+            color: AppSemanticColors.interactivePrimaryDefault,
+          ),
+          const SizedBox(width: AppSpacing.space2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '메시지 수정 중',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.interactivePrimaryDefault,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  editing.content ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: '수정 취소',
+            onPressed: _cancelEditing,
+            icon: Icon(
+              Icons.close,
+              size: AppSpacing.space5,
+              color: AppSemanticColors.textTertiary,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
           ),
         ],
       ),

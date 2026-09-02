@@ -3021,6 +3021,29 @@ class ApiService {
     });
   }
 
+  // 메시지 수정
+  Future<Map<String, dynamic>> editChatMessage({
+    required int roomId,
+    required int messageId,
+    required String content,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/messages/$messageId',
+      );
+
+      final body = {'content': content};
+
+      print('[API] 메시지 수정: $uri');
+      print('[API] 요청 데이터: $body');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(uri, headers: headers, body: json.encode(body));
+    });
+  }
+
   // 읽음 처리
   Future<Map<String, dynamic>> markChatAsRead({
     required int roomId,
