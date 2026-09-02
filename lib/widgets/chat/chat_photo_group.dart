@@ -221,9 +221,24 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                     fit: BoxFit.cover,
                     gaplessPlayback: true,
                   ),
-                // 첫 프레임이 밝은 영상에서도 재생 표시가 묻히지 않도록 살짝 어둡게.
+                // 첫 프레임이 밝으면(하늘·눈밭·실내조명) 흰 재생 표시와 파일명이 묻힌다.
+                // 전체를 균일하게 덮으면 애써 뽑은 그림이 탁해지므로, 글자가 놓이는
+                // 아래쪽만 진하게 깔고 위는 거의 건드리지 않는다.
                 if (thumbnail != null)
-                  Container(color: AppColors.black.withValues(alpha: 0.18)),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.black.withValues(alpha: 0.10),
+                          AppColors.black.withValues(alpha: 0.06),
+                          AppColors.black.withValues(alpha: 0.62),
+                        ],
+                        stops: const [0.0, 0.55, 1.0],
+                      ),
+                    ),
+                  ),
                 Center(
                   child: Container(
                     width: 52,
@@ -248,7 +263,7 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                       Icon(
                         Icons.videocam_outlined,
                         size: 14,
-                        color: AppColors.white70,
+                        color: AppColors.white,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -258,7 +273,7 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.white70,
+                            color: AppColors.white,
                           ),
                         ),
                       ),
