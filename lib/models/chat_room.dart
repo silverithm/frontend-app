@@ -19,6 +19,10 @@ class ChatRoom {
   final ChatRoomStatus status;
   final List<ChatParticipant> participants;
 
+  /// 목록에서 방 아이콘 자리에 겹쳐 그릴 참여자(최대 4명, 나는 빠져 있다).
+  /// 서버가 목록 응답에만 채워 준다 — 참가자 전체를 받지 않아도 얼굴을 보여주려는 것이다.
+  final List<ChatRoomAvatar> avatars;
+
   // 공지 — 기존 메시지 하나를 방 상단에 고정한다 (카카오톡과 같은 방식)
   final int? noticeMessageId;
   final String? noticeContent;
@@ -43,6 +47,7 @@ class ChatRoom {
     this.lastMessageAt,
     this.status = ChatRoomStatus.active,
     this.participants = const [],
+    this.avatars = const [],
     this.noticeMessageId,
     this.noticeContent,
     this.noticeByName,
@@ -78,6 +83,11 @@ class ChatRoom {
               .map((p) => ChatParticipant.fromJson(p as Map<String, dynamic>))
               .toList()
           : [],
+      avatars: json['avatars'] != null
+          ? (json['avatars'] as List<dynamic>)
+              .map((a) => ChatRoomAvatar.fromJson(a as Map<String, dynamic>))
+              .toList()
+          : const [],
       noticeMessageId: (json['noticeMessageId'] as num?)?.toInt(),
       noticeContent: json['noticeContent']?.toString(),
       noticeByName: json['noticeByName']?.toString(),
@@ -141,6 +151,7 @@ class ChatRoom {
     DateTime? lastMessageAt,
     ChatRoomStatus? status,
     List<ChatParticipant>? participants,
+    List<ChatRoomAvatar>? avatars,
     int? noticeMessageId,
     String? noticeContent,
     String? noticeByName,
@@ -165,6 +176,7 @@ class ChatRoom {
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       status: status ?? this.status,
       participants: participants ?? this.participants,
+      avatars: avatars ?? this.avatars,
       noticeMessageId: clearNotice
           ? null
           : (noticeMessageId ?? this.noticeMessageId),
@@ -173,6 +185,28 @@ class ChatRoom {
       noticeAt: clearNotice ? null : (noticeAt ?? this.noticeAt),
       noticeFileName: clearNotice ? null : (noticeFileName ?? this.noticeFileName),
       noticeFileUrl: clearNotice ? null : (noticeFileUrl ?? this.noticeFileUrl),
+    );
+  }
+}
+
+/// 목록에서 방 아이콘 자리에 겹쳐 그릴 참여자 한 명.
+/// 사진이 없으면 이름 첫 글자로 그린다.
+class ChatRoomAvatar {
+  final String userId;
+  final String userName;
+  final String? profileImageUrl;
+
+  const ChatRoomAvatar({
+    required this.userId,
+    required this.userName,
+    this.profileImageUrl,
+  });
+
+  factory ChatRoomAvatar.fromJson(Map<String, dynamic> json) {
+    return ChatRoomAvatar(
+      userId: json['userId']?.toString() ?? '',
+      userName: json['userName']?.toString() ?? '',
+      profileImageUrl: json['profileImageUrl']?.toString(),
     );
   }
 }

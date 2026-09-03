@@ -283,6 +283,9 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                             return SeedListCell(
                               leading: SeedAvatar(
                                 name: memberName,
+                                // 사진을 안 넘기면 등록돼 있어도 이름 첫 글자만 나온다
+                                imageUrl:
+                                    member['profileImageUrl']?.toString(),
                                 size: SeedAvatarSize.medium,
                               ),
                               title: memberName + (isCurrentUser ? ' (나)' : ''),

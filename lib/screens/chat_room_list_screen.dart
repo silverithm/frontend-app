@@ -11,6 +11,7 @@ import '../widgets/common/app_action_sheet.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
+import '../widgets/chat/chat_room_avatar_stack.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/chat/chat_member_list.dart';
 import 'chat_room_screen.dart';
@@ -357,10 +358,11 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
         child: Row(
           children: [
             // 채팅방 아바타/썸네일
-            SeedAvatar(
-              name: room.name,
-              imageUrl: room.thumbnailUrl,
-              size: SeedAvatarSize.large,
+            // 참여자 얼굴을 모아 보여준다 (카카오톡과 같은 방식).
+            // 참여자를 못 받은 방은 위젯이 알아서 방 이름 첫 글자로 그린다.
+            ChatRoomAvatarStack(
+              roomName: room.name,
+              avatars: room.avatars,
             ),
             const SizedBox(width: AppSpacing.space3),
 

@@ -53,7 +53,7 @@ class SeedAvatar extends StatelessWidget {
 
   /// 상대경로로 내려올 수 있는 이미지 URL을 절대 URL로 변환한다.
   /// (chat fileUrl/thumbnailUrl과 달리 profileImageUrl은 상대경로 가능성이 있어 방어적으로 처리)
-  static String _resolveImageUrl(String raw) {
+  static String resolveImageUrl(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return trimmed;
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
@@ -79,7 +79,7 @@ class SeedAvatar extends StatelessWidget {
       alignment: Alignment.center,
       child: hasImage
           ? Image.network(
-              _resolveImageUrl(imageUrl!),
+              resolveImageUrl(imageUrl!),
               width: diameter,
               height: diameter,
               fit: BoxFit.cover,
