@@ -66,6 +66,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   // 메시지 수정 중이면 그 메시지, 아니면 null(일반 전송 모드)
   ChatMessage? _editingMessage;
+  /// 답장 대상. 수정과 마찬가지로 입력창 위에 원문 미리보기를 띄운다.
+  ChatMessage? _replyingTo;
 
   // dispose 안전을 위해 provider 캐시
   late final ChatProvider _chatProvider;
@@ -88,8 +90,112 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _messageController.addListener(_onTextChanged);
   }
 
+  // --- 스크롤 중 날짜 배지 ---------------------------------------------------
+  //
+  // 위로 한참 올렸을 때 "지금 보는 게 며칠 대화인지" 알려주는 떠 있는 알약.
+  // 날짜 문구는 구분선과 **같은** `formatDateSeparatorLabel`을 쓴다 —
+  // 규칙이 두 벌이 되면 언젠가 서로 어긋난다. [[chat_message_grouping]]
+
+  /// 지금 띄우고 있는 문구 (null이면 안 보인다)
+  String? _scrollDateLabel;
+
+  /// 멈추면 사라지게 하는 타이머
+  Timer? _dateBadgeHideTimer;
+
+  /// 메시지 자리마다 붙이는 키 — 화면 맨 위 항목이 무엇인지 재는 데 쓴다.
+  /// ListView는 화면 밖 항목을 만들지 않으므로, 웹처럼 '지나간 구분선'을
+  /// 읽는 방법이 통하지 않는다. 그래서 보이는 항목을 직접 잰다.
+  final Map<String, GlobalKey> _messageProbeKeys = {};
+
+  /// 목록 영역 — 화면 위 경계를 재는 기준
+  final GlobalKey _messageListAreaKey = GlobalKey();
+
+  GlobalKey _probeKeyFor(String id) =>
+      _messageProbeKeys.putIfAbsent(id, () => GlobalKey());
+
+  static String _probeIdOf(ChatMessage message) =>
+      message.localId ?? 'id:${message.id}';
+
+  /// 화면 맨 위에 걸친 메시지를 찾아 그 날짜를 배지로 띄운다.
+  void _updateScrollDateBadge() {
+    final areaBox =
+        _messageListAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    if (areaBox == null || !areaBox.hasSize) return;
+    final areaTop = areaBox.localToGlobal(Offset.zero).dy;
+
+    ChatMessage? topmost;
+    double? bestTop;
+    for (final message in _chatProvider.messages) {
+      final box = _messageProbeKeys[_probeIdOf(message)]
+          ?.currentContext
+          ?.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) continue;
+      final top = box.localToGlobal(Offset.zero).dy;
+      // 화면 위로 완전히 지나간 항목은 지금 보이는 것이 아니다
+      if (top + box.size.height <= areaTop) continue;
+      if (bestTop == null || top < bestTop) {
+        bestTop = top;
+        topmost = message;
+      }
+    }
+    if (topmost == null) return;
+
+    final label = formatDateSeparatorLabel(topmost.createdAt);
+    if (_scrollDateLabel != label) {
+      setState(() => _scrollDateLabel = label);
+    }
+    _dateBadgeHideTimer?.cancel();
+    _dateBadgeHideTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _scrollDateLabel = null);
+    });
+  }
+
+  /// 목록 위에 배지를 얹는다. 목록 자체는 그대로 두고 덧씌우기만 한다.
+  Widget _withScrollDateBadge(Widget list) {
+    return Stack(
+      key: _messageListAreaKey,
+      children: [
+        list,
+        Positioned(
+          top: AppSpacing.space2,
+          left: 0,
+          right: 0,
+          // 대화를 가리기만 할 뿐 눌리면 안 된다
+          child: IgnorePointer(
+            child: Center(
+              child: AnimatedOpacity(
+                opacity: _scrollDateLabel == null ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 150),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space3,
+                    vertical: AppSpacing.space1,
+                  ),
+                  decoration: BoxDecoration(
+                    // 구분선과 같은 톤이되, 대화 위에 뜨므로 불투명하게 덮는다
+                    color: AppSemanticColors.backgroundTertiary,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                    border: Border.all(color: AppSemanticColors.borderSubtle),
+                  ),
+                  child: Text(
+                    _scrollDateLabel ?? '',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   void dispose() {
+    _dateBadgeHideTimer?.cancel();
     // 타이핑 중이면 타이핑 중지 알림 전송
     if (_isTyping) {
       _chatProvider.sendTypingStatus(
@@ -128,6 +234,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final chatProvider = context.read<ChatProvider>();
+
+    // 지금 화면 맨 위가 며칠 대화인지 알려주는 떠 있는 배지
+    _updateScrollDateBadge();
 
     // 목록이 reverse:true라 maxScrollExtent 쪽이 가장 오래된 끝이다.
     // 판단 자체는 순수 함수로 빼서 단위 테스트로 고정해 뒀다
@@ -336,6 +445,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _messageController.clear();
   }
 
+  /// 롱프레스 메뉴에서 '답장'을 고르면 입력창 위에 원문 미리보기를 띄운다.
+  /// 수정 중이었다면 그쪽을 접는다 — 둘을 동시에 할 수는 없다.
+  void _startReplying(ChatMessage message) {
+    setState(() {
+      _editingMessage = null;
+      _replyingTo = message;
+    });
+    _focusNode.requestFocus();
+  }
+
+  void _cancelReplying() {
+    setState(() {
+      _replyingTo = null;
+    });
+  }
+
+  /// 답장 미리보기에 보여줄 한 줄 — 사진·동영상·파일은 글자가 없으므로 종류로 대신한다.
+  /// 모델이 이미 같은 판단을 하고 있으므로(displayContent) 그것을 그대로 쓴다.
+  String _replyPreviewText(ChatMessage message) => message.displayContent;
+
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
 
@@ -373,11 +502,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
     }
 
+    final replyTarget = _replyingTo;
+    if (replyTarget != null) _cancelReplying();
+
     await chatProvider.sendTextMessage(
       widget.room.id,
       content,
       senderId: userId,
       senderName: userName,
+      replyTo: replyTarget,
     );
 
     // 스크롤을 맨 아래로
@@ -1694,15 +1827,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _showNoticeDetail(ChatRoom room) {
+    // 공지가 길면 화면을 넘긴다. 스크롤이 없으면 넘친 부분을 볼 방법이 아예 없어서
+    // "긴 글은 다 볼 수가 없다"는 신고가 들어왔다. 시트 높이를 화면의 80%로 제한하고
+    // 내용은 스크롤되게 한다 — 짧은 공지는 mainAxisSize.min 덕에 지금처럼 딱 맞게 뜬다.
     AppBottomSheet.show(
       context,
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space5),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.space5),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               Row(
                 children: [
                   Icon(
@@ -1761,7 +1902,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   ),
                 ),
               ],
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -2138,6 +2281,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 ),
               ),
             const Divider(height: 1),
+            if (message.type != MessageType.system && !message.isDeleted)
+              SeedListCell(
+                leadingIcon: Icons.reply,
+                title: '답장',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  _startReplying(message);
+                },
+              ),
             SeedListCell(
               leadingIcon: Icons.copy,
               title: '복사',
@@ -2511,6 +2664,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       return SeedListCell(
                         leading: SeedAvatar(
                           name: reader.userName,
+                          imageUrl: reader.profileImageUrl,
                           size: SeedAvatarSize.small,
                         ),
                         title: reader.userName,
@@ -2727,7 +2881,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     // 계속 최신(아래)에 붙어 시작한다.
                     if (!chatProvider.hasMoreMessages &&
                         messages.length <= _topAlignMaxMessages) {
-                      return LayoutBuilder(
+                      return _withScrollDateBadge(
+                        LayoutBuilder(
                         builder: (context, constraints) {
                           const padding = EdgeInsets.all(AppSpacing.space4);
                           final minHeight = math.max(
@@ -2761,20 +2916,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             ),
                           );
                         },
+                      ),
                       );
                     }
 
-                    return ListView.builder(
-                      controller: _scrollController,
-                      reverse: true,
-                      padding: const EdgeInsets.all(AppSpacing.space4),
-                      itemCount: itemCount,
-                      itemBuilder: (context, index) => _buildMessageListItem(
-                        chatProvider,
-                        index,
-                        currentUserId: currentUserId,
-                        isAdmin: isAdmin,
-                        photoGroups: photoGroups,
+                    return _withScrollDateBadge(
+                      ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        padding: const EdgeInsets.all(AppSpacing.space4),
+                        itemCount: itemCount,
+                        itemBuilder: (context, index) => _buildMessageListItem(
+                          chatProvider,
+                          index,
+                          currentUserId: currentUserId,
+                          isAdmin: isAdmin,
+                          photoGroups: photoGroups,
+                        ),
                       ),
                     );
                   },
@@ -2839,7 +2997,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final message = messages[index];
     // localId → id 순으로 안정된 키를 준다. 전송 중(sending) 메시지가
     // 서버 확정 메시지로 교체돼도 같은 자리로 인식되게 한다.
-    final itemKey = ValueKey(message.localId ?? message.id);
+    // GlobalKey인 것은 스크롤 중 '화면 맨 위가 어느 메시지인지' 재기 위해서다
+    // (같은 id면 늘 같은 키라 자리 인식은 지금까지와 똑같다). [[_updateScrollDateBadge]]
+    final itemKey = _probeKeyFor(_probeIdOf(message));
 
     // 날짜가 바뀌는 지점(또는 가장 오래된 메시지 위)에 구분선을 끼워넣는다.
     final showDateSeparator = shouldShowDateSeparatorAbove(messages, index);
@@ -3207,7 +3367,71 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  /// 답장이면 원문 미리보기를 본문 위에 붙인다. 삭제된 메시지에는 붙이지 않는다
+  /// (본문 자리에 "삭제된 메시지입니다"만 남아야 한다).
   Widget _buildMessageContent(
+    ChatMessage message,
+    Color textColor,
+    bool isMyMessage,
+  ) {
+    final body = _buildMessageBody(message, textColor, isMyMessage);
+    if (message.replyToId == null || message.isDeleted) return body;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildReplyQuote(message, textColor),
+        const SizedBox(height: AppSpacing.space1),
+        body,
+      ],
+    );
+  }
+
+  /// 답장 원문 한 줄 — 왼쪽 세로선 + 보낸 사람 + 내용.
+  /// 원문이 지워졌으면 서버가 "삭제된 메시지입니다"를 내려준다.
+  Widget _buildReplyQuote(ChatMessage message, Color textColor) {
+    final quoted = message.replyToContent ?? '';
+    final preview = quoted.isNotEmpty
+        ? quoted
+        : switch ((message.replyToMediaType ?? message.replyToType ?? '').toUpperCase()) {
+            'IMAGE' => '사진',
+            'VIDEO' => '동영상',
+            _ => '파일',
+          };
+
+    return Container(
+      padding: const EdgeInsets.only(left: AppSpacing.space2),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: textColor.withValues(alpha: 0.35), width: 2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            message.replyToSenderName ?? '',
+            style: AppTypography.labelSmall.copyWith(
+              color: textColor.withValues(alpha: 0.75),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            preview,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.bodySmall.copyWith(
+              color: textColor.withValues(alpha: 0.65),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBody(
     ChatMessage message,
     Color textColor,
     bool isMyMessage,
@@ -3416,6 +3640,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_editingMessage != null) _buildEditingBanner(),
+          if (_replyingTo != null) _buildReplyingBanner(),
           Row(
         children: [
           // 첨부 버튼 (사진/파일)
@@ -3495,6 +3720,65 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   /// 입력창 위에 뜨는 '메시지 수정 중' 배너.
+  /// 답장 대상 미리보기 — 입력창 위에 누구의 무슨 말에 답하는지 보여준다.
+  /// 수정 배너와 같은 모양이되 아이콘과 문구만 다르다.
+  Widget _buildReplyingBanner() {
+    final target = _replyingTo!;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space2,
+      ),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.backgroundSecondary,
+        borderRadius: BorderRadius.circular(AppBorderRadius.base),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.reply,
+            size: AppSpacing.space4,
+            color: AppSemanticColors.interactivePrimaryDefault,
+          ),
+          const SizedBox(width: AppSpacing.space2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${target.senderName}님에게 답장',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.interactivePrimaryDefault,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _replyPreviewText(target),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: '답장 취소',
+            onPressed: _cancelReplying,
+            icon: Icon(
+              Icons.close,
+              size: AppSpacing.space4,
+              color: AppSemanticColors.textTertiary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEditingBanner() {
     final editing = _editingMessage!;
     return Container(

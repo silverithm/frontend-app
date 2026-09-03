@@ -41,6 +41,9 @@ class ChatProvider with ChangeNotifier {
   int _currentPage = 0;
   int _totalPages = 0;
   bool _hasMoreMessages = true;
+  /// 한 번이라도 붙은 적이 있는가 — 첫 연결과 '다시 붙음'을 가른다.
+  /// 다시 붙은 것일 때만 끊긴 사이에 놓친 메시지를 채운다.
+  bool _hasConnectedBefore = false;
 
   // WebSocket
   StompClient? _stompClient;
@@ -150,7 +153,13 @@ class ChatProvider with ChangeNotifier {
     // 현재 선택된 채팅방이 있으면 구독
     if (_selectedRoom != null) {
       _subscribeToRoom(_selectedRoom!.id);
+      // 구독은 '앞으로 올 것'만 받는다. 다시 붙은 것이라면 끊겨 있던 동안 지나간
+      // 메시지를 따로 받아와야 한다 — 첫 연결은 화면이 이미 불러왔으므로 건너뛴다.
+      if (_hasConnectedBefore) {
+        backfillMissedMessages(_selectedRoom!.id);
+      }
     }
+    _hasConnectedBefore = true;
 
     // 목록 화면을 보고 있었다면 재연결 시 전체 방 구독을 복원한다
     _syncRoomListSubscriptions();
@@ -188,6 +197,8 @@ class ChatProvider with ChangeNotifier {
       _stompClient!.deactivate();
       _stompClient = null;
       _isConnected = false;
+      // 다음에 붙는 것은 '다시 붙음'이 아니라 새 연결이다 (로그아웃·계정 전환)
+      _hasConnectedBefore = false;
       _roomSubscriptions.clear();
       _roomListSubscriptions.clear();
       _typingUsers.clear();
@@ -627,6 +638,7 @@ class ChatProvider with ChangeNotifier {
     MessageType type = MessageType.text,
     required String senderId,
     required String senderName,
+    int? replyToId,
   }) {
     if (_stompClient == null || !_stompClient!.connected) {
       print('[ChatProvider] WebSocket 미연결 - 메시지 전송 불가');
@@ -639,6 +651,8 @@ class ChatProvider with ChangeNotifier {
       'type': type.name.toUpperCase(),
       'senderId': senderId,
       'senderName': senderName,
+      // 답장이면 원본 id를 함께 보낸다. 서버가 원본을 펼쳐 되돌려준다(웹과 같은 계약).
+      if (replyToId != null) 'replyToId': replyToId,
     };
 
     _stompClient!.send(
@@ -1094,11 +1108,56 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
+  /// 소켓이 끊겼다 다시 붙었을 때, 끊겨 있던 사이에 지나간 메시지를 채워 넣는다.
+  ///
+  /// 재구독만으로는 부족하다 — 구독은 '앞으로 올 것'만 받기 때문이다.
+  /// 목록을 통째로 갈아끼우면(loadMessages refresh) 위로 올려 불러온 옛 대화와
+  /// 스크롤 위치가 날아가므로, 모르는 것만 최신 쪽(앞)에 끼워 넣는다.
+  ///
+  /// _messages는 최신이 앞(index 0)인 순서이고, 서버도 최신순으로 준다.
+  Future<void> backfillMissedMessages(int roomId) async {
+    try {
+      final response = await ApiService().getChatMessages(roomId: roomId, page: 0);
+      final content =
+          (response['messages'] ?? response['content']) as List<dynamic>?;
+      if (content == null || content.isEmpty) return;
+
+      final latest = content
+          .map((json) => ChatMessage.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      final knownIds = _messages.map((m) => m.id).toSet();
+      final missed = latest.where((m) => !knownIds.contains(m.id)).toList();
+      if (missed.isEmpty) return;
+
+      // 새로 받은 한 페이지가 내가 아는 것과 하나도 안 겹치면, 두 구간 사이가 비어 있다
+      // (끊긴 사이에 한 페이지를 넘게 쌓인 경우). 억지로 이으면 빠진 구간이 없는 것처럼
+      // 보이므로, 그때는 새로 받은 구간만 남기고 위로 올려 불러오는 경로에 나머지를 맡긴다.
+      final overlaps = latest.any((m) => knownIds.contains(m.id));
+      if (!overlaps) {
+        _messages = latest;
+        _currentPage = 1;
+        _hasMoreMessages = true;
+        print('[ChatProvider] 재연결 후 대화가 많이 밀려 최신 구간부터 다시 잡음');
+        notifyListeners();
+        return;
+      }
+
+      missed.sort((a, b) => b.id.compareTo(a.id)); // 최신이 앞
+      _messages.insertAll(0, missed);
+      print('[ChatProvider] 재연결 후 놓친 메시지 ${missed.length}건 보충');
+      notifyListeners();
+    } catch (e) {
+      print('[ChatProvider] 재연결 후 놓친 메시지 보충 실패: $e');
+    }
+  }
+
   Future<bool> sendTextMessage(
     int roomId,
     String content, {
     required String senderId,
     required String senderName,
+    ChatMessage? replyTo,
   }) async {
     // 로컬 임시 ID 생성
     final localId = 'local_${DateTime.now().millisecondsSinceEpoch}';
@@ -1115,6 +1174,13 @@ class ChatProvider with ChangeNotifier {
       readCount: 1, // 발신자 본인은 이미 읽음
       sendingStatus: MessageSendingStatus.sending,
       localId: localId,
+      // 보내는 순간부터 답장 미리보기가 보이도록 낙관적 버블에도 담는다.
+      // 서버 응답이 오면 그쪽 값으로 통째로 교체된다.
+      replyToId: replyTo?.id,
+      replyToSenderName: replyTo?.senderName,
+      replyToContent: replyTo?.content,
+      replyToType: replyTo?.type.name.toUpperCase(),
+      replyToMediaType: replyTo?.mediaType,
     );
 
     // 즉시 UI에 표시
@@ -1129,6 +1195,7 @@ class ChatProvider with ChangeNotifier {
           content,
           senderId: senderId,
           senderName: senderName,
+          replyToId: replyTo?.id,
         );
         // WebSocket 응답이 올 때까지 sending 상태 유지 (중복 방지를 위해)
         // _handleIncomingMessage에서 pending 메시지를 찾아서 교체함
@@ -1142,6 +1209,7 @@ class ChatProvider with ChangeNotifier {
         type: 'TEXT',
         senderId: senderId,
         senderName: senderName,
+        replyToId: replyTo?.id,
       );
 
       print('[ChatProvider] 메시지 전송 응답: $response');

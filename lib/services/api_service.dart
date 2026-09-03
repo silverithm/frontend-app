@@ -2981,6 +2981,7 @@ class ApiService {
     required String type,
     required String senderId,
     required String senderName,
+    int? replyToId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages');
@@ -2990,6 +2991,8 @@ class ApiService {
         'type': type,
         'senderId': senderId,
         'senderName': senderName,
+        // 웹소켓이 안 될 때도 답장이 끊기면 안 된다.
+        if (replyToId != null) 'replyToId': replyToId,
       };
 
       print('[API] 메시지 전송: $uri');

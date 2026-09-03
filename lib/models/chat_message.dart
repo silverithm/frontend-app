@@ -86,6 +86,16 @@ class ChatMessage {
   final List<ReactionSummary> reactions; // 이모지 리액션
   final DateTime? editedAt; // 수정된 시각. null이면 수정된 적 없음
 
+  // 답장 — 서버가 원본 메시지를 펼쳐서 함께 내려준다(웹과 같은 계약).
+  // 원본이 지워졌으면 replyToContent가 "삭제된 메시지입니다"로 온다.
+  final int? replyToId;
+  final String? replyToSenderName;
+  final String? replyToContent;
+  final String? replyToType;
+  /// 답장 미리보기에 쓸 원본의 종류 — 'IMAGE' | 'VIDEO' | 'FILE'.
+  /// 구버전 서버는 안 내려주므로 없으면 replyToType으로 대신 판단한다.
+  final String? replyToMediaType;
+
   ChatMessage({
     required this.id,
     required this.chatRoomId,
@@ -107,6 +117,11 @@ class ChatMessage {
     this.localId,
     this.reactions = const [],
     this.editedAt,
+    this.replyToId,
+    this.replyToSenderName,
+    this.replyToContent,
+    this.replyToType,
+    this.replyToMediaType,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -137,6 +152,11 @@ class ChatMessage {
               .toList() ??
           [],
       editedAt: DateTime.tryParse(json['editedAt']?.toString() ?? ''),
+      replyToId: json['replyToId'] as int?,
+      replyToSenderName: json['replyToSenderName']?.toString(),
+      replyToContent: json['replyToContent']?.toString(),
+      replyToType: json['replyToType']?.toString(),
+      replyToMediaType: json['replyToMediaType']?.toString(),
     );
   }
 
@@ -160,6 +180,11 @@ class ChatMessage {
       'mediaType': mediaType,
       'reactions': reactions.map((e) => e.toJson()).toList(),
       'editedAt': editedAt?.toIso8601String(),
+      'replyToId': replyToId,
+      'replyToSenderName': replyToSenderName,
+      'replyToContent': replyToContent,
+      'replyToType': replyToType,
+      'replyToMediaType': replyToMediaType,
     };
   }
 
@@ -267,6 +292,11 @@ class ChatMessage {
     String? localId,
     List<ReactionSummary>? reactions,
     DateTime? editedAt,
+    int? replyToId,
+    String? replyToSenderName,
+    String? replyToContent,
+    String? replyToType,
+    String? replyToMediaType,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -289,6 +319,11 @@ class ChatMessage {
       localId: localId ?? this.localId,
       reactions: reactions ?? this.reactions,
       editedAt: editedAt ?? this.editedAt,
+      replyToId: replyToId ?? this.replyToId,
+      replyToSenderName: replyToSenderName ?? this.replyToSenderName,
+      replyToContent: replyToContent ?? this.replyToContent,
+      replyToType: replyToType ?? this.replyToType,
+      replyToMediaType: replyToMediaType ?? this.replyToMediaType,
     );
   }
 }
@@ -299,6 +334,8 @@ class ChatMessageReader {
   final int messageId;
   final String userId;
   final String userName;
+  /// 프로필 사진 — 없으면 아바타가 이름 첫 글자로 그린다
+  final String? profileImageUrl;
   final DateTime readAt;
 
   ChatMessageReader({
@@ -306,6 +343,7 @@ class ChatMessageReader {
     required this.messageId,
     required this.userId,
     required this.userName,
+    this.profileImageUrl,
     required this.readAt,
   });
 
@@ -315,6 +353,7 @@ class ChatMessageReader {
       messageId: json['messageId'] as int? ?? 0,
       userId: json['userId']?.toString() ?? '',
       userName: json['userName']?.toString() ?? '',
+      profileImageUrl: json['profileImageUrl']?.toString(),
       readAt:
           DateTime.tryParse(json['readAt']?.toString() ?? '') ?? DateTime.now(),
     );
@@ -326,6 +365,7 @@ class ChatMessageReader {
       'messageId': messageId,
       'userId': userId,
       'userName': userName,
+      'profileImageUrl': profileImageUrl,
       'readAt': readAt.toIso8601String(),
     };
   }
