@@ -2235,9 +2235,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final isMyMessage = message.senderId == authProvider.currentUser?.chatUserId;
     final rootContext = context;
 
+    // 항목이 늘면 시트가 화면을 넘친다 — 실제로 '수정'과 '삭제'가 화면 밖으로 밀려
+    // 안 보였다("길게 눌러도 수정이 없다"). 높이를 화면의 85%로 묶고 안에서 스크롤한다.
+    // 짧을 때는 mainAxisSize.min 덕에 지금처럼 내용 높이에 딱 맞게 뜬다.
     AppBottomSheet.show(
       context,
+      isScrollControlled: true,
       child: SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(rootContext).size.height * 0.85,
+          ),
+          child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -2356,6 +2365,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 },
               ),
           ],
+        ),
+          ),
         ),
       ),
     );
@@ -2633,7 +2644,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         builder: (context, chatProvider, child) {
           final readers = chatProvider.messageReaders;
 
+          // 사람이 많은 방(28명 등)에서는 명단이 화면을 넘긴다 —
+          // 스크롤이 없으면 아래쪽 사람은 볼 방법이 없다(롱프레스 메뉴가 그랬다).
           return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
+              child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2679,6 +2697,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     },
                   ),
               ],
+            ),
+              ),
             ),
           );
         },
