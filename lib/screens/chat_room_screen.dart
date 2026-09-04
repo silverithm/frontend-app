@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -24,6 +26,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/message_links.dart';
 import '../utils/chat_image_url.dart';
 import '../utils/chat_media.dart' as chat_media;
 import '../utils/chat_message_grouping.dart';
@@ -2174,7 +2177,50 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       items: items,
       initialIndex: index.clamp(0, items.length - 1),
       onDownload: (item) => _downloadAndOpenFile(item.imageUrl, item.fileName),
+      onDownloadAll: _downloadAllImages,
     );
+  }
+
+  /// 사진 묶음을 한 번에 받는다.
+  ///
+  /// 서른 장을 한 장씩 눌러 받게 두면 기능이 있으나 마나다.
+  /// 한꺼번에 다 밀면 회선이 좁은 현장에서 오히려 느려지고 실패하므로 세 개씩 받는다.
+  /// 한 장이 실패해도 나머지는 계속 받고, 끝에 몇 장 받았는지 알려준다.
+  Future<void> _downloadAllImages(List<ChatImageItem> items) async {
+    if (items.isEmpty) return;
+
+    final total = items.length;
+    var done = 0;
+    var failed = 0;
+
+    AppSnackBar.showInfo(context, message: '$total장 저장 중...');
+
+    final directory = await getApplicationDocumentsDirectory();
+    final dioClient = dio.Dio();
+
+    Future<void> saveOne(ChatImageItem item) async {
+      try {
+        // 같은 이름이 겹치면 덮어써 버린다 — 번호를 붙여 구분한다
+        final safeName = item.fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+        final path = '${directory.path}/${DateTime.now().microsecondsSinceEpoch}_$safeName';
+        await dioClient.download(item.imageUrl, path);
+        done++;
+      } catch (_) {
+        failed++;
+      }
+    }
+
+    await _runWithConcurrencyLimit(items, 3, saveOne);
+
+    if (!mounted) return;
+    if (failed == 0) {
+      AppSnackBar.showSuccess(context, message: '$done장을 저장했습니다');
+    } else {
+      AppSnackBar.showError(
+        context,
+        message: '$done장 저장, $failed장 실패했습니다',
+      );
+    }
   }
 
   /// 공지에 첨부된 파일도 채팅 파일 메시지와 같은 방식으로 연다.
@@ -3583,46 +3629,64 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  /// '@이름'을 굵게 칠해 눈에 띄게 한다. 내가 불린 경우는 배경까지 넣는다.
+  /// '@이름'을 굵게 칠하고, 링크는 눌러서 열 수 있게 그린다.
+  ///
+  /// 링크가 그냥 글자였다 — 붙여 넣어도 눌리지 않았다. 언급과 링크가 한 글에
+  /// 섞여 있을 수 있으므로 두 규칙을 한 번에 적용한다.
   Widget _buildTextWithMentions(String content, Color textColor) {
     final myName = context.read<AuthProvider>().currentUser?.name ?? '';
-    final matches = RegExp(r'@[^\s@]+').allMatches(content).toList();
 
-    if (matches.isEmpty) {
-      return Text(
-        content,
-        style: AppTypography.bodyMedium.copyWith(color: textColor),
-      );
-    }
+    final spans = <InlineSpan>[];
 
-    final spans = <TextSpan>[];
-    var cursor = 0;
-
-    for (final match in matches) {
-      if (match.start > cursor) {
-        spans.add(TextSpan(text: content.substring(cursor, match.start)));
+    // 먼저 링크로 쪼개고, 링크가 아닌 조각 안에서만 언급을 찾는다.
+    for (final part in splitMessageLinks(content)) {
+      if (part.isLink) {
+        spans.add(
+          TextSpan(
+            text: part.text,
+            style: TextStyle(
+              color: textColor,
+              decoration: TextDecoration.underline,
+              decorationColor: textColor.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w600,
+            ),
+            recognizer: (TapGestureRecognizer()
+              ..onTap = () => _openLink(part.url!)),
+          ),
+        );
+        continue;
       }
 
-      final mention = match.group(0)!;
-      final isMe = myName.isNotEmpty && mention == '@$myName';
+      final text = part.text;
+      final matches = RegExp(r'@[^\s@]+').allMatches(text).toList();
+      var cursor = 0;
 
-      spans.add(
-        TextSpan(
-          text: mention,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            backgroundColor: isMe
-                ? AppSemanticColors.statusWarningBackground
-                : null,
-            color: isMe ? AppSemanticColors.statusWarningText : textColor,
+      for (final match in matches) {
+        if (match.start > cursor) {
+          spans.add(TextSpan(text: text.substring(cursor, match.start)));
+        }
+
+        final mention = match.group(0)!;
+        final isMe = myName.isNotEmpty && mention == '@$myName';
+
+        spans.add(
+          TextSpan(
+            text: mention,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              backgroundColor: isMe
+                  ? AppSemanticColors.statusWarningBackground
+                  : null,
+              color: isMe ? AppSemanticColors.statusWarningText : textColor,
+            ),
           ),
-        ),
-      );
-      cursor = match.end;
-    }
+        );
+        cursor = match.end;
+      }
 
-    if (cursor < content.length) {
-      spans.add(TextSpan(text: content.substring(cursor)));
+      if (cursor < text.length) {
+        spans.add(TextSpan(text: text.substring(cursor)));
+      }
     }
 
     return RichText(
@@ -3631,6 +3695,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         children: spans,
       ),
     );
+  }
+
+  /// 링크를 바깥 브라우저로 연다. 못 열면 조용히 끝내지 않고 이유를 보여준다.
+  Future<void> _openLink(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      AppSnackBar.showError(context, message: '링크를 열 수 없습니다: $url');
+    }
   }
 
   String _formatMessageTime(DateTime time) {

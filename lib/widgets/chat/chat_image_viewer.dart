@@ -30,11 +30,16 @@ class ChatImageViewer extends StatefulWidget {
   /// 지금 보고 있는 사진을 저장한다. 인자는 화면에 떠 있는 사진.
   final void Function(ChatImageItem item)? onDownload;
 
+  /// 이 묶음의 사진을 **한 번에** 저장한다.
+  /// 서른 장을 한 장씩 누르게 두면 쓸 수 없는 기능이나 마찬가지다.
+  final void Function(List<ChatImageItem> items)? onDownloadAll;
+
   const ChatImageViewer({
     super.key,
     required this.items,
     this.initialIndex = 0,
     this.onDownload,
+    this.onDownloadAll,
   });
 
   /// 사진 한 장을 연다(예전부터 쓰던 형태 — 호출부를 바꾸지 않아도 된다).
@@ -57,6 +62,7 @@ class ChatImageViewer extends StatefulWidget {
     required List<ChatImageItem> items,
     int initialIndex = 0,
     void Function(ChatImageItem item)? onDownload,
+    void Function(List<ChatImageItem> items)? onDownloadAll,
   }) {
     if (items.isEmpty) return Future.value();
     return Navigator.of(context).push(
@@ -66,6 +72,7 @@ class ChatImageViewer extends StatefulWidget {
           items: items,
           initialIndex: initialIndex,
           onDownload: onDownload,
+          onDownloadAll: onDownloadAll,
         ),
       ),
     );
@@ -128,6 +135,13 @@ class _ChatImageViewerState extends State<ChatImageViewer> {
               onPressed: () => widget.onDownload!(current),
               icon: const Icon(Icons.download_outlined),
               tooltip: '저장',
+            ),
+          // 두 장 이상일 때만 — 한 장짜리에 '전체 저장'은 같은 버튼이 둘인 셈이다
+          if (widget.onDownloadAll != null && widget.items.length > 1)
+            IconButton(
+              onPressed: () => widget.onDownloadAll!(widget.items),
+              icon: const Icon(Icons.download_for_offline_outlined),
+              tooltip: '${widget.items.length}장 모두 저장',
             ),
         ],
       ),
