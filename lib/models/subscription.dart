@@ -95,6 +95,17 @@ class Subscription {
 
   bool get isExpired => endDate != null && endDate!.isBefore(DateTime.now());
 
+  /// 지금 서비스를 써도 되는 구독인가.
+  ///
+  /// 해지를 누른 구독(CANCELLED)은 endDate가 그대로 남아 있고, 서버도 그 날까지는
+  /// 정상 사용으로 본다(SubscriptionService.cancelSubscription은 status만 바꾼다).
+  /// isActive는 ACTIVE만 인정하므로 여기에 쓰면 "결제했고 기간도 남았는데"
+  /// 결제 화면이 뜬다. 접근 판정에는 isActive 대신 이 값을 쓴다.
+  bool get isUsable =>
+      (status == SubscriptionStatus.ACTIVE ||
+          status == SubscriptionStatus.CANCELLED) &&
+      (endDate == null || endDate!.isAfter(DateTime.now()));
+
   bool get isCancelled => status == SubscriptionStatus.CANCELLED;
 
   bool get isFree => planType == SubscriptionType.FREE;

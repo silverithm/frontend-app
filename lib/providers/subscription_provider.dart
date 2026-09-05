@@ -23,8 +23,15 @@ class SubscriptionProvider with ChangeNotifier {
   String get failuresErrorMessage => _failuresErrorMessage;
   bool get hasPaymentFailures => _paymentFailures.isNotEmpty;
 
+  // 마지막 조회가 "구독이 없어서"가 아니라 "확인 자체를 못 해서" 끝났는지.
+  // 네트워크 오류·토큰 갱신 실패·서버 오류를 구독 없음으로 오인해
+  // 결제 화면을 띄우면, 결제도 되어 있고 기간도 남은 사용자가 막힌다.
+  bool _loadFailed = false;
+  bool get loadFailed => _loadFailed;
+
   // 구독 상태 확인 메서드들
-  bool get hasActiveSubscription => _subscription?.isActive ?? false;
+  // 해지 예약(CANCELLED)이라도 남은 기간에는 쓸 수 있어야 하므로 isUsable로 본다.
+  bool get hasActiveSubscription => _subscription?.isUsable ?? false;
   bool get needsSubscription => _subscription == null || !hasActiveSubscription;
   bool get hasUsedFreeSubscription => _subscription?.hasUsedFreeSubscription ?? false;
   bool get canUseFreeSubscription => !hasUsedFreeSubscription;
@@ -56,6 +63,7 @@ class SubscriptionProvider with ChangeNotifier {
     try {
       setLoading(true);
       clearError();
+      _loadFailed = false;
 
       print('[SubscriptionProvider] 구독 정보 로드 시작');
 
@@ -90,6 +98,9 @@ class SubscriptionProvider with ChangeNotifier {
         return false;
       }
 
+      // 여기까지 왔다면 구독이 없는 게 아니라 확인에 실패한 것이다.
+      // 호출자가 둘을 구분할 수 있도록 표시해 둔다.
+      _loadFailed = true;
       setError('구독 정보를 불러오는데 실패했습니다: $e');
       return false;
     } finally {
@@ -248,7 +259,7 @@ class SubscriptionProvider with ChangeNotifier {
   // 구독 상태에 따른 액세스 권한 확인
   bool canAccessFeature() {
     if (_subscription == null) return false;
-    return _subscription!.isActive;
+    return _subscription!.isUsable;
   }
 
   // 구독 만료까지 남은 일수

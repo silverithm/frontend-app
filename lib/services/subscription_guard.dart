@@ -40,8 +40,17 @@ class SubscriptionGuard {
 
       // 구독 정보 로드
       final hasSubscription = await subscriptionProvider.loadSubscription();
-      
-      // 구독이 있고 활성 상태인 경우
+
+      // "구독이 없다"와 "구독을 확인하지 못했다"는 전혀 다르다.
+      // 토큰 갱신이 잠깐 실패했거나 서버가 흔들린 것뿐인데 결제 화면으로 보내면,
+      // 결제도 되어 있고 기간도 한참 남은 사용자가 앱을 켤 때마다 막힌다.
+      // (앱을 오래 안 켜 토큰이 만료된 상태에서 특히 잘 났다.)
+      if (!hasSubscription && subscriptionProvider.loadFailed) {
+        print('$_tag 구독 확인 실패(구독 없음 아님) - 메인 화면 진행');
+        return true;
+      }
+
+      // 구독이 있고 쓸 수 있는 상태인 경우
       if (hasSubscription && subscriptionProvider.hasActiveSubscription) {
         print('$_tag 활성 구독 있음 - 메인 화면 진행');
         return true;
