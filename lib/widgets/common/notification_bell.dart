@@ -5,10 +5,7 @@ import '../../providers/notification_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
-import '../../screens/approval_hub_screen.dart';
-import '../../screens/chat_room_list_screen.dart';
-import '../../screens/my_vacation_screen.dart';
-import '../../screens/notice_list_screen.dart';
+import '../../services/fcm_service.dart';
 import '../seed/seed_button.dart';
 
 class NotificationBell extends StatelessWidget {
@@ -265,7 +262,11 @@ class _NotificationBottomSheet extends StatelessWidget {
                         if (notification.isUnread) {
                           notificationProvider.markAsRead(notification.id);
                         }
-                        _navigateByType(context, notification.type);
+                        _navigateByType(
+                          context,
+                          notification.type,
+                          notification.relatedEntityId,
+                        );
                       },
                     );
                   },
@@ -278,23 +279,23 @@ class _NotificationBottomSheet extends StatelessWidget {
     );
   }
 
-  /// 알림 유형별 딥링크 — FCM 푸시 탭과 동일한 규칙 (fcm_service._navigateByType 참고)
-  void _navigateByType(BuildContext context, String type) {
-    Widget? target;
-    if (type.startsWith('vacation')) {
-      target = const MyVacationScreen();
-    } else if (type.startsWith('approval')) {
-      target = const ApprovalHubScreen(initialTab: 1);
-    } else if (type.startsWith('notice')) {
-      target = const NoticeListScreen();
-    } else if (type.startsWith('chat')) {
-      target = const ChatRoomListScreen();
-    }
+  /// 알림 유형별 딥링크.
+  ///
+  /// 화면 선택 규칙은 **푸시 탭과 같은 함수**(screenForNotification)를 쓴다. 예전에는
+  /// 여기에 따로 적힌 표가 있었고 그게 뒤처져 있었다 — 채팅 알림을 눌러도 방이 아니라
+  /// 목록에서 멈추고, 회의록·가입요청·일정 알림은 아무 일도 일어나지 않았다.
+  ///
+  /// [entityId]는 서버가 준 relatedEntityId다(채팅방·공지·회의록 id).
+  void _navigateByType(BuildContext context, String type, int? entityId) {
+    final target = screenForNotification(
+      resolveFCMDestination(type),
+      entityId: entityId,
+    );
     if (target == null) return; // system 등 — 이동할 곳 없음
 
     Navigator.of(context).pop(); // 알림 바텀시트 닫기
     Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(builder: (_) => target!),
+      MaterialPageRoute(builder: (_) => target),
     );
   }
 

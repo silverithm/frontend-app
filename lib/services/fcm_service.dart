@@ -12,14 +12,18 @@ import '../screens/my_vacation_screen.dart';
 import '../screens/approval_hub_screen.dart';
 import '../screens/admin_user_management_screen.dart';
 import '../screens/notice_detail_screen.dart';
+import '../screens/notice_list_screen.dart';
 import '../screens/chat_room_list_screen.dart';
 import '../screens/calendar_screen.dart';
 import '../screens/meeting_minutes_detail_screen.dart';
+import '../screens/meeting_minutes_list_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/admin_vacation_management_screen.dart';
 
 /// 알림 data의 type이 어떤 화면으로 이어져야 하는지를 나타낸다.
 enum FCMDestination {
   vacation,
+  vacationApproval,
   approval,
   notice,
   chat,
@@ -34,6 +38,10 @@ enum FCMDestination {
 /// 순수 함수라 단위 테스트로 매핑 누락을 바로 잡아낼 수 있다.
 FCMDestination resolveFCMDestination(String type) {
   // 백엔드 타입: vacation_*, chat, schedule, notice, approval 등
+  //
+  // 휴가 '신청' 알림은 관리자에게만 간다(VacationService.sendVacationSubmittedNotificationToAdmins).
+  // 받는 사람이 할 일은 승인/반려인데 '내 휴무'로 보내면 정작 그 신청을 볼 수 없다.
+  if (type == 'vacation_submitted') return FCMDestination.vacationApproval;
   if (type.startsWith('vacation')) return FCMDestination.vacation;
 
   switch (type) {
@@ -56,6 +64,76 @@ FCMDestination resolveFCMDestination(String type) {
     default:
       return FCMDestination.unknown;
   }
+}
+
+/// 알림에서 열어야 할 화면. **푸시(FCM)와 앱 안 알림함이 같은 함수를 쓴다.**
+///
+/// 예전에는 두 곳이 각자 매핑을 갖고 있었고, 알림함 쪽이 뒤처져 있었다 — 채팅 알림을
+/// 눌러도 방이 아니라 목록에서 멈추고, 회의록·가입요청은 아예 아무 일도 일어나지 않았다.
+/// 규칙이 한 곳에 있어야 한쪽만 낡는 일이 없다.
+///
+/// [entityId]는 그 알림이 가리키는 대상의 id다. 푸시는 data의 roomId/noticeId/minutesId/
+/// scheduleId로, 알림함은 저장된 relatedEntityId로 같은 값을 받는다.
+/// 대상을 못 찾으면(id 없음) 목록 화면으로라도 보내고, 목록조차 없는 종류만 null이다.
+Widget? screenForNotification(
+  FCMDestination destination, {
+  int? entityId,
+  DateTime? scheduleDate,
+}) {
+  switch (destination) {
+    case FCMDestination.vacation:
+      return const MyVacationScreen();
+    case FCMDestination.vacationApproval:
+      return const AdminVacationManagementScreen();
+    case FCMDestination.approval:
+      return const ApprovalHubScreen(initialTab: 1);
+    case FCMDestination.notice:
+      return entityId != null
+          ? NoticeDetailScreen(noticeId: entityId)
+          : const NoticeListScreen();
+    case FCMDestination.chat:
+      // roomId가 있으면 목록에서 멈추지 않고 그 대화까지 연다
+      return ChatRoomListScreen(initialRoomId: entityId);
+    case FCMDestination.schedule:
+      // 일정은 별도 상세 화면이 없어 그 날짜의 달력을 펴 주고, id가 있으면 그 카드를 강조한다
+      return CalendarScreen(
+        initialScheduleDate: scheduleDate,
+        highlightedScheduleId: entityId,
+      );
+    case FCMDestination.meetingMinutes:
+      return entityId != null
+          ? MeetingMinutesDetailScreen(minutesId: entityId)
+          : const MeetingMinutesListScreen();
+    case FCMDestination.memberManagement:
+      return const AdminUserManagementScreen();
+    case FCMDestination.myProfile:
+      return const ProfileScreen();
+    case FCMDestination.unknown:
+      return null;
+  }
+}
+
+/// 푸시 data에서 [screenForNotification]에 넘길 대상 id를 꺼낸다.
+/// 종류마다 키 이름이 다르다(roomId/noticeId/minutesId/scheduleId).
+int? entityIdFromFCMData(FCMDestination destination, Map<String, dynamic> data) {
+  String? raw;
+  switch (destination) {
+    case FCMDestination.chat:
+      raw = data['roomId']?.toString();
+      break;
+    case FCMDestination.notice:
+      raw = data['noticeId']?.toString();
+      break;
+    case FCMDestination.meetingMinutes:
+      raw = data['minutesId']?.toString();
+      break;
+    case FCMDestination.schedule:
+      raw = data['scheduleId']?.toString();
+      break;
+    default:
+      raw = null;
+  }
+  return raw == null ? null : int.tryParse(raw);
 }
 
 class FCMService {
@@ -501,87 +579,24 @@ class FCMService {
     }
 
     final destination = resolveFCMDestination(type);
+    final entityId = entityIdFromFCMData(destination, data);
+    final scheduleDate = DateTime.tryParse(data['scheduleDate']?.toString() ?? '');
     log('[FCM] 알림 이동 처리 시작 (type: $type, destination: $destination, data: $data)');
 
-    switch (destination) {
-      case FCMDestination.vacation:
-        // 백엔드 타입: vacation_*
-        navigator.push(
-          MaterialPageRoute(builder: (_) => const MyVacationScreen()),
-        );
-        break;
-      case FCMDestination.approval:
-        navigator.push(
-          MaterialPageRoute(builder: (_) => const ApprovalHubScreen(initialTab: 1)),
-        );
-        break;
-      case FCMDestination.notice:
-        final noticeId = int.tryParse(data['noticeId']?.toString() ?? '');
-        if (noticeId != null) {
-          navigator.push(
-            MaterialPageRoute(
-              builder: (_) => NoticeDetailScreen(noticeId: noticeId),
-            ),
-          );
-        } else {
-          log('[FCM] notice 알림에 noticeId가 없어 이동하지 못함 (data: $data)');
-        }
-        break;
-      case FCMDestination.chat:
-        // 백엔드가 roomId를 함께 보내므로 목록에서 멈추지 않고 그 대화까지 연다
-        final roomId = int.tryParse(data['roomId']?.toString() ?? '');
-        navigator.push(
-          MaterialPageRoute(
-            builder: (_) => ChatRoomListScreen(initialRoomId: roomId),
-          ),
-        );
-        break;
-      case FCMDestination.schedule:
-        // 일정은 별도 상세 화면이 없어 그 날짜의 일정 달력을 펴 주고, scheduleId가
-        // 있으면 그 일정 카드까지 강조해 준다 (강조 인자를 안 받던 것을 보완)
-        final date = DateTime.tryParse(data['scheduleDate']?.toString() ?? '');
-        final scheduleId = int.tryParse(data['scheduleId']?.toString() ?? '');
-        navigator.push(
-          MaterialPageRoute(
-            builder: (_) => CalendarScreen(
-              initialScheduleDate: date,
-              highlightedScheduleId: scheduleId,
-            ),
-          ),
-        );
-        break;
-      case FCMDestination.meetingMinutes:
-        // 회의록 서명 요청 — 바로 그 회의록 상세(서명 화면)로 보낸다.
-        // minutesId 파싱에 실패하면 예전엔 아무 로그 없이 조용히 아무 일도 안 일어났다
-        // (회의록 알람을 눌러도 안 열리던 사고의 유력한 원인 — 아래 처리 참고).
-        final minutesId = int.tryParse(data['minutesId']?.toString() ?? '');
-        if (minutesId != null) {
-          navigator.push(
-            MaterialPageRoute(
-              builder: (_) => MeetingMinutesDetailScreen(minutesId: minutesId),
-            ),
-          );
-        } else {
-          log('[FCM] meeting_minutes 알림에 minutesId가 없어 이동하지 못함 (data: $data)');
-        }
-        break;
-      case FCMDestination.memberManagement:
-        // 가입 요청·탈퇴는 관리자에게 오는 알림 — 회원관리(가입 승인 목록)로 보낸다.
-        navigator.push(
-          MaterialPageRoute(builder: (_) => const AdminUserManagementScreen()),
-        );
-        break;
-      case FCMDestination.myProfile:
-        // 가입 승인/거절은 신청자 본인에게 오는 알림 — 특정 상세 화면이 없어
-        // 자기 계정·소속 상태를 확인할 수 있는 내 정보 화면으로 보낸다.
-        navigator.push(
-          MaterialPageRoute(builder: (_) => const ProfileScreen()),
-        );
-        break;
-      case FCMDestination.unknown:
-        log('[FCM] 알 수 없는 알림 type — 이동하지 않음 (type: "$type", data: $data)');
-        break;
+    // 화면 선택 규칙은 알림함과 함께 쓴다 — 한쪽만 낡으면 "알람은 뜨는데 눌러도
+    // 엉뚱한 데로 가는" 사고가 조용히 재발한다.
+    final screen = screenForNotification(
+      destination,
+      entityId: entityId,
+      scheduleDate: scheduleDate,
+    );
+
+    if (screen == null) {
+      log('[FCM] 알 수 없는 알림 type — 이동하지 않음 (type: "$type", data: $data)');
+      return;
     }
+
+    navigator.push(MaterialPageRoute(builder: (_) => screen));
   }
 
   /// 네비게이터 준비 전 보류된 알림 이동을 짧은 간격으로 재시도한다.

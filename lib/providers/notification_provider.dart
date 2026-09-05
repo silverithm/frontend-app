@@ -90,6 +90,12 @@ class NotificationItem {
   final String title;
   final String message;
   final String type; // 'vacation_approved', 'vacation_rejected', 'system'
+
+  /// 이 알림이 가리키는 대상의 id — 채팅방, 공지, 회의록, 결재 문서 등.
+  /// 서버가 relatedEntityId로 늘 함께 내려주는데 앱이 읽지 않아, 알림을 눌러도
+  /// 그 대상까지 못 가고 목록에서 멈췄다(채팅 알림이 방이 아니라 목록으로 가던 이유).
+  final int? relatedEntityId;
+
   final DateTime createdAt;
   bool isUnread;
 
@@ -99,6 +105,7 @@ class NotificationItem {
     required this.message,
     required this.type,
     required this.createdAt,
+    this.relatedEntityId,
     this.isUnread = true,
   });
 
@@ -108,6 +115,7 @@ class NotificationItem {
       title: json['title'] ?? '',
       message: json['message'] ?? '',
       type: json['type'] ?? 'system',
+      relatedEntityId: int.tryParse(json['relatedEntityId']?.toString() ?? ''),
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       isUnread: !(json['isRead'] ?? false),
     );
