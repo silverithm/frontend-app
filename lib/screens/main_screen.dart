@@ -128,6 +128,8 @@ class _MainScreenState extends State<MainScreen>
         // 초기 알림 로드
         context.read<NotificationProvider>().loadNotifications(
           authProvider.currentUser!.id.toString(),
+          // 관리자는 알림이 두 식별자로 나뉘어 저장된다 — 한쪽만 보면 절반이 안 보인다
+          alsoUserId: authProvider.currentUser!.chatUserId,
         );
 
         // FCM 포그라운드 메시지 콜백 설정
@@ -135,6 +137,7 @@ class _MainScreenState extends State<MainScreen>
           if (mounted && authProvider.currentUser != null) {
             context.read<NotificationProvider>().loadNotifications(
               authProvider.currentUser!.id.toString(),
+              alsoUserId: authProvider.currentUser!.chatUserId,
             );
 
             // 채팅 푸시면 목록도 갱신 — 소켓 구독이 이미 대부분 처리하지만,
@@ -160,6 +163,8 @@ class _MainScreenState extends State<MainScreen>
       if (authProvider.currentUser != null) {
         context.read<NotificationProvider>().loadNotifications(
           authProvider.currentUser!.id.toString(),
+          // 관리자는 알림이 두 식별자로 나뉘어 저장된다 — 한쪽만 보면 절반이 안 보인다
+          alsoUserId: authProvider.currentUser!.chatUserId,
         );
 
         // 백그라운드에 있는 동안 놓친 채팅 메시지(소켓 미연결 구간)를 위한 안전망

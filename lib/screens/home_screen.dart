@@ -116,7 +116,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return;
 
-      context.read<NotificationProvider>().loadNotifications(user.id);
+      context.read<NotificationProvider>().loadNotifications(
+        user.id,
+        alsoUserId: user.chatUserId,
+      );
       context.read<NoticeProvider>().loadUnreadNoticeCount(
         companyId: companyId,
         userId: user.id,

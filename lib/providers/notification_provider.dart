@@ -27,21 +27,43 @@ class NotificationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadNotifications(String userId) async {
+  /// 알림함을 채운다.
+  ///
+  /// [alsoUserId]는 같은 사람의 **다른 식별자**다. 관리자는 채팅·결재 상신·가입 요청·휴가
+  /// 신청 알림이 채팅 규약(admin_<id>)으로 저장되고, 공지·회의록·휴가 결과는 원시 id로
+  /// 저장된다. 한 쪽만 조회하면 나머지 절반이 통째로 안 보인다.
+  Future<void> loadNotifications(String userId, {String? alsoUserId}) async {
     try {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().getNotifications(userId: userId);
+      final ids = <String>{userId, if (alsoUserId != null) alsoUserId};
 
-      if (response['notifications'] != null) {
-        final List<dynamic> notificationsList = response['notifications'];
-        _notifications = notificationsList
-            .map((n) => NotificationItem.fromJson(n))
-            .toList();
-      } else {
-        _notifications = [];
+      final merged = <String, NotificationItem>{};
+      Object? lastError;
+
+      for (final id in ids) {
+        try {
+          final response = await ApiService().getNotifications(userId: id);
+          final list = response['notifications'];
+          if (list is List) {
+            for (final n in list) {
+              final item = NotificationItem.fromJson(n as Map<String, dynamic>);
+              merged[item.id] = item; // 같은 알림이 두 번 잡히면 하나로
+            }
+          }
+        } catch (e) {
+          // 한쪽 조회가 실패해도 다른 쪽 알림은 보여준다
+          lastError = e;
+        }
       }
+
+      if (merged.isEmpty && lastError != null) {
+        throw lastError;
+      }
+
+      _notifications = merged.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       notifyListeners();
     } catch (e) {
@@ -69,7 +91,9 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  Future<void> markAllAsRead(String userId) async {
+  /// [alsoUserId]는 loadNotifications와 같은 이유 — 관리자는 식별자가 둘이라
+  /// 한쪽만 읽음 처리하면 나머지가 안 읽음으로 남아 배지가 계속 켜져 있다.
+  Future<void> markAllAsRead(String userId, {String? alsoUserId}) async {
     // 즉시 UI 업데이트
     for (var notification in _notifications) {
       notification.isUnread = false;
@@ -77,10 +101,12 @@ class NotificationProvider with ChangeNotifier {
     notifyListeners();
 
     // 백엔드 API 호출
-    try {
-      await ApiService().markAllNotificationsAsRead(userId: userId);
-    } catch (e) {
-      print('[NotificationProvider] 전체 읽음 처리 API 실패: $e');
+    for (final id in <String>{userId, if (alsoUserId != null) alsoUserId}) {
+      try {
+        await ApiService().markAllNotificationsAsRead(userId: id);
+      } catch (e) {
+        print('[NotificationProvider] 전체 읽음 처리 API 실패: $e');
+      }
     }
   }
 }

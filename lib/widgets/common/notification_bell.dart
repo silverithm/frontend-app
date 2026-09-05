@@ -95,10 +95,12 @@ class NotificationBell extends StatelessWidget {
     final notificationProvider = context.read<NotificationProvider>();
     if (authProvider.currentUser != null) {
       final userId = authProvider.currentUser!.id.toString();
+      // 관리자는 알림이 두 식별자(원시 id, admin_<id>)로 나뉘어 저장된다 — 둘 다 봐야 한다
+      final chatUserId = authProvider.currentUser!.chatUserId;
       // 즉시 모두 읽음 처리 (UI 배지 즉시 사라짐)
-      notificationProvider.markAllAsRead(userId).then((_) {
+      notificationProvider.markAllAsRead(userId, alsoUserId: chatUserId).then((_) {
         // API 완료 후 알림 목록 새로고침
-        notificationProvider.loadNotifications(userId);
+        notificationProvider.loadNotifications(userId, alsoUserId: chatUserId);
       });
     }
 
