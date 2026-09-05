@@ -691,6 +691,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         AppSnackBar.showInfo(context, message: '${picked.length}개 전송 중...');
       }
 
+      // 한 번의 동작으로 보낸 것이므로 알림도 한 번이어야 한다. 같은 묶음 표시를 달아
+      // 보내면 서버가 마지막 장까지 올라온 뒤 "사진 5장" 알림을 한 번만 보낸다.
+      final batchId = picked.length > 1
+          ? '${DateTime.now().millisecondsSinceEpoch}-${widget.room.id}-photo'
+          : null;
+      final batchSize = picked.length > 1 ? picked.length : null;
+
       // 선택 즉시 전부 "전송 중" 버블을 띄운다 — 실제 업로드는 아래에서
       // 동시 개수를 제한해 진행하지만, 진행 상황은 버블로 바로 보인다.
       final pending = picked.map((xfile) {
@@ -714,6 +721,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           isVideo: item.isVideo,
           senderId: senderId,
           senderName: senderName,
+          batchId: batchId,
+          batchSize: batchSize,
         );
         if (ok) {
           successCount++;
@@ -749,6 +758,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     required bool isVideo,
     required String senderId,
     required String senderName,
+    String? batchId,
+    int? batchSize,
   }) async {
     final chatProvider = context.read<ChatProvider>();
     try {
@@ -791,6 +802,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         localId: localId,
         senderId: senderId,
         senderName: senderName,
+        batchId: batchId,
+        batchSize: batchSize,
       );
     } catch (e) {
       print('[ChatRoomScreen] 사진·동영상 전송 에러: $e');
@@ -1025,11 +1038,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         AppSnackBar.showInfo(context, message: '파일 ${results.length}개 전송 중...');
       }
 
+      // 사진과 같은 이유로, 한 번에 고른 문서도 알림은 한 번만 간다
+      final batchId = results.length > 1
+          ? '${DateTime.now().millisecondsSinceEpoch}-${widget.room.id}-doc'
+          : null;
+      final batchSize = results.length > 1 ? results.length : null;
+
       int successCount = 0;
       int failCount = 0;
 
       for (final result in results) {
-        final ok = await _sendDocumentFile(result);
+        final ok = await _sendDocumentFile(result, batchId: batchId, batchSize: batchSize);
         if (ok) {
           successCount++;
         } else {
@@ -1056,7 +1075,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   /// 문서 파일 하나를 전송한다. 성공하면 true.
-  Future<bool> _sendDocumentFile(XFile result) async {
+  Future<bool> _sendDocumentFile(XFile result, {String? batchId, int? batchSize}) async {
     try {
       final file = File(result.path);
       final fileSize = await file.length();
@@ -1080,6 +1099,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         file,
         senderId: authProvider.currentUser?.chatUserId ?? '',
         senderName: authProvider.currentUser?.name ?? '',
+        batchId: batchId,
+        batchSize: batchSize,
       );
     } catch (e) {
       print('[ChatRoomScreen] 파일 전송 에러: $e');

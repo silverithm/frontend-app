@@ -1318,6 +1318,8 @@ class ChatProvider with ChangeNotifier {
     required String localId,
     required String senderId,
     required String senderName,
+    String? batchId,
+    int? batchSize,
   }) async {
     try {
       final response = await ApiService().uploadChatFile(
@@ -1325,6 +1327,8 @@ class ChatProvider with ChangeNotifier {
         file: file,
         senderId: senderId,
         senderName: senderName,
+        batchId: batchId,
+        batchSize: batchSize,
       );
 
       print('[ChatProvider] 파일 업로드 응답: $response');
@@ -1355,6 +1359,8 @@ class ChatProvider with ChangeNotifier {
     File file, {
     required String senderId,
     required String senderName,
+    String? batchId,
+    int? batchSize,
   }) async {
     final fileName = file.path.split('/').last;
     final localId = insertPendingFileMessage(
@@ -1369,6 +1375,8 @@ class ChatProvider with ChangeNotifier {
       localId: localId,
       senderId: senderId,
       senderName: senderName,
+      batchId: batchId,
+      batchSize: batchSize,
     );
   }
 

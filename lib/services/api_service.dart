@@ -3194,11 +3194,16 @@ class ApiService {
   }
 
   // 파일 업로드 (dio 사용 - 더 안정적인 multipart 처리)
+  //
+  // batchId/batchSize는 사진 여러 장을 한 번에 보낼 때만 넘긴다. 서버가 마지막 장까지
+  // 올라온 뒤 "사진 5장" 알림을 한 번만 보내게 하는 표시로, 안 넘기면 장마다 알림이 나간다.
   Future<Map<String, dynamic>> uploadChatFile({
     required int roomId,
     required dynamic file,
     required String senderId,
     required String senderName,
+    String? batchId,
+    int? batchSize,
   }) async {
     try {
       final url = '$_baseUrl/v1/chat/rooms/$roomId/files';
@@ -3230,6 +3235,10 @@ class ApiService {
         'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
         'senderId': senderId,
         'senderName': senderName,
+        if (batchId != null && batchSize != null && batchSize > 1) ...{
+          'batchId': batchId,
+          'batchSize': batchSize.toString(),
+        },
       });
 
       // dio 인스턴스 생성
