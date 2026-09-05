@@ -642,6 +642,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return '${dot > 0 ? fileName.substring(0, dot) : fileName}.jpg';
   }
 
+  /// 같은 이름의 사진을 동시에 여러 장 보내도 서로 덮어쓰지 않게 폴더를 가른다.
+  static int _uploadWorkSeq = 0;
+
+  /// 압축 결과를 담을 자리. **파일 이름은 원본을 물려받는다.**
+  ///
+  /// 업로드된 파일 이름이 그대로 파일 모아보기와 저장 파일 이름이 된다.
+  /// 압축기가 붙인 임시 이름(compressed_1757….jpg)을 쓰면 그 이름이 대화 밖까지 따라 나온다.
+  Future<String> _uploadWorkPath(String desiredName) async {
+    final tempDir = await getTemporaryDirectory();
+    final dir = Directory(
+      '${tempDir.path}/carev_upload/'
+      '${DateTime.now().microsecondsSinceEpoch}_${_uploadWorkSeq++}',
+    );
+    await dir.create(recursive: true);
+    return '${dir.path}/$desiredName';
+  }
+
   // video_compress는 네이티브 쪽 압축기가 한 번에 하나만 돌아간다
   // (동시에 부르면 StateError). 동영상 여러 개를 골라도 압축만은 순서대로
   // 한 개씩 처리되도록 이 체인으로 직렬화한다. 사진 압축·업로드는 이 제약이
@@ -842,7 +859,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         print(
           '[ChatRoomScreen] 동영상 압축 완료: ${_formatFileSize(originalSize)} → ${_formatFileSize(compressedSize)}',
         );
-        return compressedFile;
+        // 사진과 같은 이유로 이름을 원본에서 물려받는다 — 압축기가 붙인 이름이
+        // 파일 모아보기와 저장 파일 이름으로 그대로 새어 나간다. 출력은 항상 mp4다.
+        final dot = displayName.lastIndexOf('.');
+        final baseName = dot > 0 ? displayName.substring(0, dot) : displayName;
+        try {
+          return await compressedFile.rename(await _uploadWorkPath('$baseName.mp4'));
+        } catch (e) {
+          // 이름을 못 바꿔도 전송 자체를 막지는 않는다
+          print('[ChatRoomScreen] 동영상 이름 정리 실패(무시): $e');
+          return compressedFile;
+        }
       }
 
       print('[ChatRoomScreen] 동영상 압축 실패, 원본으로 대체 시도: $displayName');
@@ -897,7 +924,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     print(
       '[ChatRoomScreen] 사진 JPEG 정규화: $originalName (${_formatFileSize(fileSize)})',
     );
-    final converted = await _compressImage(file, fileSize);
+    final converted = await _compressImage(file, fileSize, originalName);
     if (converted != null) {
       return (file: converted, warning: null);
     }
@@ -913,12 +940,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   /// 이미지 압축 메서드 - 10MB 미만이 될 때까지 압축(출력은 항상 JPEG)
-  Future<File?> _compressImage(File file, int originalSize) async {
+  Future<File?> _compressImage(
+    File file,
+    int originalSize,
+    String originalName,
+  ) async {
     try {
-      final tempDir = await getTemporaryDirectory();
-      final fileName =
-          'compressed_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final targetPath = '${tempDir.path}/$fileName';
+      final fileName = _plannedUploadFileName(originalName);
+      final targetPath = await _uploadWorkPath(fileName);
 
       // 목표 크기: 9MB (여유분 확보)
       const int targetSize = 9 * 1024 * 1024;
@@ -971,8 +1000,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         quality -= 15;
         attempts++;
 
-        final recompressPath =
-            '${tempDir.path}/recompressed_${attempts}_$fileName';
+        // 이름은 그대로 두고 자리만 새로 잡는다 — 이름이 바뀌면 압축 횟수가 밖으로 새어 나간다
+        final recompressPath = await _uploadWorkPath(fileName);
 
         compressedXFile = await FlutterImageCompress.compressAndGetFile(
           compressedFile.path,
