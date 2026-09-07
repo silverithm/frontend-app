@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'chat_photo.dart';
 
 import '../../models/chat_message.dart';
 import '../../utils/video_thumbnail_cache.dart';
@@ -101,19 +102,19 @@ class ChatPhotoGroup extends StatelessWidget {
           height: size,
           child: url == null
               ? _broken(size)
-              : CachedNetworkImage(
+              : ChatPhoto(
                   imageUrl: url,
                   fit: BoxFit.cover,
                   width: size,
                   height: size,
                   // 칸보다 큰 원본을 그대로 디코드하지 않도록 제한
                   memCacheWidth: (size * 2).round(),
-                  placeholder: (context, _) => Container(
+                  placeholder: (context) => Container(
                     width: size,
                     height: size,
                     color: AppSemanticColors.backgroundTertiary,
                   ),
-                  errorWidget: (context, _, _) => _broken(size),
+                  brokenBuilder: (context) => _broken(size),
                 ),
         ),
       ),

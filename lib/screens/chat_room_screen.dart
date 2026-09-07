@@ -41,6 +41,7 @@ import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../widgets/chat/chat_image_viewer.dart';
+import '../widgets/chat/chat_photo.dart';
 import '../widgets/chat/chat_photo_group.dart';
 import '../widgets/chat/chat_sender_header.dart';
 import '../widgets/common/app_action_sheet.dart';
@@ -2146,7 +2147,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                     borderRadius: BorderRadius.circular(
                                       AppBorderRadius.md,
                                     ),
-                                    child: CachedNetworkImage(
+                                    child: ChatPhoto(
                                       imageUrl: thumbUrl,
                                       width: 44,
                                       height: 44,
@@ -2154,7 +2155,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                       // 44dp 썸네일에 원본 해상도를 그대로 디코드하지 않도록 제한
                                       memCacheWidth: 88,
                                       memCacheHeight: 88,
-                                      errorWidget: (_, __, ___) =>
+                                      brokenBuilder: (_) =>
                                           const Icon(Icons.image_outlined),
                                     ),
                                   )
@@ -3581,31 +3582,30 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     final placeholderHeight = placeholderWidth * 0.75;
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      child: CachedNetworkImage(
+                      // 깨져 오면 스스로 다시 받는다 (ChatPhoto) — 앱은 깨진 응답까지 캐시에 남는다
+                      child: ChatPhoto(
                         imageUrl: _chatImageUrl(message)!,
                         fit: BoxFit.cover,
                         // 말풍선 최대 폭보다 큰 원본을 그대로 디코드하지 않도록 제한
                         memCacheWidth: (placeholderWidth * 2).round(),
-                        placeholder: (context, url) => SizedBox(
+                        placeholder: (context) => SizedBox(
                           width: placeholderWidth,
                           height: placeholderHeight,
                           child: const Center(
                             child: CircularProgressIndicator(),
                           ),
                         ),
-                        errorWidget: (context, url, error) {
-                          return SizedBox(
-                            width: placeholderWidth,
-                            height: placeholderHeight,
-                            child: Container(
-                              color: AppSemanticColors.backgroundTertiary,
-                              child: Icon(
-                                Icons.broken_image,
-                                color: AppSemanticColors.textTertiary,
-                              ),
+                        brokenBuilder: (context) => SizedBox(
+                          width: placeholderWidth,
+                          height: placeholderHeight,
+                          child: Container(
+                            color: AppSemanticColors.backgroundTertiary,
+                            child: Icon(
+                              Icons.broken_image,
+                              color: AppSemanticColors.textTertiary,
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
                     );
                   },

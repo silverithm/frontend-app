@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'chat_photo.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -158,15 +159,14 @@ class _ChatImageViewerState extends State<ChatImageViewer> {
           child: InteractiveViewer(
             minScale: 1,
             maxScale: 4,
-            child: CachedNetworkImage(
+            // 크게 보기도 깨져 오면 다시 받는다 — 제보된 '사진 깨짐'이 이 화면이었다
+            child: ChatPhoto(
               imageUrl: widget.items[i].imageUrl,
               fit: BoxFit.contain,
-              progressIndicatorBuilder: (context, url, progress) =>
-                  CircularProgressIndicator(
-                    color: AppColors.white,
-                    value: progress.progress,
-                  ),
-              errorWidget: (context, url, error) {
+              placeholder: (context) => const CircularProgressIndicator(
+                color: AppColors.white,
+              ),
+              brokenBuilder: (context) {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
