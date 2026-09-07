@@ -4,6 +4,7 @@ import '../models/admin_signin_response.dart';
 import '../models/member_signin_response.dart';
 import '../services/storage_service.dart';
 import '../services/api_service.dart';
+import '../services/auth_restore.dart';
 import '../services/analytics_service.dart';
 import '../services/fcm_service.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -512,44 +513,51 @@ class AuthProvider with ChangeNotifier {
 
       print('[AuthProvider] 토큰 발견 - 유효성 검증 시작');
 
-      // 1단계: 저장된 사용자 정보 확인 (이미 위에서 확인했으므로 제거)
+      // 서버에 물어본다. **"무효"와 "답을 못 들음"은 다르다** — 판단 규칙은
+      // auth_restore.dart에 모아 두었고 그 규칙만 따로 테스트한다.
+      final firstCheck = await ApiService().validateToken();
+      var validation = firstCheck;
+      RefreshOutcome? refreshOutcome;
+      TokenCheck? recheck;
 
-      // 2단계: 서버에 토큰 유효성 검증
-      print('[AuthProvider] 서버 토큰 검증 시작');
-      var tokenValidationResult = await ApiService().validateToken();
+      if (firstCheck.check == TokenCheck.invalid) {
+        print('[AuthProvider] 토큰 무효 - 갱신 시도');
+        refreshOutcome = (await ApiService().refreshToken()).outcome;
 
-      if (tokenValidationResult == null) {
-        print('[AuthProvider] 서버 토큰 검증 실패 - refresh 시도');
-        final refreshResult = await ApiService().refreshToken();
-
-        if (refreshResult.isSuccess) {
+        if (refreshOutcome == RefreshOutcome.success) {
           print('[AuthProvider] 토큰 갱신 성공 - 재검증');
-          tokenValidationResult = await ApiService().validateToken();
-          if (tokenValidationResult == null) {
-            print('[AuthProvider] 재검증 실패 - 로그아웃');
-            await _performLogout();
-            return;
-          }
-        } else if (refreshResult.shouldLogout) {
-          print('[AuthProvider] Refresh token 만료 또는 없음 - 로그아웃');
-          await _performLogout();
-          return;
-        } else {
-          // 네트워크 오류 등 일시적 실패. 여기서 로그아웃시키면 알림을 눌러 앱을 켠 순간
-          // 신호가 잠깐 안 좋았다는 이유만으로 로그인 화면을 만난다.
-          // 저장된 정보로 그대로 들어가고, 토큰은 다음 요청이 다시 갱신한다.
-          print('[AuthProvider] 토큰 갱신 일시적 실패 - 저장된 로그인 유지');
-          final restored = _restoreUserFromSaved(savedUserData);
-          if (restored == null) {
-            await _performLogout();
-            return;
-          }
-          _currentUser = restored;
-          _isInitialized = true;
-          notifyListeners();
-          return;
+          validation = await ApiService().validateToken();
+          recheck = validation.check;
         }
       }
+
+      final decision = resolveAuthRestore(
+        check: firstCheck.check,
+        refresh: refreshOutcome,
+        recheck: recheck,
+      );
+      print('[AuthProvider] 자동로그인 판단: $decision');
+
+      if (decision == AuthRestore.logout) {
+        await _performLogout();
+        return;
+      }
+
+      if (decision == AuthRestore.keepSaved) {
+        // 서버를 못 만났을 뿐이다. 저장된 정보로 들어가고 토큰은 다음 요청이 갱신한다.
+        print('[AuthProvider] 서버 확인 실패 - 저장된 로그인 유지');
+        final restored = _restoreUserFromSaved(savedUserData);
+        if (restored == null) {
+          await _performLogout();
+          return;
+        }
+        _currentUser = restored;
+        _isInitialized = true;
+        notifyListeners();
+        return;
+      }
+
+      final tokenValidationResult = validation.data;
 
       // 3단계: 서버에서 받은 토큰 정보로 로컬 정보 업데이트
       if (tokenValidationResult != null) {
@@ -612,8 +620,18 @@ class AuthProvider with ChangeNotifier {
         await _performLogout();
       }
     } catch (e) {
+      // 여기까지 예외가 올라왔다는 건 검증에 실패한 것이지 토큰이 무효라는 뜻이 아니다.
+      // 저장된 정보로 들어갈 수 있으면 들어간다 — 로그아웃은 마지막 수단이다.
       print('[AuthProvider] 인증 상태 확인 중 오류: $e');
-      await _performLogout();
+      final saved = StorageService().getSavedUserData();
+      final restored = saved == null ? null : _restoreUserFromSaved(saved);
+      if (restored != null && StorageService().getToken() != null) {
+        print('[AuthProvider] 오류에도 저장된 로그인 유지');
+        _currentUser = restored;
+        notifyListeners();
+      } else {
+        await _performLogout();
+      }
     } finally {
       _isInitialized = true;
       setLoading(false);

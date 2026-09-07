@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -92,13 +93,23 @@ class _SignaturePadState extends State<SignaturePad> {
             borderRadius: BorderRadius.circular(AppBorderRadius.xl),
             child: RepaintBoundary(
               key: _boundaryKey,
-              child: GestureDetector(
-                onPanStart: (details) {
-                  setState(() => _strokes.add([details.localPosition]));
-                  widget.onChanged?.call(false);
-                },
-                onPanUpdate: (details) {
-                  setState(() => _strokes.last.add(details.localPosition));
+              child: RawGestureDetector(
+                gestures: {
+                  _SignaturePanRecognizer:
+                      GestureRecognizerFactoryWithHandlers<_SignaturePanRecognizer>(
+                    () => _SignaturePanRecognizer(),
+                    (recognizer) {
+                      recognizer
+                        ..onStart = (details) {
+                          setState(() => _strokes.add([details.localPosition]));
+                          widget.onChanged?.call(false);
+                        }
+                        ..onUpdate = (details) {
+                          if (_strokes.isEmpty) return;
+                          setState(() => _strokes.last.add(details.localPosition));
+                        };
+                    },
+                  ),
                 },
                 child: CustomPaint(
                   // 투명 배경 유지 (배경색을 칠하지 않음)
@@ -127,6 +138,27 @@ class _SignaturePadState extends State<SignaturePad> {
         ),
       ],
     );
+  }
+}
+
+/// 서명 칸 안에서 시작한 손가락은 **무조건 서명이다.**
+///
+/// 기본 GestureDetector의 팬 인식기는 제스처 경쟁(아레나)에 참가만 하고 이길 때까지
+/// 기다린다. 그래서 서명 칸이 무엇 안에 들어 있느냐에 따라 획이 통째로 사라졌다:
+///
+/// - 세로 스크롤 화면(내 서명 관리) 안에서는 **세로 획**을 스크롤이 가져갔다.
+/// - 결재·회의록 서명 시트(모달 바텀시트)에서도 **세로 획**을 시트 내리기가 가져갔다.
+/// - iOS에서 화면 왼쪽 끝부터 그은 **가로 획**은 '밀어서 뒤로가기'가 가져갔다.
+///   ("앱에서 서명 작성 시 가로 획 작성이 안됨" 제보가 이것이다.)
+///
+/// 손가락이 서명 칸 위에 내려온 순간 아레나를 즉시 가져가 다른 제스처가 끼어들지
+/// 못하게 한다. 대신 서명 칸 위에서 시작한 드래그로는 화면을 스크롤할 수 없는데,
+/// 그림판에서는 그게 맞는 동작이다(칸 밖에서 시작하면 그대로 스크롤된다).
+class _SignaturePanRecognizer extends PanGestureRecognizer {
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
   }
 }
 

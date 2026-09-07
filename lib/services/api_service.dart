@@ -5,7 +5,19 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 import '../services/storage_service.dart';
+import 'auth_restore.dart';
 import '../screens/login_screen.dart';
+
+/// 토큰 검증 결과 — 판정과 서버가 준 정보를 함께 들고 온다.
+class TokenCheckResult {
+  final TokenCheck check;
+  final Map<String, dynamic>? data;
+
+  const TokenCheckResult(this.check, this.data);
+}
+
+/// 인증 관련 요청의 시간 제한. 응답이 영영 안 오면 시작 화면에 갇힌다.
+const Duration _authRequestTimeout = Duration(seconds: 10);
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -46,14 +58,17 @@ class ApiService {
         return RefreshTokenResult.noRefreshToken();
       }
 
-      final response = await http.post(
-        Uri.parse('$_baseUrl${Constants.refreshTokenEndpoint}'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: json.encode({'refreshToken': refreshToken}),
-      );
+      // 검증과 같은 이유로 시간 제한을 둔다 — 갱신이 매달려 있으면 앱이 못 뜬다
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl${Constants.refreshTokenEndpoint}'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: json.encode({'refreshToken': refreshToken}),
+          )
+          .timeout(_authRequestTimeout);
 
       print('[API] Refresh token 응답 상태: ${response.statusCode}');
       print('[API] Refresh token 응답: ${response.body}');
@@ -358,46 +373,55 @@ class ApiService {
   }
 
   // 토큰 검증 (서버에 토큰 유효성 확인)
-  Future<Map<String, dynamic>?> validateToken() async {
+  /// 저장된 토큰이 아직 쓸 수 있는지 서버에 묻는다.
+  ///
+  /// **"무효"와 "답을 못 들음"을 반드시 구분해서 돌려준다.** 예전에는 둘 다 null이었고,
+  /// 그래서 신호가 잠깐 나빴거나 서버가 배포 중이었다는 이유만으로 로그인이 풀렸다.
+  /// 판단 규칙은 auth_restore.dart에 있다.
+  Future<TokenCheckResult> validateToken() async {
+    final token = StorageService().getToken();
+    if (token == null) {
+      print('[API] 토큰이 없어서 검증 불가');
+      return const TokenCheckResult(TokenCheck.invalid, null);
+    }
+
+    print('[API] 토큰 검증 시작');
+
     try {
-      final token = StorageService().getToken();
-      if (token == null) {
-        print('[API] 토큰이 없어서 검증 불가');
-        return null;
-      }
-
-      print('[API] 토큰 검증 시작');
-
-      // POST 방식으로 Request Body에 토큰 포함해서 전송
-      final response = await http.post(
-        Uri.parse('$_baseUrl${Constants.validateTokenEndpoint}'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: json.encode({'token': token}),
-      );
+      // POST 방식으로 Request Body에 토큰 포함해서 전송.
+      // 시간 제한을 둔다 — 응답이 영영 안 오면 시작 화면에 갇힌다.
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl${Constants.validateTokenEndpoint}'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: json.encode({'token': token}),
+          )
+          .timeout(_authRequestTimeout);
 
       print('[API] 토큰 검증 응답 상태: ${response.statusCode}');
-      print('[API] 토큰 검증 응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
-        // 성공 응답 파싱
         final responseData = json.decode(response.body) as Map<String, dynamic>;
         print('[API] 토큰 검증 성공 - 사용자: ${responseData['username']}');
-        return responseData;
-      } else if (response.statusCode == 400) {
-        // 토큰 무효 (서버에서 400 Bad Request 반환)
-        final responseData = json.decode(response.body) as Map<String, dynamic>;
-        print('[API] 토큰 무효: ${responseData['message']}');
-        return null;
-      } else {
-        print('[API] 토큰 검증 실패: ${response.statusCode}');
-        return null;
+        return TokenCheckResult(TokenCheck.valid, responseData);
       }
+
+      if (response.statusCode == 400) {
+        // 서버가 분명히 "무효"라고 답한 유일한 경우다 (UserController.validateToken)
+        print('[API] 토큰 무효 (400)');
+        return const TokenCheckResult(TokenCheck.invalid, null);
+      }
+
+      // 5xx 등 — 토큰이 무효라는 답이 아니다
+      print('[API] 토큰 검증 불가(서버 응답 ${response.statusCode})');
+      return const TokenCheckResult(TokenCheck.unavailable, null);
     } catch (e) {
-      print('[API] 토큰 검증 중 오류: $e');
-      return null;
+      // 네트워크 끊김·시간 초과·응답 파싱 실패 — 역시 무효라는 답이 아니다
+      print('[API] 토큰 검증 불가(오류): $e');
+      return const TokenCheckResult(TokenCheck.unavailable, null);
     }
   }
 
@@ -4414,4 +4438,11 @@ class RefreshTokenResult {
 
   // 로그아웃이 필요한 경우 (토큰이 없거나 만료됨)
   bool get shouldLogout => !hasRefreshToken || isExpired;
+
+  /// 자동로그인 판단이 쓰는 형태 (auth_restore.dart)
+  RefreshOutcome get outcome {
+    if (isSuccess) return RefreshOutcome.success;
+    if (shouldLogout) return RefreshOutcome.expired;
+    return RefreshOutcome.unavailable;
+  }
 }
