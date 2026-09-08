@@ -23,6 +23,7 @@ import 'login_screen.dart';
 import 'my_vacation_screen.dart';
 import 'notice_list_screen.dart';
 import 'notification_settings_screen.dart';
+import 'text_size_settings_screen.dart';
 import 'plaza_screen.dart';
 import 'profile_screen.dart';
 import 'signature_manage_screen.dart';
@@ -253,6 +254,12 @@ class MenuScreen extends StatelessWidget {
                 description: '푸시 알림 받기 켜기·끄기',
                 onTap: () =>
                     _push(context, const NotificationSettingsScreen()),
+              ),
+              _MenuItem(
+                icon: Icons.format_size,
+                label: '글자 크기',
+                description: '앱 글자를 크게·작게',
+                onTap: () => _push(context, const TextSizeSettingsScreen()),
               ),
               _MenuItem(
                 icon: Icons.settings_outlined,

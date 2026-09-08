@@ -58,6 +58,9 @@ bool isSenderGroupStart(List<ChatMessage> messages, int index) {
       previous.type == MessageType.system) {
     return true;
   }
+  // 지운 메시지는 그 자리에 "삭제된 메시지입니다"만 남고 얼굴·이름을 그리지 않는다.
+  // 보낸 사람은 그대로 남아 있어서, 지운 뒤 다시 쓰면 다음 메시지가 머리를 잃었다.
+  if (previous.isDeleted) return true;
   if (previous.senderId != message.senderId) return true;
   if (!isSameDate(message.createdAt, previous.createdAt)) return true;
 

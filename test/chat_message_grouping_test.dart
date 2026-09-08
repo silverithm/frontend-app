@@ -11,6 +11,7 @@ void main() {
     required String senderId,
     required DateTime createdAt,
     MessageType type = MessageType.text,
+    bool isDeleted = false,
   }) {
     return ChatMessage(
       id: id,
@@ -20,6 +21,7 @@ void main() {
       type: type,
       content: '내용',
       createdAt: createdAt,
+      isDeleted: isDeleted,
     );
   }
 
@@ -102,6 +104,26 @@ void main() {
       ];
       expect(isSenderGroupStart(messages, 0), isFalse);
       expect(isSenderGroupStart(messages, 1), isFalse);
+    });
+
+    test('지운 메시지 다음은 그룹 시작 — 얼굴도 이름도 없는 말풍선이 뜨지 않게', () {
+      // 지운 자리에는 "삭제된 메시지입니다"만 남고 얼굴·이름을 그리지 않는다.
+      // 그런데 보낸 사람은 그대로 남아 있어서, 지웠다가 다시 쓰면 다음 메시지가
+      // "앞에 같은 사람이 있다"는 이유로 머리를 잃었다. (제보 2026-09-08)
+      final messages = [
+        msg(id: 3, senderId: 'a', createdAt: DateTime(2026, 8, 29, 11)),
+        msg(id: 2, senderId: 'a', createdAt: DateTime(2026, 8, 29, 10), isDeleted: true),
+        msg(id: 1, senderId: 'a', createdAt: DateTime(2026, 8, 29, 9)),
+      ];
+      expect(isSenderGroupStart(messages, 0), isTrue);
+    });
+
+    test('지운 메시지 자신은 앞과 같은 사람이면 그룹 시작이 아니다 — 빈 머리를 새로 그리지 않는다', () {
+      final messages = [
+        msg(id: 2, senderId: 'a', createdAt: DateTime(2026, 8, 29, 10), isDeleted: true),
+        msg(id: 1, senderId: 'a', createdAt: DateTime(2026, 8, 29, 9)),
+      ];
+      expect(isSenderGroupStart(messages, 0), isFalse);
     });
 
     test('같은 발신자라도 날짜가 바뀌면 그룹을 끊는다', () {

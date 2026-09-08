@@ -26,6 +26,7 @@ import 'services/storage_service.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
 import 'services/fcm_service.dart';
+import 'theme/text_scale.dart';
 import 'services/in_app_review_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
@@ -103,6 +104,19 @@ class MyApp extends StatelessWidget {
           return shadcn.ShadcnApp(
             navigatorKey: FCMService.navigatorKey,
             title: 'Frontend App',
+            // 기기 설정의 글꼴 배율을 존중하되 화면이 견디는 범위로 자르고,
+            // 앱에서 고른 크기를 곱한다 — 왜 그렇게 하는지는 theme/text_scale.dart 참고.
+            builder: (context, child) {
+              final systemScale = MediaQuery.textScalerOf(context).scale(1.0);
+              final scale = effectiveTextScale(systemScale, appProvider.textSize);
+              return MediaQuery.withNoTextScaling(
+                child: MediaQuery(
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: TextScaler.linear(scale)),
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              );
+            },
             // shadcn 위젯도 앱 테마(Seed 그레이 + 케어브이 틸)와 색을 맞춘다
             theme: shadcn.ThemeData(
               colorScheme: shadcn.ColorSchemes.lightZinc.copyWith(
