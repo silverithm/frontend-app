@@ -7,6 +7,7 @@ import '../models/chat_room.dart';
 import '../models/chat_message.dart';
 import '../models/chat_participant.dart';
 import '../services/api_service.dart';
+import '../services/socket_reconnect.dart';
 import '../services/storage_service.dart';
 import '../utils/chat_message_pagination.dart';
 
@@ -47,6 +48,19 @@ class ChatProvider with ChangeNotifier {
 
   // WebSocket
   StompClient? _stompClient;
+
+  /// 다시 붙기 예약 — 간격을 점점 늘린다 (socket_reconnect.dart)
+  Timer? _reconnectTimer;
+  int _reconnectAttempt = 0;
+
+  /// 인증 문제로 끊겼다 — 다음에 붙기 전에 토큰을 새로 받는다
+  bool _needsFreshToken = false;
+
+  /// 세션이 끝나 재연결을 멈춘 상태. 다시 로그인하거나 앱을 다시 열면 풀린다.
+  bool _stoppedForAuth = false;
+
+  /// 화면에서 일부러 끊은 것인지 (로그아웃·계정 전환) — 그때는 다시 붙지 않는다
+  bool _intentionallyDisconnected = false;
   final Map<int, List<StompUnsubscribe>> _roomSubscriptions = {};
 
   // 채팅방 목록 화면에서 전체 방을 실시간 갱신하기 위한 경량 구독
@@ -110,7 +124,36 @@ class ChatProvider with ChangeNotifier {
       return;
     }
 
+    // 붙기 시작했으니 예약해 둔 재시도는 취소한다
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _stoppedForAuth = false;
+    _intentionallyDisconnected = false;
+
+    // **실패한 채로 남아 있는 예전 클라이언트를 반드시 끈다.**
+    // 안 끄면 그 클라이언트도 계속 다시 붙으려 하고, 화면을 옮길 때마다 하나씩 쌓여
+    // 초당 여러 번 서버를 두드리게 된다(운영에서 실제로 초당 여섯 번까지 올라갔다).
+    if (_stompClient != null) {
+      _stompClient!.deactivate();
+      _stompClient = null;
+    }
+
     try {
+      // 인증 문제로 끊겼던 것이면 토큰부터 새로 받는다 — 만료된 토큰을 들고
+      // 다시 붙어 봐야 또 401이다.
+      if (_needsFreshToken) {
+        _needsFreshToken = false;
+        final refresh = await ApiService().refreshToken();
+        if (refresh.shouldLogout) {
+          // 세션이 진짜로 끝났다. 여기서 계속 시도하면 서버만 두드린다.
+          print('[ChatProvider] 세션 만료 — 소켓 재연결을 멈춘다');
+          _stoppedForAuth = true;
+          _isConnected = false;
+          notifyListeners();
+          return;
+        }
+      }
+
       final token = StorageService().getToken();
       if (token == null) {
         print('[ChatProvider] 토큰이 없어 WebSocket 연결 불가');
@@ -130,7 +173,10 @@ class ChatProvider with ChangeNotifier {
           webSocketConnectHeaders: {'Authorization': 'Bearer $token'},
           heartbeatOutgoing: const Duration(seconds: 10),
           heartbeatIncoming: const Duration(seconds: 10),
-          reconnectDelay: const Duration(seconds: 5),
+          // 패키지의 자동 재연결은 **붙을 때 읽은 토큰을 그대로 다시 쓴다.**
+          // 만료된 토큰으로 5초마다 영원히 두드리게 되므로 끄고, 우리가 직접
+          // 토큰을 새로 받아 간격을 늘려 가며 붙는다(socket_reconnect.dart).
+          reconnectDelay: Duration.zero,
         ),
       );
 
@@ -146,6 +192,9 @@ class ChatProvider with ChangeNotifier {
   void _onConnect(StompFrame frame) {
     print('[ChatProvider] WebSocket 연결 성공');
     _isConnected = true;
+    // 붙었으니 재시도 간격을 처음으로 되돌린다
+    _reconnectAttempt = 0;
+    _needsFreshToken = false;
     _typingUsers.clear();
     _cancelAllTypingTimers();
     notifyListeners();
@@ -170,6 +219,7 @@ class ChatProvider with ChangeNotifier {
   void _onDisconnect(StompFrame frame) {
     print('[ChatProvider] WebSocket 연결 해제');
     _isConnected = false;
+    _scheduleReconnect();
     _roomSubscriptions.clear();
     _roomListSubscriptions.clear();
     _typingUsers.clear();
@@ -183,16 +233,45 @@ class ChatProvider with ChangeNotifier {
   void _onStompError(StompFrame frame) {
     print('[ChatProvider] STOMP 에러: ${frame.body}');
     _isConnected = false;
+    if (looksLikeAuthFailure(frame.body)) _needsFreshToken = true;
+    _scheduleReconnect();
     notifyListeners();
   }
 
   void _onWebSocketError(dynamic error) {
     print('[ChatProvider] WebSocket 에러: $error');
     _isConnected = false;
+    // 401로 막힌 것이면 토큰부터 새로 받아야 한다 — 같은 토큰으로 다시 붙으면 또 401이다
+    if (looksLikeAuthFailure(error)) _needsFreshToken = true;
+    _scheduleReconnect();
     notifyListeners();
   }
 
+  /// 다시 붙기를 예약한다. 간격은 2초에서 시작해 60초까지 늘어난다.
+  ///
+  /// 예약은 **하나만** 살아 있는다 — 에러와 끊김이 함께 오는 경우가 흔한데,
+  /// 그때마다 예약을 쌓으면 재시도가 겹쳐 서버를 두드리게 된다.
+  void _scheduleReconnect() {
+    if (_intentionallyDisconnected || _stoppedForAuth) return;
+    if (_reconnectTimer?.isActive ?? false) return;
+
+    final delay = socketRetryDelay(_reconnectAttempt);
+    _reconnectAttempt++;
+    print('[ChatProvider] ${delay.inSeconds}초 뒤 다시 붙는다 (시도 $_reconnectAttempt)');
+
+    _reconnectTimer = Timer(delay, () {
+      _reconnectTimer = null;
+      if (_intentionallyDisconnected || _stoppedForAuth) return;
+      connectWebSocket();
+    });
+  }
+
   void disconnectWebSocket() {
+    // 사람이 끊은 것이다 — 다시 붙지 않는다
+    _intentionallyDisconnected = true;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempt = 0;
     if (_stompClient != null) {
       _stompClient!.deactivate();
       _stompClient = null;
