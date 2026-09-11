@@ -117,6 +117,76 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   GlobalKey _probeKeyFor(String id) =>
       _messageProbeKeys.putIfAbsent(id, () => GlobalKey());
 
+  /// 답장 인용문을 눌러 찾아온 메시지 — 잠깐 배경으로 알려 준다
+  int? _highlightedMessageId;
+
+  /// 인용된 원본으로 데려간다 (카톡과 같은 동작).
+  ///
+  /// 원본이 아직 안 불러온 옛 대화에 있을 수 있어, 몇 쪽까지는 더 받아 보며 찾는다.
+  /// 그래도 못 찾으면 말없이 가만있지 않고 사정을 알린다.
+  Future<void> _jumpToRepliedMessage(int replyToId) async {
+    final provider = context.read<ChatProvider>();
+
+    int indexOf() => provider.messages.indexWhere((m) => m.id == replyToId);
+
+    var found = indexOf() >= 0;
+    var tries = 0;
+    while (!found && provider.hasMoreMessages && tries < 5) {
+      await provider.loadMessages(roomId: widget.room.id);
+      if (!mounted) return;
+      found = indexOf() >= 0;
+      tries++;
+    }
+
+    if (!found) {
+      if (mounted) {
+        AppSnackBar.showInfo(context, message: '원본이 너무 오래된 대화에 있어 찾지 못했습니다');
+      }
+      return;
+    }
+
+    await _scrollToProbe('id:$replyToId');
+    if (!mounted) return;
+
+    setState(() => _highlightedMessageId = replyToId);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _highlightedMessageId = null);
+    });
+  }
+
+  /// 그 메시지 자리가 보일 때까지 한 화면씩 옮겨 가며 찾는다.
+  ///
+  /// 목록은 화면 밖 항목을 아예 만들지 않는다. 그래서 아직 안 그려진 메시지는
+  /// 자리(키)도 없어 바로 데려갈 수 없다 — 조금씩 옮기며 그려지기를 기다린다.
+  /// 목록이 거꾸로(최신이 아래) 그려지므로 오래된 쪽은 스크롤 값이 커지는 방향이다.
+  Future<void> _scrollToProbe(String probeId) async {
+    for (var attempt = 0; attempt < 15; attempt++) {
+      final context = _messageProbeKeys[probeId]?.currentContext;
+      if (context != null) {
+        await Scrollable.ensureVisible(
+          context,
+          alignment: 0.4,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+        );
+        return;
+      }
+
+      if (!_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      final next = (position.pixels + position.viewportDimension * 0.8)
+          .clamp(0.0, position.maxScrollExtent);
+      if (next <= position.pixels) return; // 더 갈 데가 없다
+      await _scrollController.animateTo(
+        next,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.linear,
+      );
+      await Future.delayed(const Duration(milliseconds: 16));
+      if (!mounted) return;
+    }
+  }
+
   static String _probeIdOf(ChatMessage message) =>
       message.localId ?? 'id:${message.id}';
 
@@ -3151,19 +3221,35 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         ? null
         : [for (final i in groupIndices) messages[i]];
 
+    // 답장 인용문을 눌러 찾아온 메시지는 잠깐 배경으로 알려 준다 — 데려다 놓고
+    // 아무 표시가 없으면 어느 줄을 보라는 건지 알 수 없다.
+    final isHighlighted = _highlightedMessageId != null &&
+        (groupMessages == null
+            ? message.id == _highlightedMessageId
+            : groupMessages.any((m) => m.id == _highlightedMessageId));
+
     return KeyedSubtree(
       key: itemKey,
       child: Column(
         children: [
           if (showDateSeparator) _buildDateSeparator(message.createdAt),
-          _buildMessageBubble(
-            // 시각·읽음 표시는 묶음의 **가장 최신** 사진 기준으로 보여준다.
-            groupMessages == null ? message : groupMessages.last,
-            isMyMessage,
-            showSenderName,
-            isAdmin,
-            chatProvider.participants,
-            photoGroup: groupMessages,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            decoration: BoxDecoration(
+              color: isHighlighted
+                  ? AppSemanticColors.brandDefault.withValues(alpha: 0.12)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+            ),
+            child: _buildMessageBubble(
+              // 시각·읽음 표시는 묶음의 **가장 최신** 사진 기준으로 보여준다.
+              groupMessages == null ? message : groupMessages.last,
+              isMyMessage,
+              showSenderName,
+              isAdmin,
+              chatProvider.participants,
+              photoGroup: groupMessages,
+            ),
           ),
         ],
       ),
@@ -3517,33 +3603,44 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             _ => '파일',
           };
 
-    return Container(
-      padding: const EdgeInsets.only(left: AppSpacing.space2),
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: textColor.withValues(alpha: 0.35), width: 2),
+    return Semantics(
+      button: true,
+      label: '답장 원본으로 이동',
+      child: GestureDetector(
+        // 누르면 그 원본으로 데려간다 (카톡과 같은 동작)
+        onTap: message.replyToId == null
+            ? null
+            : () => _jumpToRepliedMessage(message.replyToId!),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.only(left: AppSpacing.space2),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: textColor.withValues(alpha: 0.35), width: 2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message.replyToSenderName ?? '',
+                style: AppTypography.labelSmall.copyWith(
+                  color: textColor.withValues(alpha: 0.75),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              // 두 줄로 잘라 "..."을 붙이지 않는다 — 무슨 말에 답한 건지 읽는 자리인데
+              // 정작 그 말이 잘려 있으면 소용이 없다. 길면 아래로 흐른다.
+              Text(
+                preview,
+                style: AppTypography.bodySmall.copyWith(
+                  color: textColor.withValues(alpha: 0.65),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            message.replyToSenderName ?? '',
-            style: AppTypography.labelSmall.copyWith(
-              color: textColor.withValues(alpha: 0.75),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            preview,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.bodySmall.copyWith(
-              color: textColor.withValues(alpha: 0.65),
-            ),
-          ),
-        ],
       ),
     );
   }
