@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../models/admin_signin_response.dart';
@@ -678,6 +679,20 @@ class AuthProvider with ChangeNotifier {
   void updateUser(User user) {
     _currentUser = user;
     notifyListeners();
+    // 저장해둔 로그인 응답도 같이 고쳐 둔다. 안 그러면 프로필 사진을 바꾼 뒤
+    // 앱을 껐다 켰을 때 옛 사진(또는 이니셜)으로 되돌아간다.
+    unawaited(_persistProfileImageUrl(user.profileImageUrl));
+  }
+
+  Future<void> _persistProfileImageUrl(String? profileImageUrl) async {
+    try {
+      final saved = StorageService().getSavedUserData();
+      if (saved == null) return;
+      saved['profileImageUrl'] = profileImageUrl;
+      await StorageService().saveUserData(saved);
+    } catch (e) {
+      print('[AuthProvider] 프로필 사진 저장 실패: $e');
+    }
   }
 
   // 강제 로그아웃 - 디버깅 및 응급상황용

@@ -4324,6 +4324,57 @@ class ApiService {
     }
   }
 
+  /// 내 프로필 사진 업로드 — **관리자(AppUser) 계정용.**
+  ///
+  /// 기관 대표 로그인은 members 행이 없어 `/members/{id}/profile-image`가 통하지 않는다.
+  /// 그래서 앱에서는 관리자만 사진을 못 올렸고, 채팅 인원 목록에 이니셜로만 떴다.
+  /// 관리자 웹이 쓰는 것과 같은 경로다.
+  Future<Map<String, dynamic>> uploadMyProfileImage({
+    required String filePath,
+  }) async {
+    final token = StorageService().getToken();
+    final fileName = filePath.split('/').last;
+
+    final formData = dio.FormData.fromMap({
+      'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
+    });
+
+    final dioClient = dio.Dio();
+    dioClient.options.connectTimeout = const Duration(seconds: 30);
+    dioClient.options.sendTimeout = const Duration(seconds: 60);
+    dioClient.options.receiveTimeout = const Duration(seconds: 30);
+
+    try {
+      final response = await dioClient.post(
+        '$_baseUrl/v1/users/profile-image',
+        data: formData,
+        options: dio.Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        ),
+      );
+
+      if (response.data is Map) {
+        return Map<String, dynamic>.from(response.data);
+      }
+      throw ApiException('프로필 사진 업로드 실패', response.statusCode ?? 500);
+    } on dio.DioException catch (e) {
+      final data = e.response?.data;
+      final message = (data is Map && data['error'] != null)
+          ? data['error'].toString()
+          : '프로필 사진 업로드에 실패했습니다';
+      throw ApiException(message, e.response?.statusCode ?? 500);
+    }
+  }
+
+  /// 내 프로필 사진 삭제 (관리자 계정용)
+  Future<Map<String, dynamic>> deleteMyProfileImage() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/users/profile-image');
+      final headers = await _getHeaders();
+      return await http.delete(uri, headers: headers);
+    });
+  }
+
   // 프로필 사진 삭제
   Future<Map<String, dynamic>> deleteMemberProfileImage({
     required String memberId,

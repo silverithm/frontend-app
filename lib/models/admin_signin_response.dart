@@ -15,6 +15,9 @@ class AdminSigninResponse {
   final SubscriptionResponse? subscription;
   final String? customerKey;
 
+  /// 관리자 프로필 사진. 로그인 응답에 없으면 null — 앱은 이니셜로 그린다.
+  final String? profileImageUrl;
+
   AdminSigninResponse({
     required this.userId,
     required this.userName,
@@ -27,6 +30,7 @@ class AdminSigninResponse {
     required this.tokenInfo,
     this.subscription,
     this.customerKey,
+    this.profileImageUrl,
   });
 
   factory AdminSigninResponse.fromJson(Map<String, dynamic> json) {
@@ -46,6 +50,7 @@ class AdminSigninResponse {
           ? SubscriptionResponse.fromJson(json['subscription'])
           : null,
       customerKey: json['customerKey'],
+      profileImageUrl: json['profileImageUrl']?.toString(),
     );
   }
 
@@ -60,6 +65,7 @@ class AdminSigninResponse {
       status: 'active',
       isActive: true,
       isAdminAccount: true, // app_user 로그인 — 채팅 식별자에 admin_ 접두사가 붙는다
+      profileImageUrl: profileImageUrl,
       createdAt: DateTime.now(),
       company: Company(
         id: companyId,

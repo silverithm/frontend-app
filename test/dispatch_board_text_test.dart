@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/models/dispatch.dart';
+import 'package:frontend_app/models/vacation_request.dart';
 import 'package:frontend_app/utils/dispatch_algorithm.dart';
 import 'package:frontend_app/utils/dispatch_board_text.dart';
 
@@ -112,7 +113,7 @@ void main() {
 - 레이2/이광성팀장
 1차) 강문자 조복수 이종술 유임생
 2차) 김태선 이옥자2 박옥자
-- 스타리아/황인후 박성은팀장
+- 스타리아/황인후
 1차) 박윤철 김필수 정순효
 2차) 김성숙 황쌍자
 - 스타렉스/김형인
@@ -144,6 +145,33 @@ void main() {
     final daily = dailyDispatch(DateTime.parse(monday), plain, []);
 
     expect(buildDispatchBoardText(daily, RouteType.toWork), startsWith('8/31 (월) 등원\n'));
+  });
+
+  // 노선에 등록된 인력을 전부 적는 바람에 주운전자가 출근한 날에도 부운전자 이름이
+  // 같이 찍혔다("주운전자만 나와야 하는데 부운전자가 같이 나옴"). 그날 운전하는 한 사람만 적는다.
+  test('주운전자가 출근한 날은 부운전자 이름이 나오지 않는다', () {
+    final daily = dailyDispatch(DateTime.parse(monday), settings, []);
+    final text = buildDispatchBoardText(daily, RouteType.toWork);
+
+    expect(text, contains('- 스타리아/황인후\n'));
+    expect(text, isNot(contains('박성은팀장')));
+  });
+
+  test('주운전자가 쉬면 부운전자만 적고 (대체)를 붙인다', () {
+    final daily = dailyDispatch(DateTime.parse(monday), settings, [
+      VacationRequest(
+        id: 'v1',
+        userId: 'd1-0', // 스타리아 주운전자 황인후
+        userName: '황인후',
+        role: 'DRIVER',
+        date: DateTime.parse(monday),
+        createdAt: DateTime.parse(monday),
+      ),
+    ]);
+    final text = buildDispatchBoardText(daily, RouteType.toWork);
+
+    expect(text, contains('- 스타리아/박성은팀장 (대체)\n'));
+    expect(text, isNot(contains('황인후')));
   });
 
   test('운행이 없는 노선은 명단 자리에 사유를 적는다', () {

@@ -126,13 +126,14 @@ class _ProfileScreenState extends State<ProfileScreen>
     AppSnackBar.showInfo(context, message: '회사 코드가 복사되었습니다');
   }
 
-  /// 프로필 사진 업로드/삭제는 Member(직원) 계정만 가능하다 — 백엔드
-  /// MemberController.uploadProfileImage가 members 테이블 id로 조회하는데,
-  /// 기관 대표 로그인(AppUser, 회사 코드 보유)은 대응하는 Member 행이 없다.
-  bool _canEditProfileImage(User user) {
-    final isCompanyOwnerLogin = AdminUtils.canAccessAdminPages(user) &&
+  /// 기관 대표(AppUser) 로그인인가.
+  ///
+  /// 이 계정은 members 행이 없어 `/members/{id}/profile-image`가 통하지 않는다. 그래서
+  /// 앱에서는 관리자만 사진을 못 올렸고 채팅 인원 목록에 이니셜로만 떴다("관리자 프로필이
+  /// 뜨게"). 관리자 웹이 쓰는 `/users/profile-image`로 보내면 같은 사진을 쓴다.
+  bool _isCompanyOwnerLogin(User user) {
+    return AdminUtils.canAccessAdminPages(user) &&
         (user.company?.companyCode?.isNotEmpty ?? false);
-    return !isCompanyOwnerLogin;
   }
 
   User _withProfileImageUrl(User user, String? url) {
@@ -216,10 +217,12 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       setState(() => _isUploadingPhoto = true);
 
-      final response = await ApiService().uploadMemberProfileImage(
-        memberId: user.id,
-        filePath: picked.path,
-      );
+      final response = _isCompanyOwnerLogin(user)
+          ? await ApiService().uploadMyProfileImage(filePath: picked.path)
+          : await ApiService().uploadMemberProfileImage(
+              memberId: user.id,
+              filePath: picked.path,
+            );
 
       final newUrl = response['profileImageUrl']?.toString();
       if (mounted) {
@@ -259,7 +262,11 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     setState(() => _isUploadingPhoto = true);
     try {
-      await ApiService().deleteMemberProfileImage(memberId: user.id);
+      if (_isCompanyOwnerLogin(user)) {
+        await ApiService().deleteMyProfileImage();
+      } else {
+        await ApiService().deleteMemberProfileImage(memberId: user.id);
+      }
       if (mounted) {
         context
             .read<AuthProvider>()
@@ -957,8 +964,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         ),
                                       ),
                                     ),
-                                  if (_canEditProfileImage(user))
-                                    Positioned(
+                                  // 사진은 직원도 관리자도 바꿀 수 있다 (보내는 곳만 다르다)
+                                  Positioned(
                                       right: 0,
                                       bottom: 0,
                                       child: Semantics(

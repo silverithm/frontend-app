@@ -21,20 +21,21 @@ String formatBoardDate(String isoDate) {
   return '${parsed.month}/${parsed.day} (${_weekdayNames[parsed.weekday - 1]})';
 }
 
-/// 차량/인력 줄: "스타리아/황인후 박성은팀장"
+/// 차량/운전자 줄: "스타리아/황인후"
+///
+/// **그날 그 차를 실제로 모는 한 사람만 적는다.** 노선에 등록된 인력을 전부 늘어놓으면
+/// 주운전자가 출근한 날에도 부운전자 이름이 나란히 찍혀 "오늘 저 차는 누가 가나"를 읽을 수 없다.
+/// 부운전자는 주운전자가 쉬는 날 대신 잡히고, 그때는 뒤에 "(대체)"가 붙어 구분된다.
 String buildRouteHeadline(RouteDispatch rd) {
   final vehicle = (rd.driver?.vehicleName.trim().isNotEmpty ?? false)
       ? rd.driver!.vehicleName.trim()
       : rd.routeName;
 
-  final names = rd.crew.isNotEmpty
-      ? rd.crew.map((d) => d.driverName).toList()
-      : (rd.driver != null ? [rd.driver!.driverName] : <String>[]);
-
-  if (names.isEmpty) return vehicle;
+  final driverName = rd.driver?.driverName.trim() ?? '';
+  if (driverName.isEmpty) return vehicle;
 
   final substitute = rd.status == DispatchStatus.substitute ? ' (대체)' : '';
-  return '$vehicle/${names.join(' ')}$substitute';
+  return '$vehicle/$driverName$substitute';
 }
 
 /// 노선 한 덩어리: 헤드라인 + 회차 라인들
