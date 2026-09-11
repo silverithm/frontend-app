@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
+import '../models/elder_care_profile.dart';
 import '../utils/constants.dart';
 import '../services/storage_service.dart';
 import 'auth_restore.dart';
@@ -1060,6 +1061,62 @@ class ApiService {
 
       return await http.get(uri, headers: headers);
     });
+  }
+
+  /// 어르신 목록 + 케어 정보(careProfile). 같은 엔드포인트를 쓰되 응답을 모델로 풀어준다.
+  ///
+  /// 배차 화면은 원시 Map이 필요해 getCompanyElders를 그대로 두고,
+  /// 케어 화면만 이 메서드를 쓴다. careProfile은 미등록이면 null로 온다.
+  Future<List<ElderInfo>> getCompanyEldersWithCare({
+    required String companyId,
+  }) async {
+    final data = await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/elders/company/$companyId');
+
+      print('[API] 어르신 케어 목록 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+
+    // 백엔드 응답은 항상 래퍼 객체다 — 배열이 바로 오지 않는다.
+    final list = data['elders'];
+    if (list is! List) return <ElderInfo>[];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(ElderInfo.fromJson)
+        .toList();
+  }
+
+  /// 어르신 케어 정보 수정. 앱은 주민번호를 보내지 않는다(모델 toJson이 아예 싣지 않음).
+  Future<ElderCareProfile> updateElderCareProfile(
+    int elderId,
+    ElderCareProfile profile,
+  ) async {
+    final data = await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/elders/company/elder/$elderId/care-profile',
+      );
+
+      print('[API] 어르신 케어 정보 수정: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode(profile.toJson()),
+      );
+    });
+
+    // 서버가 careProfile로 감싸 줄 수도, 객체를 그대로 줄 수도 있어 둘 다 받는다.
+    final body = data['careProfile'];
+    return ElderCareProfile.fromJson(
+      body is Map<String, dynamic> ? body : data,
+    );
   }
 
   // ================== 어르신 출결 ==================

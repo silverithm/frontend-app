@@ -19,6 +19,7 @@ import 'admin_vacation_limits_setting_screen.dart';
 import 'ai_post_writer_screen.dart';
 import 'company_library_screen.dart';
 import 'dispatch_screen.dart';
+import 'elder_care_list_screen.dart';
 import 'login_screen.dart';
 import 'my_vacation_screen.dart';
 import 'notice_list_screen.dart';
@@ -66,17 +67,23 @@ class MenuScreen extends StatelessWidget {
     final isAdmin = AdminUtils.canAccessAdminPages(user);
 
     // 세부 권한 — 관리자는 모두 true라 기존 화면이 그대로 유지된다.
-    final canManageNotice =
-        PermissionUtils.has(user, AppPermission.noticeManage);
-    final canViewMembers = PermissionUtils.hasAny(
+    final canManageNotice = PermissionUtils.has(
       user,
-      const [AppPermission.memberView, AppPermission.memberManage],
+      AppPermission.noticeManage,
     );
+    final canViewMembers = PermissionUtils.hasAny(user, const [
+      AppPermission.memberView,
+      AppPermission.memberManage,
+    ]);
     final canManageWork = PermissionUtils.has(user, AppPermission.workManage);
-    final canManageTemplate =
-        PermissionUtils.has(user, AppPermission.approvalTemplate);
-    final canDispatch =
-        PermissionUtils.has(user, AppPermission.scheduleDispatch);
+    final canManageTemplate = PermissionUtils.has(
+      user,
+      AppPermission.approvalTemplate,
+    );
+    final canDispatch = PermissionUtils.has(
+      user,
+      AppPermission.scheduleDispatch,
+    );
 
     // '기관 관리' 그룹은 보여줄 항목이 하나라도 있을 때만 낸다.
     // 권한이 없으면 감춘다 — 웹도 권한 없는 탭은 아예 렌더하지 않는다.
@@ -107,8 +114,7 @@ class MenuScreen extends StatelessWidget {
         _MenuItem(
           icon: Icons.event_busy_outlined,
           label: '휴무 한도 설정',
-          onTap: () =>
-              _push(context, const AdminVacationLimitsSettingScreen()),
+          onTap: () => _push(context, const AdminVacationLimitsSettingScreen()),
         ),
       if (canDispatch)
         _MenuItem(
@@ -169,6 +175,13 @@ class MenuScreen extends StatelessWidget {
                 label: '결재 서명 관리',
                 description: '전자결재에 사용할 서명 등록',
                 onTap: () => _push(context, const SignatureManageScreen()),
+              ),
+              // 케어 기준은 요양보호사·간호사 모두가 수시로 확인한다 — 권한으로 가리지 않는다.
+              _MenuItem(
+                icon: Icons.elderly,
+                label: '어르신 정보',
+                description: '등급·식사·투약·자리 등 케어 기준',
+                onTap: () => _push(context, const ElderCareListScreen()),
               ),
               _MenuItem(
                 icon: Icons.groups_outlined,
@@ -234,10 +247,7 @@ class MenuScreen extends StatelessWidget {
 
           if (adminItems.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.space4),
-            _MenuGroup(
-              title: '기관 관리',
-              items: adminItems,
-            ),
+            _MenuGroup(title: '기관 관리', items: adminItems),
           ],
 
           const SizedBox(height: AppSpacing.space4),
@@ -252,8 +262,7 @@ class MenuScreen extends StatelessWidget {
                 icon: Icons.notifications_outlined,
                 label: '알림 설정',
                 description: '푸시 알림 받기 켜기·끄기',
-                onTap: () =>
-                    _push(context, const NotificationSettingsScreen()),
+                onTap: () => _push(context, const NotificationSettingsScreen()),
               ),
               _MenuItem(
                 icon: Icons.format_size,
