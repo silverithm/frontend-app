@@ -1007,6 +1007,30 @@ class ApiService {
 
   /// 회사의 배차 설정 한 벌을 통째로 받는다.
   /// 서버가 원본이고 관리자 웹과 같은 JSON을 본다 — 한쪽에서 고치면 다른 쪽에도 보인다.
+  /// 그날 하루치 배차 수정본 (관리자 웹에서 손으로 옮긴 배치).
+  ///
+  /// 앱은 읽기만 한다 — 같은 날 배차표가 웹과 앱에서 달라지면 안 되기 때문이다.
+  Future<Map<String, dynamic>> getDispatchOverridesRange({
+    required String companyId,
+    required String startDate,
+    required String endDate,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/dispatch-overrides/range').replace(
+        queryParameters: {
+          'companyId': companyId,
+          'startDate': startDate,
+          'endDate': endDate,
+        },
+      );
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
   Future<Map<String, dynamic>> getDispatchSettings({
     required String companyId,
   }) async {

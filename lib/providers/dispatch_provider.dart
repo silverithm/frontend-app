@@ -21,6 +21,8 @@ class DispatchProvider with ChangeNotifier {
   List<VacationRequest> _vacations = [];
   // 출결은 백엔드 elder_attendance가 원본이다 (배차설정 JSON의 결석은 레거시)
   List<ElderDayAttendance> _attendances = [];
+  /// 날짜(yyyy-MM-dd) → 그날 하루치 배차 수정본. 관리자 웹에서 손으로 옮긴 배치다.
+  Map<String, List<DispatchAssignmentOverride>> _overridesByDate = {};
   bool _isLoading = false;
   bool _isSaving = false;
   String? _error;
@@ -57,6 +59,7 @@ class DispatchProvider with ChangeNotifier {
         _apiService.getDispatchSettings(companyId: companyId),
         _loadVacations(companyId),
         _loadAttendances(companyId, DateTime.now()),
+        _loadOverrides(companyId, DateTime.now()),
       ]);
 
       final settingsJson = results[0] as Map<String, dynamic>;
@@ -92,6 +95,38 @@ class DispatchProvider with ChangeNotifier {
     }
   }
 
+  /// 그 달의 배차 수정본을 한 번에 받는다 (수정한 날만 온다).
+  Future<void> _loadOverrides(String companyId, DateTime month) async {
+    final first = DateTime(month.year, month.month, 1);
+    final last = DateTime(month.year, month.month + 1, 0);
+
+    try {
+      final response = await _apiService.getDispatchOverridesRange(
+        companyId: companyId,
+        startDate: formatDate(first),
+        endDate: formatDate(last),
+      );
+      final days = response['days'];
+      final parsed = <String, List<DispatchAssignmentOverride>>{};
+      if (days is Map) {
+        days.forEach((date, rows) {
+          if (rows is List) {
+            parsed['$date'] = rows
+                .whereType<Map>()
+                .map((e) => DispatchAssignmentOverride.fromJson(
+                    Map<String, dynamic>.from(e)))
+                .toList();
+          }
+        });
+      }
+      _overridesByDate = parsed;
+    } catch (e) {
+      // 수정본을 못 받아도 배차표는 설정대로 그려져야 한다
+      debugPrint('[DispatchProvider] 배차 수정본 조회 실패: $e');
+      _overridesByDate = {};
+    }
+  }
+
   /// 그 달의 출결을 한 번에 받는다.
   /// 날짜별로 부르면 한 달에 30번 왕복하게 된다.
   Future<void> _loadAttendances(String companyId, DateTime month) async {
@@ -124,7 +159,12 @@ class DispatchProvider with ChangeNotifier {
   Future<void> loadAttendancesForMonth(DateTime month) async {
     final companyId = _companyId;
     if (companyId == null) return;
-    await _loadAttendances(companyId, month);
+    // 그 달의 배차 수정본도 함께 받는다 — 출결만 받아 오면 다른 달로 옮겼을 때
+    // 웹에서 옮겨 둔 배차가 앱에서만 사라진다
+    await Future.wait([
+      _loadAttendances(companyId, month),
+      _loadOverrides(companyId, month),
+    ]);
     notifyListeners();
   }
 
@@ -172,8 +212,15 @@ class DispatchProvider with ChangeNotifier {
 
   // ================== 조회 ==================
 
-  DailyDispatch dispatchForDate(DateTime date) =>
-      dailyDispatch(date, _settings, _vacations, attendances: _attendances);
+  DailyDispatch dispatchForDate(DateTime date) {
+    final overrides = _overridesByDate[formatDate(date)] ?? const [];
+    final settings = overrides.isEmpty
+        ? _settings
+        : _settings.copyWith(
+            seniors: applyDispatchOverrides(_settings.seniors, overrides),
+          );
+    return dailyDispatch(date, settings, _vacations, attendances: _attendances);
+  }
 
   Map<String, DispatchDaySummary> summaryForMonth(int year, int month) =>
       monthlyDispatchSummary(

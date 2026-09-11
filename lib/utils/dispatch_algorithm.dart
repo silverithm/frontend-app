@@ -252,6 +252,60 @@ RouteDispatch routeDispatchForDate(
   );
 }
 
+/// 그날 하루치 수정본을 어르신 명단에 얹는다.
+///
+/// 설정(원본)은 건드리지 않는다 — 오늘 옮긴 것이 내일까지 따라가면 안 되기 때문이다.
+/// 수정본에 없는 어르신은 설정 그대로이고, 설정에서 사라진 어르신의 옛 수정본은 버린다.
+///
+/// 웹은 앞뒤 사람의 사이값(1.5 같은)으로 자리를 준다. 앱의 [Senior.boardingOrder]는 정수라
+/// 그대로 담으면 두 사람이 같은 자리가 되므로, **정렬한 뒤 1부터 다시 매긴다.**
+/// 앱은 배차표를 보여주기만 하므로 순서만 웹과 같으면 된다.
+List<Senior> applyDispatchOverrides(
+  List<Senior> seniors,
+  List<DispatchAssignmentOverride> overrides,
+) {
+  if (overrides.isEmpty) return seniors;
+
+  // 같은 어르신이 여러 줄이면 마지막 줄이 이긴다 (저장 순서 = 사람이 마지막에 한 조작)
+  final byId = <String, DispatchAssignmentOverride>{};
+  for (final o in overrides) {
+    byId[o.seniorId] = o;
+  }
+
+  final moved = <Senior>[];
+  final places = <String, double>{};
+  for (final senior in seniors) {
+    final o = byId[senior.id];
+    if (o == null) {
+      moved.add(senior);
+      places[senior.id] = senior.boardingOrder.toDouble();
+      continue;
+    }
+    moved.add(senior.copyWith(
+      routeId: o.routeId,
+      tripOrder: o.tripOrder,
+      boardingOrder: senior.boardingOrder,
+    ));
+    places[senior.id] = o.boardingOrder;
+  }
+
+  // 노선·회차별로 자리 순서대로 줄을 세운 뒤 정수로 다시 매긴다
+  final groups = <String, List<Senior>>{};
+  for (final senior in moved) {
+    groups.putIfAbsent('${senior.routeId}|${senior.tripOrder ?? 0}', () => []).add(senior);
+  }
+
+  final renumbered = <String, Senior>{};
+  for (final group in groups.values) {
+    group.sort((a, b) => (places[a.id] ?? 0).compareTo(places[b.id] ?? 0));
+    for (var i = 0; i < group.length; i++) {
+      renumbered[group[i].id] = group[i].copyWith(boardingOrder: i + 1);
+    }
+  }
+
+  return moved.map((s) => renumbered[s.id] ?? s).toList();
+}
+
 DailyDispatch dailyDispatch(
   DateTime date,
   DispatchSettings settings,

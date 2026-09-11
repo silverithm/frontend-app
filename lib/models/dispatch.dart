@@ -246,6 +246,46 @@ class TripGroup {
 ///
 /// @deprecated 출결은 백엔드 elder_attendance로 통합됐다(ElderDayAttendance).
 /// 구버전 앱이 이 JSON 필드를 아직 읽고 있어 모양만 유지한다.
+/// 그날 하루치 배차 수정본 한 줄.
+///
+/// 배차표는 노선 설정에서 매일 다시 계산된다. 관리자 웹에서 "오늘은 저 어르신을 저 차에"로
+/// 옮긴 것이 여기 담긴다 — 설정은 건드리지 않으므로 내일 배차는 그대로다.
+class DispatchAssignmentOverride {
+  final String seniorId;
+  final String routeId;
+
+  /// 그날 탈 회차. 회차를 쓰지 않는 노선이면 null이다.
+  final int? tripOrder;
+
+  /// 그 노선 안에서의 자리. 웹은 앞뒤 사람의 사이값(1.5 같은)을 보내므로 실수로 받는다 —
+  /// 정수로 잘라 읽으면 두 사람이 같은 자리가 되어 순서가 뒤집힌다.
+  final double boardingOrder;
+
+  const DispatchAssignmentOverride({
+    required this.seniorId,
+    required this.routeId,
+    this.tripOrder,
+    required this.boardingOrder,
+  });
+
+  factory DispatchAssignmentOverride.fromJson(Map<String, dynamic> json) {
+    final order = json['boardingOrder'];
+    return DispatchAssignmentOverride(
+      seniorId: json['seniorId']?.toString() ?? '',
+      routeId: json['routeId']?.toString() ?? '',
+      tripOrder: json['tripOrder'] == null ? null : _asInt(json['tripOrder']),
+      boardingOrder: order is num ? order.toDouble() : double.tryParse('$order') ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'seniorId': seniorId,
+        'routeId': routeId,
+        if (tripOrder != null) 'tripOrder': tripOrder,
+        'boardingOrder': boardingOrder,
+      };
+}
+
 class SeniorAbsence {
   final String seniorId;
   final String date;
