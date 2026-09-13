@@ -73,8 +73,9 @@ class MessageInput extends StatelessWidget {
                 ),
                 maxLines: 4,
                 minLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSend(),
+                keyboardType: TextInputType.multiline,
+                // 카카오톡과 같게: 키보드 엔터는 줄바꿈, 전송은 오른쪽 버튼으로만
+                textInputAction: TextInputAction.newline,
               ),
             ),
           ),
