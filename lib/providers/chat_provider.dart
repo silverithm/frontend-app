@@ -9,6 +9,7 @@ import '../models/chat_participant.dart';
 import '../services/api_service.dart';
 import '../services/socket_reconnect.dart';
 import '../services/storage_service.dart';
+import '../utils/chat_date_jump.dart';
 import '../utils/chat_message_pagination.dart';
 
 class ChatProvider with ChangeNotifier {
@@ -1579,6 +1580,30 @@ class ChatProvider with ChangeNotifier {
     } catch (e) {
       print('[ChatProvider] 대화 검색 에러: $e');
       return [];
+    }
+  }
+
+  // ===================== 날짜로 이동 =====================
+
+  /// 그 날짜의 첫 메시지 id를 구한다.
+  /// 그 날짜 이후 대화가 없으면(404) null을 돌려주고, 그 밖의 오류(형식 오류,
+  /// 비참가자 등)는 ApiException 그대로 던져 화면에서 사정을 보여주게 한다 —
+  /// 조용히 실패시키지 않는다.
+  Future<int?> findFirstMessageIdOnDate(
+    int roomId,
+    DateTime date, {
+    String? userId,
+  }) async {
+    try {
+      final response = await ApiService().getFirstMessageOnDate(
+        roomId: roomId,
+        date: formatChatDateQuery(date),
+        userId: userId,
+      );
+      return response['messageId'] as int?;
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
     }
   }
 
