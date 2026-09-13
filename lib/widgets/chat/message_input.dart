@@ -63,6 +63,8 @@ class MessageInput extends StatelessWidget {
                 focusNode: focusNode,
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요',
+                  // 글자를 키우면 '메시지를 입력하세 / 요'로 글자 중간에서 줄이 넘어갔다 — 한 줄로 두고 줄인다
+                  hintMaxLines: 1,
                   hintStyle: AppTypography.bodyMedium.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),

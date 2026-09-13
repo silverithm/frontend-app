@@ -3836,8 +3836,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
     }
 
-    return RichText(
-      text: TextSpan(
+    // RichText가 아니라 Text.rich여야 한다. RichText는 글자 배율(기본값 noScaling)도 앱 서체도
+    // 물려받지 않아, 말풍선 본문만 글자 크기 설정을 무시하고 작게·다른 서체로 그려졌다
+    // (같은 말풍선의 답장 인용문은 커지는데 본문은 그대로였다).
+    return Text.rich(
+      TextSpan(
         style: AppTypography.bodyMedium.copyWith(color: textColor),
         children: spans,
       ),
@@ -3910,6 +3913,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 focusNode: _focusNode,
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요',
+                  // 글자를 키우면 '메시지를 입력하세 / 요'로 글자 중간에서 줄이 넘어갔다 — 한 줄로 두고 줄인다
+                  hintMaxLines: 1,
                   hintStyle: AppTypography.bodyMedium.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 class AppTypography {
-  // Font families
-  static const String fontFamilySans = 'Inter';
-  static const String fontFamilyMono = 'SF Mono';
+  /// 앱 전체 서체 (pubspec.yaml에 실어 둔 Pretendard).
+  ///
+  /// 한글을 품은 서체를 직접 싣는 이유: 기본 서체(Roboto·Geist)에 한글이 없으면 한글은
+  /// 기기의 대체 서체로 그려진다. 대체 서체는 기기마다 다르고, 같은 기기에서도 기호(♡·❤)가
+  /// 섞인 줄은 다른 대체 서체가 골라져 말풍선마다 글꼴이 달라졌다
+  /// (제보 2026-09-08 "안드로이드에서 폰트와 크기가 제각각으로 나오는 현상").
+  /// 전에는 'Inter'라고 적혀 있었지만 실린 적도 쓰인 적도 없는 값이었다.
+  static const String fontFamilySans = 'Pretendard';
 
   // Font sizes
   static const double fontSizeXs = 11.0;

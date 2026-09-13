@@ -1600,8 +1600,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                     const SizedBox(width: AppSpacing.space3),
                                     Expanded(
-                                      child: RichText(
-                                        text: TextSpan(
+                                      child: Text.rich(
+                                        TextSpan(
                                           children: [
                                             TextSpan(
                                               text: '개인정보 처리방침',
@@ -1713,8 +1713,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                     const SizedBox(width: AppSpacing.space3),
                                     Expanded(
-                                      child: RichText(
-                                        text: TextSpan(
+                                      child: Text.rich(
+                                        TextSpan(
                                           children: [
                                             TextSpan(
                                               text: '서비스 이용약관',

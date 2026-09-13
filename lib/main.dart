@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'theme/app_colors.dart';
+import 'theme/app_typography.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'localization/shadcn_fallback_localizations_delegate.dart';
 import 'package:provider/provider.dart';
@@ -78,6 +79,12 @@ void main() async {
   runApp(const MyApp());
 }
 
+/// shadcn 위젯의 글자도 앱 서체를 따른다 — 기본값 Geist에는 한글이 없다.
+const _appTypography = shadcn.Typography.geist(
+  sans: TextStyle(fontFamily: AppTypography.fontFamilySans),
+  mono: TextStyle(fontFamily: AppTypography.fontFamilySans),
+);
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -109,11 +116,25 @@ class MyApp extends StatelessWidget {
             builder: (context, child) {
               final systemScale = MediaQuery.textScalerOf(context).scale(1.0);
               final scale = effectiveTextScale(systemScale, appProvider.textSize);
-              return MediaQuery.withNoTextScaling(
-                child: MediaQuery(
-                  data: MediaQuery.of(context)
-                      .copyWith(textScaler: TextScaler.linear(scale)),
-                  child: child ?? const SizedBox.shrink(),
+              // 서체도 여기서 한 벌로 묶는다 — ShadcnApp이 만드는 Material 테마는 Roboto를,
+              // shadcn 자체 글자는 Geist를 쓰는데 둘 다 한글이 없다(theme/app_typography.dart).
+              final theme = Theme.of(context);
+              return MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(scale)),
+                child: Theme(
+                  data: theme.copyWith(
+                    textTheme: theme.textTheme
+                        .apply(fontFamily: AppTypography.fontFamilySans),
+                    primaryTextTheme: theme.primaryTextTheme
+                        .apply(fontFamily: AppTypography.fontFamilySans),
+                  ),
+                  child: DefaultTextStyle.merge(
+                    style: const TextStyle(
+                      fontFamily: AppTypography.fontFamilySans,
+                    ),
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               );
             },
@@ -136,6 +157,7 @@ class MyApp extends StatelessWidget {
                 input: () => const Color(0xFFDCDEE3),
               ),
               radius: 0.5,
+              typography: _appTypography,
             ),
             darkTheme: shadcn.ThemeData(
               colorScheme: shadcn.ColorSchemes.darkZinc.copyWith(
@@ -144,6 +166,7 @@ class MyApp extends StatelessWidget {
                 ring: () => const Color(0xFF20C997),
               ),
               radius: 0.5,
+              typography: _appTypography,
             ),
             themeMode: appProvider.isDarkMode
                 ? shadcn.ThemeMode.dark

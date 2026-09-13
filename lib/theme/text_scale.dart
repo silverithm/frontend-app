@@ -38,19 +38,27 @@ enum AppTextSize {
 
 /// 화면이 견디는 최소·최대 배율.
 ///
-/// 위쪽 1.4는 눈대중이 아니라 제보 화면 기준이다 — 그보다 커지면 채팅 입력창 문구가
-/// 글자 중간에서 줄바꿈되고 말풍선이 화면을 넘친다. 아래쪽 0.85는 더 줄이면 요양 현장에서
-/// 읽기 힘들어지는 선이다.
+/// 아래쪽 0.85는 더 줄이면 요양 현장에서 읽기 힘들어지는 선이다. 위쪽 1.6은 여러 기기
+/// (아이폰 SE 375pt 폭 포함) 캡처로 채팅·메뉴·설정 화면이 깨지지 않는 것을 확인한 선이다.
 const double minTextScale = 0.85;
-const double maxTextScale = 1.4;
+const double maxTextScale = 1.6;
+
+/// 기기 설정을 따르는 한도.
+///
+/// 기기 배율을 이보다 크게 그대로 받으면 앱에서 고를 여지가 사라진다. 예전에는 둘을 곱한 뒤
+/// 한 번만 잘랐는데, 제보하신 분 기기(배율 약 1.8)에서는 작게·보통·크게·아주 크게가 전부
+/// 상한 하나로 같아져 설정을 눌러도 아무것도 바뀌지 않았다.
+const double maxSystemTextScale = 1.3;
 
 /// 실제로 적용할 글자 배율.
 ///
 /// [systemScale]은 기기 설정에서 온 값, [size]는 앱에서 고른 값이다.
-/// 둘을 곱한 뒤 화면이 견디는 범위로 자른다 — 기기에서 이미 크게 해둔 분이 앱에서 '크게'를
-/// 또 고르면 곱해져 화면이 깨지기 때문이다.
+/// 기기 설정은 [maxSystemTextScale]까지만 따르고, 그 위에 앱에서 고른 크기를 곱한 뒤
+/// 화면이 견디는 범위로 자른다. 그래서 기기에서 아무리 크게 해 두어도 네 가지 선택이 서로
+/// 다른 크기를 낸다.
 double effectiveTextScale(double systemScale, AppTextSize size) {
-  final raw = systemScale * size.factor;
-  if (raw.isNaN || raw <= 0) return size.factor;
+  if (systemScale.isNaN || systemScale <= 0) return size.factor;
+  final base = math.min(math.max(systemScale, minTextScale), maxSystemTextScale);
+  final raw = base * size.factor;
   return math.min(math.max(raw, minTextScale), maxTextScale);
 }

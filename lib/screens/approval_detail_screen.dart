@@ -36,6 +36,9 @@ class ApprovalDetailScreen extends StatefulWidget {
 class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
   late ApprovalRequest _approval;
   ApprovalTemplate? _template; // 공문 본문 라벨 해석용
+  // 양식 조회가 끝났는지(성공·실패 모두). 끝나기 전에 공문을 그리면 라벨 대신
+  // 'quantity'·'item-name' 같은 필드 키가 잠깐 비쳤다.
+  bool _templateSettled = false;
   bool _isDeleting = false;
 
   @override
@@ -45,22 +48,30 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
     // 빌드 완료 후 로드하여 setState during build 에러 방지
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDetail();
+      // 목록에서 받은 양식 번호로 곧바로 양식도 불러온다 — 상세 조회를 기다렸다가 부르면 그만큼 늦다
+      _loadTemplate();
     });
   }
 
   Future<void> _loadDetail() async {
     final approvalProvider = context.read<ApprovalProvider>();
     final detail = await approvalProvider.loadApprovalDetail(approvalId: _approval.id);
+    final templateChanged = detail != null && detail.templateId != _approval.templateId;
     if (detail != null && mounted) {
       setState(() {
         _approval = detail;
+        // 알림에서 들어오면 목록 정보 없이 번호만 있어 양식 번호가 비어 있다 — 새로 받을 때까지 다시 가린다
+        if (templateChanged) _templateSettled = false;
       });
     }
-    _loadTemplate();
+    if (templateChanged) _loadTemplate();
   }
 
   Future<void> _loadTemplate() async {
-    if (_approval.templateId <= 0) return;
+    if (_approval.templateId <= 0) {
+      if (mounted) setState(() => _templateSettled = true);
+      return;
+    }
     try {
       final response = await ApiService()
           .getApprovalTemplateDetail(templateId: _approval.templateId);
@@ -72,6 +83,8 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       }
     } catch (e) {
       debugPrint('양식 정보 로드 실패(공문 라벨 없이 표시): $e');
+    } finally {
+      if (mounted) setState(() => _templateSettled = true);
     }
   }
 
@@ -438,12 +451,18 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
               const SizedBox(height: AppSpacing.space4),
             ],
 
-            // 공문(표준 기안문) 뷰
-            OfficialDocumentView(
-              approval: _approval,
-              template: _template,
-              companyName: context.read<AuthProvider>().currentUser?.company?.name ?? '',
-            ),
+            // 공문(표준 기안문) 뷰 — 양식을 받기 전에는 자리만 잡아 둔다
+            if (_templateSettled)
+              OfficialDocumentView(
+                approval: _approval,
+                template: _template,
+                companyName: context.read<AuthProvider>().currentUser?.company?.name ?? '',
+              )
+            else
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.space8),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
 
             const SizedBox(height: AppSpacing.space4),
 
