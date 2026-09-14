@@ -2116,6 +2116,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.space2),
+                      // 날짜로 이동은 검색창과 같은 줄에 둔다. 따로 한 줄을 차지하면 검색창이
+                      // 자동으로 키보드를 올린 상태에서 시트 높이가 모자라 아래가 넘쳤다(360dp 캡처).
+                      Semantics(
+                        button: true,
+                        label: '날짜로 이동',
+                        child: SeedButton(
+                          label: '날짜',
+                          variant: SeedButtonVariant.neutralOutline,
+                          size: SeedButtonSize.small,
+                          prefixIcon: Icons.calendar_today,
+                          onPressed: _jumpToDate,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
                       SeedButton(
                         label: '검색',
                         variant: SeedButtonVariant.brandSolid,
@@ -2125,30 +2139,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space4,
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: _jumpToDate,
-                      icon: Icon(
-                        Icons.calendar_today,
-                        size: AppSpacing.space4,
-                        color: AppSemanticColors.interactivePrimaryDefault,
-                      ),
-                      label: Text(
-                        '날짜로 이동',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.interactivePrimaryDefault,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space2),
                 const Divider(height: 1),
                 Expanded(
                   child: isSearching
@@ -2282,12 +2272,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         AppSnackBar.showInfo(context, message: '그 날짜의 대화를 찾지 못했습니다');
       }
     } on ApiException catch (e) {
-      if (mounted) Navigator.pop(context);
-      if (mounted) AppSnackBar.showError(context, message: e.message);
-    } catch (e) {
+      // 서버 문구(예: 'Method Not Allowed')를 그대로 보여주면 선생님들은 무슨 뜻인지 모른다
+      debugPrint('[ChatRoom] 날짜로 이동 실패: ${e.message}');
       if (mounted) Navigator.pop(context);
       if (mounted) {
-        AppSnackBar.showError(context, message: '날짜로 이동하지 못했습니다: $e');
+        AppSnackBar.showError(context, message: '날짜로 이동하지 못했습니다. 잠시 후 다시 시도해주세요');
+      }
+    } catch (e) {
+      debugPrint('[ChatRoom] 날짜로 이동 실패: $e');
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        AppSnackBar.showError(context, message: '날짜로 이동하지 못했습니다. 잠시 후 다시 시도해주세요');
       }
     } finally {
       progressNotifier.dispose();

@@ -155,40 +155,161 @@ class _ChatImageViewerState extends State<ChatImageViewer> {
             ? const PageScrollPhysics()
             : const NeverScrollableScrollPhysics(),
         onPageChanged: (value) => setState(() => _index = value),
-        itemBuilder: (context, i) => Center(
-          child: InteractiveViewer(
-            minScale: 1,
-            maxScale: 4,
-            // 크게 보기도 깨져 오면 다시 받는다 — 제보된 '사진 깨짐'이 이 화면이었다
-            child: ChatPhoto(
-              imageUrl: widget.items[i].imageUrl,
-              fit: BoxFit.contain,
-              placeholder: (context) => const CircularProgressIndicator(
-                color: AppColors.white,
-              ),
-              brokenBuilder: (context) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.broken_image_outlined,
-                      color: AppColors.white.withValues(alpha: 0.54),
-                      size: 48,
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-                    Text(
-                      '사진을 불러오지 못했습니다',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.white70,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
+        itemBuilder: (context, i) => _ViewerPage(
+          imageUrl: widget.items[i].imageUrl,
         ),
       ),
+    );
+  }
+}
+
+/// 세로가 가로의 이만큼보다 길면 폭에 맞춰 세로로 훑어보는 모드로 연다.
+/// 휴대폰 화면 캡처(약 2.2)는 지금처럼 화면에 통째로 맞춘다.
+const double chatViewerTallImageRatio = 2.5;
+
+/// 사진이 긴 세로 이미지인지 — 크기를 모르면(아직 안 받았거나 0) 일반 사진으로 본다.
+bool isTallChatImage(int width, int height) =>
+    width > 0 && height / width > chatViewerTallImageRatio;
+
+/// 크게 보기의 한 장.
+///
+/// 공문을 채팅에 한 장짜리 긴 JPG로 올리게 되면서, 화면에 통째로 맞추면 1214×13817 공문이
+/// 폭 49px 막대로 보이고 4배로 키워도 글자를 읽을 수 없었다(360dp 캡처). 긴 세로 이미지는
+/// 폭에 맞춰 위에서부터 보여 주고, 끌어서 아래로 내려 읽고, 두 손가락으로 더 키우거나
+/// 전체가 보이도록 줄일 수 있게 한다.
+class _ViewerPage extends StatefulWidget {
+  final String imageUrl;
+
+  const _ViewerPage({required this.imageUrl});
+
+  @override
+  State<_ViewerPage> createState() => _ViewerPageState();
+}
+
+class _ViewerPageState extends State<_ViewerPage> {
+  ImageStream? _stream;
+  ImageStreamListener? _listener;
+  Size? _imageSize;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveSize();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ViewerPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _imageSize = null;
+      _resolveSize();
+    }
+  }
+
+  void _resolveSize() {
+    _detach();
+    final stream = CachedNetworkImageProvider(widget.imageUrl)
+        .resolve(ImageConfiguration.empty);
+    final listener = ImageStreamListener(
+      (info, _) {
+        if (!mounted) return;
+        setState(() => _imageSize = Size(
+              info.image.width.toDouble(),
+              info.image.height.toDouble(),
+            ));
+      },
+      // 크기를 못 알아내면 일반 사진처럼 연다 — 깨짐 처리는 ChatPhoto가 한다
+      onError: (_, __) {},
+    );
+    stream.addListener(listener);
+    _stream = stream;
+    _listener = listener;
+  }
+
+  void _detach() {
+    if (_stream != null && _listener != null) {
+      _stream!.removeListener(_listener!);
+    }
+    _stream = null;
+    _listener = null;
+  }
+
+  @override
+  void dispose() {
+    _detach();
+    super.dispose();
+  }
+
+  Widget _photo({double? width, double? height, BoxFit fit = BoxFit.contain, int? memCacheWidth}) {
+    // 크게 보기도 깨져 오면 다시 받는다 — 제보된 '사진 깨짐'이 이 화면이었다
+    return ChatPhoto(
+      imageUrl: widget.imageUrl,
+      width: width,
+      height: height,
+      fit: fit,
+      memCacheWidth: memCacheWidth,
+      placeholder: (context) => const Center(
+        child: CircularProgressIndicator(color: AppColors.white),
+      ),
+      brokenBuilder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.broken_image_outlined,
+              color: AppColors.white.withValues(alpha: 0.54),
+              size: 48,
+            ),
+            const SizedBox(height: AppSpacing.space3),
+            Text(
+              '사진을 불러오지 못했습니다',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.white70,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = _imageSize;
+    if (size == null || !isTallChatImage(size.width.round(), size.height.round())) {
+      return Center(
+        child: InteractiveViewer(
+          minScale: 1,
+          maxScale: 4,
+          child: _photo(),
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewWidth = constraints.maxWidth;
+        final contentHeight = viewWidth * size.height / size.width;
+        final dpr = MediaQuery.of(context).devicePixelRatio;
+        return InteractiveViewer(
+          // 자식이 화면보다 길어도 되게 — 폭에 맞춘 긴 문서를 끌어서 아래로 내린다
+          constrained: false,
+          // 줄이면 문서 전체가 한 화면에 들어오는 데까지
+          minScale: (constraints.maxHeight / contentHeight).clamp(0.05, 1.0),
+          maxScale: 4,
+          child: SizedBox(
+            width: viewWidth,
+            height: contentHeight,
+            // 화면 폭만큼만 풀어 둔다 — 원본 폭으로 풀면 세로가 GPU가 그릴 수 있는 크기를 넘기 쉽다
+            child: _photo(
+              width: viewWidth,
+              height: contentHeight,
+              fit: BoxFit.fill,
+              memCacheWidth: (viewWidth * dpr).round(),
+            ),
+          ),
+        );
+      },
     );
   }
 }
