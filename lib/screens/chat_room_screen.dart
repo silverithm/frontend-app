@@ -58,12 +58,17 @@ class ChatRoomScreen extends StatefulWidget {
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
 }
 
-class _ChatRoomScreenState extends State<ChatRoomScreen> {
+class _ChatRoomScreenState extends State<ChatRoomScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
   Timer? _typingTimer;
   bool _isTyping = false;
+
+  /// 끊긴 배너의 "30초 넘게 못 붙었다" 문구를 위한 재확인 시계.
+  /// isConnected 자체는 바뀌지 않아도 시간만 흘러 문구가 바뀌어야 하므로 따로 둔다.
+  Timer? _connectionWatchTimer;
 
   // @멘션 — 입력 중인 '@뒤 글자'와 후보 목록
   String? _mentionQuery;
@@ -83,6 +88,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.initState();
     _chatProvider = context.read<ChatProvider>();
     _authProvider = context.read<AuthProvider>();
+    WidgetsBinding.instance.addObserver(this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadMessages();
@@ -93,6 +99,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     _scrollController.addListener(_onScroll);
     _messageController.addListener(_onTextChanged);
+
+    // 끊김 배너의 "30초 넘게" 문구가 시간에 맞춰 바뀌도록 가볍게 다시 그린다.
+    // isConnected 자체는 이 방에서 바꾸지 않으므로 setState만 한다.
+    _connectionWatchTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted && !_chatProvider.isConnected) setState(() {});
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) return;
+    // 화면이 꺼졌다 돌아왔을 때 — 소켓 하트비트가 아직 끊김을 알아채기 전이라도
+    // 지금 열어 둔 이 방에서 놓친 메시지가 없는지 바로 확인한다. ensureConnected는
+    // 소켓이 죽어 있으면 재연결도 함께 한다(main_screen의 전역 처리와 같은 호출이지만,
+    // 여기서는 '지금 보고 있는 방'을 확실히 채워 두려고 이 화면에서도 직접 건다).
+    _chatProvider.ensureConnected();
   }
 
   // --- 스크롤 중 날짜 배지 ---------------------------------------------------
@@ -289,6 +312,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _connectionWatchTimer?.cancel();
     _dateBadgeHideTimer?.cancel();
     // 타이핑 중이면 타이핑 중지 알림 전송
     if (_isTyping) {
@@ -1856,6 +1881,84 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   /// 방 상단에 붙는 공지 띠. 눌러서 펼치면 전체 내용이 보인다.
+  /// 재로그인 안내가 필요한 임계 시간 — 이보다 오래 못 붙으면 "잠깐 끊김"이
+  /// 아니라 눈에 띄게 알린다.
+  static const _connectionNoticeThreshold = Duration(seconds: 30);
+
+  /// 소켓이 끊긴 동안 조용히 있지 않는다. 처음엔 옅게 "다시 연결 중"을 보여주고,
+  /// [_connectionNoticeThreshold]를 넘기면 더 눈에 띄게 바꾼다. 재로그인이
+  /// 필요한 경우(_stoppedForAuth)는 별도 문구로 안내한다 — ChatProvider가
+  /// 이미 로그인 화면으로 보내는 중이지만, 화면 전환 전 잠깐이라도 이유를 보여준다.
+  Widget _buildConnectionBanner() {
+    return Consumer<ChatProvider>(
+      builder: (context, chatProvider, child) {
+        if (chatProvider.isConnected) return const SizedBox.shrink();
+
+        final String message;
+        final bool severe;
+        if (chatProvider.stoppedForAuth) {
+          message = '로그인이 만료되었습니다. 다시 로그인해주세요';
+          severe = true;
+        } else {
+          final since = chatProvider.disconnectedSince;
+          final longDown = since != null &&
+              DateTime.now().difference(since) >= _connectionNoticeThreshold;
+          message = longDown
+              ? '연결이 계속 끊겨 있습니다. 네트워크 상태를 확인해주세요'
+              : '연결이 끊겨 다시 연결하는 중...';
+          severe = longDown;
+        }
+
+        final backgroundColor = severe
+            ? AppSemanticColors.statusErrorBackground
+            : AppSemanticColors.statusWarningBackground;
+        final borderColor = severe
+            ? AppSemanticColors.statusErrorBorder
+            : AppSemanticColors.statusWarningBorder;
+        final textColor = severe
+            ? AppSemanticColors.statusErrorText
+            : AppSemanticColors.statusWarningText;
+        final iconColor = severe
+            ? AppSemanticColors.statusErrorIcon
+            : AppSemanticColors.statusWarningIcon;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space4,
+            vertical: AppSpacing.space2,
+          ),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            border: Border(bottom: BorderSide(color: borderColor, width: 1)),
+          ),
+          child: Row(
+            children: [
+              if (!severe)
+                SizedBox(
+                  width: AppSpacing.space4,
+                  height: AppSpacing.space4,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: iconColor,
+                  ),
+                )
+              else
+                Icon(Icons.wifi_off, size: AppSpacing.space4, color: iconColor),
+              const SizedBox(width: AppSpacing.space2),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppTypography.labelSmall.copyWith(color: textColor),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildNoticeBanner(ChatRoom room, bool isAdmin) {
     if (!room.hasNotice) return const SizedBox.shrink();
 
@@ -3204,6 +3307,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           },
           child: Column(
             children: [
+              // 소켓 연결 상태 — 끊긴 동안은 조용히 있지 않고 알려 준다
+              _buildConnectionBanner(),
+
               // 상단 고정 공지
               Consumer<ChatProvider>(
                 builder: (context, chatProvider, child) {
