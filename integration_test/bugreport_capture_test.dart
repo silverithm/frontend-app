@@ -36,6 +36,7 @@ void main() {
   }
 
   Future<void> shot(WidgetTester tester, String name) async {
+    debugPrint('[STEP] $name');
     await settle(tester, seconds: 1.5);
     debugPrint('[SHOT] $name');
     await settle(tester, seconds: 4);
@@ -43,6 +44,13 @@ void main() {
 
   testWidgets('버그제보 요청 캡처', (tester) async {
     app.main();
+    var step = 'start';
+    final original = FlutterError.onError;
+    FlutterError.onError = (details) {
+      final text = details.exceptionAsString().split('\n').first;
+      debugPrint('[ERROR@$step] $text');
+      if (!text.contains('overflowed')) original?.call(details);
+    };
     final either = find.byWidgetPredicate(
         (w) => w is Text && (w.data == '로그인' || w.data == '전자결재'));
     expect(await waitFor(tester, either, maxSeconds: 180), isTrue);
@@ -83,6 +91,7 @@ void main() {
     await settle(tester, seconds: 6);
     await shot(tester, '50_room_bottom');
 
+    step = 'viewer';
     // 1) 긴 공문 이미지 — 말풍선을 눌러 크게 보기
     final pdfName = find.textContaining('공문_오전 반차 신청');
     debugPrint('[INFO] 공문 파일 줄 ${pdfName.evaluate().length}개');
@@ -135,6 +144,7 @@ void main() {
       }
     }
 
+    step = 'newline';
     // 2) 줄바꿈 — 엔터가 줄바꿈이고 보내지지 않는다
     final input = find.byType(TextField).last;
     final field = tester.widget<TextField>(input);
@@ -153,9 +163,13 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await settle(tester, seconds: 1);
 
+    step = 'datejump';
     // 3) 날짜로 이동 — ⋮ → 대화 내용 검색 → 날짜로 이동
     await tester.tap(find.byTooltip('더보기').last, warnIfMissed: false);
+    step = 'action_sheet';
     await settle(tester, seconds: 2);
+    await shot(tester, '52b_action_sheet');
+    step = 'search_sheet';
     await tester.tap(find.text('대화 내용 검색').last, warnIfMissed: false);
     await settle(tester, seconds: 2);
     await shot(tester, '53_search_sheet');
@@ -179,6 +193,7 @@ void main() {
       await settle(tester, seconds: 1);
       await shot(tester, '55_date_jump_result');
     }
+    FlutterError.onError = original;
     debugPrint('[DONE]');
   }, timeout: const Timeout(Duration(minutes: 10)));
 }

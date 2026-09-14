@@ -31,13 +31,20 @@ Future<void> showAppActionSheet(
   return showModalBottomSheet(
     context: context,
     backgroundColor: AppSemanticColors.surfaceDefault,
+    // 기본 시트는 화면의 9/16에서 멈춘다. 채팅방 ⋮ 메뉴(제목 + 다섯 항목)는 360×640 폰에서
+    // 그보다 8px 길어 마지막 항목이 잘렸고, 글자를 크게 해 둔 분은 47px까지 잘렸다.
+    // 내용만큼 커지되 화면의 85%에서 멈추고, 그래도 길면 스크롤한다.
+    isScrollControlled: true,
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.of(context).size.height * 0.85,
+    ),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(AppBorderRadius.xl2),
       ),
     ),
     builder: (sheetContext) => SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
