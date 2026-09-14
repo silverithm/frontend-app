@@ -27,6 +27,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/message_links.dart';
+import '../utils/chat_date_jump.dart';
 import '../utils/chat_image_url.dart';
 import '../utils/chat_media.dart' as chat_media;
 import '../utils/chat_message_grouping.dart';
@@ -125,33 +126,52 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   /// 원본이 아직 안 불러온 옛 대화에 있을 수 있어, 몇 쪽까지는 더 받아 보며 찾는다.
   /// 그래도 못 찾으면 말없이 가만있지 않고 사정을 알린다.
   Future<void> _jumpToRepliedMessage(int replyToId) async {
+    final ok = await _jumpToMessage(replyToId);
+    if (!ok && mounted) {
+      AppSnackBar.showInfo(context, message: '원본이 너무 오래된 대화에 있어 찾지 못했습니다');
+    }
+  }
+
+  /// [replyToId]를 [_jumpToRepliedMessage]가 재사용하고, 날짜로 이동
+  /// ([_jumpToDate])도 같은 경로를 쓴다 — 목록에 없으면 옛 대화를 몇 쪽 더
+  /// 받아 찾고, 도착하면 잠깐 배경을 강조한다. 찾았는지 여부만 돌려주고
+  /// 못 찾았을 때 보여줄 안내는 호출한 쪽의 문맥에 맞게 각자 띄운다.
+  ///
+  /// [onLoadProgress]는 옛 대화를 더 받는 동안 매 시도마다 불린다 (진행 표시용).
+  Future<bool> _jumpToMessage(
+    int targetId, {
+    int maxTries = 5,
+    void Function(int triesSoFar)? onLoadProgress,
+  }) async {
     final provider = context.read<ChatProvider>();
 
-    int indexOf() => provider.messages.indexWhere((m) => m.id == replyToId);
+    int indexOf() => provider.messages.indexWhere((m) => m.id == targetId);
 
     var found = indexOf() >= 0;
     var tries = 0;
-    while (!found && provider.hasMoreMessages && tries < 5) {
+    while (shouldKeepLoadingForDateJump(
+      found: found,
+      hasMore: provider.hasMoreMessages,
+      triesSoFar: tries,
+      maxTries: maxTries,
+    )) {
       await provider.loadMessages(roomId: widget.room.id);
-      if (!mounted) return;
+      if (!mounted) return false;
       found = indexOf() >= 0;
       tries++;
+      onLoadProgress?.call(tries);
     }
 
-    if (!found) {
-      if (mounted) {
-        AppSnackBar.showInfo(context, message: '원본이 너무 오래된 대화에 있어 찾지 못했습니다');
-      }
-      return;
-    }
+    if (!found) return false;
 
-    await _scrollToProbe('id:$replyToId');
-    if (!mounted) return;
+    await _scrollToProbe('id:$targetId');
+    if (!mounted) return true;
 
-    setState(() => _highlightedMessageId = replyToId);
+    setState(() => _highlightedMessageId = targetId);
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _highlightedMessageId = null);
     });
+    return true;
   }
 
   /// 그 메시지 자리가 보일 때까지 한 화면씩 옮겨 가며 찾는다.
@@ -2096,6 +2116,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.space2),
+                      // 날짜로 이동은 검색창과 같은 줄에 둔다. 따로 한 줄을 차지하면 검색창이
+                      // 자동으로 키보드를 올린 상태에서 시트 높이가 모자라 아래가 넘쳤다(360dp 캡처).
+                      Semantics(
+                        button: true,
+                        label: '날짜로 이동',
+                        child: SeedButton(
+                          label: '날짜',
+                          variant: SeedButtonVariant.neutralOutline,
+                          size: SeedButtonSize.small,
+                          prefixIcon: Icons.calendar_today,
+                          onPressed: _jumpToDate,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
                       SeedButton(
                         label: '검색',
                         variant: SeedButtonVariant.brandSolid,
@@ -2155,6 +2189,104 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       searchController.dispose();
       searchFocusNode.dispose();
     });
+  }
+
+  /// "날짜로 이동" — 카톡처럼 날짜를 고르면 그 날 첫 메시지로 바로 간다.
+  ///
+  /// 서버가 그 날짜의 첫 메시지 id를 알려주면(first-on-date), 화면에서는
+  /// [_jumpToMessage]로 재사용해 옛 대화를 필요한 만큼 더 받으며 찾아간다.
+  /// 상한은 [chatDateJumpMaxLoadTries] — 답장 인용문 이동(5쪽)보다 훨씬
+  /// 넉넉한 건, 몇 달 전 날짜를 찍을 수도 있어서다.
+  Future<void> _jumpToDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: now,
+      locale: const Locale('ko', 'KR'),
+      helpText: '이동할 날짜 선택',
+    );
+    if (picked == null || !mounted) return;
+
+    // 검색 시트를 닫고 대화 화면에서 진행 표시·강조를 보여준다
+    Navigator.of(context).pop();
+
+    final userId = _authProvider.currentUser?.chatUserId;
+    final progressNotifier = ValueNotifier<int>(0);
+
+    AppDialog.showCustom<void>(
+      context,
+      barrierDismissible: false,
+      child: ValueListenableBuilder<int>(
+        valueListenable: progressNotifier,
+        builder: (context, tries, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: AppSpacing.space4),
+              Text(
+                '${formatChatDateQuery(picked)} 대화를 찾는 중...',
+                style: AppTypography.bodyMedium,
+              ),
+              if (tries > 0) ...[
+                const SizedBox(height: AppSpacing.space2),
+                Text(
+                  '옛 대화 $tries쪽째 확인 중',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final messageId = await _chatProvider.findFirstMessageIdOnDate(
+        widget.room.id,
+        picked,
+        userId: userId,
+      );
+
+      if (messageId == null) {
+        if (mounted) Navigator.pop(context);
+        if (mounted) {
+          AppSnackBar.showInfo(context, message: '그 날짜 이후 대화가 없습니다');
+        }
+        return;
+      }
+
+      final found = await _jumpToMessage(
+        messageId,
+        maxTries: chatDateJumpMaxLoadTries,
+        onLoadProgress: (tries) => progressNotifier.value = tries,
+      );
+
+      if (mounted) Navigator.pop(context);
+      if (!found && mounted) {
+        AppSnackBar.showInfo(context, message: '그 날짜의 대화를 찾지 못했습니다');
+      }
+    } on ApiException catch (e) {
+      // 서버 문구(예: 'Method Not Allowed')를 그대로 보여주면 선생님들은 무슨 뜻인지 모른다
+      debugPrint('[ChatRoom] 날짜로 이동 실패: ${e.message}');
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        AppSnackBar.showError(context, message: '날짜로 이동하지 못했습니다. 잠시 후 다시 시도해주세요');
+      }
+    } catch (e) {
+      debugPrint('[ChatRoom] 날짜로 이동 실패: $e');
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        AppSnackBar.showError(context, message: '날짜로 이동하지 못했습니다. 잠시 후 다시 시도해주세요');
+      }
+    } finally {
+      progressNotifier.dispose();
+    }
   }
 
   // ===================== 파일함 =====================
@@ -3918,8 +4050,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
     }
 
-    return RichText(
-      text: TextSpan(
+    // RichText가 아니라 Text.rich여야 한다. RichText는 글자 배율(기본값 noScaling)도 앱 서체도
+    // 물려받지 않아, 말풍선 본문만 글자 크기 설정을 무시하고 작게·다른 서체로 그려졌다
+    // (같은 말풍선의 답장 인용문은 커지는데 본문은 그대로였다).
+    return Text.rich(
+      TextSpan(
         style: AppTypography.bodyMedium.copyWith(color: textColor),
         children: spans,
       ),
@@ -3992,6 +4127,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 focusNode: _focusNode,
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요',
+                  // 글자를 키우면 '메시지를 입력하세 / 요'로 글자 중간에서 줄이 넘어갔다 — 한 줄로 두고 줄인다
+                  hintMaxLines: 1,
                   hintStyle: AppTypography.bodyMedium.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
@@ -4002,8 +4139,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 ),
                 maxLines: 4,
                 minLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
+                keyboardType: TextInputType.multiline,
+                // 카카오톡과 같게: 키보드 엔터는 줄바꿈, 전송은 오른쪽 버튼으로만
+                textInputAction: TextInputAction.newline,
               ),
             ),
           ),

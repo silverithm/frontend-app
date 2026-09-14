@@ -3240,6 +3240,30 @@ class ApiService {
     });
   }
 
+  // 날짜로 이동 — 그 날짜의 첫 메시지 id를 구한다.
+  // 200 {"messageId":.., "createdAt":..} / 404 그 날짜 이후 대화가 없음
+  Future<Map<String, dynamic>> getFirstMessageOnDate({
+    required int roomId,
+    required String date,
+    String? userId,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = <String, String>{'date': date};
+      if (userId != null) queryParams['userId'] = userId;
+
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/messages/first-on-date',
+      ).replace(queryParameters: queryParams);
+
+      print('[API] 날짜로 이동 - 첫 메시지 조회: $uri');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
   // 공지 등록 — 기존 메시지를 방 상단에 고정한다
   Future<Map<String, dynamic>> setChatRoomNotice({
     required int roomId,

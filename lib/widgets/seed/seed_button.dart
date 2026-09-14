@@ -288,7 +288,9 @@ class _SeedButtonState extends State<SeedButton> {
         duration: const Duration(milliseconds: 100),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 100),
-          height: _height,
+          // 높이는 최소값이다. 고정 높이(중간 40)에 위아래 여백 10씩이면 글자 자리가 20뿐이라,
+          // 글자 크기를 조금만 키워도 '승인'·'거절'의 아래가 잘렸다. 보통 크기에서는 그대로 40이다.
+          constraints: BoxConstraints(minHeight: _height),
           padding: _padding,
           decoration: BoxDecoration(
             color: colors.background,

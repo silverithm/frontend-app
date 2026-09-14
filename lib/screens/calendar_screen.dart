@@ -474,37 +474,43 @@ class _CalendarScreenState extends State<CalendarScreen>
                     )
                   : null,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  day.toString(),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: isSelected
-                        ? AppSemanticColors.textInverse
-                        : isSunday
-                        ? AppSemanticColors.statusErrorIcon
-                        : isSaturday
-                        ? AppSemanticColors.interactivePrimaryDefault
-                        : AppSemanticColors.textPrimary,
-                    fontWeight: isToday || isSelected
-                        ? AppTypography.fontWeightSemibold
-                        : AppTypography.fontWeightNormal,
-                  ),
-                ),
-                if (hasSchedule)
-                  Container(
-                    margin: const EdgeInsets.only(top: 2),
-                    width: 4,
-                    height: 4,
-                    decoration: BoxDecoration(
+            // 칸은 정사각형이라 폭이 좁은 폰(360dp)에서 글자를 가장 크게 하면 날짜 숫자와 일정 점이
+            // 칸 높이를 넘었다. 넘칠 때만 칸에 맞춰 줄이고, 평소 크기에서는 그대로 둔다.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    day.toString(),
+                    style: AppTypography.bodyMedium.copyWith(
                       color: isSelected
                           ? AppSemanticColors.textInverse
-                          : AppSemanticColors.statusSuccessIcon,
-                      shape: BoxShape.circle,
+                          : isSunday
+                          ? AppSemanticColors.statusErrorIcon
+                          : isSaturday
+                          ? AppSemanticColors.interactivePrimaryDefault
+                          : AppSemanticColors.textPrimary,
+                      fontWeight: isToday || isSelected
+                          ? AppTypography.fontWeightSemibold
+                          : AppTypography.fontWeightNormal,
                     ),
                   ),
-              ],
+                  if (hasSchedule)
+                    Container(
+                      margin: const EdgeInsets.only(top: 2),
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppSemanticColors.textInverse
+                            : AppSemanticColors.statusSuccessIcon,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

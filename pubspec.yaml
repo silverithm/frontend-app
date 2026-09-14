@@ -155,6 +155,24 @@ flutter:
     - assets/images/
     - .env
 
+  # 앱 전체 서체. 한글이 없는 Roboto·Geist를 기본으로 두면 한글은 기기마다 다른 대체
+  # 서체로 그려지고, 같은 화면에서도 기호(♡·❤)가 섞인 줄만 서체가 바뀌었다
+  # (제보 2026-09-08 "안드로이드에서 폰트와 크기가 제각각"). 한글을 품은 서체를 직접 싣는다.
+  # Pretendard — SIL Open Font License 1.1 (assets/fonts/Pretendard-LICENSE.txt)
+  fonts:
+    - family: Pretendard
+      fonts:
+        - asset: assets/fonts/Pretendard-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Pretendard-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Pretendard-SemiBold.otf
+          weight: 600
+        - asset: assets/fonts/Pretendard-Bold.otf
+          weight: 700
+        - asset: assets/fonts/Pretendard-ExtraBold.otf
+          weight: 800
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

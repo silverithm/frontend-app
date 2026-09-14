@@ -24,8 +24,8 @@ void main() {
   });
 
   group('화면이 견디는 범위로 자른다', () {
-    test('기기에서 아주 크게 해둬도 상한을 넘지 않는다 — 여기서 화면이 깨졌다', () {
-      expect(effectiveTextScale(2.0, AppTextSize.normal), maxTextScale);
+    test('기기에서 아주 크게 해둬도 기기 몫은 한도까지만 따른다 — 여기서 화면이 깨졌다', () {
+      expect(effectiveTextScale(2.0, AppTextSize.normal), maxSystemTextScale);
       expect(effectiveTextScale(3.5, AppTextSize.extraLarge), maxTextScale);
     });
 
@@ -59,6 +59,19 @@ void main() {
 
     test('기기에서 이미 키운 분이 앱에서도 크게 고르면 곱해지되 상한에서 멈춘다', () {
       expect(effectiveTextScale(1.3, AppTextSize.extraLarge), maxTextScale);
+    });
+
+    // 제보자 화면을 역산하면 기기 배율이 1.8쯤이었다. 예전 규칙(곱한 뒤 한 번만 자름)에서는
+    // 1.56을 넘는 순간 네 가지가 전부 상한 하나로 같아져, 설정을 눌러도 아무것도 바뀌지 않았다.
+    test('기기에서 아주 크게 해둔 분에게도 네 가지가 서로 다른 크기를 낸다', () {
+      for (final systemScale in [1.0, 1.3, 1.56, 1.8, 2.0, 3.0]) {
+        final scales =
+            AppTextSize.values.map((s) => effectiveTextScale(systemScale, s)).toList();
+        for (var i = 1; i < scales.length; i++) {
+          expect(scales[i], greaterThan(scales[i - 1]),
+              reason: '기기 $systemScale에서 ${AppTextSize.values[i]}');
+        }
+      }
     });
   });
 

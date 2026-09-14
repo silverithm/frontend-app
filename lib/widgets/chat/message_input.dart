@@ -63,6 +63,8 @@ class MessageInput extends StatelessWidget {
                 focusNode: focusNode,
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요',
+                  // 글자를 키우면 '메시지를 입력하세 / 요'로 글자 중간에서 줄이 넘어갔다 — 한 줄로 두고 줄인다
+                  hintMaxLines: 1,
                   hintStyle: AppTypography.bodyMedium.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
@@ -71,8 +73,9 @@ class MessageInput extends StatelessWidget {
                 ),
                 maxLines: 4,
                 minLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSend(),
+                keyboardType: TextInputType.multiline,
+                // 카카오톡과 같게: 키보드 엔터는 줄바꿈, 전송은 오른쪽 버튼으로만
+                textInputAction: TextInputAction.newline,
               ),
             ),
           ),
