@@ -169,7 +169,11 @@ class _MainScreenState extends State<MainScreen>
 
         // 백그라운드에 있는 동안 놓친 채팅 메시지(소켓 미연결 구간)를 위한 안전망
         final companyId = authProvider.currentUser!.company?.id ?? '1';
-        context.read<ChatProvider>().loadChatRooms(
+        final chatProvider = context.read<ChatProvider>();
+        // 화면이 꺼진 동안 소켓이 조용히 죽어 있으면 하트비트가 알아채기 전에 바로 다시 붙는다.
+        // 그 사이에 보낸 메시지가 사라지던 것이 2026-09-14 "메시지가 안 보내져요"의 원인이다.
+        chatProvider.ensureConnected();
+        chatProvider.loadChatRooms(
           companyId: companyId,
           userId: authProvider.currentUser!.id,
         );

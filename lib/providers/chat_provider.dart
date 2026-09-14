@@ -8,6 +8,7 @@ import '../models/chat_message.dart';
 import '../models/chat_participant.dart';
 import '../services/api_service.dart';
 import '../services/socket_reconnect.dart';
+import '../services/chat_outbox.dart';
 import '../services/storage_service.dart';
 import '../utils/chat_message_pagination.dart';
 
@@ -61,6 +62,12 @@ class ChatProvider with ChangeNotifier {
 
   /// 화면에서 일부러 끊은 것인지 (로그아웃·계정 전환) — 그때는 다시 붙지 않는다
   bool _intentionallyDisconnected = false;
+
+  /// 보낸 메시지의 발신함 — "반드시 도착하거나 반드시 실패로 보인다". 규칙은 chat_outbox.dart.
+  late final ChatOutbox _outbox = ChatOutbox(_PrefsOutboxStore());
+
+  /// 소켓으로 보낸 뒤 서버 에코를 기다리는 시계 — localId → timer. 넘기면 REST로 다시 보낸다.
+  final Map<String, Timer> _ackTimers = {};
   final Map<int, List<StompUnsubscribe>> _roomSubscriptions = {};
 
   // 채팅방 목록 화면에서 전체 방을 실시간 갱신하기 위한 경량 구독
@@ -208,6 +215,8 @@ class ChatProvider with ChangeNotifier {
         backfillMissedMessages(_selectedRoom!.id);
       }
     }
+    // 끊겨 있는 동안 실패한 메시지는 이제 보낼 수 있다 — 이 세션 것만 (chat_outbox.dart)
+    if (_hasConnectedBefore) _resendFailedInSession();
     _hasConnectedBefore = true;
 
     // 목록 화면을 보고 있었다면 재연결 시 전체 방 구독을 복원한다
@@ -544,6 +553,13 @@ class ChatProvider with ChangeNotifier {
       final isMyMessage =
           currentUserId != null && message.senderId == currentUserId;
 
+      // 내가 보낸 메시지의 에코라면 발신함에서 지운다 — 방을 나가 있어도 재전송 시계는 멈춰야 한다
+      final echoedKey = message.clientMessageId;
+      if (echoedKey != null && echoedKey.isNotEmpty) {
+        final acked = _outbox.acknowledgeByClientMessageId(echoedKey);
+        if (acked != null) _cancelAckTimer(acked.localId);
+      }
+
       // 현재 선택된 채팅방의 메시지인 경우 목록에 추가
       if (_selectedRoom != null && roomId == _selectedRoom!.id) {
         // 이미 있는 메시지인지 체크 (서버 ID로)
@@ -555,34 +571,15 @@ class ChatProvider with ChangeNotifier {
           return;
         }
 
-        // 내가 보낸 pending 메시지가 있는지 확인 (같은 content, sender)
-        final pendingIndex = _messages.indexWhere(
-          (m) =>
-              m.sendingStatus == MessageSendingStatus.sending &&
-              m.senderId == message!.senderId &&
-              m.content == message.content,
-        );
-
+        // 내 '전송 중' 말풍선인가 — 식별자로만 찾는다.
+        // 전에는 (보낸 사람, 내용)으로 찾고 5초 안의 같은 내용을 중복으로 버렸다.
+        // "네", "네"처럼 같은 말을 연달아 보내면 두 번째가 사라지던 이유다.
+        final pendingIndex = indexOfPending(_messages, message);
         if (pendingIndex != -1) {
-          // pending 메시지를 서버 메시지로 교체
-          _messages[pendingIndex] = message.copyWith(
-            sendingStatus: MessageSendingStatus.sent,
-          );
-          notifyListeners();
+          _settlePending(_messages[pendingIndex].localId!, message);
         } else {
-          // 최근에 같은 내용의 메시지를 보냈는지 확인 (중복 방지)
-          final recentDuplicate = _messages.any(
-            (m) =>
-                m.senderId == message!.senderId &&
-                m.content == message.content &&
-                m.createdAt.difference(message.createdAt).abs().inSeconds < 5,
-          );
-
-          if (!recentDuplicate) {
-            // 새 메시지 추가
-            _messages.insert(0, message);
-            notifyListeners();
-          }
+          _messages.insert(0, message);
+          notifyListeners();
         }
       }
 
@@ -718,6 +715,7 @@ class ChatProvider with ChangeNotifier {
     required String senderId,
     required String senderName,
     int? replyToId,
+    String? clientMessageId,
   }) {
     if (_stompClient == null || !_stompClient!.connected) {
       print('[ChatProvider] WebSocket 미연결 - 메시지 전송 불가');
@@ -732,6 +730,8 @@ class ChatProvider with ChangeNotifier {
       'senderName': senderName,
       // 답장이면 원본 id를 함께 보낸다. 서버가 원본을 펼쳐 되돌려준다(웹과 같은 계약).
       if (replyToId != null) 'replyToId': replyToId,
+      // 서버가 그대로 되돌려주는 식별자 — 에코를 내 말풍선에 붙이고, 재전송 중복을 막는다
+      if (clientMessageId != null) 'clientMessageId': clientMessageId,
     };
 
     _stompClient!.send(
@@ -1176,6 +1176,8 @@ class ChatProvider with ChangeNotifier {
         _hasMoreMessages = false;
       }
 
+      if (refresh) _restoreFailedBubbles(roomId);
+
       print('[ChatProvider] 로드된 메시지 수: ${_messages.length}');
       notifyListeners();
     } catch (e) {
@@ -1231,6 +1233,12 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
+  /// 문자 메시지를 보낸다. 화면에는 즉시 '전송 중' 말풍선이 뜬다.
+  ///
+  /// 소켓이 붙어 있으면 소켓으로 보내고 [ackTimeout] 안에 서버 에코를 기다린다.
+  /// 에코가 없으면 같은 식별자로 REST로 다시 보낸다 — 서버는 같은 식별자를 두 번 저장하지
+  /// 않으므로 소켓 전송이 실은 도착해 있었어도 중복이 생기지 않는다.
+  /// 그것도 실패하면 '실패'로 남기고 다시 보내기를 기다린다(chat_outbox.dart).
   Future<bool> sendTextMessage(
     int roomId,
     String content, {
@@ -1238,21 +1246,31 @@ class ChatProvider with ChangeNotifier {
     required String senderName,
     ChatMessage? replyTo,
   }) async {
-    // 로컬 임시 ID 생성
-    final localId = 'local_${DateTime.now().millisecondsSinceEpoch}';
+    final now = DateTime.now();
+    final entry = OutboxEntry(
+      localId: 'local_${now.millisecondsSinceEpoch}_${_pendingLocalIdSeq++}',
+      clientMessageId: newClientMessageId(),
+      roomId: roomId,
+      senderId: senderId,
+      senderName: senderName,
+      content: content,
+      replyToId: replyTo?.id,
+      createdAt: now,
+    );
 
     // 임시 메시지 생성 (전송 중 상태)
     final pendingMessage = ChatMessage(
-      id: -DateTime.now().millisecondsSinceEpoch, // 음수 임시 ID
+      id: -now.millisecondsSinceEpoch, // 음수 임시 ID
       chatRoomId: roomId,
       senderId: senderId,
       senderName: senderName,
       type: MessageType.text,
       content: content,
-      createdAt: DateTime.now(),
+      createdAt: now,
       readCount: 1, // 발신자 본인은 이미 읽음
       sendingStatus: MessageSendingStatus.sending,
-      localId: localId,
+      localId: entry.localId,
+      clientMessageId: entry.clientMessageId,
       // 보내는 순간부터 답장 미리보기가 보이도록 낙관적 버블에도 담는다.
       // 서버 응답이 오면 그쪽 값으로 통째로 교체된다.
       replyToId: replyTo?.id,
@@ -1265,50 +1283,153 @@ class ChatProvider with ChangeNotifier {
     // 즉시 UI에 표시
     _messages.insert(0, pendingMessage);
     notifyListeners();
+    _outbox.expectAck(entry);
 
-    try {
-      // WebSocket이 연결되어 있으면 WebSocket으로 전송
-      if (_isConnected) {
-        sendMessageViaWebSocket(
-          roomId,
-          content,
-          senderId: senderId,
-          senderName: senderName,
-          replyToId: replyTo?.id,
-        );
-        // WebSocket 응답이 올 때까지 sending 상태 유지 (중복 방지를 위해)
-        // _handleIncomingMessage에서 pending 메시지를 찾아서 교체함
-        return true;
-      }
-
-      // HTTP fallback
-      final response = await ApiService().sendChatMessage(
-        roomId: roomId,
-        content: content,
-        type: 'TEXT',
+    // 소켓이 정말 살아 있을 때만 소켓으로 — _isConnected만 믿으면 죽은 소켓에 보내고 잊는다
+    if (_isConnected && (_stompClient?.connected ?? false)) {
+      sendMessageViaWebSocket(
+        roomId,
+        content,
         senderId: senderId,
         senderName: senderName,
         replyToId: replyTo?.id,
+        clientMessageId: entry.clientMessageId,
       );
+      _startAckTimer(entry);
+      return true;
+    }
 
-      print('[ChatProvider] 메시지 전송 응답: $response');
+    return _sendViaRest(entry);
+  }
+
+  /// 소켓으로 보낸 뒤 에코를 기다린다. 시간 안에 안 오면 REST로 같은 식별자로 다시 보낸다.
+  void _startAckTimer(OutboxEntry entry) {
+    _ackTimers[entry.localId]?.cancel();
+    _ackTimers[entry.localId] = Timer(ackTimeout, () {
+      _ackTimers.remove(entry.localId);
+      final stillWaiting = _outbox.awaitingAck.any((e) => e.localId == entry.localId);
+      if (!stillWaiting) return;
+      print('[ChatProvider] ${ackTimeout.inSeconds}초 안에 서버 에코 없음 — REST로 다시 보낸다: ${entry.clientMessageId}');
+      _sendViaRest(entry);
+    });
+  }
+
+  void _cancelAckTimer(String localId) {
+    _ackTimers.remove(localId)?.cancel();
+  }
+
+  void _cancelAllAckTimers() {
+    for (final timer in _ackTimers.values) {
+      timer.cancel();
+    }
+    _ackTimers.clear();
+  }
+
+  /// 서버 에코가 내 말풍선에 닿았다 — 시계를 멈추고 발신함에서 지우고 말풍선을 바꾼다.
+  void _settlePending(String localId, ChatMessage serverMessage) {
+    _cancelAckTimer(localId);
+    _outbox.acknowledge(localId);
+    _replacePendingMessage(localId, serverMessage);
+  }
+
+  /// REST로 보낸다(같은 식별자). 성공하면 말풍선을 서버 메시지로 바꾸고, 실패하면 '실패'로 남긴다.
+  Future<bool> _sendViaRest(OutboxEntry entry) async {
+    try {
+      final Map<String, dynamic> response;
+      if (entry.isFile) {
+        response = await ApiService().uploadChatFile(
+          roomId: entry.roomId,
+          file: File(entry.filePath!),
+          senderId: entry.senderId,
+          senderName: entry.senderName,
+          batchId: entry.batchId,
+          batchSize: entry.batchSize,
+          clientMessageId: entry.clientMessageId,
+        );
+      } else {
+        response = await ApiService().sendChatMessage(
+          roomId: entry.roomId,
+          content: entry.content ?? '',
+          type: 'TEXT',
+          senderId: entry.senderId,
+          senderName: entry.senderName,
+          replyToId: entry.replyToId,
+          clientMessageId: entry.clientMessageId,
+        );
+      }
 
       final messageData = response['message'] ?? response;
       final newMessage = ChatMessage.fromJson(
         messageData as Map<String, dynamic>,
       );
-
-      // 임시 메시지를 실제 메시지로 교체
-      _replacePendingMessage(localId, newMessage);
-
+      _cancelAckTimer(entry.localId);
+      _outbox.acknowledge(entry.localId);
+      _replacePendingMessage(entry.localId, newMessage);
       return true;
     } catch (e) {
-      print('[ChatProvider] 메시지 전송 에러: $e');
-      // 전송 실패 상태로 변경
-      _updatePendingMessageStatus(localId, MessageSendingStatus.failed);
-      setError('메시지 전송에 실패했습니다: ${e.toString()}');
+      print('[ChatProvider] 전송 실패(REST): ${entry.clientMessageId} $e');
+      _cancelAckTimer(entry.localId);
+      _outbox.markFailed(entry.localId);
+      _updatePendingMessageStatus(entry.localId, MessageSendingStatus.failed);
+      setError(entry.isFile
+          ? '파일 전송에 실패했습니다: ${e.toString()}'
+          : '메시지 전송에 실패했습니다: ${e.toString()}');
       return false;
     }
+  }
+
+  /// '다시 보내기'. 실패한 말풍선을 같은 식별자로 REST로 다시 보낸다.
+  Future<bool> retryMessage(String localId) async {
+    final entry = _outbox.entry(localId);
+    if (entry == null) return false;
+    final resend = entry.asInSession();
+    _outbox.expectAck(resend);
+    _updatePendingMessageStatus(localId, MessageSendingStatus.sending);
+    return _sendViaRest(resend);
+  }
+
+  /// '보내지 않고 삭제'. 서버에 없는 말풍선을 화면과 발신함에서 지운다.
+  void discardLocalMessage(String localId) {
+    _cancelAckTimer(localId);
+    _outbox.discard(localId);
+    _messages.removeWhere((m) => m.localId == localId);
+    notifyListeners();
+  }
+
+  /// 소켓이 다시 붙었다 — 이 세션에서 실패한 것만 자동으로 다시 보낸다.
+  /// 앱을 껐다 켠 뒤 남은 실패는 여기 오지 않는다(chat_outbox.dart의 이유).
+  void _resendFailedInSession() {
+    for (final entry in _outbox.autoResendCandidates()) {
+      print('[ChatProvider] 다시 붙음 — 실패한 메시지 자동 재전송: ${entry.clientMessageId}');
+      _outbox.expectAck(entry);
+      _updatePendingMessageStatus(entry.localId, MessageSendingStatus.sending);
+      _sendViaRest(entry);
+    }
+  }
+
+  /// 방에 들어갔을 때, 이 방에서 실패한 채 남은 메시지를 '실패' 말풍선으로 되살린다.
+  void _restoreFailedBubbles(int roomId) {
+    for (final entry in _outbox.failedForRoom(roomId)) {
+      if (_messages.any((m) => m.localId == entry.localId)) continue;
+      _messages.insert(0, entry.toFailedMessage());
+    }
+  }
+
+  /// 앱이 앞으로 돌아왔을 때 — 소켓이 죽어 있으면 기다리지 않고 바로 다시 붙는다.
+  ///
+  /// 화면이 꺼지거나 망이 바뀌면 소켓은 조용히 죽고, 앱은 하트비트가 어긋나기 전까지
+  /// 그걸 모른다. 그 사이에 보낸 메시지가 사라지던 게 이번 사고다.
+  void ensureConnected() {
+    if (_intentionallyDisconnected || _stoppedForAuth) return;
+    if (StorageService().getToken() == null) return;
+    final alive = _isConnected && (_stompClient?.connected ?? false);
+    if (alive) return;
+    print('[ChatProvider] 앱 복귀 — 소켓이 죽어 있어 바로 다시 붙는다');
+    _isConnected = false;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempt = 0;
+    connectWebSocket();
   }
 
   /// [insertPendingFileMessage]로 띄워둔 버블을, 업로드를 시도조차 하지 못한
@@ -1334,6 +1455,13 @@ class ChatProvider with ChangeNotifier {
       _messages[index] = newMessage.copyWith(
         sendingStatus: MessageSendingStatus.sent,
       );
+      notifyListeners();
+      return;
+    }
+    // 말풍선이 없다(그 사이 목록을 다시 불러왔다). 지금 그 방이면 서버 메시지를 그대로 끼운다.
+    if (_selectedRoom?.id == newMessage.chatRoomId &&
+        !_messages.any((m) => m.id > 0 && m.id == newMessage.id)) {
+      _messages.insert(0, newMessage);
       notifyListeners();
     }
   }
@@ -1379,6 +1507,7 @@ class ChatProvider with ChangeNotifier {
       createdAt: DateTime.now(),
       sendingStatus: MessageSendingStatus.sending,
       localId: localId,
+      clientMessageId: newClientMessageId(),
     );
 
     // 즉시 UI에 표시
@@ -1400,34 +1529,23 @@ class ChatProvider with ChangeNotifier {
     String? batchId,
     int? batchSize,
   }) async {
-    try {
-      final response = await ApiService().uploadChatFile(
-        roomId: roomId,
-        file: file,
-        senderId: senderId,
-        senderName: senderName,
-        batchId: batchId,
-        batchSize: batchSize,
-      );
-
-      print('[ChatProvider] 파일 업로드 응답: $response');
-
-      final messageData = response['message'] ?? response;
-      final newMessage = ChatMessage.fromJson(
-        messageData as Map<String, dynamic>,
-      );
-
-      // 임시 메시지를 실제 메시지로 교체
-      _replacePendingMessage(localId, newMessage);
-
-      return true;
-    } catch (e) {
-      print('[ChatProvider] 파일 전송 에러: $e');
-      // 전송 실패 상태로 변경
-      _updatePendingMessageStatus(localId, MessageSendingStatus.failed);
-      setError('파일 전송에 실패했습니다: ${e.toString()}');
-      return false;
-    }
+    final pending = _messages
+        .cast<ChatMessage?>()
+        .firstWhere((m) => m!.localId == localId, orElse: () => null);
+    final entry = OutboxEntry(
+      localId: localId,
+      clientMessageId: pending?.clientMessageId ?? newClientMessageId(),
+      roomId: roomId,
+      senderId: senderId,
+      senderName: senderName,
+      filePath: file.path,
+      batchId: batchId,
+      batchSize: batchSize,
+      createdAt: pending?.createdAt ?? DateTime.now(),
+    );
+    // 파일은 언제나 REST다 — 실패하면 발신함에 남아 '다시 보내기'로 같은 식별자로 올라간다
+    _outbox.expectAck(entry);
+    return _sendViaRest(entry);
   }
 
   /// 파일 하나를 곧바로 만들고 업로드한다(버블을 미리 띄워둘 필요가 없는
@@ -1460,6 +1578,11 @@ class ChatProvider with ChangeNotifier {
   }
 
   Future<bool> deleteMessage(int roomId, int messageId) async {
+    if (messageId <= 0) {
+      // 아직 서버에 없는 말풍선 — 서버는 "메시지를 찾을 수 없습니다"로 답한다(운영 500)
+      setError('아직 보내지지 않은 메시지입니다');
+      return false;
+    }
     try {
       final response = await ApiService().deleteChatMessage(
         roomId: roomId,
@@ -1486,6 +1609,10 @@ class ChatProvider with ChangeNotifier {
   }
 
   Future<bool> editMessage(int roomId, int messageId, String content) async {
+    if (messageId <= 0) {
+      setError('아직 보내지지 않은 메시지입니다');
+      return false;
+    }
     try {
       final response = await ApiService().editChatMessage(
         roomId: roomId,
@@ -1698,6 +1825,7 @@ class ChatProvider with ChangeNotifier {
   void reset() {
     disconnectWebSocket();
     _cancelAllTypingTimers();
+    _cancelAllAckTimers();
     _roomListRefreshDebounce?.cancel();
     _isWatchingRoomList = false;
     _chatRooms = [];
@@ -1729,4 +1857,15 @@ class ChatProvider with ChangeNotifier {
     disconnectWebSocket();
     super.dispose();
   }
+}
+
+/// 발신함의 실패 목록을 shared_preferences 한 칸에 둔다.
+class _PrefsOutboxStore implements OutboxStore {
+  static const _key = 'chat_outbox_failed';
+
+  @override
+  String? read() => StorageService().getString(_key);
+
+  @override
+  Future<void> write(String json) => StorageService().saveString(_key, json);
 }

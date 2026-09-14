@@ -2397,7 +2397,73 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // 단 반응이 다른 쪽에서도 같은 이모지로 보여야 한다. 순서도 맞춰둔다.
   static const List<String> _quickEmojis = ['❤️', '👍', '😂', '😮', '😢', '✅'];
 
+  /// 전송 중이거나 실패한 말풍선의 메뉴 — 다시 보내기 / 보내지 않고 삭제.
+  void _showLocalMessageOptions(ChatMessage message) {
+    final failed = message.sendingStatus == MessageSendingStatus.failed;
+    final localId = message.localId;
+    AppBottomSheet.show(
+      context,
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.space3,
+                horizontal: AppSpacing.space4,
+              ),
+              child: Text(
+                failed ? '보내지 못한 메시지입니다' : '보내는 중입니다',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
+              ),
+            ),
+            if (failed && localId != null)
+              SeedListCell(
+                leadingIcon: Icons.refresh,
+                title: '다시 보내기',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  context.read<ChatProvider>().retryMessage(localId);
+                },
+              ),
+            if (failed && localId != null)
+              SeedListCell(
+                leadingIcon: Icons.delete_outline,
+                title: '보내지 않고 삭제',
+                isDestructive: true,
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  context.read<ChatProvider>().discardLocalMessage(localId);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 실패한 말풍선(사진 묶음이면 묶음 안의 실패한 것들)을 다시 보낸다.
+  void _retryFailed(List<ChatMessage> messages) {
+    final chatProvider = context.read<ChatProvider>();
+    for (final m in messages) {
+      if (m.sendingStatus == MessageSendingStatus.failed && m.localId != null) {
+        chatProvider.retryMessage(m.localId!);
+      }
+    }
+  }
+
   void _showMessageOptions(ChatMessage message) {
+    // 서버에 아직 없는 말풍선(전송 중·실패)은 수정·삭제·반응을 보낼 곳이 없다.
+    // 전에는 같은 메뉴가 떠서 서버가 "메시지를 찾을 수 없습니다"(500)로 답했다.
+    if (message.isLocalOnly) {
+      _showLocalMessageOptions(message);
+      return;
+    }
+
     final authProvider = context.read<AuthProvider>();
     final isMyMessage = message.senderId == authProvider.currentUser?.chatUserId;
     final rootContext = context;
@@ -3461,6 +3527,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     ? AppSemanticColors.textSecondary
                     : AppSemanticColors.interactivePrimaryDefault,
                 fontWeight: FontWeight.bold,
+              ),
+            ),
+          // 실패는 아이콘만으로는 부족하다 — 다시 타이핑하지 않고 그 자리에서 보낼 수 있어야 한다
+          if (isMyMessage && sendingStatus == MessageSendingStatus.failed)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _retryFailed(photoGroup ?? [message]),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  '다시 보내기',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppSemanticColors.statusErrorIcon,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
           Row(

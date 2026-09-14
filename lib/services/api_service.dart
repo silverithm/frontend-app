@@ -3087,6 +3087,7 @@ class ApiService {
     required String senderId,
     required String senderName,
     int? replyToId,
+    String? clientMessageId,
   }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/chat/rooms/$roomId/messages');
@@ -3098,6 +3099,8 @@ class ApiService {
         'senderName': senderName,
         // 웹소켓이 안 될 때도 답장이 끊기면 안 된다.
         if (replyToId != null) 'replyToId': replyToId,
+        // 같은 식별자로 다시 보내면 서버는 새로 저장하지 않는다 — 소켓 전송 뒤 응답을 못 받았을 때의 재전송용
+        if (clientMessageId != null) 'clientMessageId': clientMessageId,
       };
 
       print('[API] 메시지 전송: $uri');
@@ -3309,12 +3312,11 @@ class ApiService {
     required String senderName,
     String? batchId,
     int? batchSize,
+    String? clientMessageId,
   }) async {
     try {
       final url = '$_baseUrl/v1/chat/rooms/$roomId/files';
       print('[API] 채팅 파일 업로드: $url');
-
-      final token = StorageService().getToken();
 
       // 파일 경로 얻기
       String filePath;
@@ -3335,37 +3337,58 @@ class ApiService {
         '[API] 업로드 파일명: $fileName, 크기: $fileSize bytes (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB)',
       );
 
-      // dio FormData 생성
-      final formData = dio.FormData.fromMap({
-        'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
-        'senderId': senderId,
-        'senderName': senderName,
-        if (batchId != null && batchSize != null && batchSize > 1) ...{
-          'batchId': batchId,
-          'batchSize': batchSize.toString(),
-        },
-      });
-
       // dio 인스턴스 생성
       final dioClient = dio.Dio();
       dioClient.options.connectTimeout = const Duration(seconds: 30);
       dioClient.options.receiveTimeout = const Duration(seconds: 60);
       dioClient.options.sendTimeout = const Duration(seconds: 60);
+      // 401/403은 예외가 아니라 응답으로 받는다 — 토큰을 갱신하고 한 번 더 올리기 위해
+      dioClient.options.validateStatus = (status) => status != null && status < 500;
 
-      final response = await dioClient.post(
-        url,
-        data: formData,
-        options: dio.Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'ngrok-skip-browser-warning': 'true',
+      Future<dio.Response> attempt() async {
+        // FormData는 한 번 보내면 다시 못 쓴다 — 시도마다 새로 만든다
+        final formData = dio.FormData.fromMap({
+          'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
+          'senderId': senderId,
+          'senderName': senderName,
+          if (batchId != null && batchSize != null && batchSize > 1) ...{
+            'batchId': batchId,
+            'batchSize': batchSize.toString(),
           },
-        ),
-        onSendProgress: (sent, total) {
-          final progress = (sent / total * 100).toStringAsFixed(1);
-          print('[API] 업로드 진행률: $progress% ($sent / $total)');
-        },
-      );
+          if (clientMessageId != null) 'clientMessageId': clientMessageId,
+        });
+        return dioClient.post(
+          url,
+          data: formData,
+          options: dio.Options(
+            headers: {
+              'Authorization': 'Bearer ${StorageService().getToken()}',
+              'ngrok-skip-browser-warning': 'true',
+            },
+          ),
+          onSendProgress: (sent, total) {
+            final progress = (sent / total * 100).toStringAsFixed(1);
+            print('[API] 업로드 진행률: $progress% ($sent / $total)');
+          },
+        );
+      }
+
+      var response = await attempt();
+
+      // 문자 메시지(_makeAuthenticatedRequest)와 같은 규칙 — 토큰이 만료됐으면 갱신하고 한 번 더.
+      // 전에는 사진만 이 경로가 없어, 오래 켜 둔 앱에서 사진이 '실패'로 떨어졌다.
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        print('[API] 파일 업로드 토큰 만료 감지 - refresh 시도');
+        final refreshResult = await _refreshToken();
+        if (refreshResult.isSuccess) {
+          response = await attempt();
+        } else if (refreshResult.shouldLogout) {
+          await _performGlobalLogout();
+          throw ApiException('로그인이 필요합니다', 401);
+        } else {
+          throw ApiException('일시적인 네트워크 오류입니다. 잠시 후 다시 시도해주세요', 503);
+        }
+      }
 
       print('[API] 파일 업로드 응답 상태: ${response.statusCode}');
       print('[API] 파일 업로드 응답: ${response.data}');

@@ -83,6 +83,11 @@ class ChatMessage {
   final bool isDeleted;
   final MessageSendingStatus sendingStatus;
   final String? localId; // 로컬에서 생성한 임시 ID
+
+  /// 보내는 쪽이 붙인 식별자(UUID). 서버가 그대로 되돌려주므로, '전송 중' 말풍선을
+  /// 서버가 저장한 메시지와 이 값으로 짝맞춘다(내용 비교가 아니라).
+  /// 같은 값으로 다시 보내면 서버는 새로 저장하지 않고 처음 것을 돌려준다.
+  final String? clientMessageId;
   final List<ReactionSummary> reactions; // 이모지 리액션
   final DateTime? editedAt; // 수정된 시각. null이면 수정된 적 없음
 
@@ -115,6 +120,7 @@ class ChatMessage {
     this.isDeleted = false,
     this.sendingStatus = MessageSendingStatus.sent,
     this.localId,
+    this.clientMessageId,
     this.reactions = const [],
     this.editedAt,
     this.replyToId,
@@ -123,6 +129,10 @@ class ChatMessage {
     this.replyToType,
     this.replyToMediaType,
   });
+
+  /// 서버에 아직 없는 메시지인가 — 전송 중이거나 실패한 낙관적 말풍선.
+  /// 이런 메시지는 수정·삭제·반응을 서버에 보낼 수 없다(음수 임시 id).
+  bool get isLocalOnly => id <= 0;
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
@@ -146,6 +156,7 @@ class ChatMessage {
       isDeleted: json['isDeleted'] as bool? ?? false,
       sendingStatus: MessageSendingStatus.sent, // 서버에서 온 메시지는 이미 전송됨
       localId: json['localId']?.toString(),
+      clientMessageId: json['clientMessageId']?.toString(),
       reactions:
           (json['reactions'] as List<dynamic>?)
               ?.map((e) => ReactionSummary.fromJson(e as Map<String, dynamic>))
@@ -290,6 +301,7 @@ class ChatMessage {
     bool? isDeleted,
     MessageSendingStatus? sendingStatus,
     String? localId,
+    String? clientMessageId,
     List<ReactionSummary>? reactions,
     DateTime? editedAt,
     int? replyToId,
@@ -317,6 +329,7 @@ class ChatMessage {
       isDeleted: isDeleted ?? this.isDeleted,
       sendingStatus: sendingStatus ?? this.sendingStatus,
       localId: localId ?? this.localId,
+      clientMessageId: clientMessageId ?? this.clientMessageId,
       reactions: reactions ?? this.reactions,
       editedAt: editedAt ?? this.editedAt,
       replyToId: replyToId ?? this.replyToId,
