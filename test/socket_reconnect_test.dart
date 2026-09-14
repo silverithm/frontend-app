@@ -116,4 +116,66 @@ void main() {
       expect(isJwtExpired(_fakeJwt({'sub': 'no-exp-claim'}), now: now), isFalse);
     });
   });
+
+  group('네트워크가 돌아왔을 때 바로 다시 붙는지', () {
+    test('연결이 돌아왔고 소켓은 끊겨 있으면 바로 시도한다 — 대기를 기다리지 않는다', () {
+      expect(
+        shouldReconnectOnConnectivityChange(
+          hasConnection: true,
+          isSocketConnected: false,
+          intentionallyDisconnected: false,
+          stoppedForAuth: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('연결이 없어졌다는 신호는 재시도 대상이 아니다 — 시도해 봐야 실패만 반복한다', () {
+      expect(
+        shouldReconnectOnConnectivityChange(
+          hasConnection: false,
+          isSocketConnected: false,
+          intentionallyDisconnected: false,
+          stoppedForAuth: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('이미 붙어 있으면 할 일이 없다', () {
+      expect(
+        shouldReconnectOnConnectivityChange(
+          hasConnection: true,
+          isSocketConnected: true,
+          intentionallyDisconnected: false,
+          stoppedForAuth: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('사람이 일부러 끊었으면 네트워크가 돌아와도 다시 붙지 않는다', () {
+      expect(
+        shouldReconnectOnConnectivityChange(
+          hasConnection: true,
+          isSocketConnected: false,
+          intentionallyDisconnected: true,
+          stoppedForAuth: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('세션이 끝나 멈춘 상태면 네트워크가 돌아와도 다시 붙지 않는다', () {
+      expect(
+        shouldReconnectOnConnectivityChange(
+          hasConnection: true,
+          isSocketConnected: false,
+          intentionallyDisconnected: false,
+          stoppedForAuth: true,
+        ),
+        isFalse,
+      );
+    });
+  });
 }

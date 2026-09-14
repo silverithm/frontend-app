@@ -69,3 +69,28 @@ bool isJwtExpired(String? token, {DateTime? now, Duration skew = const Duration(
   final nowUtc = (now ?? DateTime.now()).toUtc();
   return !nowUtc.isBefore(expiresAt.subtract(skew));
 }
+
+/// 기기 네트워크가 돌아왔다는 신호를 받았을 때, 지금 바로 다시 붙어야 하는지.
+///
+/// 끊긴 뒤로는 간격을 늘려 가며(2·4·8·16·32·60초) 기다리는데, 비행기 모드를 잠깐
+/// 껐다 켠 정도로도 다음 재시도까지(최대 60초) 그냥 기다리고 있었다 — 네트워크가 이미
+/// 돌아왔는데도 화면엔 "확인해주세요" 배너가 그대로였다. connectivity_plus가 주는
+/// '연결이 생겼다/없어졌다' 신호를 붙여, 생겼을 때는 대기를 걷어내고 바로 시도한다.
+///
+/// 없어졌다는 신호(hasConnection=false)는 재시도 대상이 아니다 — 지금 새로 시도해 봐야
+/// 실패만 반복하고, 네트워크가 다시 돌아오면 어차피 다음 신호가 온다.
+/// 이미 소켓이 붙어 있으면([isSocketConnected]) 할 일이 없고, 사람이 일부러 끊었거나
+/// ([intentionallyDisconnected]) 세션이 끝나 멈춘 상태([stoppedForAuth])라면 재접속
+/// 자체를 하지 않는다 — 이 두 플래그는 소켓 쪽의 '재접속을 아예 하지 않는' 규칙과
+/// 반드시 같아야 하므로, ChatProvider가 그대로 넘겨준다.
+bool shouldReconnectOnConnectivityChange({
+  required bool hasConnection,
+  required bool isSocketConnected,
+  required bool intentionallyDisconnected,
+  required bool stoppedForAuth,
+}) {
+  if (!hasConnection) return false;
+  if (isSocketConnected) return false;
+  if (intentionallyDisconnected || stoppedForAuth) return false;
+  return true;
+}

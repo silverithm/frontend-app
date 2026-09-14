@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
 import '../models/chat_room.dart';
@@ -47,6 +48,33 @@ class ChatProvider with ChangeNotifier {
   /// 한 번이라도 붙은 적이 있는가 — 첫 연결과 '다시 붙음'을 가른다.
   /// 다시 붙은 것일 때만 끊긴 사이에 놓친 메시지를 채운다.
   bool _hasConnectedBefore = false;
+
+  /// 기기 네트워크가 끊겼다 돌아오는 걸 듣는다 — 비행기 모드를 풀었는데 다음 재시도
+  /// (최대 60초)까지 그냥 기다리는 걸 막는다(socket_reconnect.dart의
+  /// shouldReconnectOnConnectivityChange).
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  ChatProvider() {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+      _onConnectivityChanged,
+      onError: (Object e) => print('[ChatProvider] 연결성 감시 에러: $e'),
+    );
+  }
+
+  void _onConnectivityChanged(List<ConnectivityResult> results) {
+    final hasConnection = results.any((r) => r != ConnectivityResult.none);
+    final shouldReconnect = shouldReconnectOnConnectivityChange(
+      hasConnection: hasConnection,
+      isSocketConnected: _isConnected && (_stompClient?.connected ?? false),
+      intentionallyDisconnected: _intentionallyDisconnected,
+      stoppedForAuth: _stoppedForAuth,
+    );
+    if (!shouldReconnect) return;
+    print('[ChatProvider] 네트워크가 돌아왔다 — 대기를 걷어내고 바로 다시 붙는다');
+    // 대기 타이머를 걷어내고 시도 횟수를 되돌린 뒤 바로 붙는 것까지 ensureConnected가
+    // 이미 하는 일이다(앱 복귀 때와 같은 절차) — 토큰 유무·플래그 재확인도 겹쳐서 안전하다.
+    ensureConnected();
+  }
 
   // WebSocket
   StompClient? _stompClient;
@@ -1943,6 +1971,7 @@ class ChatProvider with ChangeNotifier {
 
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     _roomListRefreshDebounce?.cancel();
     _cancelAllTypingTimers();
     // 소켓을 안 끊고 dispose하면 STOMP 콜백이 dispose된 provider에 대고
