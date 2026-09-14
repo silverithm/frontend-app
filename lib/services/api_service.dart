@@ -8,6 +8,7 @@ import '../utils/constants.dart';
 import '../services/storage_service.dart';
 import 'auth_restore.dart';
 import '../screens/login_screen.dart';
+import '../widgets/common/app_snackbar.dart';
 
 /// 토큰 검증 결과 — 판정과 서버가 준 정보를 함께 들고 온다.
 class TokenCheckResult {
@@ -124,6 +125,19 @@ class ApiService {
       }
     } catch (e) {
       print('[API] 로그인 화면 이동 중 오류: $e');
+    }
+  }
+
+  /// 요청 인터셉터(`_makeAuthenticatedRequest`) 밖에서 세션 만료를 발견했을 때도
+  /// 같은 로그아웃 경로를 타도록 여는 공개 창구다. 채팅 소켓처럼 401 대신 그냥
+  /// 연결이 끊기는 경로에서 refresh token까지 만료된 걸 알게 됐을 때 쓴다 —
+  /// 화면 이동만 하면 사용자는 왜 로그아웃됐는지 모르므로 [message]로 이유를 알린다.
+  Future<void> performGlobalLogout({String? message}) async {
+    await _performGlobalLogout();
+    if (message == null) return;
+    final context = _globalContext;
+    if (context != null && context.mounted) {
+      AppSnackBar.showError(context, message: message);
     }
   }
 

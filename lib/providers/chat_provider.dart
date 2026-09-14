@@ -61,6 +61,10 @@ class ChatProvider with ChangeNotifier {
   /// 세션이 끝나 재연결을 멈춘 상태. 다시 로그인하거나 앱을 다시 열면 풀린다.
   bool _stoppedForAuth = false;
 
+  /// 언제부터 끊겨 있는지 — 화면에 "얼마나 안 붙었는지" 보여주는 데 쓴다.
+  /// 다시 붙으면 null로 돌아간다.
+  DateTime? _disconnectedSince;
+
   /// 화면에서 일부러 끊은 것인지 (로그아웃·계정 전환) — 그때는 다시 붙지 않는다
   bool _intentionallyDisconnected = false;
 
@@ -99,6 +103,10 @@ class ChatProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   bool get isConnected => _isConnected;
+  /// 세션이 끝나 재연결이 멈춘 상태인가 — 화면에서 재로그인 안내를 띄우는 데 쓴다.
+  bool get stoppedForAuth => _stoppedForAuth;
+  /// 언제부터 끊겨 있는지 (붙어 있으면 null).
+  DateTime? get disconnectedSince => _disconnectedSince;
   Set<String> get typingUsers => _typingUsers;
   bool get hasMoreMessages => _hasMoreMessages;
   bool get isLoadingOlderMessages => _isLoadingOlderMessages;
@@ -149,15 +157,29 @@ class ChatProvider with ChangeNotifier {
     try {
       // 인증 문제로 끊겼던 것이면 토큰부터 새로 받는다 — 만료된 토큰을 들고
       // 다시 붙어 봐야 또 401이다.
-      if (_needsFreshToken) {
+      //
+      // 서버가 재시작돼 끊긴 경우(401이 아니라 그냥 연결 끊김)는 _needsFreshToken이
+      // 서지 않는다. 그 상태로 간격을 늘려 가며 기다리는 동안 토큰이 만료될 수 있으므로,
+      // 붙기 직전에 들고 있는 토큰의 exp를 직접 본다 — 401을 한 번 맞고서야 갱신하는
+      // 왕복을 없앤다(socket_reconnect.dart의 isJwtExpired).
+      final needsRefresh =
+          _needsFreshToken || isJwtExpired(StorageService().getToken());
+      if (needsRefresh) {
         _needsFreshToken = false;
         final refresh = await ApiService().refreshToken();
         if (refresh.shouldLogout) {
           // 세션이 진짜로 끝났다. 여기서 계속 시도하면 서버만 두드린다.
-          print('[ChatProvider] 세션 만료 — 소켓 재연결을 멈춘다');
+          // 조용히 멈추지 않고 로그인 화면으로 보내 다시 로그인하도록 안내한다.
+          print('[ChatProvider] 세션 만료 — 소켓 재연결을 멈추고 재로그인을 안내한다');
           _stoppedForAuth = true;
           _isConnected = false;
+          _markDisconnected();
           notifyListeners();
+          unawaited(
+            ApiService().performGlobalLogout(
+              message: '로그인이 만료되었습니다. 다시 로그인해주세요',
+            ),
+          );
           return;
         }
       }
@@ -200,6 +222,7 @@ class ChatProvider with ChangeNotifier {
   void _onConnect(StompFrame frame) {
     print('[ChatProvider] WebSocket 연결 성공');
     _isConnected = true;
+    _disconnectedSince = null;
     // 붙었으니 재시도 간격을 처음으로 되돌린다
     _reconnectAttempt = 0;
     _needsFreshToken = false;
@@ -226,9 +249,16 @@ class ChatProvider with ChangeNotifier {
     _registerPresence();
   }
 
+  /// 끊긴 시각을 기록한다 — 이미 끊긴 채로 또 에러가 겹쳐 와도 처음 끊긴 시각을 지키기
+  /// 위해 이미 값이 있으면 덮어쓰지 않는다(그래야 화면의 "몇 초째 끊김" 표시가 맞는다).
+  void _markDisconnected() {
+    _disconnectedSince ??= DateTime.now();
+  }
+
   void _onDisconnect(StompFrame frame) {
     print('[ChatProvider] WebSocket 연결 해제');
     _isConnected = false;
+    _markDisconnected();
     _scheduleReconnect();
     _roomSubscriptions.clear();
     _roomListSubscriptions.clear();
@@ -243,6 +273,7 @@ class ChatProvider with ChangeNotifier {
   void _onStompError(StompFrame frame) {
     print('[ChatProvider] STOMP 에러: ${frame.body}');
     _isConnected = false;
+    _markDisconnected();
     if (looksLikeAuthFailure(frame.body)) _needsFreshToken = true;
     _scheduleReconnect();
     notifyListeners();
@@ -251,6 +282,7 @@ class ChatProvider with ChangeNotifier {
   void _onWebSocketError(dynamic error) {
     print('[ChatProvider] WebSocket 에러: $error');
     _isConnected = false;
+    _markDisconnected();
     // 401로 막힌 것이면 토큰부터 새로 받아야 한다 — 같은 토큰으로 다시 붙으면 또 401이다
     if (looksLikeAuthFailure(error)) _needsFreshToken = true;
     _scheduleReconnect();
@@ -1424,7 +1456,16 @@ class ChatProvider with ChangeNotifier {
     if (_intentionallyDisconnected || _stoppedForAuth) return;
     if (StorageService().getToken() == null) return;
     final alive = _isConnected && (_stompClient?.connected ?? false);
-    if (alive) return;
+    if (alive) {
+      // 클라이언트는 '붙어 있다'고 알고 있어도, 화면이 꺼진 동안 조용히 죽었다가
+      // 아직 하트비트가 그걸 알아채기 전일 수 있다(끊김 감지 자체가 다음 하트비트까지
+      // 늦어진다). 열려 있는 방이 있으면 그 사이 놓친 메시지가 없는지 확인해 둔다 —
+      // backfillMissedMessages는 이미 아는 메시지와 겹치면 아무것도 안 하는 안전한 호출이다.
+      if (_hasConnectedBefore && _selectedRoom != null) {
+        backfillMissedMessages(_selectedRoom!.id);
+      }
+      return;
+    }
     print('[ChatProvider] 앱 복귀 — 소켓이 죽어 있어 바로 다시 붙는다');
     _isConnected = false;
     _reconnectTimer?.cancel();
