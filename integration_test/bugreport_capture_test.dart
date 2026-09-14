@@ -61,7 +61,8 @@ void main() {
       await waitFor(tester, find.text('전자결재'), maxSeconds: 25);
     }
     await settle(tester, seconds: 4);
-    final isDemo = find.textContaining('체험 관리자').evaluate().isNotEmpty;
+    // 이미 로그인된 채 열리면 홈 인사말이 늦게 뜬다 — 기다린 뒤 판단한다
+    final isDemo = await waitFor(tester, find.textContaining('체험 관리자'), maxSeconds: 20);
     expect(isDemo, isTrue, reason: '체험 계정(체험 관리자)으로만 캡처한다');
     final close = find.text('닫기');
     if (close.evaluate().isNotEmpty) {
