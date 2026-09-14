@@ -13,6 +13,8 @@ library;
 
 import 'dart:math' as math;
 
+import '../utils/jwt_utils.dart';
+
 /// 처음 실패 뒤 기다리는 시간
 const Duration firstRetryDelay = Duration(seconds: 2);
 
@@ -45,4 +47,25 @@ bool looksLikeAuthFailure(Object? error) {
       || text.contains('not upgraded')
       || text.contains('forbidden')
       || text.contains('403');
+}
+
+/// 끊긴 사이 토큰이 이미 만료됐는지, **핸드셰이크를 보내기 전에** 미리 안다.
+///
+/// 서버 재시작으로 끊긴 경우는 401이 아니라 그냥 연결 끊김이라 [looksLikeAuthFailure]가
+/// 걸러내지 못한다. 그 상태로 간격을 늘려가며 기다리는 동안(최대 60초 간격) 토큰이
+/// 만료될 수 있는데, 그러면 다시 붙을 때 무조건 한 번은 401을 맞고서야 갱신하게 된다 —
+/// 그 한 번이 또 서버를 두드리고 사용자는 그만큼 더 기다린다. JWT의 `exp`는 토큰 안에
+/// 이미 있으므로, 붙기 직전에 이것부터 보면 그 왕복을 없앨 수 있다.
+///
+/// 형식이 JWT가 아니거나 `exp`를 읽을 수 없으면 '만료 아님'으로 본다 — 잘못 판단해도
+/// 손해는 401을 맞고 갱신하는 기존 경로로 돌아가는 것뿐이라, 여기서 틀려도 안전하다.
+bool isJwtExpired(String? token, {DateTime? now, Duration skew = const Duration(seconds: 10)}) {
+  if (token == null || token.isEmpty) return false;
+  final claims = JwtUtils.decodeJwt(token);
+  if (claims == null) return false;
+  final exp = claims['exp'];
+  if (exp is! num) return false;
+  final expiresAt = DateTime.fromMillisecondsSinceEpoch(exp.toInt() * 1000, isUtc: true);
+  final nowUtc = (now ?? DateTime.now()).toUtc();
+  return !nowUtc.isBefore(expiresAt.subtract(skew));
 }

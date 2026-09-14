@@ -1,5 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/services/socket_reconnect.dart';
+
+/// 테스트용 JWT — 서명은 검사하지 않으므로 아무 문자열이나 둔다.
+String _fakeJwt(Map<String, dynamic> claims) {
+  String seg(Object value) =>
+      base64Url.encode(utf8.encode(json.encode(value))).replaceAll('=', '');
+  return '${seg({
+        'alg': 'HS256',
+      })}.${seg(claims)}.signature';
+}
 
 /// 채팅 소켓 재연결 규칙.
 ///
@@ -69,6 +80,40 @@ void main() {
 
     test('오류가 없으면 인증 문제도 아니다', () {
       expect(looksLikeAuthFailure(null), isFalse);
+    });
+  });
+
+  group('토큰 만료를 미리 안다', () {
+    final now = DateTime.utc(2026, 9, 14, 12, 0, 0);
+
+    test('exp가 지났으면 만료로 본다 — 401을 맞기 전에 갱신해야 한다', () {
+      final token = _fakeJwt({
+        'exp': now.subtract(const Duration(minutes: 1)).millisecondsSinceEpoch ~/ 1000,
+      });
+      expect(isJwtExpired(token, now: now), isTrue);
+    });
+
+    test('exp가 넉넉히 남았으면 만료가 아니다', () {
+      final token = _fakeJwt({
+        'exp': now.add(const Duration(minutes: 30)).millisecondsSinceEpoch ~/ 1000,
+      });
+      expect(isJwtExpired(token, now: now), isFalse);
+    });
+
+    test('여유 시간(skew) 안으로 들어오면 아직 안 지났어도 만료로 본다', () {
+      // 재연결 왕복 도중에 넘어가 버리는 경우까지 잡기 위한 여유다.
+      final token = _fakeJwt({
+        'exp': now.add(const Duration(seconds: 5)).millisecondsSinceEpoch ~/ 1000,
+      });
+      expect(isJwtExpired(token, now: now, skew: const Duration(seconds: 10)), isTrue);
+    });
+
+    test('JWT 형식이 아니거나 exp를 못 읽으면 만료 아님으로 본다 — 틀려도 401 경로로 돌아갈 뿐', () {
+      expect(isJwtExpired(null, now: now), isFalse);
+      expect(isJwtExpired('', now: now), isFalse);
+      expect(isJwtExpired('not-a-jwt', now: now), isFalse);
+      expect(isJwtExpired('a.b', now: now), isFalse);
+      expect(isJwtExpired(_fakeJwt({'sub': 'no-exp-claim'}), now: now), isFalse);
     });
   });
 }
