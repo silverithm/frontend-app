@@ -57,6 +57,11 @@ void main() {
       await tester.enterText(fields.at(0), email);
       await tester.enterText(fields.at(1), password);
       await tester.pump(const Duration(milliseconds: 300));
+      // 작은 화면에선 키보드가 로그인 버튼을 가린다 — 키보드를 내리고 버튼을 보이게 한 뒤 누른다
+      FocusManager.instance.primaryFocus?.unfocus();
+      await settle(tester, seconds: 1.5);
+      await tester.ensureVisible(find.text('로그인').last);
+      await settle(tester, seconds: 0.5);
       await tester.tap(find.text('로그인').last);
       await waitFor(tester, find.text('전자결재'), maxSeconds: 25);
     }
