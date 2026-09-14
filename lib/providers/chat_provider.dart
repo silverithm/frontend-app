@@ -50,6 +50,8 @@ class ChatProvider with ChangeNotifier {
 
   // WebSocket
   StompClient? _stompClient;
+  /// connectWebSocket이 호출될 때마다 하나씩 오른다 — 종료 콜백이 어느 연결의 것인지 가린다
+  int _socketGeneration = 0;
 
   /// 다시 붙기 예약 — 간격을 점점 늘린다 (socket_reconnect.dart)
   Timer? _reconnectTimer;
@@ -192,6 +194,9 @@ class ChatProvider with ChangeNotifier {
 
       final wsUrl = 'wss://silverithm.site/ws/chat';
 
+      // 이 연결의 세대 번호. 옛 클라이언트를 끄면서 나는 종료 신호가 새 연결을 다시 끊게
+      // 두지 않기 위해, 종료 콜백은 자기 세대일 때만 처리한다.
+      final generation = ++_socketGeneration;
       _stompClient = StompClient(
         config: StompConfig(
           url: wsUrl,
@@ -199,6 +204,11 @@ class ChatProvider with ChangeNotifier {
           onDisconnect: _onDisconnect,
           onStompError: _onStompError,
           onWebSocketError: _onWebSocketError,
+          // 서버가 소켓을 정상 종료하면(배포로 컨테이너 교체, 서버 재시작) 오류가 아니라
+          // '종료'로 온다. 이 콜백이 없던 동안은 그 경우 앱이 끊긴 줄도 모르고 조용히
+          // 멈춰 있었다 — 재접속도, 끊김 표시도 없이. 하트비트로 죽은 연결을 잡아낸 뒤
+          // 패키지가 소켓을 닫을 때도 여기로 온다.
+          onWebSocketDone: () => _onWebSocketDone(generation),
           stompConnectHeaders: {'Authorization': 'Bearer $token'},
           webSocketConnectHeaders: {'Authorization': 'Bearer $token'},
           heartbeatOutgoing: const Duration(seconds: 10),
@@ -220,7 +230,8 @@ class ChatProvider with ChangeNotifier {
   }
 
   void _onConnect(StompFrame frame) {
-    print('[ChatProvider] WebSocket 연결 성공');
+    // 서버가 하트비트를 주는지 남긴다 — 서버가 0으로 답하면 클라이언트는 끊김을 못 알아챈다
+    print('[ChatProvider] WebSocket 연결 성공 (heart-beat=${frame.headers['heart-beat']})');
     _isConnected = true;
     _disconnectedSince = null;
     // 붙었으니 재시도 간격을 처음으로 되돌린다
@@ -253,6 +264,22 @@ class ChatProvider with ChangeNotifier {
   /// 위해 이미 값이 있으면 덮어쓰지 않는다(그래야 화면의 "몇 초째 끊김" 표시가 맞는다).
   void _markDisconnected() {
     _disconnectedSince ??= DateTime.now();
+  }
+
+  /// 소켓이 닫혔다(정상 종료·하트비트 실패). 끊김으로 표시하고 다시 붙는다.
+  void _onWebSocketDone(int generation) {
+    if (generation != _socketGeneration) return; // 이미 갈아 끼운 옛 연결의 종료
+    if (_intentionallyDisconnected) return;
+    if (!_isConnected && (_reconnectTimer?.isActive ?? false)) return;
+    print('[ChatProvider] WebSocket 닫힘 — 다시 붙는다');
+    _isConnected = false;
+    _markDisconnected();
+    _roomSubscriptions.clear();
+    _roomListSubscriptions.clear();
+    _presenceSubscription = null;
+    _onlineUserIds = {};
+    _scheduleReconnect();
+    notifyListeners();
   }
 
   void _onDisconnect(StompFrame frame) {
