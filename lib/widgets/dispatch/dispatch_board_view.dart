@@ -117,7 +117,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     );
   }
 
-  /// 어르신 하나를 탭했을 때 — 결석/개인등하원/사유를 바로 손본다.
+  /// 어르신 하나를 탭했을 때 — 결석/개인등하원/사유를 바로 손보고, 다른 차로 옮길 수도 있다.
   void _openElderSheet(Senior senior, String routeType) {
     if (senior.elderlyId == null) return; // 회원관리 연결 필요 — 손볼 데이터가 없다
 
@@ -126,13 +126,142 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space4),
-          child: DispatchElderAttendanceTile(
-            senior: senior,
-            routeType: routeType,
-            dateStr: formatDate(_date),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DispatchElderAttendanceTile(
+                senior: senior,
+                routeType: routeType,
+                dateStr: formatDate(_date),
+              ),
+              const SizedBox(height: AppSpacing.space2),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _showMoveVehiclePicker(senior, routeType);
+                },
+                icon: const Icon(Icons.swap_horiz),
+                label: const Text('다른 차량으로 이동'),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  /// "다른 차량으로 이동" — 같은 방향(등원/하원)의 다른 노선과, 그 노선이 회차를
+  /// 쓴다면 회차까지 골라 그날 수정본으로 저장한다. 정확한 자리는 맨 뒤로 붙인다
+  /// (관리자 웹의 드래그 위치 지정과 달리, 여기서는 차/회차만 고른다).
+  Future<void> _showMoveVehiclePicker(Senior senior, String routeType) async {
+    final provider = context.read<DispatchProvider>();
+    final daily = provider.dispatchForDate(_date);
+    final candidates = provider.routes
+        .where((r) => r.type == routeType && r.id != senior.routeId)
+        .toList();
+
+    if (candidates.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('같은 방향의 다른 노선이 없습니다')),
+      );
+      return;
+    }
+
+    final targetRoute = await AppBottomSheet.show<DispatchRoute>(
+      context,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${senior.name}님을 옮길 차량',
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: AppTypography.fontWeightSemibold,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space2),
+              for (final route in candidates)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(route.name),
+                  subtitle: route.routeDrivers.isEmpty
+                      ? null
+                      : Text(route.routeDrivers.first.driverName),
+                  onTap: () => Navigator.of(context).pop(route),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (targetRoute == null || !mounted) return;
+
+    // 그 노선이 회차를 쓰는지(이미 탑승 중인 누군가에게 tripOrder가 있는지) 본다
+    final targetDispatch = daily.routeDispatches
+        .where((rd) => rd.routeId == targetRoute.id);
+    final usesTrip = targetDispatch.isNotEmpty &&
+        targetDispatch.first.tripGroups.any((g) => g.tripOrder != null);
+
+    int? targetTripOrder;
+    if (usesTrip) {
+      if (!mounted) return;
+      targetTripOrder = await AppBottomSheet.show<int>(
+        context,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.space4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${targetRoute.name} — 몇 회차',
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: AppTypography.fontWeightSemibold,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space2),
+                for (final trip in const [1, 2])
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('$trip차'),
+                    onTap: () => Navigator.of(context).pop(trip),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (targetTripOrder == null || !mounted) return;
+    }
+
+    final ok = await provider.moveSeniorOverride(
+      date: _date,
+      seniorId: senior.id,
+      targetRouteId: targetRoute.id,
+      targetTripOrder: targetTripOrder,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? '${senior.name}님을 ${targetRoute.name}(으)로 옮겼습니다' : '이동을 저장하지 못했습니다. 다시 시도해 주세요',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _resetOverrides() async {
+    final provider = context.read<DispatchProvider>();
+    final ok = await provider.resetOverridesForDate(_date);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ok ? '오늘 배차를 설정대로 되돌렸습니다' : '되돌리기에 실패했습니다')),
     );
   }
 
@@ -383,6 +512,13 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
                   fontWeight: AppTypography.fontWeightSemibold,
                 ),
               ),
+              if (provider.hasOverridesForDate(_date)) ...[
+                const Spacer(),
+                TextButton(
+                  onPressed: _resetOverrides,
+                  child: const Text('원래대로'),
+                ),
+              ],
             ],
           ),
           if (unassigned.isNotEmpty) ...[

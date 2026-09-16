@@ -128,4 +128,38 @@ void main() {
       expect(result.routeCount, 0);
     });
   });
+
+  group('nextBoardingOrder', () {
+    Senior senior(String id, int order) => Senior(
+          id: id,
+          name: id,
+          routeId: 'r',
+          boardingOrder: order,
+        );
+
+    test('빈 명단이면 1', () {
+      expect(nextBoardingOrder(const [], -1), 1);
+      expect(nextBoardingOrder(const [], 0), 1);
+    });
+
+    test('맨 뒤(index=-1)면 마지막 사람 다음 자리', () {
+      final list = [senior('a', 1), senior('b', 2)];
+      expect(nextBoardingOrder(list, -1), 3);
+    });
+
+    test('맨 앞(index=0)이면 첫 사람 앞자리', () {
+      final list = [senior('a', 1), senior('b', 2)];
+      expect(nextBoardingOrder(list, 0), 0);
+    });
+
+    test('중간이면 앞뒤 사람의 사이값', () {
+      final list = [senior('a', 1), senior('b', 2), senior('c', 3)];
+      expect(nextBoardingOrder(list, 1), 1.5);
+    });
+
+    test('명단이 하나뿐이고 맨 앞에 놓으면 그 사람보다 앞', () {
+      final list = [senior('a', 5)];
+      expect(nextBoardingOrder(list, 0), 4);
+    });
+  });
 }

@@ -223,6 +223,105 @@ class DispatchProvider with ChangeNotifier {
     return dailyDispatch(date, settings, _vacations, attendances: _attendances);
   }
 
+  /// 그날 손으로 옮긴 배차가 있는지 — 있으면 배차표에 "원래대로" 버튼을 보여준다.
+  bool hasOverridesForDate(DateTime date) =>
+      (_overridesByDate[formatDate(date)] ?? const []).isNotEmpty;
+
+  /// 어르신 한 분을 다른 차(또는 회차)로 옮긴다 — 관리자 웹 DispatchBoard.moveSenior와 같은 규칙.
+  ///
+  /// 탑승 순서는 **떨어뜨린 자리**로 정한다 — 앞사람과 뒷사람 사이의 값을 준다.
+  /// 옮긴 사람만 그날 수정본에 기록하고(같은 차에 탄 나머지 분들 순서는 건드리지 않는다),
+  /// 먼저 화면을 바꾼 뒤(낙관적 반영) 저장이 실패하면 되돌린다.
+  Future<bool> moveSeniorOverride({
+    required DateTime date,
+    required String seniorId,
+    required String targetRouteId,
+    int? targetTripOrder,
+    String? beforeSeniorId,
+  }) async {
+    final companyId = _companyId;
+    if (companyId == null) return false;
+
+    final dateStr = formatDate(date);
+    final daily = dispatchForDate(date);
+    final targetRoute = daily.routeDispatches
+        .where((rd) => rd.routeId == targetRouteId);
+    final tripGroups = targetRoute.isEmpty ? const <TripGroup>[] : targetRoute.first.tripGroups;
+    final group = tripGroups.where((g) => g.tripOrder == targetTripOrder);
+    final list = (group.isEmpty ? const <Senior>[] : group.first.seniors)
+        .where((s) => s.id != seniorId)
+        .toList();
+
+    final index = beforeSeniorId == null
+        ? -1
+        : list.indexWhere((s) => s.id == beforeSeniorId);
+    final boardingOrder = nextBoardingOrder(list, index);
+
+    final before = _overridesByDate[dateStr];
+    final kept = (before ?? const [])
+        .where((o) => o.seniorId != seniorId)
+        .toList();
+    final next = [
+      ...kept,
+      DispatchAssignmentOverride(
+        seniorId: seniorId,
+        routeId: targetRouteId,
+        tripOrder: targetTripOrder,
+        boardingOrder: boardingOrder,
+      ),
+    ];
+
+    _overridesByDate = {..._overridesByDate, dateStr: next};
+    notifyListeners();
+
+    try {
+      await _apiService.saveDispatchOverrides(
+        companyId: companyId,
+        date: dateStr,
+        assignments: next.map((o) => o.toJson()).toList(),
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[DispatchProvider] 배차 이동 저장 실패: $e');
+      _overridesByDate = {..._overridesByDate};
+      if (before == null) {
+        _overridesByDate.remove(dateStr);
+      } else {
+        _overridesByDate[dateStr] = before;
+      }
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// 그날 수정본을 지운다 — 설정대로 되돌린다("원래대로").
+  /// 빈 배열을 보내는 것으로 저장한다(웹과 같은 의미: DELETE가 아니라 PUT [] 이다).
+  Future<bool> resetOverridesForDate(DateTime date) async {
+    final companyId = _companyId;
+    if (companyId == null) return false;
+
+    final dateStr = formatDate(date);
+    final before = _overridesByDate[dateStr];
+    if (before == null || before.isEmpty) return true;
+
+    _overridesByDate = {..._overridesByDate, dateStr: const []};
+    notifyListeners();
+
+    try {
+      await _apiService.saveDispatchOverrides(
+        companyId: companyId,
+        date: dateStr,
+        assignments: const [],
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[DispatchProvider] 배차 되돌리기 실패: $e');
+      _overridesByDate = {..._overridesByDate, dateStr: before};
+      notifyListeners();
+      return false;
+    }
+  }
+
   Map<String, DispatchDaySummary> summaryForMonth(int year, int month) =>
       monthlyDispatchSummary(
         year,

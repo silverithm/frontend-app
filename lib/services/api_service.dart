@@ -1047,6 +1047,31 @@ class ApiService {
     });
   }
 
+  /// 그날 하루치 배차 수정본을 저장한다 — 관리자 웹 apiService.saveDispatchOverrides와 같다.
+  ///
+  /// 빈 배열을 보내면 그 날은 설정대로 돌아간다("원래대로"). 호출부(DispatchProvider)가
+  /// 먼저 화면을 바꾸고(낙관적 반영) 이 요청이 실패하면 되돌린다.
+  Future<Map<String, dynamic>> saveDispatchOverrides({
+    required String companyId,
+    required String date,
+    required List<Map<String, dynamic>> assignments,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/dispatch-overrides').replace(
+        queryParameters: {'companyId': companyId, 'date': date},
+      );
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'assignments': assignments}),
+      );
+    });
+  }
+
   Future<Map<String, dynamic>> getDispatchSettings({
     required String companyId,
   }) async {

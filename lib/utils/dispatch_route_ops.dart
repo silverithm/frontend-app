@@ -1,9 +1,24 @@
-/// 노선 설정을 다루는 순수 함수들 — 주운전자 중복 검사, 하원↔등원 노선 복사.
+/// 노선 설정을 다루는 순수 함수들 — 주운전자 중복 검사, 하원↔등원 노선 복사, 배차표 손보기.
 ///
 /// UI(다이얼로그/스낵바)와 분리해서 단위 테스트로 규칙을 고정한다.
 library;
 
 import '../models/dispatch.dart';
+
+/// 떨어뜨린 자리의 탑승 순서를 구한다 — 관리자 웹 dispatchBoardEdit.ts의
+/// nextBoardingOrder와 같은 규칙이다.
+///
+/// [list]는 옮길 어르신을 뺀, 목표 차/회차의 현재 명단(탑승 순서대로 정렬됨)이다.
+/// [index]가 음수이면 맨 뒤, 0이면 맨 앞, 그 외에는 앞사람과 뒷사람의 사이값이다.
+/// 사이값이 소수여도 정렬에는 문제가 없다 — 순서는 크기 비교로만 쓰인다.
+/// 정수로 다시 매기면 같은 차에 탄 나머지 분들의 순서까지 전부 그날 수정본에 넣어야 하고,
+/// 그러면 나중에 설정에서 순서를 바꿔도 그날만 옛 순서로 남는다.
+double nextBoardingOrder(List<Senior> list, int index) {
+  if (list.isEmpty) return 1;
+  if (index < 0) return list.last.boardingOrder.toDouble() + 1;
+  if (index == 0) return list.first.boardingOrder.toDouble() - 1;
+  return (list[index - 1].boardingOrder + list[index].boardingOrder) / 2.0;
+}
 
 /// 이 사람이 같은 방향(routeType)의 다른 노선에서 주운전자인지 찾는다.
 ///
