@@ -8,22 +8,30 @@ import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../models/dispatch.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/dispatch_provider.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../utils/dispatch_algorithm.dart';
 import '../../utils/dispatch_board_text.dart';
+import '../common/app_dialog.dart';
+import 'dispatch_attendance_section.dart';
 
 /// 노선배차표 — 하루치 배차를 한 화면에 본다.
 ///
 /// 센터장이 매일 카톡방에 올리던 표를 그대로 옮긴 화면이다. 선생님들이 앱에서
 /// "오늘 우리 차 누가 타지"를 스크롤 없이 확인하는 것이 목적이라, 노선 목록이 아니라
-/// 차량-회차-명단 한 덩어리로 조밀하게 보여준다.
+/// 차량-회차-명단 한 덩어리로 조밀하게 보여준다. 아래에는 출결 섹션이 바로 붙어서
+/// 배차표를 보면서 결석을 바로 체크할 수 있다(예전의 "출결" 탭을 합친 것).
 ///
 /// 규칙과 문구는 관리자 웹(DispatchBoard.tsx / dispatchBoardText.ts)과 같다.
 class DispatchBoardView extends StatefulWidget {
-  const DispatchBoardView({super.key});
+  /// 달력에서 날짜를 골라 넘어온 경우의 초기 날짜. 없으면 오늘.
+  final DateTime? initialDate;
+
+  const DispatchBoardView({super.key, this.initialDate});
 
   @override
   State<DispatchBoardView> createState() => _DispatchBoardViewState();
@@ -35,10 +43,97 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
 
   bool _isCapturing = false;
 
+  /// 회원관리에 등록된 어르신 (미배정 계산용) — 배차 설정 화면과 같은 API를 쓴다.
+  final ApiService _apiService = ApiService();
+  List<_ElderRef> _companyElders = [];
+
   @override
   void initState() {
     super.initState();
-    _date = DateTime.now();
+    _date = widget.initialDate ?? DateTime.now();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCompanyElders());
+  }
+
+  Future<void> _loadCompanyElders() async {
+    final companyId = context.read<AuthProvider>().currentUser?.company?.id;
+    if (companyId == null || companyId.isEmpty) return;
+    try {
+      final response = await _apiService.getCompanyElders(companyId: companyId);
+      final raw = response['elders'] ?? response['data'] ?? response['content'];
+      if (raw is List && mounted) {
+        setState(() {
+          _companyElders = raw
+              .whereType<Map>()
+              .map((e) => _ElderRef.fromJson(Map<String, dynamic>.from(e)))
+              .where((e) => e.id != null && e.name.isNotEmpty)
+              .toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('[배차표] 어르신 목록 조회 실패: $e');
+    }
+  }
+
+  /// 지금 보는 방향(등원/하원) 노선 어디에도 없는 어르신
+  List<_ElderRef> _unassignedElders(DispatchProvider provider) {
+    final assignedIds = <int>{};
+    for (final senior in provider.seniors) {
+      final route = provider.routes.where((r) => r.id == senior.routeId);
+      if (route.isEmpty || route.first.type != _routeType) continue;
+      final id = senior.elderlyId;
+      if (id != null) assignedIds.add(id);
+    }
+    return _companyElders.where((e) => !assignedIds.contains(e.id)).toList();
+  }
+
+  void _showUnassignedNames(List<_ElderRef> unassigned) {
+    AppBottomSheet.show<void>(
+      context,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '미배정 어르신 ${unassigned.length}명',
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: AppTypography.fontWeightSemibold,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space2),
+              Wrap(
+                spacing: AppSpacing.space2,
+                runSpacing: AppSpacing.space2,
+                children: unassigned
+                    .map((e) => Chip(label: Text(e.name)))
+                    .toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 어르신 하나를 탭했을 때 — 결석/개인등하원/사유를 바로 손본다.
+  void _openElderSheet(Senior senior, String routeType) {
+    if (senior.elderlyId == null) return; // 회원관리 연결 필요 — 손볼 데이터가 없다
+
+    AppBottomSheet.show<void>(
+      context,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space4),
+          child: DispatchElderAttendanceTile(
+            senior: senior,
+            routeType: routeType,
+            dateStr: formatDate(_date),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _pickDate() async {
@@ -98,7 +193,12 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildHeader(daily, personal),
+                  _buildHeader(
+                    daily,
+                    personal,
+                    context.read<DispatchProvider>(),
+                    _unassignedElders(context.read<DispatchProvider>()),
+                  ),
                   for (final rd in dispatches) _RouteBlock(dispatch: rd),
                 ],
               ),
@@ -138,12 +238,13 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     final personal = _routeType == RouteType.toWork
         ? daily.personalPickupSeniors
         : daily.personalDropoffSeniors;
+    final unassigned = _unassignedElders(provider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildControls(daily, dispatches, personal),
-        _buildHeader(daily, personal),
+        _buildHeader(daily, personal, provider, unassigned),
         Expanded(child: _buildRouteList(dispatches)),
       ],
     );
@@ -151,13 +252,24 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
 
   Widget _buildRouteList(List<RouteDispatch> dispatches) {
     if (dispatches.isEmpty) {
-      return Center(
-        child: Text(
-          '$_routeType 노선이 없습니다',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppSemanticColors.textTertiary,
-          ),
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.space4,
+          0,
+          AppSpacing.space4,
+          AppSpacing.space4,
         ),
+        children: [
+          Center(
+            child: Text(
+              '$_routeType 노선이 없습니다',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            ),
+          ),
+          DispatchAttendanceSection(date: _date),
+        ],
       );
     }
 
@@ -168,8 +280,17 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
         AppSpacing.space4,
         AppSpacing.space4,
       ),
-      itemCount: dispatches.length,
-      itemBuilder: (_, index) => _RouteBlock(dispatch: dispatches[index]),
+      // 노선 카드들 다음에 출결 섹션을 한 항목 더 붙인다
+      itemCount: dispatches.length + 1,
+      itemBuilder: (_, index) {
+        if (index == dispatches.length) {
+          return DispatchAttendanceSection(date: _date);
+        }
+        return _RouteBlock(
+          dispatch: dispatches[index],
+          onSeniorTap: (senior) => _openElderSheet(senior, _routeType),
+        );
+      },
     );
   }
 
@@ -223,8 +344,17 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     );
   }
 
-  Widget _buildHeader(DailyDispatch daily, List<Senior> personal) {
+  Widget _buildHeader(
+    DailyDispatch daily,
+    List<Senior> personal,
+    DispatchProvider provider,
+    List<_ElderRef> unassigned,
+  ) {
     final personalLabel = _routeType == RouteType.toWork ? '개인등원' : '개인하원';
+    final totalRegistered = provider.seniors.where((s) {
+      final route = provider.routes.where((r) => r.id == s.routeId);
+      return route.isNotEmpty && route.first.type == _routeType;
+    }).length;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -247,7 +377,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
               ),
               const SizedBox(width: AppSpacing.space2),
               Text(
-                '총 ${countAttending(daily, _routeType)}명',
+                '탑승 ${countAttending(daily, _routeType)}명 · 전체 $totalRegistered명',
                 style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.interactivePrimaryDefault,
                   fontWeight: AppTypography.fontWeightSemibold,
@@ -255,6 +385,29 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
               ),
             ],
           ),
+          if (unassigned.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.space1),
+            GestureDetector(
+              onTap: () => _showUnassignedNames(unassigned),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space2,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.statusWarningBackground,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.sm),
+                ),
+                child: Text(
+                  '미배정 ${unassigned.length}명',
+                  style: AppTypography.caption.copyWith(
+                    color: AppSemanticColors.statusWarningText,
+                    fontWeight: AppTypography.fontWeightMedium,
+                  ),
+                ),
+              ),
+            ),
+          ],
           if (personal.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.space1),
             Text(
@@ -266,6 +419,22 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// 회원관리에 등록된 어르신 (미배정 계산용)
+class _ElderRef {
+  final int? id;
+  final String name;
+
+  const _ElderRef({this.id, required this.name});
+
+  factory _ElderRef.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'];
+    return _ElderRef(
+      id: rawId is int ? rawId : int.tryParse(rawId?.toString() ?? ''),
+      name: json['name']?.toString() ?? '',
     );
   }
 }
@@ -324,8 +493,9 @@ class _DirectionToggle extends StatelessWidget {
 /// 차량 한 대 — 헤드라인 + 회차별 명단
 class _RouteBlock extends StatelessWidget {
   final RouteDispatch dispatch;
+  final ValueChanged<Senior>? onSeniorTap;
 
-  const _RouteBlock({required this.dispatch});
+  const _RouteBlock({required this.dispatch, this.onSeniorTap});
 
   @override
   Widget build(BuildContext context) {
@@ -400,11 +570,26 @@ class _RouteBlock extends StatelessWidget {
                       const SizedBox(width: AppSpacing.space1),
                     ],
                     Expanded(
-                      child: Text(
-                        group.seniors.map((s) => s.name).join(' '),
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                        ),
+                      child: Wrap(
+                        spacing: AppSpacing.space1,
+                        children: group.seniors
+                            .map(
+                              (senior) => GestureDetector(
+                                onTap: onSeniorTap == null
+                                    ? null
+                                    : () => onSeniorTap!(senior),
+                                child: Text(
+                                  senior.name,
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textSecondary,
+                                    decoration: onSeniorTap == null
+                                        ? null
+                                        : TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
                       ),
                     ),
                   ],

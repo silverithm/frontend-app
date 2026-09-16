@@ -6,6 +6,7 @@ import '../models/dispatch.dart';
 import '../models/vacation_request.dart';
 import '../services/api_service.dart';
 import '../utils/dispatch_algorithm.dart';
+import '../utils/dispatch_route_ops.dart';
 
 /// 배차 설정과 그날그날의 배차 결과를 들고 있는다.
 ///
@@ -244,20 +245,25 @@ class DispatchProvider with ChangeNotifier {
     (a) => a.seniorId == seniorId && a.date == date,
   );
 
-  /// 이 사람이 다른 노선의 주운전자인지.
+  /// 이 사람이 같은 방향의 다른 노선에서 주운전자인지.
   ///
-  /// 주운전자는 두 노선을 동시에 몰 수 없어 겹치면 막는다. 부운전자는 예비라서
-  /// 한 사람이 여러 코스를 맡는 것이 정상이므로 겹쳐도 막지 않는다.
-  DispatchRoute? primaryDriverConflict(String driverName, {String? exceptRouteId}) {
-    final name = driverName.trim();
-    if (name.isEmpty) return null;
-
-    for (final route in _settings.routes) {
-      if (exceptRouteId != null && route.id == exceptRouteId) continue;
-      if (route.routeDrivers.isEmpty) continue;
-      if (route.routeDrivers.first.driverName.trim() == name) return route;
-    }
-    return null;
+  /// 주운전자는 같은 시간대(등원 또는 하원)의 두 노선을 동시에 몰 수 없어 겹치면
+  /// 막는다. 등원과 하원은 서로 다른 시간대라 한 사람이 등원 주운전자이면서
+  /// 하원 주운전자인 것은 정상이므로 막지 않는다. 부운전자는 예비라서 한 사람이
+  /// 여러 코스를 맡는 것이 정상이므로 겹쳐도 막지 않는다.
+  ///
+  /// [routeType]을 넘기지 않으면 과거처럼 모든 방향을 검사한다(하위호환).
+  DispatchRoute? primaryDriverConflict(
+    String driverName, {
+    String? exceptRouteId,
+    String? routeType,
+  }) {
+    return findPrimaryDriverConflict(
+      routes: _settings.routes,
+      driverName: driverName,
+      exceptRouteId: exceptRouteId,
+      routeType: routeType,
+    );
   }
 
   // ================== 노선 ==================
@@ -274,6 +280,28 @@ class DispatchProvider with ChangeNotifier {
           .toList(),
     );
     _commit();
+  }
+
+  /// [sourceType](등원/하원) 노선들을 반대 방향으로 복사한다. 같은 이름의 노선이
+  /// 이미 반대 방향에 있으면 건드리지 않는다. 호출부(설정 화면)가 결과를
+  /// 스낵바로 안내한다.
+  RouteCopyResult copyRoutesToOtherType(String sourceType) {
+    var counter = 0;
+    final result = copyRoutesToOtherTypePure(
+      routes: _settings.routes,
+      seniors: _settings.seniors,
+      sourceType: sourceType,
+      newId: () => '${DateTime.now().microsecondsSinceEpoch}_${counter++}',
+    );
+
+    if (result.newRoutes.isEmpty) return result;
+
+    _settings = _settings.copyWith(
+      routes: [..._settings.routes, ...result.newRoutes],
+      seniors: [..._settings.seniors, ...result.newSeniors],
+    );
+    _commit();
+    return result;
   }
 
   void deleteRoute(String routeId) {

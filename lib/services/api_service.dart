@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import '../models/elder_care_profile.dart';
+import '../utils/api_response_parser.dart';
 import '../utils/constants.dart';
 import '../services/storage_service.dart';
 import 'auth_restore.dart';
@@ -528,7 +529,7 @@ class ApiService {
     required String companyId,
   }) async {
     try {
-      final uri = Uri.parse('$_baseUrl/dispatch-settings/driver-roles').replace(
+      final uri = Uri.parse('$_baseUrl/v1/dispatch-settings/driver-roles').replace(
         queryParameters: {'companyId': companyId, 'memberName': memberName},
       );
 
@@ -1807,87 +1808,17 @@ class ApiService {
     print('API 응답 본문 길이: ${response.body.length}');
     print('API 응답 본문: "${response.body}"');
 
-    // 빈 응답 처리
-    if (response.body.isEmpty) {
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        print('빈 응답이지만 성공 상태 코드 - 빈 맵 반환');
-        return {};
-      } else {
-        print('빈 응답이고 에러 상태 코드');
-        _throwMeaningfulError(response.statusCode, '서버에서 빈 응답을 반환했습니다');
-      }
-    }
-
     try {
-      final responseData = json.decode(response.body) as Map<String, dynamic>;
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        print('API 요청 성공 - 응답 데이터 반환');
-        return responseData;
-      } else {
-        print('API 요청 실패 - 에러 처리');
-        // frontend-admin과 동일한 에러 처리 방식
-        final errorMessage =
-            responseData['error'] ??
-            responseData['message'] ??
-            _getDefaultErrorMessage(response.statusCode);
-        throw ApiException(errorMessage, response.statusCode);
-      }
-    } catch (e) {
-      print('JSON 파싱 에러: $e');
-      if (e is ApiException) {
-        rethrow;
-      }
-      if (e is FormatException) {
-        // JSON 파싱 실패 시 응답 내용에 따라 적절한 에러 메시지 생성
-        if (response.body.contains('error')) {
-          try {
-            // 단순한 에러 텍스트인 경우
-            final simpleError = response.body
-                .replaceAll('"', '')
-                .replaceAll('{', '')
-                .replaceAll('}', '');
-            if (simpleError.contains('error:')) {
-              final errorMsg = simpleError.split('error:')[1].trim();
-              throw ApiException(errorMsg, response.statusCode);
-            }
-          } catch (_) {
-            // 파싱 실패 시 기본 에러
-          }
-        }
-        _throwMeaningfulError(response.statusCode, '서버 응답을 파싱할 수 없습니다');
-      } else {
-        _throwMeaningfulError(response.statusCode, 'API 요청 처리 중 오류가 발생했습니다');
-      }
-    }
-
-    // 도달하지 않아야 하는 코드, 안전을 위해 예외 throw
-    throw ApiException('예상치 못한 오류가 발생했습니다', 500);
-  }
-
-  void _throwMeaningfulError(int statusCode, String fallbackMessage) {
-    final errorMessage = _getDefaultErrorMessage(statusCode, fallbackMessage);
-    throw ApiException(errorMessage, statusCode);
-  }
-
-  String _getDefaultErrorMessage(int statusCode, [String? fallbackMessage]) {
-    switch (statusCode) {
-      case 400:
-        return '잘못된 요청입니다. 입력 정보를 다시 확인해 주세요';
-      case 401:
-        return '인증이 필요합니다. 다시 로그인해 주세요';
-      case 403:
-        return '접근 권한이 없습니다';
-      case 404:
-        return '요청한 리소스를 찾을 수 없습니다';
-      case 500:
-        return '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해 주세요';
-      case 502:
-        return '서버가 일시적으로 사용할 수 없습니다';
-      case 503:
-        return '서비스를 일시적으로 사용할 수 없습니다';
-      default:
-        return fallbackMessage ?? 'API 요청 실패 (${statusCode})';
+      // 2xx인데 본문이 JSON 객체가 아닌 경우(빈 본문, 순수 텍스트 "Success" 등)도
+      // 성공으로 본다 — 백엔드가 상태 문자열만 돌려주는 엔드포인트가 있어서,
+      // 여기서 실패로 잘못 처리하면 실제로는 성공한 요청이 에러로 보고된다.
+      return parseApiResponseBody(
+        statusCode: response.statusCode,
+        body: response.body,
+      );
+    } on ApiParseException catch (e) {
+      print('API 요청 실패 - 에러 처리: ${e.message}');
+      throw ApiException(e.message, e.statusCode);
     }
   }
 

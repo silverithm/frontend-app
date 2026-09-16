@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -14,6 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_compress/video_compress.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:open_filex/open_filex.dart';
+import 'package:gal/gal.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/schedule_provider.dart';
@@ -2279,6 +2281,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                                   color: AppSemanticColors.textTertiary,
                                 ),
                               ),
+                              onTap: () async {
+                                Navigator.of(context).pop();
+                                final ok = await _jumpToMessage(message.id);
+                                if (!ok && mounted) {
+                                  AppSnackBar.showInfo(
+                                    context,
+                                    message: '검색한 메시지를 찾지 못했습니다',
+                                  );
+                                }
+                              },
                             );
                           },
                         ),
@@ -2532,9 +2544,103 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       context,
       items: items,
       initialIndex: index.clamp(0, items.length - 1),
-      onDownload: (item) => _downloadAndOpenFile(item.imageUrl, item.fileName),
+      onDownload: (item) => _saveImage(item.imageUrl, item.fileName),
       onDownloadAll: _downloadAllImages,
     );
+  }
+
+  /// 사진을 기기 사진첩에 저장할 때 쓰는 앨범 이름.
+  static const String _photoAlbumName = '케어브이';
+
+  /// 이미지 하나를 저장한다. Android는 "사진첩" / "폴더 선택" 중 고르게 하고,
+  /// iOS는 앨범 선택 UI가 따로 없어(사진첩이 유일한 저장소) 바로 사진첩에 담는다.
+  Future<void> _saveImage(String url, String fileName) async {
+    if (!Platform.isAndroid) {
+      await _saveImageToGallery(url, fileName);
+      return;
+    }
+
+    final choice = await _pickSaveDestination();
+    if (choice == 'gallery') {
+      await _saveImageToGallery(url, fileName);
+    } else if (choice == 'folder') {
+      await _saveImageToChosenFolder(url, fileName);
+    }
+  }
+
+  /// "사진첩 저장" / "폴더 선택해 저장" 고르는 시트 (Android 전용)
+  Future<String?> _pickSaveDestination() {
+    return AppBottomSheet.show<String>(
+      context,
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SeedListCell(
+              title: "사진첩 '$_photoAlbumName'에 저장",
+              showChevron: false,
+              onTap: () => Navigator.of(context).pop('gallery'),
+            ),
+            SeedListCell(
+              title: '폴더 선택해 저장',
+              showChevron: false,
+              onTap: () => Navigator.of(context).pop('folder'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<Uint8List?> _downloadBytes(String url) async {
+    try {
+      final response = await dio.Dio().get<List<int>>(
+        url,
+        options: dio.Options(responseType: dio.ResponseType.bytes),
+      );
+      final data = response.data;
+      if (data == null) return null;
+      return Uint8List.fromList(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _saveImageToGallery(String url, String fileName) async {
+    final bytes = await _downloadBytes(url);
+    if (bytes == null) {
+      if (mounted) AppSnackBar.showError(context, message: '저장에 실패했습니다');
+      return;
+    }
+    try {
+      await Gal.putImageBytes(bytes, album: _photoAlbumName, name: fileName);
+      if (!mounted) return;
+      AppSnackBar.showSuccess(
+        context,
+        message: "사진첩 '$_photoAlbumName' 앨범에 저장했습니다",
+      );
+    } catch (_) {
+      if (mounted) AppSnackBar.showError(context, message: '저장에 실패했습니다');
+    }
+  }
+
+  Future<void> _saveImageToChosenFolder(String url, String fileName) async {
+    final dirPath = await getDirectoryPath();
+    if (dirPath == null) return; // 취소
+
+    final bytes = await _downloadBytes(url);
+    if (bytes == null) {
+      if (mounted) AppSnackBar.showError(context, message: '저장에 실패했습니다');
+      return;
+    }
+    try {
+      final safeName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      await File('$dirPath/$safeName').writeAsBytes(bytes);
+      if (!mounted) return;
+      AppSnackBar.showSuccess(context, message: '저장했습니다');
+    } catch (_) {
+      if (mounted) AppSnackBar.showError(context, message: '저장에 실패했습니다');
+    }
   }
 
   /// 사진 묶음을 한 번에 받는다.
@@ -2545,21 +2651,59 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   Future<void> _downloadAllImages(List<ChatImageItem> items) async {
     if (items.isEmpty) return;
 
+    String destination = 'gallery';
+    if (Platform.isAndroid) {
+      final choice = await _pickSaveDestination();
+      if (choice == null) return;
+      destination = choice;
+    }
+
     final total = items.length;
     var done = 0;
     var failed = 0;
 
     AppSnackBar.showInfo(context, message: '$total장 저장 중...');
 
-    final directory = await getApplicationDocumentsDirectory();
-    final dioClient = dio.Dio();
+    if (destination == 'folder') {
+      final dirPath = await getDirectoryPath();
+      if (dirPath == null) return; // 취소
+
+      Future<void> saveOne(ChatImageItem item) async {
+        final bytes = await _downloadBytes(item.imageUrl);
+        if (bytes == null) {
+          failed++;
+          return;
+        }
+        try {
+          // 같은 이름이 겹치면 덮어써 버린다 — 번호를 붙여 구분한다
+          final safeName = item.fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+          final path = '$dirPath/${DateTime.now().microsecondsSinceEpoch}_$safeName';
+          await File(path).writeAsBytes(bytes);
+          done++;
+        } catch (_) {
+          failed++;
+        }
+      }
+
+      await _runWithConcurrencyLimit(items, 3, saveOne);
+
+      if (!mounted) return;
+      if (failed == 0) {
+        AppSnackBar.showSuccess(context, message: '$done장을 저장했습니다');
+      } else {
+        AppSnackBar.showError(context, message: '$done장 저장, $failed장 실패했습니다');
+      }
+      return;
+    }
 
     Future<void> saveOne(ChatImageItem item) async {
+      final bytes = await _downloadBytes(item.imageUrl);
+      if (bytes == null) {
+        failed++;
+        return;
+      }
       try {
-        // 같은 이름이 겹치면 덮어써 버린다 — 번호를 붙여 구분한다
-        final safeName = item.fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-        final path = '${directory.path}/${DateTime.now().microsecondsSinceEpoch}_$safeName';
-        await dioClient.download(item.imageUrl, path);
+        await Gal.putImageBytes(bytes, album: _photoAlbumName, name: item.fileName);
         done++;
       } catch (_) {
         failed++;
@@ -2570,7 +2714,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     if (!mounted) return;
     if (failed == 0) {
-      AppSnackBar.showSuccess(context, message: '$done장을 저장했습니다');
+      AppSnackBar.showSuccess(
+        context,
+        message: "사진첩 '$_photoAlbumName' 앨범에 $done장을 저장했습니다",
+      );
     } else {
       AppSnackBar.showError(
         context,
@@ -2590,7 +2737,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         context,
         imageUrl: url,
         fileName: name,
-        onDownload: () => _downloadAndOpenFile(url, name),
+        onDownload: () => _saveImage(url, name),
       );
       return;
     }

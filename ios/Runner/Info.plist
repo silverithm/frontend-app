@@ -76,6 +76,8 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>결재 문서 및 채팅에서 사진을 첨부하기 위해 사진 라이브러리 접근 권한이 필요합니다.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>채팅 사진을 사진첩의 '케어브이' 앨범에 저장하기 위해 사진 라이브러리 접근 권한이 필요합니다.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

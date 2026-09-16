@@ -8,16 +8,15 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/dispatch/dispatch_board_view.dart';
 import '../widgets/dispatch/dispatch_calendar_view.dart';
-import '../widgets/dispatch/dispatch_day_sheet.dart';
-import '../widgets/dispatch/dispatch_list_view.dart';
-import '../widgets/dispatch/senior_absence_view.dart';
 import '../widgets/seed/seed_button.dart';
 import 'dispatch_settings_screen.dart';
 
-/// 배차관리 — 배차표 / 달력 / 목록 / 출결 네 화면과 설정 진입.
+/// 배차관리 — 배차표 / 달력 두 화면과 설정 진입.
 ///
 /// 기본은 배차표다. 선생님들이 가장 자주 확인하는 것이 "오늘 우리 차 명단"이라
-/// 앱을 열면 그것부터 보이게 한다. 나머지 화면은 그대로 남겨 뒀다.
+/// 앱을 열면 그것부터 보이게 한다. 예전엔 목록/출결 탭이 따로 있었지만, 출결은
+/// 배차표를 보면서 바로 체크하는 게 현장 흐름이라 배차표 화면에 합쳤고, 목록은
+/// 배차표와 겹치는 정보라 없앴다.
 ///
 /// 관리자 웹의 배차관리 탭과 같은 구성이다. 설정은 서버 한 곳에 있어서
 /// 웹에서 짠 노선이 앱에 그대로 보이고, 앱에서 고치면 웹에도 반영된다.
@@ -31,6 +30,10 @@ class DispatchScreen extends StatefulWidget {
 class _DispatchScreenState extends State<DispatchScreen> {
   int _tabIndex = 0;
   late DateTime _month;
+
+  /// 달력에서 날짜를 골라 배차표로 넘어온 경우의 날짜. ValueKey로 배차표를
+  /// 새로 만들어 그 날짜부터 보여준다.
+  DateTime? _boardJumpDate;
 
   /// 달력 펼쳐보기. 접힌 상태가 기본이라 한 달이 한 화면에 들어온다.
   bool _calendarExpanded = false;
@@ -102,7 +105,7 @@ class _DispatchScreenState extends State<DispatchScreen> {
   }
 
   Widget _buildTabs() {
-    const labels = ['배차표', '달력', '목록', '출결'];
+    const labels = ['배차표', '달력'];
 
     return Container(
       margin: const EdgeInsets.fromLTRB(
@@ -155,20 +158,11 @@ class _DispatchScreenState extends State<DispatchScreen> {
   Widget _buildBody(DispatchProvider provider) {
     switch (_tabIndex) {
       case 0:
-        return const DispatchBoardView();
-      case 2:
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
-          child: DispatchListView(
-            settings: provider.settings,
-            vacations: provider.vacations,
-            attendances: provider.attendances,
-          ),
-        );
-      case 3:
-        return const Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.space4),
-          child: SeniorAbsenceView(),
+        // ValueKey로 날짜가 바뀔 때마다 새로 만들어야 달력에서 고른 날짜부터
+        // 보여준다 — 배차표는 자기 날짜를 내부 상태로 들고 있어서다.
+        return DispatchBoardView(
+          key: ValueKey(_boardJumpDate),
+          initialDate: _boardJumpDate,
         );
       default:
         return RefreshIndicator(
@@ -188,11 +182,13 @@ class _DispatchScreenState extends State<DispatchScreen> {
               DispatchCalendarView(
                 month: _month,
                 summary: provider.summaryForMonth(_month.year, _month.month),
-                onDateSelected: (date) => DispatchDaySheet.show(
-                  context,
-                  date: date,
-                  dispatch: provider.dispatchForDate(date),
-                ),
+                // 날짜를 고르면 배차표 탭으로 넘어가 그 날짜를 바로 보여준다.
+                // 예전엔 여기서 DispatchDaySheet(요약 바텀시트)를 띄웠지만,
+                // 배차표가 같은 정보를 더 자세히 보여주므로 없앴다.
+                onDateSelected: (date) => setState(() {
+                  _boardJumpDate = date;
+                  _tabIndex = 0;
+                }),
                 onPreviousMonth: () => setState(
                   () => _month = DateTime(_month.year, _month.month - 1),
                 ),

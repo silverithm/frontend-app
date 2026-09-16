@@ -84,6 +84,39 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
 
   String _newId() => DateTime.now().microsecondsSinceEpoch.toString();
 
+  /// 회원관리에 등록됐지만 어느 노선에도 배정되지 않은 어르신
+  List<_ElderOption> _unassignedElders(DispatchProvider provider) {
+    final assignedElderlyIds = provider.seniors
+        .map((s) => s.elderlyId)
+        .whereType<int>()
+        .toSet();
+    return _elders.where((e) => e.id != null && !assignedElderlyIds.contains(e.id)).toList();
+  }
+
+  Future<void> _copyRoutes(DispatchProvider provider, String sourceType) async {
+    final targetType = sourceType == RouteType.toWork ? RouteType.toHome : RouteType.toWork;
+    final confirmed = await AppDialog.showConfirm(
+      context,
+      title: '$targetType 노선으로 복사',
+      message:
+          '$sourceType 노선 중 아직 $targetType에 같은 이름의 노선이 없는 것만 운전자·어르신을 그대로 복사합니다.',
+      confirmText: '복사',
+      cancelText: '취소',
+    );
+    if (confirmed != true) return;
+
+    final result = provider.copyRoutesToOtherType(sourceType);
+    if (!mounted) return;
+    if (result.routeCount == 0) {
+      AppSnackBar.showInfo(context, message: '복사할 $sourceType 노선이 없습니다 (이미 $targetType에 같은 이름이 있습니다)');
+      return;
+    }
+    AppSnackBar.showSuccess(
+      context,
+      message: '$targetType 노선 ${result.routeCount}개, 어르신 ${result.seniorCount}명 복사',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DispatchProvider>();
@@ -115,6 +148,20 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                 ),
               ),
             ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) => _copyRoutes(provider, value),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: RouteType.toWork,
+                child: Text('등원 노선을 하원으로 복사'),
+              ),
+              PopupMenuItem(
+                value: RouteType.toHome,
+                child: Text('하원 노선을 등원으로 복사'),
+              ),
+            ],
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -126,16 +173,43 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       ),
       body: provider.routes.isEmpty
           ? _buildEmpty()
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.space4,
-                AppSpacing.space4,
-                AppSpacing.space4,
-                AppSpacing.space12,
-              ),
-              itemCount: provider.routes.length,
-              itemBuilder: (context, index) =>
-                  _buildRouteCard(provider, provider.routes[index]),
+          : Column(
+              children: [
+                if (_unassignedElders(provider).isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                      0,
+                    ),
+                    padding: const EdgeInsets.all(AppSpacing.space3),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.statusWarningBackground,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                    ),
+                    child: Text(
+                      '미배정 어르신 ${_unassignedElders(provider).length}명 · ${_unassignedElders(provider).map((e) => e.name).join(', ')}',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.statusWarningText,
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                      AppSpacing.space12,
+                    ),
+                    itemCount: provider.routes.length,
+                    itemBuilder: (context, index) =>
+                        _buildRouteCard(provider, provider.routes[index]),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -525,7 +599,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       // 웹(handleAddRoute)과 같은 규칙: 노선을 만들려면 운전자가 최소 1명 있어야 한다.
       // 여기서 주운전자를 바로 고르게 해서, 아무도 안 고른 빈 노선이 만들어지는
       // 걸 막는다.
-      final driver = await _pickNewRouteMainDriver(provider);
+      final driver = await _pickNewRouteMainDriver(provider, type);
       if (driver == null) return;
 
       provider.addRoute(
@@ -545,7 +619,10 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
 
   /// 새 노선의 주운전자를 고른다. 취소하거나 아무도 안 고르면 null을 돌려주고,
   /// 웹 handleAddRoute와 같은 문구("최소 1명의 운전자를 입력해주세요.")로 안내한다.
-  Future<User?> _pickNewRouteMainDriver(DispatchProvider provider) async {
+  Future<User?> _pickNewRouteMainDriver(
+    DispatchProvider provider,
+    String routeType,
+  ) async {
     final members = context.read<AdminProvider>().companyMembers;
     if (members.isEmpty) {
       if (mounted) {
@@ -592,14 +669,14 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       return null;
     }
 
-    // 주운전자는 두 노선을 동시에 몰 수 없다 (부운전자 배정과 같은 규칙).
-    final conflict = provider.primaryDriverConflict(picked.name);
+    // 주운전자는 같은 방향(등원/하원)의 두 노선을 동시에 몰 수 없다 (부운전자 배정과 같은 규칙).
+    final conflict = provider.primaryDriverConflict(picked.name, routeType: routeType);
     if (conflict != null) {
       if (mounted) {
         AppSnackBar.showError(
           context,
           message:
-              '${picked.name} 선생님은 이미 ${conflict.name}(${conflict.type}) 주운전자입니다',
+              '${picked.name} 선생님은 이미 ${conflict.name}(${conflict.type}) 주운전자입니다. 같은 방향의 두 노선을 동시에 맡을 수 없습니다.',
         );
       }
       return null;
@@ -702,18 +779,19 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       return;
     }
 
-    // 주운전자는 두 노선을 동시에 몰 수 없다. 부운전자는 여러 코스를 맡는 것이 정상이라 막지 않는다.
+    // 주운전자는 같은 방향(등원/하원)의 두 노선을 동시에 몰 수 없다. 부운전자는 여러 코스를 맡는 것이 정상이라 막지 않는다.
     if (index == 0) {
       final conflict = provider.primaryDriverConflict(
         picked.name,
         exceptRouteId: route.id,
+        routeType: route.type,
       );
       if (conflict != null) {
         if (mounted) {
           AppSnackBar.showError(
             context,
             message:
-                '${picked.name} 선생님은 이미 ${conflict.name}(${conflict.type}) 주운전자입니다',
+                '${picked.name} 선생님은 이미 ${conflict.name}(${conflict.type}) 주운전자입니다. 같은 방향의 두 노선을 동시에 맡을 수 없습니다.',
           );
         }
         return;
