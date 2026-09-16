@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 
@@ -234,24 +235,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         }
 
         if (adminProvider.companyMembers.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.people_outline,
-                  size: 64,
-                  color: AppSemanticColors.textTertiary,
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                Text(
-                  '등록된 회원이 없습니다',
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+          return const AppEmptyState(
+            icon: Icons.people_outline,
+            title: '등록된 회원이 없습니다',
           );
         }
 
@@ -676,24 +662,9 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
         }
 
         if (adminProvider.pendingUsers.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  size: 64,
-                  color: AppSemanticColors.statusSuccessIcon,
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                Text(
-                  '승인 대기 중인 사용자가 없습니다',
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+          return const AppEmptyState(
+            icon: Icons.check_circle_outline,
+            title: '승인 대기 중인 사용자가 없습니다',
           );
         }
 

@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -386,24 +387,10 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.space8),
-      child: Column(
-        children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 48,
-            color: AppSemanticColors.textTertiary,
-          ),
-          const SizedBox(height: AppSpacing.space3),
-          Text(
-            '접수된 항목이 없어요',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppSemanticColors.textTertiary,
-            ),
-          ),
-        ],
-      ),
+    return const AppEmptyState(
+      icon: Icons.inbox_outlined,
+      title: '접수된 항목이 없어요',
+      topSpacing: AppSpacing.space8,
     );
   }
 

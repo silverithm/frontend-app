@@ -9,6 +9,7 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/app_action_sheet.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/chat/chat_room_avatar_stack.dart';
@@ -210,31 +211,10 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: AppSpacing.space16,
-            color: AppSemanticColors.textTertiary,
-          ),
-          const SizedBox(height: AppSpacing.space4),
-          Text(
-            '아직 채팅방이 없어요',
-            style: AppTypography.bodyLarge.copyWith(
-              color: AppSemanticColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space2),
-          Text(
-            '+ 버튼으로 첫 채팅을 시작해보세요',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textTertiary,
-            ),
-          ),
-        ],
-      ),
+    return const AppEmptyState(
+      icon: Icons.chat_bubble_outline,
+      title: '아직 채팅방이 없어요',
+      description: '+ 버튼으로 첫 채팅을 시작해보세요',
     );
   }
 

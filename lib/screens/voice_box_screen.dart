@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
@@ -236,26 +237,10 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.mark_email_read_outlined,
-              size: 48,
-              color: AppSemanticColors.textTertiary,
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            Text(
-              '아직 제출한 내역이 없어요',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return const AppEmptyState(
+      icon: Icons.mark_email_read_outlined,
+      title: '아직 제출한 내역이 없어요',
+      topSpacing: AppSpacing.space8,
     );
   }
 

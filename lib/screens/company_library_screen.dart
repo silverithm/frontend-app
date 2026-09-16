@@ -16,6 +16,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -411,16 +412,10 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
       children: [
         if (_categories.isNotEmpty) _buildCategoryChips(),
         if (items.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.space10),
-            child: Center(
-              child: Text(
-                _items.isEmpty ? '아직 올라온 자료가 없습니다' : '이 분류에는 자료가 없습니다',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
-              ),
-            ),
+          AppEmptyState(
+            icon: Icons.folder_open_outlined,
+            title: _items.isEmpty ? '아직 올라온 자료가 없습니다' : '이 분류에는 자료가 없습니다',
+            topSpacing: AppSpacing.space10,
           )
         else
           ...items.map((item) => _buildItemCard(item, isAdmin)),

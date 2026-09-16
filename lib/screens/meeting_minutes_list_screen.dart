@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_empty_state.dart';
 import 'meeting_minutes_detail_screen.dart';
 
 /// 회의록 목록 — 서명 요청이 온 회의록을 확인하고 들어가서 서명한다.
@@ -78,7 +79,7 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
             : _error != null
                 ? _message(_error!)
                 : _items.isEmpty
-                    ? _message('아직 회의록이 없습니다.\n서명 요청이 오면 여기에서 확인할 수 있어요.')
+                    ? _emptyState()
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(AppSpacing.space4),
@@ -162,6 +163,20 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
                         },
                       ),
       ),
+    );
+  }
+
+  Widget _emptyState() {
+    // RefreshIndicator가 동작하려면 스크롤 가능한 자식이 필요하다
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: const [
+        AppEmptyState(
+          icon: Icons.description_outlined,
+          title: '아직 회의록이 없습니다',
+          description: '서명 요청이 오면 여기에서 확인할 수 있어요',
+        ),
+      ],
     );
   }
 

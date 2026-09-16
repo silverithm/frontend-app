@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_section_header.dart';
@@ -434,57 +435,11 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         opacity: _fadeAnimation,
                         child: SlideTransition(
                           position: _slideAnimation,
-                          child: Container(
-                            margin: const EdgeInsets.all(AppSpacing.space8),
-                            padding: const EdgeInsets.all(AppSpacing.space8),
-                            decoration: BoxDecoration(
-                              color: AppSemanticColors.surfaceDefault,
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.xl3,
-                              ),
-                              border: Border.all(
-                                color: AppSemanticColors.borderDefault,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(
-                                    AppSpacing.space5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        AppSemanticColors.backgroundSecondary,
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.xl2,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.event_available,
-                                    size: 64,
-                                    color: AppSemanticColors.textTertiary,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.space6),
-                                Text(
-                                  '아직 휴무 신청 내역이 없어요',
-                                  style: AppTypography.heading6.copyWith(
-                                    color: AppSemanticColors.textPrimary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.space2),
-                                Text(
-                                  '달력에서 날짜를 선택하여\n휴무를 신청해보세요',
-                                  textAlign: TextAlign.center,
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textTertiary,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          child: const AppEmptyState(
+                            icon: Icons.event_available,
+                            title: '아직 휴무 신청 내역이 없어요',
+                            description: '달력에서 날짜를 선택하여\n휴무를 신청해보세요',
+                            topSpacing: AppSpacing.space8,
                           ),
                         ),
                       ),

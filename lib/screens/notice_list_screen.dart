@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/notice/notice_card.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/seed/seed_button.dart';
 import 'notice_detail_screen.dart';
@@ -113,31 +114,10 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.campaign_outlined,
-            size: 64,
-            color: AppSemanticColors.textTertiary,
-          ),
-          const SizedBox(height: AppSpacing.space4),
-          Text(
-            '아직 공지사항이 없어요',
-            style: AppTypography.bodyLarge.copyWith(
-              color: AppSemanticColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space2),
-          Text(
-            '새 공지가 등록되면 여기에 표시돼요',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textTertiary,
-            ),
-          ),
-        ],
-      ),
+    return const AppEmptyState(
+      icon: Icons.campaign_outlined,
+      title: '아직 공지사항이 없어요',
+      description: '새 공지가 등록되면 여기에 표시돼요',
     );
   }
 
