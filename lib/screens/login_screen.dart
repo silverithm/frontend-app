@@ -366,7 +366,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: _showForgotPasswordDialog,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.space8),
+                const SizedBox(height: AppSpacing.space6),
 
                 // 로그인 버튼
                 Consumer<AuthProvider>(
@@ -421,12 +421,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
 
-                const SizedBox(height: AppSpacing.space10),
+                const SizedBox(height: AppSpacing.space6),
                 Divider(color: AppSemanticColors.borderSubtle, height: 1),
                 const SizedBox(height: AppSpacing.space4),
 
                 // 하단 링크들 (사용법, 웹사이트) — 위계상 폼 아래로 이동
                 _buildBottomLinks(),
+                const SizedBox(height: AppSpacing.space2),
               ],
             ),
           ),
