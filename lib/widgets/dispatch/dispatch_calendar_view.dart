@@ -20,6 +20,11 @@ class DispatchCalendarView extends StatelessWidget {
   final VoidCallback onNextMonth;
   final VoidCallback onToday;
 
+  /// 월 제목 옆에 무채색으로 붙는 보조 문구 (예: "등원 3 · 하원 3 · 어르신 6").
+  /// 예전엔 달력 위에 따로 한 줄을 차지했지만, 매일 보는 값이 아니라 제목 옆
+  /// subtitle로 접었다.
+  final String? subtitle;
+
   /// 펼쳐보기. 접었을 때는 달력이 한 화면에 들어오는 것이 먼저라 이름을 숨기고,
   /// 펼치면 그날 나오는 사람을 칸 안에 다 적는다.
   final bool isExpanded;
@@ -33,6 +38,7 @@ class DispatchCalendarView extends StatelessWidget {
     required this.onPreviousMonth,
     required this.onNextMonth,
     required this.onToday,
+    this.subtitle,
     this.isExpanded = false,
     required this.onToggleExpanded,
   });
@@ -62,11 +68,28 @@ class DispatchCalendarView extends StatelessWidget {
   Widget _buildHeader() {
     return Row(
       children: [
-        Text(
-          '${month.year}년 ${month.month}월',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textPrimary,
-            fontWeight: AppTypography.fontWeightBold,
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${month.year}년 ${month.month}월',
+                style: AppTypography.heading6.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                  fontWeight: AppTypography.fontWeightBold,
+                ),
+              ),
+              if (subtitle != null && subtitle!.isNotEmpty)
+                Text(
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(width: AppSpacing.space2),
@@ -368,8 +391,8 @@ class _Dot extends StatelessWidget {
         children: [
           for (var i = 0; i < dots; i++)
             Container(
-              width: 6,
-              height: 6,
+              width: 7,
+              height: 7,
               margin: const EdgeInsets.symmetric(horizontal: 1),
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
