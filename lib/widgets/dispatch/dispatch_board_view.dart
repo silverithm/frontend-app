@@ -18,13 +18,21 @@ import '../../utils/dispatch_algorithm.dart';
 import '../../utils/dispatch_board_text.dart';
 import '../common/app_dialog.dart';
 import 'dispatch_attendance_section.dart';
+import 'dispatch_status_style.dart';
+
+const _titleWeekdayNames = ['월', '화', '수', '목', '금', '토', '일'];
+
+/// "9월 16일 (수)" — 화면 제목용. 카톡 공지 문구(formatBoardDate)와는 별개다.
+String _formatTitleDate(DateTime date) {
+  return '${date.month}월 ${date.day}일 (${_titleWeekdayNames[date.weekday - 1]})';
+}
 
 /// 노선배차표 — 하루치 배차를 한 화면에 본다.
 ///
 /// 센터장이 매일 카톡방에 올리던 표를 그대로 옮긴 화면이다. 선생님들이 앱에서
 /// "오늘 우리 차 누가 타지"를 스크롤 없이 확인하는 것이 목적이라, 노선 목록이 아니라
-/// 차량-회차-명단 한 덩어리로 조밀하게 보여준다. 아래에는 출결 섹션이 바로 붙어서
-/// 배차표를 보면서 결석을 바로 체크할 수 있다(예전의 "출결" 탭을 합친 것).
+/// 차량 카드 한 덩어리로 조밀하게 보여준다. 차량 카드 안 어르신 한 줄마다 탑승/결석/
+/// 개인등하원 상태를 바로 보여주므로, 예전처럼 같은 이름이 출결 섹션에 또 나오지 않는다.
 ///
 /// 규칙과 문구는 관리자 웹(DispatchBoard.tsx / dispatchBoardText.ts)과 같다.
 class DispatchBoardView extends StatefulWidget {
@@ -86,7 +94,17 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     return _companyElders.where((e) => !assignedIds.contains(e.id)).toList();
   }
 
-  void _showUnassignedNames(List<_ElderRef> unassigned) {
+  /// 지금 보는 방향에서 결석 처리된 어르신
+  List<Senior> _absentSeniors(DispatchProvider provider) {
+    final dateStr = formatDate(_date);
+    return provider.seniors.where((senior) {
+      final route = provider.routes.where((r) => r.id == senior.routeId);
+      if (route.isEmpty || route.first.type != _routeType) return false;
+      return attendanceStateOf(provider, senior, dateStr).isAbsent;
+    }).toList();
+  }
+
+  void _showNamesSheet(String title, List<String> names) {
     AppBottomSheet.show<void>(
       context,
       child: SafeArea(
@@ -97,7 +115,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '미배정 어르신 ${unassigned.length}명',
+                title,
                 style: AppTypography.bodyMedium.copyWith(
                   fontWeight: AppTypography.fontWeightSemibold,
                 ),
@@ -106,9 +124,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
               Wrap(
                 spacing: AppSpacing.space2,
                 runSpacing: AppSpacing.space2,
-                children: unassigned
-                    .map((e) => Chip(label: Text(e.name)))
-                    .toList(),
+                children: names.map((name) => Chip(label: Text(name))).toList(),
               ),
             ],
           ),
@@ -121,6 +137,15 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
   void _openElderSheet(Senior senior, String routeType) {
     if (senior.elderlyId == null) return; // 회원관리 연결 필요 — 손볼 데이터가 없다
 
+    final provider = context.read<DispatchProvider>();
+    final route = provider.routes.where((r) => r.id == senior.routeId);
+    final vehicleName = route.isEmpty
+        ? ''
+        : (route.first.routeDrivers.isNotEmpty &&
+                route.first.routeDrivers.first.vehicleName.trim().isNotEmpty
+            ? route.first.routeDrivers.first.vehicleName.trim()
+            : route.first.name);
+
     AppBottomSheet.show<void>(
       context,
       child: SafeArea(
@@ -130,12 +155,28 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text(
+                senior.name,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: AppTypography.fontWeightSemibold,
+                ),
+              ),
+              if (vehicleName.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  vehicleName,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.space3),
               DispatchElderAttendanceTile(
                 senior: senior,
                 routeType: routeType,
                 dateStr: formatDate(_date),
               ),
-              const SizedBox(height: AppSpacing.space2),
+              const SizedBox(height: AppSpacing.space3),
               OutlinedButton.icon(
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -322,13 +363,16 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildHeader(
-                    daily,
-                    personal,
-                    context.read<DispatchProvider>(),
-                    _unassignedElders(context.read<DispatchProvider>()),
-                  ),
-                  for (final rd in dispatches) _RouteBlock(dispatch: rd),
+                  for (final rd in dispatches)
+                    _RouteBlock(
+                      dispatch: rd,
+                      routeSeniors: _routeSeniorsOf(
+                        context.read<DispatchProvider>(),
+                        rd.routeId,
+                      ),
+                      provider: context.read<DispatchProvider>(),
+                      dateStr: formatDate(_date),
+                    ),
                 ],
               ),
             ),
@@ -359,6 +403,11 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     }
   }
 
+  List<Senior> _routeSeniorsOf(DispatchProvider provider, String routeId) {
+    return provider.seniors.where((s) => s.routeId == routeId).toList()
+      ..sort((a, b) => a.boardingOrder.compareTo(b.boardingOrder));
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DispatchProvider>();
@@ -368,18 +417,18 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
         ? daily.personalPickupSeniors
         : daily.personalDropoffSeniors;
     final unassigned = _unassignedElders(provider);
+    final absent = _absentSeniors(provider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildControls(daily, dispatches, personal),
-        _buildHeader(daily, personal, provider, unassigned),
-        Expanded(child: _buildRouteList(dispatches)),
+        _buildTopSection(daily, dispatches, personal, provider, unassigned, absent),
+        Expanded(child: _buildRouteList(dispatches, provider)),
       ],
     );
   }
 
-  Widget _buildRouteList(List<RouteDispatch> dispatches) {
+  Widget _buildRouteList(List<RouteDispatch> dispatches, DispatchProvider provider) {
     if (dispatches.isEmpty) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -397,7 +446,6 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
               ),
             ),
           ),
-          DispatchAttendanceSection(date: _date),
         ],
       );
     }
@@ -409,154 +457,147 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
         AppSpacing.space4,
         AppSpacing.space4,
       ),
-      // 노선 카드들 다음에 출결 섹션을 한 항목 더 붙인다
-      itemCount: dispatches.length + 1,
+      itemCount: dispatches.length,
       itemBuilder: (_, index) {
-        if (index == dispatches.length) {
-          return DispatchAttendanceSection(date: _date);
-        }
+        final dispatch = dispatches[index];
         return _RouteBlock(
-          dispatch: dispatches[index],
+          dispatch: dispatch,
+          routeSeniors: _routeSeniorsOf(provider, dispatch.routeId),
+          provider: provider,
+          dateStr: formatDate(_date),
           onSeniorTap: (senior) => _openElderSheet(senior, _routeType),
         );
       },
     );
   }
 
-  Widget _buildControls(
+  /// 헤더 한 덩어리 — 날짜/제목 줄, 등원·하원 전환, 상태 요약 칩들.
+  /// 카드 A/B/C처럼 정보 세 종류를 한 줄에 욱여넣던 예전 헤더를 세 줄로 풀었다.
+  Widget _buildTopSection(
     DailyDispatch daily,
     List<RouteDispatch> dispatches,
     List<Senior> personal,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
-        0,
-        AppSpacing.space4,
-        AppSpacing.space2,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _pickDate,
-              icon: const Icon(Icons.calendar_today_outlined, size: 16),
-              label: Text(formatBoardDate(formatDate(_date))),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.space2),
-          _DirectionToggle(
-            value: _routeType,
-            onChanged: (value) => setState(() => _routeType = value),
-          ),
-          const SizedBox(width: AppSpacing.space2),
-          IconButton(
-            onPressed: () => _copyText(daily),
-            icon: const Icon(Icons.copy_outlined),
-            tooltip: '텍스트 복사',
-          ),
-          IconButton(
-            onPressed: _isCapturing
-                ? null
-                : () => _shareImage(daily, dispatches, personal),
-            icon: _isCapturing
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.ios_share),
-            tooltip: '이미지로 공유',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(
-    DailyDispatch daily,
-    List<Senior> personal,
     DispatchProvider provider,
     List<_ElderRef> unassigned,
+    List<Senior> absent,
   ) {
     final personalLabel = _routeType == RouteType.toWork ? '개인등원' : '개인하원';
-    // '전체'는 회원관리에 등록된 어르신 수다(관리자 웹과 같은 기준). 아직 못 받아왔으면
-    // 이 방향 노선에 실린 어르신 수로 대신한다.
-    final totalRegistered = _companyElders.isNotEmpty
-        ? _companyElders.length
-        : provider.seniors.where((s) {
-            final route = provider.routes.where((r) => r.id == s.routeId);
-            return route.isNotEmpty && route.first.type == _routeType;
-          }).length;
+    final carCount = countPassengers(dispatches);
+    final hasOverrides = provider.hasOverridesForDate(_date);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.space4,
-        0,
-        AppSpacing.space4,
         AppSpacing.space3,
+        AppSpacing.space4,
+        AppSpacing.space2,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(
-                '${formatBoardDate(daily.date)} $_routeType',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                  fontWeight: AppTypography.fontWeightSemibold,
+              Expanded(
+                child: GestureDetector(
+                  onTap: _pickDate,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 18,
+                        color: AppSemanticColors.interactivePrimaryDefault,
+                      ),
+                      const SizedBox(width: AppSpacing.space1_5),
+                      Text(
+                        _formatTitleDate(_date),
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                          fontWeight: AppTypography.fontWeightBold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.space2),
-              Text(
-                '탑승 ${countAttending(daily, _routeType)}명 · 전체 $totalRegistered명',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.interactivePrimaryDefault,
-                  fontWeight: AppTypography.fontWeightSemibold,
-                ),
+              IconButton(
+                onPressed: () => _copyText(daily),
+                icon: const Icon(Icons.copy_outlined),
+                iconSize: 20,
+                tooltip: '텍스트 복사',
               ),
-              if (provider.hasOverridesForDate(_date)) ...[
-                const Spacer(),
+              IconButton(
+                onPressed: _isCapturing
+                    ? null
+                    : () => _shareImage(daily, dispatches, personal),
+                icon: _isCapturing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.ios_share),
+                iconSize: 20,
+                tooltip: '이미지로 공유',
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.space2),
+          Row(
+            children: [
+              _DirectionToggle(
+                value: _routeType,
+                onChanged: (value) => setState(() => _routeType = value),
+              ),
+              const Spacer(),
+              if (hasOverrides)
                 TextButton(
                   onPressed: _resetOverrides,
                   child: const Text('원래대로'),
                 ),
-              ],
             ],
           ),
-          if (unassigned.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.space1),
-            GestureDetector(
-              onTap: () => _showUnassignedNames(unassigned),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space2,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.statusWarningBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.sm),
-                ),
-                child: Text(
-                  '미배정 ${unassigned.length}명',
-                  style: AppTypography.caption.copyWith(
-                    color: AppSemanticColors.statusWarningText,
-                    fontWeight: AppTypography.fontWeightMedium,
-                  ),
-                ),
+          const SizedBox(height: AppSpacing.space2),
+          Wrap(
+            spacing: AppSpacing.space2,
+            runSpacing: AppSpacing.space1_5,
+            children: [
+              _StatChip(label: '탑승', count: carCount),
+              _StatChip(
+                label: '결석',
+                count: absent.length,
+                tone: _StatTone.warning,
+                onTap: absent.isEmpty
+                    ? null
+                    : () => _showNamesSheet(
+                        '결석 ${absent.length}명',
+                        absent.map((s) => s.name).toList(),
+                      ),
               ),
-            ),
-          ],
-          if (personal.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.space1),
-            Text(
-              '[$personalLabel : ${personal.map((s) => s.name).join(', ')}]',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textSecondary,
+              _StatChip(
+                label: personalLabel,
+                count: personal.length,
+                tone: _StatTone.info,
+                onTap: personal.isEmpty
+                    ? null
+                    : () => _showNamesSheet(
+                        '$personalLabel ${personal.length}명',
+                        personal.map((s) => s.name).toList(),
+                      ),
               ),
-            ),
-          ],
+              _StatChip(
+                label: '미배정',
+                count: unassigned.length,
+                tone: _StatTone.warning,
+                onTap: unassigned.isEmpty
+                    ? null
+                    : () => _showNamesSheet(
+                        '미배정 어르신 ${unassigned.length}명',
+                        unassigned.map((e) => e.name).toList(),
+                      ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -630,113 +671,459 @@ class _DirectionToggle extends StatelessWidget {
   }
 }
 
-/// 차량 한 대 — 헤드라인 + 회차별 명단
-class _RouteBlock extends StatelessWidget {
-  final RouteDispatch dispatch;
-  final ValueChanged<Senior>? onSeniorTap;
+enum _StatTone { neutral, warning, info }
 
-  const _RouteBlock({required this.dispatch, this.onSeniorTap});
+/// 요약 줄의 작은 통계 칩. 0명이어도 자리를 지켜서 매일 같은 위치에서 읽힌다.
+class _StatChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final _StatTone tone;
+  final VoidCallback? onTap;
+
+  const _StatChip({
+    required this.label,
+    required this.count,
+    this.tone = _StatTone.neutral,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isOff =
-        dispatch.status == DispatchStatus.noService ||
+    final active = count > 0;
+    Color background;
+    Color foreground;
+    switch (tone) {
+      case _StatTone.warning:
+        background = active
+            ? AppSemanticColors.statusWarningBackground
+            : AppSemanticColors.backgroundTertiary;
+        foreground = active
+            ? AppSemanticColors.statusWarningText
+            : AppSemanticColors.textTertiary;
+        break;
+      case _StatTone.info:
+        background = active
+            ? AppSemanticColors.brandWeak
+            : AppSemanticColors.backgroundTertiary;
+        foreground = active
+            ? AppSemanticColors.brandPressed
+            : AppSemanticColors.textTertiary;
+        break;
+      case _StatTone.neutral:
+        background = AppSemanticColors.backgroundTertiary;
+        foreground = AppSemanticColors.textSecondary;
+        break;
+    }
+
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space2_5,
+        vertical: AppSpacing.space1_5,
+      ),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      ),
+      child: Text(
+        '$label $count명',
+        style: AppTypography.caption.copyWith(
+          color: foreground,
+          fontWeight: AppTypography.fontWeightMedium,
+        ),
+      ),
+    );
+
+    if (onTap == null) return chip;
+    return GestureDetector(onTap: onTap, child: chip);
+  }
+}
+
+/// 차량 한 대 — 차량 이름 + 승차정원, 운전자 칩, 상태 배지, 어르신 한 줄씩.
+/// [routeSeniors]는 그 노선에 설정된 전체 어르신(오늘 탑승 여부와 무관)이다.
+/// 탑승/결석/개인등하원을 한 줄에서 상태 배지로 구분해서 보여주므로,
+/// 예전처럼 출결만 따로 모은 섹션이 필요 없다.
+class _RouteBlock extends StatelessWidget {
+  final RouteDispatch dispatch;
+  final List<Senior> routeSeniors;
+  final DispatchProvider provider;
+  final String dateStr;
+  final ValueChanged<Senior>? onSeniorTap;
+
+  const _RouteBlock({
+    required this.dispatch,
+    required this.routeSeniors,
+    required this.provider,
+    required this.dateStr,
+    this.onSeniorTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isOff = dispatch.status == DispatchStatus.noService ||
         dispatch.status == DispatchStatus.holiday;
+    final style = DispatchStatusStyle.of(dispatch.status);
+
+    final vehicleName = (dispatch.driver?.vehicleName.trim().isNotEmpty ?? false)
+        ? dispatch.driver!.vehicleName.trim()
+        : dispatch.routeName;
+    final showRouteNameHint = vehicleName != dispatch.routeName;
+    final capacity = dispatch.driver?.vehicleCapacity ?? 0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
       padding: const EdgeInsets.all(AppSpacing.space3),
       decoration: BoxDecoration(
         color: isOff
             ? AppSemanticColors.backgroundTertiary
             : AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         border: Border.all(color: AppSemanticColors.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  buildRouteHeadline(dispatch),
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            vehicleName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                              fontWeight: AppTypography.fontWeightSemibold,
+                            ),
+                          ),
+                        ),
+                        if (capacity > 0) ...[
+                          const SizedBox(width: AppSpacing.space1_5),
+                          Text(
+                            '$capacity인승',
+                            style: AppTypography.caption.copyWith(
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (showRouteNameHint) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        dispatch.routeName,
+                        style: AppTypography.caption.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (!isOff)
-                Text(
-                  '${dispatch.passengers.length}명',
+              const SizedBox(width: AppSpacing.space2),
+              _StatusBadge(style: style),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.space2),
+          if (isOff)
+            Text(
+              dispatch.reason ?? dispatch.status,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            )
+          else ...[
+            _DriverChip(dispatch: dispatch),
+            const SizedBox(height: AppSpacing.space2),
+            Divider(height: 1, color: AppSemanticColors.borderSubtle),
+            if (routeSeniors.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+                child: Text(
+                  '탑승 없음',
                   style: AppTypography.caption.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space1),
+              )
+            else
+              ..._buildTripGroups(),
+          ],
+        ],
+      ),
+    );
+  }
 
-          if (isOff)
-            Text(
-              dispatch.reason ?? dispatch.status,
+  List<Widget> _buildTripGroups() {
+    final groups = groupPassengersByTrip(routeSeniors);
+    final widgets = <Widget>[];
+    for (final group in groups) {
+      if (group.tripOrder != null) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.space1_5, bottom: 2),
+            child: Text(
+              '${group.tripOrder}차 · ${group.seniors.length}명',
               style: AppTypography.caption.copyWith(
-                color: AppSemanticColors.textTertiary,
+                color: AppSemanticColors.interactivePrimaryDefault,
+                fontWeight: AppTypography.fontWeightSemibold,
               ),
-            )
-          else if (dispatch.tripGroups.isEmpty)
-            Text(
-              '탑승 없음',
-              style: AppTypography.caption.copyWith(
-                color: AppSemanticColors.textTertiary,
-              ),
-            )
-          else
-            ...dispatch.tripGroups.map(
-              (group) => Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (group.tripOrder != null) ...[
-                      Text(
-                        '${group.tripOrder}차)',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.interactivePrimaryDefault,
-                          fontWeight: AppTypography.fontWeightSemibold,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
-                    ],
-                    Expanded(
-                      child: Wrap(
-                        spacing: AppSpacing.space1,
-                        children: group.seniors
-                            .map(
-                              (senior) => GestureDetector(
-                                onTap: onSeniorTap == null
-                                    ? null
-                                    : () => onSeniorTap!(senior),
-                                child: Text(
-                                  senior.name,
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: AppSemanticColors.textSecondary,
-                                    decoration: onSeniorTap == null
-                                        ? null
-                                        : TextDecoration.underline,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  ],
+            ),
+          ),
+        );
+      }
+      for (final senior in group.seniors) {
+        widgets.add(
+          _ElderRow(
+            senior: senior,
+            provider: provider,
+            dateStr: dateStr,
+            routeType: dispatch.routeType,
+            onTap: onSeniorTap,
+          ),
+        );
+      }
+    }
+    return widgets;
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final DispatchStatusStyle style;
+
+  const _StatusBadge({required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space2,
+        vertical: AppSpacing.space1,
+      ),
+      decoration: BoxDecoration(
+        color: style.background,
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        border: Border.all(color: style.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(style.icon, size: 12, color: style.foreground),
+          const SizedBox(width: AppSpacing.space1),
+          Text(
+            style.label,
+            style: AppTypography.caption.copyWith(
+              color: style.foreground,
+              fontWeight: AppTypography.fontWeightMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 운전자 칩 — 대체 운행이면 경고 톤으로 바뀌고, 탭하면 사유를 보여준다.
+class _DriverChip extends StatelessWidget {
+  final RouteDispatch dispatch;
+
+  const _DriverChip({required this.dispatch});
+
+  @override
+  Widget build(BuildContext context) {
+    final driver = dispatch.driver;
+    if (driver == null) {
+      return Text(
+        dispatch.reason ?? '운행 정보 없음',
+        style: AppTypography.bodySmall.copyWith(
+          color: AppSemanticColors.textTertiary,
+        ),
+      );
+    }
+
+    final isSubstitute = dispatch.status == DispatchStatus.substitute;
+    final label = isSubstitute
+        ? '대체 · ${dispatch.driverRole ?? ''} ${driver.driverName}'
+        : '${dispatch.driverRole ?? '운전자'} ${driver.driverName}';
+
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space2_5,
+        vertical: AppSpacing.space1,
+      ),
+      decoration: BoxDecoration(
+        color: isSubstitute
+            ? AppSemanticColors.statusWarningBackground
+            : AppSemanticColors.backgroundTertiary,
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.person_outline,
+            size: 14,
+            color: isSubstitute
+                ? AppSemanticColors.statusWarningText
+                : AppSemanticColors.textSecondary,
+          ),
+          const SizedBox(width: AppSpacing.space1),
+          Text(
+            label.trim(),
+            style: AppTypography.bodySmall.copyWith(
+              color: isSubstitute
+                  ? AppSemanticColors.statusWarningText
+                  : AppSemanticColors.textSecondary,
+              fontWeight: AppTypography.fontWeightMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!isSubstitute || dispatch.reason == null) return chip;
+
+    return GestureDetector(
+      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(dispatch.reason!)),
+      ),
+      child: chip,
+    );
+  }
+}
+
+/// 어르신 한 줄 — 이름 + 상태 배지(탑승은 배지 없음) + 화살표.
+class _ElderRow extends StatelessWidget {
+  final Senior senior;
+  final DispatchProvider provider;
+  final String dateStr;
+  final String routeType;
+  final ValueChanged<Senior>? onTap;
+
+  const _ElderRow({
+    required this.senior,
+    required this.provider,
+    required this.dateStr,
+    required this.routeType,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (senior.elderlyId == null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1_5),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                senior.name,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppSemanticColors.textSecondary,
                 ),
               ),
             ),
-        ],
+            Text(
+              '회원관리 연결 필요',
+              style: AppTypography.caption.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final state = attendanceStateOf(provider, senior, dateStr);
+    final isPickupRoute = routeType == RouteType.toWork;
+    final personalChecked = isPickupRoute ? state.personalPickup : state.personalDropoff;
+    final personalLabel = isPickupRoute ? '개인등원' : '개인하원';
+
+    Widget? pill;
+    if (state.isAbsent) {
+      pill = const _StatusPill(
+        label: '결석',
+        foreground: AppSemanticColors.statusErrorText,
+        background: AppSemanticColors.statusErrorBackground,
+      );
+    } else if (personalChecked) {
+      pill = _StatusPill(
+        label: personalLabel,
+        foreground: AppSemanticColors.interactivePrimaryDefault,
+        outlined: true,
+      );
+    }
+
+    final interactive = onTap != null;
+
+    return InkWell(
+      onTap: interactive ? () => onTap!(senior) : null,
+      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1_5),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                senior.name,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                  decoration: state.isAbsent ? TextDecoration.lineThrough : null,
+                ),
+              ),
+            ),
+            if (pill != null) ...[pill, const SizedBox(width: AppSpacing.space1)],
+            if (interactive)
+              Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: AppSemanticColors.textTertiary,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  final String label;
+  final Color foreground;
+  final Color? background;
+  final bool outlined;
+
+  const _StatusPill({
+    required this.label,
+    required this.foreground,
+    this.background,
+    this.outlined = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space2,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: background ?? Colors.transparent,
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        border: outlined ? Border.all(color: foreground) : null,
+      ),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(
+          color: foreground,
+          fontWeight: AppTypography.fontWeightMedium,
+        ),
       ),
     );
   }
