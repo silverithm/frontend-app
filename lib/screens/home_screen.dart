@@ -20,7 +20,6 @@ import '../utils/permissions.dart';
 import '../utils/daily_greeting.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/notification_bell.dart';
-import '../widgets/seed/seed_button.dart';
 import '../widgets/today_schedule_dialog.dart';
 import 'admin_notice_management_screen.dart';
 import 'approval_hub_screen.dart';
@@ -59,8 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final isAdmin = AdminUtils.canAccessAdminPages(user);
     // 공지 전체(미게시 포함)·회원 목록은 해당 권한이 있어야 의미가 있다.
     // 관리자는 PermissionUtils가 전부 true라 기존과 동일하게 동작한다.
-    final canManageNotice =
-        PermissionUtils.has(user, AppPermission.noticeManage);
+    final canManageNotice = PermissionUtils.has(
+      user,
+      AppPermission.noticeManage,
+    );
     final companyId = user.company?.id ?? '1';
 
     try {
@@ -144,8 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (prefs.getString('last_today_schedule_popup_date') == todayKey) return;
 
     if (!mounted) return;
-    final todaySchedules =
-        context.read<ScheduleProvider>().getSchedulesForDate(now);
+    final todaySchedules = context.read<ScheduleProvider>().getSchedulesForDate(
+      now,
+    );
     if (todaySchedules.isEmpty) return;
 
     await prefs.setString('last_today_schedule_popup_date', todayKey);
@@ -173,7 +175,8 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
 
     const weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-    final dateLabel = '${now.month}월 ${now.day}일 (${weekdays[now.weekday - 1]})';
+    final dateLabel =
+        '${now.month}월 ${now.day}일 (${weekdays[now.weekday - 1]})';
 
     return _SectionCard(
       padding: const EdgeInsets.fromLTRB(
@@ -195,44 +198,46 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           else
-            ...todaySchedules.take(2).map(
-              (schedule) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.space2),
-                child: Row(
-                  children: [
-                    Container(
-                      width: AppSpacing.space1_5,
-                      height: AppSpacing.space1_5,
-                      decoration: BoxDecoration(
-                        color: scheduleDisplayColor(schedule),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    SizedBox(
-                      width: AppSpacing.space10,
-                      child: Text(
-                        schedule.timeText,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textSecondary,
+            ...todaySchedules
+                .take(2)
+                .map(
+                  (schedule) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: AppSpacing.space1_5,
+                          height: AppSpacing.space1_5,
+                          decoration: BoxDecoration(
+                            color: scheduleDisplayColor(schedule),
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Expanded(
-                      child: Text(
-                        schedule.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: AppTypography.fontWeightMedium,
+                        const SizedBox(width: AppSpacing.space2),
+                        SizedBox(
+                          width: AppSpacing.space10,
+                          child: Text(
+                            schedule.timeText,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Expanded(
+                          child: Text(
+                            schedule.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: AppTypography.fontWeightMedium,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
           if (todaySchedules.length > 2)
             Text(
               '외 ${todaySchedules.length - 2}건',
@@ -240,10 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppSemanticColors.textTertiary,
               ),
             ),
-          // 카드가 화면 비율대로 늘어나므로 남는 공간은 여기서 흡수하고
-          // 휴무자 줄은 카드 바닥에 앵커한다
-          const Spacer(),
-          const SizedBox(height: AppSpacing.space2),
+          const SizedBox(height: AppSpacing.space3),
           Divider(height: 1, color: AppSemanticColors.borderSubtle),
           const SizedBox(height: AppSpacing.space3),
           Row(
@@ -278,7 +280,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openApproval({required bool hasMyTurn}) {
     if (hasMyTurn) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ApprovalHubScreen(initialTab: 1)),
+        MaterialPageRoute(
+          builder: (_) => const ApprovalHubScreen(initialTab: 1),
+        ),
       );
       return;
     }
@@ -286,9 +290,9 @@ class _HomeScreenState extends State<HomeScreen> {
       widget.onNavigateToTab!(MainTabs.approval);
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ApprovalHubScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ApprovalHubScreen()));
   }
 
   @override
@@ -308,10 +312,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // 홈의 공지/결재 칸은 세부 권한을 따른다(관리자는 전부 true).
-    final canManageNotice =
-        PermissionUtils.has(user, AppPermission.noticeManage);
-    final canManageApprovals =
-        PermissionUtils.has(user, AppPermission.approvalManage);
+    final canManageNotice = PermissionUtils.has(
+      user,
+      AppPermission.noticeManage,
+    );
+    final canManageApprovals = PermissionUtils.has(
+      user,
+      AppPermission.approvalManage,
+    );
     final approvalProvider = context.watch<ApprovalProvider>();
     final noticeProvider = context.watch<NoticeProvider>();
     final vacationProvider = context.watch<VacationProvider>();
@@ -340,20 +348,16 @@ class _HomeScreenState extends State<HomeScreen> {
       body: RefreshIndicator(
         onRefresh: _loadDashboardData,
         color: AppSemanticColors.interactivePrimaryDefault,
-        // 세 칸이 내용과 무관하게 화면을 비율대로 꽉 채운다 — 내용이 비어도
-        // 카드가 화면을 나눠 갖고, 내용이 넘치는 작은 화면에서만 스크롤된다.
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-            SafeArea(
-              // 플랫한 표면 헤더 — 본문과 같은 backgroundPrimary를 써서
-              // 이질적인 대면적 브랜드 블록 없이 콘텐츠와 자연스럽게 이어지도록 한다.
+        // D1: 카드는 내용 크기만큼만 차지한다 — 내용이 비어 있다고
+        // 빈 화면을 억지로 나눠 갖지 않는다. 넘칠 때만 스크롤된다.
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SafeArea(
+                // 플랫한 표면 헤더 — 본문과 같은 backgroundPrimary를 써서
+                // 이질적인 대면적 브랜드 블록 없이 콘텐츠와 자연스럽게 이어지도록 한다.
                 bottom: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -397,17 +401,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-            if (_isLoading)
-              Expanded(
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: AppSemanticColors.interactivePrimaryDefault,
+              if (_isLoading)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.space16,
                   ),
-                ),
-              )
-            else
-              Expanded(
-                child: Padding(
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: AppSemanticColors.interactivePrimaryDefault,
+                    ),
+                  ),
+                )
+              else
+                Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.space4,
                     AppSpacing.space2,
@@ -417,129 +423,122 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                    // 홈은 세 칸만 — 공지사항(2건) · 전자결재(2건) · 오늘(일정+휴무자).
-                    // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
-                    Expanded(child: _SectionCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _SectionHeader(
-                            title: '공지사항',
-                            subtitle: '최근 공지',
-                            actionLabel: '전체보기',
-                            onAction: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => canManageNotice
-                                    ? const AdminNoticeManagementScreen()
-                                    : const NoticeListScreen(),
+                      // 홈은 세 칸만 — 공지사항(2건) · 전자결재(2건) · 오늘(일정+휴무자).
+                      // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
+                      _SectionCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _SectionHeader(
+                              title: '공지사항',
+                              subtitle: '최근 공지',
+                              actionLabel: '전체보기',
+                              onAction: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => canManageNotice
+                                      ? const AdminNoticeManagementScreen()
+                                      : const NoticeListScreen(),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: AppSpacing.space3),
-                          if (recentNotices.isEmpty)
-                            const _EmptySectionState(
-                              icon: Icons.campaign_outlined,
-                              title: '등록된 공지사항이 없습니다',
-                              subtitle: '새 공지가 올라오면 이곳에 표시됩니다.',
-                            )
-                          else
-                            Column(
-                              children: [
-                                for (final entry
-                                    in recentNotices.asMap().entries) ...[
-                                  if (entry.key > 0)
-                                    Divider(
-                                      height: 1,
-                                      color: AppSemanticColors.borderSubtle,
-                                    ),
-                                  _NoticePreviewTile(
-                                    notice: entry.value,
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => NoticeDetailScreen(
-                                          noticeId: entry.value.id,
+                            const SizedBox(height: AppSpacing.space3),
+                            if (recentNotices.isEmpty)
+                              const _EmptySectionState(
+                                icon: Icons.campaign_outlined,
+                                title: '등록된 공지사항이 없습니다',
+                                subtitle: '새 공지가 올라오면 이곳에 표시됩니다.',
+                              )
+                            else
+                              Column(
+                                children: [
+                                  for (final entry
+                                      in recentNotices.asMap().entries) ...[
+                                    if (entry.key > 0)
+                                      Divider(
+                                        height: 1,
+                                        color: AppSemanticColors.borderSubtle,
+                                      ),
+                                    _NoticePreviewTile(
+                                      notice: entry.value,
+                                      onTap: () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => NoticeDetailScreen(
+                                            noticeId: entry.value.id,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                        ],
+                              ),
+                          ],
+                        ),
                       ),
-                    )),
-                    const SizedBox(height: AppSpacing.space3),
+                      const SizedBox(height: AppSpacing.space3),
 
-                    Expanded(child: _SectionCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _SectionHeader(
-                            // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
-                            // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
-                            title: myTurnApprovals > 0
-                                ? '전자결재 ($myTurnApprovals)'
-                                : '전자결재',
-                            subtitle: myTurnApprovals > 0
-                                ? '지금 내가 처리할 결재 $myTurnApprovals건'
-                                : (canManageApprovals
-                                    ? '승인이 필요한 문서'
-                                    : '내 결재 진행 상황'),
-                            actionLabel: '전체보기',
-                            onAction: () => _openApproval(hasMyTurn: myTurnApprovals > 0),
-                          ),
-                          const SizedBox(height: AppSpacing.space3),
-                          if (recentApprovals.isEmpty)
-                            _EmptySectionState(
-                              icon: Icons.fact_check_outlined,
-                              title: canManageApprovals
-                                  ? '승인 대기 문서가 없습니다'
-                                  : '진행 중인 결재가 없습니다',
-                              subtitle: '새 결재가 생기면 이곳에 표시됩니다.',
-                            )
-                          else
-                            Column(
-                              children: [
-                                for (final entry
-                                    in recentApprovals.asMap().entries) ...[
-                                  if (entry.key > 0)
-                                    Divider(
-                                      height: 1,
-                                      color: AppSemanticColors.borderSubtle,
-                                    ),
-                                  _ApprovalPreviewTile(
-                                    approval: entry.value,
-                                    // 미리보기에서 바로 그 문서의 공문 상세로
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => ApprovalDetailScreen(
-                                          approval: entry.value,
+                      _SectionCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _SectionHeader(
+                              // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
+                              // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
+                              title: myTurnApprovals > 0
+                                  ? '전자결재 ($myTurnApprovals)'
+                                  : '전자결재',
+                              subtitle: myTurnApprovals > 0
+                                  ? '지금 내가 처리할 결재 $myTurnApprovals건'
+                                  : (canManageApprovals
+                                        ? '승인이 필요한 문서'
+                                        : '내 결재 진행 상황'),
+                              actionLabel: '전체보기',
+                              onAction: () =>
+                                  _openApproval(hasMyTurn: myTurnApprovals > 0),
+                            ),
+                            const SizedBox(height: AppSpacing.space3),
+                            if (recentApprovals.isEmpty)
+                              _EmptySectionState(
+                                icon: Icons.fact_check_outlined,
+                                title: canManageApprovals
+                                    ? '승인 대기 문서가 없습니다'
+                                    : '진행 중인 결재가 없습니다',
+                                subtitle: '새 결재가 생기면 이곳에 표시됩니다.',
+                              )
+                            else
+                              Column(
+                                children: [
+                                  for (final entry
+                                      in recentApprovals.asMap().entries) ...[
+                                    if (entry.key > 0)
+                                      Divider(
+                                        height: 1,
+                                        color: AppSemanticColors.borderSubtle,
+                                      ),
+                                    _ApprovalPreviewTile(
+                                      approval: entry.value,
+                                      // 미리보기에서 바로 그 문서의 공문 상세로
+                                      onTap: () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => ApprovalDetailScreen(
+                                            approval: entry.value,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                        ],
+                              ),
+                          ],
+                        ),
                       ),
-                    )),
-                    const SizedBox(height: AppSpacing.space3),
+                      const SizedBox(height: AppSpacing.space3),
 
-                    // 오늘 — 오늘의 일정과 휴무자 요약
-                    Expanded(
-                      child: _buildTodayBriefing(
-                        scheduleProvider,
-                        vacationProvider,
-                      ),
-                    ),
-                  ]),
+                      // 오늘 — 오늘의 일정과 휴무자 요약
+                      _buildTodayBriefing(scheduleProvider, vacationProvider),
+                    ],
+                  ),
                 ),
-              ),
-                  ],
-                ),
-              ),
-            ),
+            ],
           ),
         ),
       ),
@@ -591,8 +590,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     source.sort((a, b) {
-      final aMyTurn = approvalProvider.isMyTurn(a, myId: myId, isAdmin: isAdmin) ? 0 : 1;
-      final bMyTurn = approvalProvider.isMyTurn(b, myId: myId, isAdmin: isAdmin) ? 0 : 1;
+      final aMyTurn = approvalProvider.isMyTurn(a, myId: myId, isAdmin: isAdmin)
+          ? 0
+          : 1;
+      final bMyTurn = approvalProvider.isMyTurn(b, myId: myId, isAdmin: isAdmin)
+          ? 0
+          : 1;
       if (aMyTurn != bMyTurn) return aMyTurn - bMyTurn;
       final aPending = a.status == ApprovalStatus.pending ? 0 : 1;
       final bPending = b.status == ApprovalStatus.pending ? 0 : 1;
@@ -672,11 +675,35 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
         if (actionLabel != null && onAction != null)
-          SeedButton(
-            label: actionLabel!,
-            onPressed: onAction,
-            variant: SeedButtonVariant.neutralWeak,
-            size: SeedButtonSize.xsmall,
+          Material(
+            color: AppColors.transparent,
+            child: InkWell(
+              onTap: onAction,
+              borderRadius: BorderRadius.circular(AppBorderRadius.md),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space1,
+                  vertical: AppSpacing.space1,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      actionLabel!,
+                      style: AppTypography.labelMedium.copyWith(
+                        color: AppSemanticColors.interactivePrimaryDefault,
+                        fontWeight: AppTypography.fontWeightSemibold,
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: AppSemanticColors.interactivePrimaryDefault,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
       ],
     );
