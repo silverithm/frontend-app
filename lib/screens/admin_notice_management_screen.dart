@@ -262,8 +262,7 @@ class _AdminNoticeManagementScreenState
                       ),
                       const SizedBox(width: AppSpacing.space1),
                     ],
-                    NoticePriorityBadge(priority: notice.priority, small: true),
-                    const SizedBox(width: AppSpacing.space2),
+                    // D8: 상태 배지는 하나만 — 긴급은 배지 대신 제목 앞 점+라벨로 표시한다
                     NoticeStatusBadge(status: notice.status, small: true),
                     const Spacer(),
                     IconButton(
@@ -301,15 +300,40 @@ class _AdminNoticeManagementScreenState
                 ),
                 const SizedBox(height: AppSpacing.space2),
 
-                // Title
-                Text(
-                  notice.title,
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                // Title — 긴급은 배지 대신 제목 앞 빨간 점+라벨로
+                Row(
+                  children: [
+                    if (notice.priority == NoticePriority.high) ...[
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.statusErrorIcon,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space1),
+                      Text(
+                        '긴급',
+                        style: AppTypography.labelSmall.copyWith(
+                          color: AppSemanticColors.statusErrorText,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space1_5),
+                    ],
+                    Expanded(
+                      child: Text(
+                        notice.title,
+                        style: AppTypography.bodyLarge.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.space2),
 
