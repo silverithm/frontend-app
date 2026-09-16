@@ -22,6 +22,7 @@ import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/index.dart';
 import '../widgets/common/app_action_sheet.dart';
+import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import 'login_screen.dart';
@@ -137,23 +138,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   User _withProfileImageUrl(User user, String? url) {
-    return User(
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      profileImage: user.profileImage,
-      profileImageUrl: url,
-      createdAt: user.createdAt,
-      isActive: user.isActive,
-      username: user.username,
-      status: user.status,
-      department: user.department,
-      position: user.position,
-      company: user.company,
-      lastLoginAt: user.lastLoginAt,
-      tokenInfo: user.tokenInfo,
-    );
+    if (url == null) {
+      return user.copyWith(clearProfileImageUrl: true);
+    }
+    return user.copyWith(profileImageUrl: url);
   }
 
   void _showProfileImageOptions(BuildContext context, User user) {
@@ -932,7 +920,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       child: (user.profileImageUrl ?? '').isNotEmpty
                                           ? ClipOval(
                                               child: Image.network(
-                                                user.profileImageUrl!,
+                                                SeedAvatar.resolveImageUrl(
+                                                  user.profileImageUrl!,
+                                                ),
                                                 fit: BoxFit.cover,
                                                 errorBuilder:
                                                     (context, error, stackTrace) {
@@ -1037,7 +1027,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     ),
                                     const SizedBox(height: AppSpacing.space4),
 
-                                    // 직원 유형 (클릭 가능)
+                                    // 직원 유형 (기관 대표(app_user) 로그인은 members 행이 없어
+                                    // 역할 변경 API가 항상 실패한다 — 사진 업로드와 같은 기준으로 숨긴다)
+                                    if (_isCompanyOwnerLogin(user))
+                                      _buildInfoRow(
+                                        icon: _getRoleIcon(_effectiveRole(user)),
+                                        iconColor: _getRoleColor(_effectiveRole(user)),
+                                        title: '직원 유형',
+                                        value: _getRoleDisplayName(_effectiveRole(user)),
+                                      )
+                                    else
                                     InkWell(
                                       onTap: () => _showRoleChangeDialog(context, user),
                                       borderRadius: BorderRadius.circular(AppBorderRadius.lg),

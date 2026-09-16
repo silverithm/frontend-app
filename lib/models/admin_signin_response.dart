@@ -18,6 +18,9 @@ class AdminSigninResponse {
   /// 관리자 프로필 사진. 로그인 응답에 없으면 null — 앱은 이니셜로 그린다.
   final String? profileImageUrl;
 
+  /// 관리자 직책. 서버가 안 내려주면(구버전) null — 화면에서 '관리자'로 대체 표시한다.
+  final String? position;
+
   AdminSigninResponse({
     required this.userId,
     required this.userName,
@@ -31,12 +34,13 @@ class AdminSigninResponse {
     this.subscription,
     this.customerKey,
     this.profileImageUrl,
+    this.position,
   });
 
   factory AdminSigninResponse.fromJson(Map<String, dynamic> json) {
     return AdminSigninResponse(
       userId: json['userId']?.toString() ?? '',
-      userName: json['userName'] ?? '',
+      userName: json['userName'] ?? json['name'] ?? '',
       userEmail: json['userEmail'] ?? '',
       companyId: json['companyId']?.toString() ?? '',
       companyName: json['companyName'] ?? '',
@@ -51,6 +55,7 @@ class AdminSigninResponse {
           : null,
       customerKey: json['customerKey'],
       profileImageUrl: json['profileImageUrl']?.toString(),
+      position: json['position']?.toString(),
     );
   }
 
@@ -66,6 +71,7 @@ class AdminSigninResponse {
       isActive: true,
       isAdminAccount: true, // app_user 로그인 — 채팅 식별자에 admin_ 접두사가 붙는다
       profileImageUrl: profileImageUrl,
+      position: position,
       createdAt: DateTime.now(),
       company: Company(
         id: companyId,

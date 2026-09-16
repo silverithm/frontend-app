@@ -206,13 +206,14 @@ class _ChatMemberListState extends State<ChatMemberList> {
 
   Widget _buildMyProfileTile() {
     final me = context.read<AuthProvider>().currentUser;
+    final myPosition = (me?.position ?? '').isNotEmpty ? me!.position! : null;
     return Container(
       color: AppSemanticColors.backgroundSecondary,
       child: _buildMemberTile(
         id: me?.id ?? '',
         name: me?.name ?? '나',
-        position: '나',
-        imageUrl: null,
+        position: myPosition != null ? '$myPosition (나)' : '나',
+        imageUrl: me?.profileImageUrl,
         // 내가 이 화면을 보고 있다는 것 자체가 접속 중이라는 뜻
         isOnline: true,
         onTap: null,

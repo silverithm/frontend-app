@@ -221,7 +221,9 @@ class _AdminCompanySettingsScreenState
                         icon: Icons.admin_panel_settings,
                         iconColor: AppSemanticColors.textSecondary,
                         title: '역할',
-                        value: '관리자',
+                        value: (user!.position?.isNotEmpty ?? false)
+                            ? user.position!
+                            : '관리자',
                       ),
                     ],
                   ),

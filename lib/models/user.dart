@@ -12,7 +12,6 @@ class User {
   /// role만으로는 판별할 수 없다 — 직원(members) 중에도 role이 ADMIN인 사람이 있고,
   /// 그 사람의 id는 직원 id다. 채팅 식별자 규약(관리자만 admin_ 접두사)에 이 구분이 필요하다.
   final bool isAdminAccount;
-  final String? profileImage;
   final String? profileImageUrl;
   final DateTime createdAt;
   final bool isActive;
@@ -35,7 +34,6 @@ class User {
     required this.email,
     required this.name,
     required this.role,
-    this.profileImage,
     this.profileImageUrl,
     required this.createdAt,
     this.isActive = true,
@@ -68,7 +66,6 @@ class User {
       status: json['status'] ?? 'active',
       department: json['department'],
       position: json['position'],
-      profileImage: json['profileImage'],
       profileImageUrl: json['profileImageUrl']?.toString(),
       company: json['company'] != null
           ? Company.fromJson(json['company'])
@@ -98,7 +95,6 @@ class User {
       'status': status,
       'department': department,
       'position': position,
-      'profileImage': profileImage,
       'profileImageUrl': profileImageUrl,
       'company': company?.toJson(),
       'createdAt': createdAt.toIso8601String(),
@@ -119,8 +115,8 @@ class User {
     String? status,
     String? department,
     String? position,
-    String? profileImage,
     String? profileImageUrl,
+    bool clearProfileImageUrl = false,
     Company? company,
     DateTime? createdAt,
     DateTime? lastLoginAt,
@@ -138,8 +134,9 @@ class User {
       status: status ?? this.status,
       department: department ?? this.department,
       position: position ?? this.position,
-      profileImage: profileImage ?? this.profileImage,
-      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      profileImageUrl: clearProfileImageUrl
+          ? null
+          : (profileImageUrl ?? this.profileImageUrl),
       company: company ?? this.company,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,

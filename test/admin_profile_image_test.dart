@@ -7,7 +7,7 @@ import 'package:frontend_app/models/admin_signin_response.dart';
 /// 웹에서 사진을 올려도 앱에서는 관리자만 늘 이니셜이었다
 /// ("프로필 사진 업데이트가 반영 안 되네, 관리자 프로필이 뜨게 웹앱모두").
 void main() {
-  Map<String, dynamic> signinJson({String? profileImageUrl}) => {
+  Map<String, dynamic> signinJson({String? profileImageUrl, String? position}) => {
         'userId': 3,
         'userName': '김도형',
         'userEmail': 'test@carev.kr',
@@ -17,6 +17,7 @@ void main() {
         'companyCode': 'ABCD',
         'tokenInfo': {'accessToken': 'a', 'refreshToken': 'r'},
         if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+        if (position != null) 'position': position,
       };
 
   const photoUrl =
@@ -39,5 +40,24 @@ void main() {
 
     expect(user.isAdminAccount, isTrue);
     expect(user.id, '3');
+  });
+
+  test('로그인 시 입력한 이메일이 응답에 먼저 채워지면 User.email에 실린다', () {
+    final json = signinJson()..['userEmail'] = 'typed@carev.kr';
+    final user = AdminSigninResponse.fromJson(json).toUser();
+
+    expect(user.email, 'typed@carev.kr');
+  });
+
+  test('직책이 내려오면 User.position에 실린다', () {
+    final user = AdminSigninResponse.fromJson(signinJson(position: '원장')).toUser();
+
+    expect(user.position, '원장');
+  });
+
+  test('직책이 없으면 null이다 — 화면은 "관리자"로 대체 표시한다', () {
+    final user = AdminSigninResponse.fromJson(signinJson()).toUser();
+
+    expect(user.position, isNull);
   });
 }

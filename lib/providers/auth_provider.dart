@@ -129,8 +129,14 @@ class AuthProvider with ChangeNotifier {
       print('[AuthProvider] 관리자 로그인 응답: $response');
 
       if (response['userId'] != null) {
+        // 서버 응답에 로그인 시 입력한 이메일을 먼저 채워 넣은 뒤 파싱한다.
+        // 순서를 반대로 하면(파싱 후 modifiedResponse만 고침) User.email이
+        // 빈 값으로 세션에 남는다.
+        final modifiedResponse = Map<String, dynamic>.from(response);
+        modifiedResponse['userEmail'] = username; // 로그인 시 입력한 이메일 저장
+
         // AdminSigninResponse로 파싱 후 User 객체로 변환
-        final adminResponse = AdminSigninResponse.fromJson(response);
+        final adminResponse = AdminSigninResponse.fromJson(modifiedResponse);
         _currentUser = adminResponse.toUser();
 
         // 토큰 저장
@@ -149,8 +155,6 @@ class AuthProvider with ChangeNotifier {
         }
 
         // 사용자 정보 저장 (로그인 시 입력한 이메일 포함)
-        final modifiedResponse = Map<String, dynamic>.from(response);
-        modifiedResponse['userEmail'] = username; // 로그인 시 입력한 이메일 저장
         await StorageService().saveUserData(modifiedResponse);
 
         // Analytics 사용자 속성 설정
@@ -679,19 +683,22 @@ class AuthProvider with ChangeNotifier {
   void updateUser(User user) {
     _currentUser = user;
     notifyListeners();
-    // 저장해둔 로그인 응답도 같이 고쳐 둔다. 안 그러면 프로필 사진을 바꾼 뒤
-    // 앱을 껐다 켰을 때 옛 사진(또는 이니셜)으로 되돌아간다.
-    unawaited(_persistProfileImageUrl(user.profileImageUrl));
+    // 저장해둔 로그인 응답도 같이 고쳐 둔다. 안 그러면 프로필 사진·직책을 바꾼 뒤
+    // 앱을 껐다 켰을 때 옛 값(또는 이니셜)으로 되돌아간다.
+    unawaited(_persistUserFields(user));
   }
 
-  Future<void> _persistProfileImageUrl(String? profileImageUrl) async {
+  Future<void> _persistUserFields(User user) async {
     try {
       final saved = StorageService().getSavedUserData();
       if (saved == null) return;
-      saved['profileImageUrl'] = profileImageUrl;
+      saved['profileImageUrl'] = user.profileImageUrl;
+      saved['position'] = user.position;
+      saved['name'] = user.name;
+      saved['role'] = user.role;
       await StorageService().saveUserData(saved);
     } catch (e) {
-      print('[AuthProvider] 프로필 사진 저장 실패: $e');
+      print('[AuthProvider] 사용자 정보 저장 실패: $e');
     }
   }
 
@@ -874,20 +881,7 @@ class AuthProvider with ChangeNotifier {
 
         // 현재 사용자 정보 업데이트
         if (_currentUser != null) {
-          final updatedUser = User(
-            id: _currentUser!.id,
-            username: _currentUser!.username,
-            email: _currentUser!.email,
-            name: _currentUser!.name,
-            role: role,
-            company: _currentUser!.company,
-            tokenInfo: _currentUser!.tokenInfo,
-            createdAt: _currentUser!.createdAt,
-            department: _currentUser!.department,
-            position: _currentUser!.position,
-          );
-
-          _currentUser = updatedUser;
+          _currentUser = _currentUser!.copyWith(role: role);
 
           // 저장된 사용자 데이터도 업데이트
           final userData = StorageService().getSavedUserData();

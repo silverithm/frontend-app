@@ -8,6 +8,7 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/permissions.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import 'admin_company_settings_screen.dart';
 import 'admin_voice_box_screen.dart';
@@ -156,7 +157,10 @@ class MenuScreen extends StatelessWidget {
           _ProfileCard(
             name: user?.name ?? '',
             companyName: user?.company?.name ?? '',
-            roleLabel: isAdmin ? '관리자' : '직원',
+            roleLabel: (user?.position?.isNotEmpty ?? false)
+                ? user!.position!
+                : (isAdmin ? '관리자' : '직원'),
+            imageUrl: user?.profileImageUrl,
             onTap: () => _push(context, const ProfileScreen()),
           ),
           const SizedBox(height: AppSpacing.space5),
@@ -295,6 +299,7 @@ class _ProfileCard extends StatelessWidget {
   final String name;
   final String companyName;
   final String roleLabel;
+  final String? imageUrl;
   final VoidCallback onTap;
 
   const _ProfileCard({
@@ -302,6 +307,7 @@ class _ProfileCard extends StatelessWidget {
     required this.companyName,
     required this.roleLabel,
     required this.onTap,
+    this.imageUrl,
   });
 
   @override
@@ -310,15 +316,12 @@ class _ProfileCard extends StatelessWidget {
     return SeedListSection(
       children: [
         SeedListCell(
-          leading: CircleAvatar(
-            radius: 24,
-            backgroundColor: AppSemanticColors.brandWeak,
-            child: Text(
-              name.isNotEmpty ? name.characters.first : '?',
-              style: AppTypography.heading5.copyWith(
-                color: AppSemanticColors.brandPressed,
-              ),
-            ),
+          // 프로필에서 올린 사진이 있으면 그걸 보여준다 — 전에는 늘 이니셜만 나와
+          // '사진을 설정했는데 안 보인다'는 제보가 있었다. 없을 땐 SeedAvatar가 이니셜로 대체한다.
+          leading: SeedAvatar(
+            name: name,
+            imageUrl: imageUrl,
+            size: SeedAvatarSize.large,
           ),
           title: name,
           description: companyName,
