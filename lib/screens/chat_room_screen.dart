@@ -2606,6 +2606,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     }
   }
 
+  /// 사진첩 저장용 이름 — gal이 확장자를 스스로 붙이므로 마지막 확장자를 뗀다
+  static String _photoBaseName(String fileName) {
+    final dot = fileName.lastIndexOf('.');
+    if (dot <= 0 || fileName.length - dot > 6) return fileName;
+    return fileName.substring(0, dot);
+  }
+
   Future<void> _saveImageToGallery(String url, String fileName) async {
     final bytes = await _downloadBytes(url);
     if (bytes == null) {
@@ -2613,7 +2620,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       return;
     }
     try {
-      await Gal.putImageBytes(bytes, album: _photoAlbumName, name: fileName);
+      // gal이 확장자를 붙이므로 이름에서 떼고 넘긴다 — 안 떼면 'a.jpg.jpg'로 저장된다
+      await Gal.putImageBytes(bytes, album: _photoAlbumName, name: _photoBaseName(fileName));
       if (!mounted) return;
       AppSnackBar.showSuccess(
         context,
@@ -2703,7 +2711,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         return;
       }
       try {
-        await Gal.putImageBytes(bytes, album: _photoAlbumName, name: item.fileName);
+        await Gal.putImageBytes(bytes, album: _photoAlbumName, name: _photoBaseName(item.fileName));
         done++;
       } catch (_) {
         failed++;

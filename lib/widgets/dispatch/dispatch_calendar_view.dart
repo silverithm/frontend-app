@@ -326,22 +326,26 @@ class _DayCell extends StatelessWidget {
       return const SizedBox(height: 6);
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (s.normalCount > 0)
-          _Dot(
-            color: AppSemanticColors.statusSuccessIcon,
-            count: s.normalCount,
-          ),
-        if (s.substituteCount > 0)
-          _Dot(
-            color: AppSemanticColors.statusWarningIcon,
-            count: s.substituteCount,
-          ),
-        if (s.noServiceCount > 0)
-          _Dot(color: AppSemanticColors.statusErrorIcon, count: s.noServiceCount),
-      ],
+    // 점이 두세 종류 붙으면 좁은 칸(360dp 기준 40px 남짓)을 몇 px 넘친다 — 넘치면 줄여서 맞춘다
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (s.normalCount > 0)
+            _Dot(
+              color: AppSemanticColors.statusSuccessIcon,
+              count: s.normalCount,
+            ),
+          if (s.substituteCount > 0)
+            _Dot(
+              color: AppSemanticColors.statusWarningIcon,
+              count: s.substituteCount,
+            ),
+          if (s.noServiceCount > 0)
+            _Dot(color: AppSemanticColors.statusErrorIcon, count: s.noServiceCount),
+        ],
+      ),
     );
   }
 }

@@ -480,10 +480,14 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     List<_ElderRef> unassigned,
   ) {
     final personalLabel = _routeType == RouteType.toWork ? '개인등원' : '개인하원';
-    final totalRegistered = provider.seniors.where((s) {
-      final route = provider.routes.where((r) => r.id == s.routeId);
-      return route.isNotEmpty && route.first.type == _routeType;
-    }).length;
+    // '전체'는 회원관리에 등록된 어르신 수다(관리자 웹과 같은 기준). 아직 못 받아왔으면
+    // 이 방향 노선에 실린 어르신 수로 대신한다.
+    final totalRegistered = _companyElders.isNotEmpty
+        ? _companyElders.length
+        : provider.seniors.where((s) {
+            final route = provider.routes.where((r) => r.id == s.routeId);
+            return route.isNotEmpty && route.first.type == _routeType;
+          }).length;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(

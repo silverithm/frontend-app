@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../models/dispatch.dart';
 import '../providers/dispatch_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -212,7 +213,10 @@ class _DispatchScreenState extends State<DispatchScreen> {
   /// 노선 N · 어르신 N — 한 줄이면 충분하다
   Widget _buildSummaryLine(DispatchProvider provider) {
     return Text(
-      '노선 ${provider.routes.length} · 어르신 ${provider.seniors.length}',
+      // 등원·하원 노선을 따로 세고, 어르신은 두 방향에 같은 분이 겹치므로 사람 수로 센다
+      '등원 ${provider.routes.where((r) => r.type == RouteType.toWork).length}'
+      ' · 하원 ${provider.routes.where((r) => r.type == RouteType.toHome).length}'
+      ' · 어르신 ${provider.seniors.map((s) => s.elderlyId ?? s.name).toSet().length}',
       style: AppTypography.bodySmall.copyWith(
         color: AppSemanticColors.textTertiary,
       ),
