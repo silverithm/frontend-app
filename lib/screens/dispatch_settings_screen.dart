@@ -189,11 +189,24 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                       color: AppSemanticColors.statusWarningBackground,
                       borderRadius: BorderRadius.circular(AppBorderRadius.md),
                     ),
-                    child: Text(
-                      '미배정 어르신 ${_unassignedElders(provider).length}명 · ${_unassignedElders(provider).map((e) => e.name).join(', ')}',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.statusWarningText,
-                      ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: AppSemanticColors.statusWarningText,
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Expanded(
+                          child: Text(
+                            '미배정 어르신 ${_unassignedElders(provider).length}명 · ${_unassignedElders(provider).map((e) => e.name).join(', ')}',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.statusWarningText,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 Expanded(
