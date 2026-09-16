@@ -39,10 +39,15 @@ class _AdminApprovalTemplateScreenState
   @override
   void initState() {
     super.initState();
-    _loadData();
+    // 첫 프레임이 그려지는 중에 프로바이더가 notifyListeners를 부르면
+    // "setState() or markNeedsBuild() called during build"가 난다 — 한 프레임 뒤에 시작한다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadData();
+    });
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
@@ -56,7 +61,7 @@ class _AdminApprovalTemplateScreenState
         AppSnackBar.showError(context, message: '데이터 로드 실패: $e');
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
