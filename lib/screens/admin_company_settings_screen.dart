@@ -8,7 +8,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/index.dart';
-import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_button.dart';
 import 'admin_payment_screen.dart';
 import 'login_screen.dart';
@@ -50,30 +49,14 @@ class _AdminCompanySettingsScreenState
 
         if (company == null) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('회사 정보'),
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-              foregroundColor: AppSemanticColors.textInverse,
-            ),
+            appBar: const CareVAppBar(title: '회사 정보'),
             body: const Center(child: Text('회사 정보를 불러올 수 없습니다.')),
           );
         }
 
         return Scaffold(
           backgroundColor: AppSemanticColors.backgroundSecondary,
-          appBar: AppBar(
-            title: Text(
-              '회사 정보',
-              style: AppTypography.heading6.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppSemanticColors.textInverse,
-              ),
-            ),
-            backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-            foregroundColor: AppSemanticColors.textInverse,
-            elevation: 0,
-            centerTitle: true,
-          ),
+          appBar: const CareVAppBar(title: '회사 정보', centerTitle: true),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.space6),
             child: Column(

@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 
@@ -265,17 +266,7 @@ class _AdminVacationLimitsSettingScreenState
       backgroundColor: AppSemanticColors.backgroundPrimary,
       // 슬림 타이틀 — 형제 화면(admin_unified_approval/admin_user_management)과 동일하게
       // 아이콘뱃지+서브텍스트+"ADMIN"배지로 제목을 세 번 반복하지 않는다 (중복 강조 정리)
-      appBar: AppBar(
-        title: Text(
-          '휴무 제한 설정',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
-        ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
-        elevation: 0,
-      ),
+      appBar: const CareVAppBar(title: '휴무 제한 설정'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(

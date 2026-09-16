@@ -12,6 +12,7 @@ import '../widgets/notice/notice_priority_badge.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 import 'admin_notice_form_screen.dart';
@@ -78,16 +79,8 @@ class _AdminNoticeManagementScreenState
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: widget.showAppBar
-          ? AppBar(
-              title: Text(
-                '공지사항 관리',
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textInverse,
-                ),
-              ),
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-              foregroundColor: AppSemanticColors.textInverse,
-              elevation: 0,
+          ? CareVAppBar(
+              title: '공지사항 관리',
               actions: [
                 IconButton(
                   tooltip: '필터',
@@ -175,16 +168,10 @@ class _AdminNoticeManagementScreenState
   }
 
   Widget _buildSearchBar() {
-    final isEmbedded = !widget.showAppBar;
-    final textColor = isEmbedded
-        ? AppSemanticColors.textPrimary
-        : AppSemanticColors.textInverse;
-    final hintColor = isEmbedded
-        ? AppSemanticColors.textTertiary
-        : AppSemanticColors.textInverse.withValues(alpha: 0.6);
-    final fillColor = isEmbedded
-        ? AppSemanticColors.backgroundTertiary
-        : AppSemanticColors.textInverse.withValues(alpha: 0.1);
+    // 앱바가 흰 배경으로 통일되어(D6) showAppBar 여부와 무관하게 같은 밝은 톤을 쓴다.
+    final textColor = AppSemanticColors.textPrimary;
+    final hintColor = AppSemanticColors.textTertiary;
+    final fillColor = AppSemanticColors.backgroundTertiary;
 
     return Container(
       padding: const EdgeInsets.symmetric(

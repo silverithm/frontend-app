@@ -22,6 +22,7 @@ import '../widgets/seed/seed_text_field.dart';
 import 'plaza_post_detail_screen.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/carev_app_bar.dart';
 
 /// 게시판 key → 화면 표시 라벨. 목록·상세·글쓰기 시트가 공통으로 쓴다.
 String plazaBoardLabel(String? key) {
@@ -234,18 +235,13 @@ class _PlazaScreenState extends State<PlazaScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text('케어브이 커뮤니티',
-            style: AppTypography.heading6
-                .copyWith(color: AppSemanticColors.textInverse)),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
+      appBar: CareVAppBar(
+        title: '케어브이 커뮤니티',
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppSemanticColors.textInverse,
-          unselectedLabelColor:
-              AppSemanticColors.textInverse.withValues(alpha: 0.6),
-          indicatorColor: AppSemanticColors.textInverse,
+          labelColor: AppSemanticColors.brandDefault,
+          unselectedLabelColor: AppSemanticColors.textTertiary,
+          indicatorColor: AppSemanticColors.brandDefault,
           tabs: const [
             Tab(text: '요양 소식'),
             Tab(text: '게시판'),

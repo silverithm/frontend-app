@@ -13,6 +13,7 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 
@@ -124,23 +125,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text(
-          '공지사항',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
-        ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          tooltip: '뒤로 가기',
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
+      appBar: const CareVAppBar(title: '공지사항', centerTitle: true),
       body: Consumer<NoticeProvider>(
         builder: (context, noticeProvider, child) {
           if (noticeProvider.isLoading && noticeProvider.selectedNotice == null) {

@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/carev_app_bar.dart';
 
 /// 알림 설정 화면.
 ///
@@ -104,15 +105,7 @@ class _NotificationSettingsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text(
-          '알림 설정',
-          style:
-              AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse),
-        ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
-      ),
+      appBar: const CareVAppBar(title: '알림 설정'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
