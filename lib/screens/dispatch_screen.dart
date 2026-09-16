@@ -176,13 +176,12 @@ class _DispatchScreenState extends State<DispatchScreen> {
               AppSpacing.space6,
             ),
             children: [
-              // 노선·어르신 수는 카드 두 장을 차지할 만큼 자주 보는 값이 아니다.
-              // 달력이 한 화면에 들어오는 쪽이 먼저라 한 줄로 줄였다.
-              _buildSummaryLine(provider),
-              const SizedBox(height: AppSpacing.space2),
               DispatchCalendarView(
                 month: _month,
                 summary: provider.summaryForMonth(_month.year, _month.month),
+                // 노선·어르신 수는 매일 보는 값이 아니라, 달력 제목 옆에 무채색
+                // 보조 문구로만 붙인다(달력이 한 화면에 들어오는 쪽이 우선이다).
+                subtitle: _summaryText(provider),
                 // 날짜를 고르면 배차표 탭으로 넘어가 그 날짜를 바로 보여준다.
                 // 예전엔 여기서 DispatchDaySheet(요약 바텀시트)를 띄웠지만,
                 // 배차표가 같은 정보를 더 자세히 보여주므로 없앴다.
@@ -210,17 +209,12 @@ class _DispatchScreenState extends State<DispatchScreen> {
     }
   }
 
-  /// 노선 N · 어르신 N — 한 줄이면 충분하다
-  Widget _buildSummaryLine(DispatchProvider provider) {
-    return Text(
-      // 등원·하원 노선을 따로 세고, 어르신은 두 방향에 같은 분이 겹치므로 사람 수로 센다
-      '등원 ${provider.routes.where((r) => r.type == RouteType.toWork).length}'
-      ' · 하원 ${provider.routes.where((r) => r.type == RouteType.toHome).length}'
-      ' · 어르신 ${provider.seniors.map((s) => s.elderlyId ?? s.name).toSet().length}',
-      style: AppTypography.bodySmall.copyWith(
-        color: AppSemanticColors.textTertiary,
-      ),
-    );
+  /// 등원 N · 하원 N · 어르신 N — 달력 제목 옆 보조 문구
+  String _summaryText(DispatchProvider provider) {
+    // 등원·하원 노선을 따로 세고, 어르신은 두 방향에 같은 분이 겹치므로 사람 수로 센다
+    return '등원 ${provider.routes.where((r) => r.type == RouteType.toWork).length}'
+        ' · 하원 ${provider.routes.where((r) => r.type == RouteType.toHome).length}'
+        ' · 어르신 ${provider.seniors.map((s) => s.elderlyId ?? s.name).toSet().length}';
   }
 
   Widget _buildSetupGuide() {
