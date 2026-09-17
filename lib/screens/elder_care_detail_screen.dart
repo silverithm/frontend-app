@@ -181,7 +181,8 @@ class _Row {
   const _Row(this.label, this.value, {this.alert = false});
 
   /// "미등록·미지정"이 열두 번 반복돼 뭘 채웠는지 안 보였다 — 빈 값은 회색 "—" 하나로 줄인다.
-  static const Set<String> emptyMarkers = {'미등록', '미지정', '등급 미등록', '없음', ''};
+  /// '없음'은 빼 둔다 — 낙상 위험·욕창처럼 '없음'이 곧 답인 칸이 있어서 지우면 정보가 사라진다.
+  static const Set<String> emptyMarkers = {'미등록', '미지정', '등급 미등록', ''};
 
   bool get isEmpty => emptyMarkers.contains(value.trim());
 
