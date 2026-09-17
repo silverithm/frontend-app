@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../../models/chat_room.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_typography.dart';
 import '../seed/seed_avatar.dart';
 
-/// 채팅방 목록 아이콘 — 참여자 얼굴을 모아 하나의 원으로 보여준다 (카카오톡과 같은 방식).
+/// 채팅방 목록 아이콘 — 참여자 얼굴을 모아 하나의 원으로 보여준다 (웹과 같은 규칙).
 ///
-/// 사람 수에 따라 칸을 다르게 나눈다. 넷을 넘으면 앞의 넷만 보여준다 —
-/// 더 넣으면 한 칸이 너무 작아져 누가 누군지 알아볼 수 없다.
+/// D3: 3명 이상은 얼굴 3~4개를 한 원에 욱여넣지 않는다 — 칸이 너무 작아져 이니셜이
+/// 안 읽혔다. 대신 첫 사람 얼굴 하나 + 나머지 인원수로 보여준다(최대 2칸이라 항상 읽힌다).
 ///
 /// ```
-///   1명        2명          3명            4명 이상
-///  ┌────┐    ┌──┬──┐    ┌────┬───┐     ┌──┬──┐
-///  │ 얼 │    │얼│얼│    │ 얼 ├───┤     │얼│얼│
-///  │ 굴 │    │  │  │    │    │얼 │     ├──┼──┤
-///  └────┘    └──┴──┘    └────┴───┘     │얼│얼│
-///                                       └──┴──┘
+///   1명        2명          3명 이상
+///  ┌────┐    ┌──┬──┐    ┌────┬───┐
+///  │ 얼 │    │얼│얼│    │ 얼 │+2 │
+///  │ 굴 │    │  │  │    │ 굴 │   │
+///  └────┘    └──┴──┘    └────┴───┘
 /// ```
 /// 참여자를 못 받았으면(옛 서버 응답 등) 방 이름 첫 글자로 그린다 — 빈 원을 두지 않는다.
 class ChatRoomAvatarStack extends StatelessWidget {
@@ -35,7 +35,7 @@ class ChatRoomAvatarStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final people = avatars.take(4).toList();
+    final people = avatars;
 
     if (people.isEmpty) {
       return SeedAvatar(name: roomName, size: SeedAvatarSize.large);
@@ -53,65 +53,40 @@ class ChatRoomAvatarStack extends StatelessWidget {
         width: size,
         height: size,
         color: AppSemanticColors.borderSubtle,
-        child: _grid(people),
+        child: Row(
+          children: [
+            Expanded(child: _face(people[0])),
+            const SizedBox(width: _gap),
+            Expanded(
+              child: people.length == 2
+                  ? _face(people[1])
+                  : _countBadge(people.length - 1),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _grid(List<ChatRoomAvatar> people) {
-    switch (people.length) {
-      case 2:
-        // 세로로 반씩 — 둘이 나란히 서 있는 모양
-        return Row(
-          children: [
-            Expanded(child: _face(people[0])),
-            const SizedBox(width: _gap),
-            Expanded(child: _face(people[1])),
-          ],
-        );
-      case 3:
-        // 왼쪽 한 명이 크게, 오른쪽에 둘이 위아래로
-        return Row(
-          children: [
-            Expanded(child: _face(people[0])),
-            const SizedBox(width: _gap),
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(child: _face(people[1])),
-                  const SizedBox(height: _gap),
-                  Expanded(child: _face(people[2])),
-                ],
-              ),
+  /// 오른쪽 칸 — 첫 사람 외 나머지 인원수("+N")
+  Widget _countBadge(int count) {
+    return Container(
+      color: AppSemanticColors.brandWeak,
+      alignment: Alignment.center,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: Text(
+            '+$count',
+            style: AppTypography.labelSmall.copyWith(
+              color: AppSemanticColors.textLink,
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        );
-      default:
-        // 넷은 2×2
-        return Column(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(child: _face(people[0])),
-                  const SizedBox(width: _gap),
-                  Expanded(child: _face(people[1])),
-                ],
-              ),
-            ),
-            const SizedBox(height: _gap),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(child: _face(people[2])),
-                  const SizedBox(width: _gap),
-                  Expanded(child: _face(people[3])),
-                ],
-              ),
-            ),
-          ],
-        );
-    }
+          ),
+        ),
+      ),
+    );
   }
 
   /// 한 칸. 사진이 있으면 칸을 꽉 채우고, 없으면 이름 첫 글자를 브랜드 톤으로 그린다.

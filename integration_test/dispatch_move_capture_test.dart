@@ -6,7 +6,6 @@ import 'package:integration_test/integration_test.dart';
 
 import 'package:frontend_app/main.dart' as app;
 import 'package:frontend_app/widgets/chat/chat_image_viewer.dart';
-import 'package:frontend_app/widgets/dispatch/dispatch_attendance_section.dart';
 import 'package:frontend_app/widgets/seed/seed_list_cell.dart';
 
 /// "다른 차량으로 이동" 기능 + 배차/달력/설정/채팅 검색·이미지저장 실기기 검증 캡처.
@@ -156,17 +155,17 @@ void main() {
       await closeSheetIfOpen();
       await settle(tester, seconds: 1);
       await shot(tester, '03_after_absent_toggle');
-      // 결석 되돌리기(체험 데이터 원복) — 결석이면 칩이 사라지므로 출결 목록의 줄로 연다
-      final row = find.text(elderName);
-      if (row.evaluate().isNotEmpty) {
-        await tester.ensureVisible(row.last);
+      // 결석 되돌리기(체험 데이터 원복) — 새 디자인은 행이 남아 있으므로 다시 탭해 시트에서 푼다
+      final rowAgain = find.text(elderName);
+      if (rowAgain.evaluate().isNotEmpty) {
+        await tester.ensureVisible(rowAgain.first);
         await settle(tester, seconds: 0.5);
-        final rowCheckbox = find.descendant(
-          of: find.ancestor(of: row.last, matching: find.byType(DispatchElderAttendanceTile)).first,
-          matching: find.byType(Checkbox),
-        );
-        await tester.tap(rowCheckbox.first, warnIfMissed: false);
-        await settle(tester, seconds: 2.5);
+        await tester.tap(rowAgain.first, warnIfMissed: false);
+        await settle(tester, seconds: 2);
+        if (find.byType(BottomSheet).evaluate().isNotEmpty) {
+          await toggleAbsentInSheet();
+          await closeSheetIfOpen();
+        }
       }
       // 목록 맨 위로
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 1500), warnIfMissed: false);

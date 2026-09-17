@@ -89,6 +89,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   void initState() {
     super.initState();
     _chatProvider = context.read<ChatProvider>();
+    // 재연결 후 대화가 많이 밀렸을 때 목록을 갈아끼워도 되는지(맨 아래를 보고 있는지) 알려 준다
+    _chatProvider.viewerNearBottom = _viewerNearBottom;
     _authProvider = context.read<AuthProvider>();
     WidgetsBinding.instance.addObserver(this);
 
@@ -315,6 +317,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (_chatProvider.viewerNearBottom == _viewerNearBottom) {
+      _chatProvider.viewerNearBottom = null;
+    }
     _connectionWatchTimer?.cancel();
     _dateBadgeHideTimer?.cancel();
     // 타이핑 중이면 타이핑 중지 알림 전송
@@ -1891,6 +1896,56 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   /// [_connectionNoticeThreshold]를 넘기면 더 눈에 띄게 바꾼다. 재로그인이
   /// 필요한 경우(_stoppedForAuth)는 별도 문구로 안내한다 — ChatProvider가
   /// 이미 로그인 화면으로 보내는 중이지만, 화면 전환 전 잠깐이라도 이유를 보여준다.
+  /// 목록은 reverse라 pixels가 0이면 맨 아래(최신)다. 한 화면의 절반 안쪽이면 '아래를 보는 중'.
+  bool _viewerNearBottom() {
+    if (!_scrollController.hasClients) return true;
+    final position = _scrollController.position;
+    return position.pixels < position.viewportDimension * 0.5;
+  }
+
+  /// 옛 대화를 읽는 중에 재연결로 새 대화가 많이 쌓였을 때 — 목록을 튀게 하지 않고 알려 준다
+  Widget _buildNewerMessagesPill() {
+    return Consumer<ChatProvider>(
+      builder: (context, chatProvider, _) {
+        if (!chatProvider.hasNewerMessages) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+          child: Center(
+            child: Material(
+              color: AppSemanticColors.brandDefault,
+              borderRadius: BorderRadius.circular(999),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(999),
+                onTap: () async {
+                  await chatProvider.loadMessages(roomId: widget.room.id, refresh: true);
+                  if (!mounted || !_scrollController.hasClients) return;
+                  _scrollController.jumpTo(0);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space4,
+                    vertical: AppSpacing.space2,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_downward, size: 16, color: Colors.white),
+                      const SizedBox(width: AppSpacing.space1),
+                      Text(
+                        '새 메시지 보기',
+                        style: AppTypography.labelMedium.copyWith(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildConnectionBanner() {
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
@@ -3464,6 +3519,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             children: [
               // 소켓 연결 상태 — 끊긴 동안은 조용히 있지 않고 알려 준다
               _buildConnectionBanner(),
+              _buildNewerMessagesPill(),
 
               // 상단 고정 공지
               Consumer<ChatProvider>(
