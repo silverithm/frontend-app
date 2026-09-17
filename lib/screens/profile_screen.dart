@@ -1752,18 +1752,18 @@ class _ProfileScreenState extends State<ProfileScreen>
     required String title,
     required String value,
   }) {
+    // 줄마다 아이콘을 붙이면 위계가 없어 보였다(D10) — 라벨/값 표로만 보여준다.
+    // 이메일처럼 긴 값은 두 줄로 꺾지 않고 한 줄에 줄임표.
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, color: iconColor, size: 20),
-        const SizedBox(width: AppSpacing.space2),
         SizedBox(
-          width: 60,
+          width: 72,
           child: Text(
             title,
-            style: AppTypography.bodyMedium.copyWith(
+            style: AppTypography.bodySmall.copyWith(
               fontWeight: FontWeight.w500,
-              color: AppSemanticColors.textSecondary,
+              color: AppSemanticColors.textTertiary,
             ),
           ),
         ),
@@ -1771,6 +1771,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         Expanded(
           child: Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.w500,
               color: AppSemanticColors.textPrimary,

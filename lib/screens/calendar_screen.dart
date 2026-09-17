@@ -1096,6 +1096,8 @@ class _CalendarScreenState extends State<CalendarScreen>
   /// 휴무 달력 탭 빌드
   Widget _buildVacationCalendar() {
     return SingleChildScrollView(
+      // 떠 있는 + 버튼이 달력 마지막 줄을 가리지 않도록 아래 여백을 둔다(D9)
+      padding: const EdgeInsets.only(bottom: 96),
       child: Column(
         children: [
           // 근무조정 컨텍스트 — 다음 달만 받기 제한 · 이번 달 마감일 (행사는 날짜별 배지·신청 시 안내로 대체)

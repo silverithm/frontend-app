@@ -290,11 +290,11 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                 ),
               ),
 
-              // 이름 표시 옵션 — 같은 표면, 하단 구분선으로만 분리
+              // 이름 표시 옵션 — 한 줄 얇게(D9: 헤더가 3단으로 달력을 밀어내던 것)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space4,
-                  vertical: AppSpacing.space3,
+                  vertical: AppSpacing.space1_5,
                 ),
                 decoration: rowDivider,
                 child: Row(
@@ -302,26 +302,17 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.space1_5),
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.statusInfoBackground,
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.md,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.people_alt_outlined,
-                            size: 16,
-                            color: AppSemanticColors.statusInfoIcon,
-                          ),
+                        Icon(
+                          Icons.people_alt_outlined,
+                          size: 16,
+                          color: AppSemanticColors.textSecondary,
                         ),
-                        const SizedBox(width: AppSpacing.space2_5),
+                        const SizedBox(width: AppSpacing.space2),
                         Text(
                           '휴무자 이름 표시',
-                          style: AppTypography.bodyMedium.copyWith(
+                          style: AppTypography.bodySmall.copyWith(
                             fontWeight: AppTypography.fontWeightSemibold,
-                            color: AppSemanticColors.textPrimary,
+                            color: AppSemanticColors.textSecondary,
                           ),
                         ),
                       ],

@@ -35,14 +35,18 @@ class AiPostWriterScreen extends StatefulWidget {
 
 /// 어디에 올릴 글인지. 백엔드 라우트의 channel 값과 1:1.
 enum _Channel {
-  band,
-  blog;
+  band('band', '밴드 글', '밴드용'),
+  blog('blog', '블로그 글', '블로그용'),
+  guardian('guardian', '보호자 안내문', '보호자 안내문'),
+  notice('notice', '기관 공지문', '기관 공지문'),
+  instagram('instagram', '인스타그램 글', '인스타그램용');
 
-  String get apiValue => this == _Channel.band ? 'band' : 'blog';
+  const _Channel(this.apiValue, this.label, this.resultLabel);
 
-  String get label => this == _Channel.band ? '밴드 글' : '블로그 글';
-
-  String get resultLabel => this == _Channel.band ? '밴드용' : '블로그용';
+  /// 백엔드 라우트(/api/v1/ai-post)의 channel 값
+  final String apiValue;
+  final String label;
+  final String resultLabel;
 }
 
 class _AiPostResult {
@@ -234,7 +238,7 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
     try {
       await Clipboard.setData(ClipboardData(text: text));
       if (!mounted) return;
-      AppSnackBar.showSuccess(context, message: '$label을(를) 복사했어요. 밴드·블로그에 붙여넣으세요');
+      AppSnackBar.showSuccess(context, message: '$label을(를) 복사했어요. 올릴 곳에 붙여넣으세요');
     } catch (_) {
       if (!mounted) return;
       AppSnackBar.showError(context, message: '복사에 실패했습니다. 글을 길게 눌러 직접 복사해주세요');
@@ -260,7 +264,7 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
                 variant: SeedCalloutVariant.info,
                 title: '사진만 올리면 글을 써드려요',
                 description:
-                    '오늘 찍은 식사·프로그램 사진을 올리면 밴드/블로그 게시글을 자동으로 작성해요. 완성된 글을 복사해서 붙여넣기만 하면 됩니다.',
+                    '오늘 찍은 식사·프로그램 사진을 올리면 밴드·블로그 글, 보호자 안내문, 기관 공지문, 인스타그램 글을 자동으로 작성해요. 완성된 글을 복사해서 붙여넣기만 하면 됩니다.',
               ),
               const SizedBox(height: AppSpacing.space5),
 
@@ -303,18 +307,18 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space2),
-              Row(
+              // 다섯 종류라 한 줄에 다 안 들어간다 — 줄바꿈되는 칩 묶음으로
+              Wrap(
+                spacing: AppSpacing.space2,
+                runSpacing: AppSpacing.space2,
                 children: [
-                  for (final channel in _Channel.values) ...[
+                  for (final channel in _Channel.values)
                     SeedChip(
                       label: channel.label,
                       selected: _channel == channel,
                       isDisabled: _isGenerating,
                       onTap: () => setState(() => _channel = channel),
                     ),
-                    if (channel != _Channel.values.last)
-                      const SizedBox(width: AppSpacing.space2),
-                  ],
                 ],
               ),
               const SizedBox(height: AppSpacing.space5),

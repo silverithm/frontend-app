@@ -52,6 +52,18 @@ class DispatchCalendarView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(),
+        // 보조 요약은 제목 옆에 끼우면 좁은 폰에서 제목이 두 줄로 꺾이고 요약이 잘린다 — 한 줄 아래에
+        if (subtitle != null && subtitle!.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.space1),
+          Text(
+            subtitle!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.caption.copyWith(
+              color: AppSemanticColors.textTertiary,
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.space3),
         _buildWeekdayRow(),
         const SizedBox(height: AppSpacing.space1),
@@ -69,27 +81,15 @@ class DispatchCalendarView extends StatelessWidget {
     return Row(
       children: [
         Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${month.year}년 ${month.month}월',
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                  fontWeight: AppTypography.fontWeightBold,
-                ),
-              ),
-              if (subtitle != null && subtitle!.isNotEmpty)
-                Text(
-                  subtitle!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.caption.copyWith(
-                    color: AppSemanticColors.textTertiary,
-                  ),
-                ),
-            ],
+          child: Text(
+            '${month.year}년 ${month.month}월',
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.fade,
+            style: AppTypography.heading6.copyWith(
+              color: AppSemanticColors.textPrimary,
+              fontWeight: AppTypography.fontWeightBold,
+            ),
           ),
         ),
         const SizedBox(width: AppSpacing.space2),

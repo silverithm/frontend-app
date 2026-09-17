@@ -78,14 +78,8 @@ class _ElderCareDetailScreenState extends State<ElderCareDetailScreen> {
             ),
           ],
         ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.space4,
-            AppSpacing.space4,
-            AppSpacing.space4,
-            AppSpacing.space10,
-          ),
-          children: [
+        body: Builder(builder: (context) {
+          final sections = <_Section>[
             _Section(
               title: '기본',
               rows: [
@@ -145,17 +139,30 @@ class _ElderCareDetailScreenState extends State<ElderCareDetailScreen> {
             ),
             _Section(title: '자리', rows: [_Row('위치', p.seatSummary)]),
             _Section(title: '메모', rows: [_Row('기타', p.careNote ?? '없음')]),
-            if (p.updatedAt != null) ...[
-              const SizedBox(height: AppSpacing.space3),
-              Text(
-                '최종 수정 ${_formatDateTime(p.updatedAt!)}',
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
+          ];
+          final allRows = sections.expand((sec) => sec.rows).toList();
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space4,
+              AppSpacing.space4,
+              AppSpacing.space4,
+              AppSpacing.space10,
+            ),
+            children: [
+              _CompletenessLine(rows: allRows),
+              ...sections,
+              if (p.updatedAt != null) ...[
+                const SizedBox(height: AppSpacing.space3),
+                Text(
+                  '최종 수정 ${_formatDateTime(p.updatedAt!)}',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
-        ),
+          );
+        }),
       ),
     );
   }
@@ -172,6 +179,52 @@ class _Row {
   final bool alert;
 
   const _Row(this.label, this.value, {this.alert = false});
+
+  /// "미등록·미지정"이 열두 번 반복돼 뭘 채웠는지 안 보였다 — 빈 값은 회색 "—" 하나로 줄인다.
+  static const Set<String> emptyMarkers = {'미등록', '미지정', '등급 미등록', '없음', ''};
+
+  bool get isEmpty => emptyMarkers.contains(value.trim());
+
+  String get displayValue => isEmpty ? '—' : value;
+}
+
+/// 케어 정보를 얼마나 채웠는지 한 줄 — 무엇이 비었는지 보다 "얼마나 남았는지"를 먼저 보여준다.
+class _CompletenessLine extends StatelessWidget {
+  final List<_Row> rows;
+
+  const _CompletenessLine({required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = rows.length;
+    final filled = rows.where((r) => !r.isEmpty).length;
+    if (total == 0) return const SizedBox.shrink();
+    final ratio = filled / total;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.space4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '케어 정보 $total항목 중 $filled 입력',
+            style: AppTypography.labelMedium.copyWith(
+              color: AppSemanticColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space1),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 6,
+              backgroundColor: AppSemanticColors.backgroundTertiary,
+              color: AppSemanticColors.interactivePrimaryDefault,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _Section extends StatelessWidget {
@@ -237,11 +290,13 @@ class _Section extends StatelessWidget {
                         const SizedBox(width: AppSpacing.space2),
                         Expanded(
                           child: Text(
-                            row.value,
+                            row.displayValue,
                             style: AppTypography.bodyMedium.copyWith(
                               color: row.alert
                                   ? AppSemanticColors.statusWarningText
-                                  : AppSemanticColors.textPrimary,
+                                  : row.isEmpty
+                                      ? AppSemanticColors.textTertiary
+                                      : AppSemanticColors.textPrimary,
                               fontWeight: row.alert
                                   ? FontWeight.w600
                                   : FontWeight.w400,

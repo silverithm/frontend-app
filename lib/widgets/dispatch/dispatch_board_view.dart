@@ -149,7 +149,8 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     AppBottomSheet.show<void>(
       context,
       child: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
+          // 결석을 켜면 사유 칸이 늘어나 작은 폰에서 몇 px 넘쳤다 — 스크롤로 받는다
           padding: const EdgeInsets.all(AppSpacing.space4),
           child: Column(
             mainAxisSize: MainAxisSize.min,

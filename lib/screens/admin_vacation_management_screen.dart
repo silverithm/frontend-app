@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -264,52 +265,20 @@ class _AdminVacationManagementScreenState
                   ),
                   const SizedBox(height: AppSpacing.space4),
 
-                  // 직무 필터
-                  Text(
-                    '직무',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.space2),
+                  // 직무·정렬은 자주 안 바꾸므로 한 줄 요약 버튼으로 접고, 누르면 시트에서 고른다 (D12)
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildRoleFilterChip('전체', RoleUtils.allRole),
-                        for (final role in _roleFilterOptions) ...[
-                          const SizedBox(width: AppSpacing.space2),
-                          _buildRoleFilterChip(
-                            RoleUtils.displayName(role),
-                            role,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.space4),
-
-                  // 정렬 옵션
-                  Text(
-                    '정렬',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.space2),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildSortFilterChip('신청순', 'application'),
+                        _buildFilterSummaryChip(
+                          label: '직무 · ${_roleFilterLabel()}',
+                          onTap: _openRoleFilterSheet,
+                        ),
                         const SizedBox(width: AppSpacing.space2),
-                        _buildSortFilterChip('최신순', 'latest'),
-                        const SizedBox(width: AppSpacing.space2),
-                        _buildSortFilterChip('오래된순', 'oldest'),
-                        const SizedBox(width: AppSpacing.space2),
-                        _buildSortFilterChip('이름순', 'name'),
-                        const SizedBox(width: AppSpacing.space2),
-                        _buildSortFilterChip('직무순', 'role'),
+                        _buildFilterSummaryChip(
+                          label: '정렬 · ${_sortLabel()}',
+                          onTap: _openSortFilterSheet,
+                        ),
                       ],
                     ),
                   ),
@@ -496,6 +465,110 @@ class _AdminVacationManagementScreenState
   }
 
   /// 등록된 역할 + 실제 신청에 나타난 역할로 필터 목록을 만든다
+  static const Map<String, String> _sortLabels = {
+    'application': '신청순',
+    'latest': '최신순',
+    'oldest': '오래된순',
+    'name': '이름순',
+    'role': '직무순',
+  };
+
+  String _sortLabel() => _sortLabels[_sortBy] ?? '신청순';
+
+  String _roleFilterLabel() =>
+      _roleFilter == RoleUtils.allRole ? '전체' : RoleUtils.displayName(_roleFilter);
+
+  /// 접힌 필터 한 개 — "직무 · 전체 ▾" 같은 요약 칩. 누르면 시트가 열린다.
+  Widget _buildFilterSummaryChip({required String label, required VoidCallback onTap}) {
+    return Material(
+      color: AppSemanticColors.backgroundTertiary,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space3,
+            vertical: AppSpacing.space1,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: AppTypography.labelMedium.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(Icons.expand_more, size: 16, color: AppSemanticColors.textSecondary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openFilterSheet(String title, List<Widget> Function() chips) {
+    AppBottomSheet.show<void>(
+      context,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: AppTypography.fontWeightSemibold,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space3),
+              Wrap(
+                spacing: AppSpacing.space2,
+                runSpacing: AppSpacing.space2,
+                children: chips(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 시트 안에서 고르면 화면에 반영하고 시트를 닫는다
+  Widget _sheetChip(String label, bool selected, VoidCallback onPick) {
+    return SeedChip(
+      label: label,
+      selected: selected,
+      size: SeedChipSize.small,
+      onTap: () {
+        onPick();
+        Navigator.of(context).pop();
+      },
+    );
+  }
+
+  void _openRoleFilterSheet() {
+    _openFilterSheet('직무', () => [
+      _sheetChip('전체', _roleFilter == RoleUtils.allRole,
+          () => setState(() => _roleFilter = RoleUtils.allRole)),
+      for (final role in _roleFilterOptions)
+        _sheetChip(RoleUtils.displayName(role), _roleFilter == role,
+            () => setState(() => _roleFilter = role)),
+    ]);
+  }
+
+  void _openSortFilterSheet() {
+    _openFilterSheet('정렬', () => [
+      for (final entry in _sortLabels.entries)
+        _sheetChip(entry.value, _sortBy == entry.key,
+            () => setState(() => _sortBy = entry.key)),
+    ]);
+  }
+
   List<String> get _roleFilterOptions {
     final roles = <String>[];
     final seen = <String>{};

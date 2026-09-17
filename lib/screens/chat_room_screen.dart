@@ -2016,8 +2016,51 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     );
   }
 
+  /// 고정 공지는 기본으로 한 줄만 보여준다. 넉 줄짜리 배너가 대화를 밀어내
+  /// "채팅이 답답하다"는 얘기가 있었다. 누르면 펼치고, 다시 누르면 접힌다.
+  bool _noticeExpanded = false;
+
   Widget _buildNoticeBanner(ChatRoom room, bool isAdmin) {
     if (!room.hasNotice) return const SizedBox.shrink();
+
+    if (!_noticeExpanded) {
+      return Material(
+        color: AppSemanticColors.statusInfoBackground,
+        child: InkWell(
+          onTap: () => setState(() => _noticeExpanded = true),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space2,
+            ),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: AppSemanticColors.statusInfoBorder, width: 1),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.campaign_outlined, size: AppSpacing.space5, color: AppSemanticColors.statusInfoIcon),
+                const SizedBox(width: AppSpacing.space2),
+                Expanded(
+                  child: Text(
+                    room.noticeContent ?? '',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.statusInfoText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(Icons.expand_more, size: AppSpacing.space5, color: AppSemanticColors.statusInfoIcon),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,
@@ -2037,10 +2080,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.campaign_outlined,
-            size: AppSpacing.space5,
-            color: AppSemanticColors.statusInfoIcon,
+          // 아이콘을 누르면 다시 한 줄로 접힌다
+          GestureDetector(
+            onTap: () => setState(() => _noticeExpanded = false),
+            behavior: HitTestBehavior.opaque,
+            child: Icon(
+              Icons.expand_less,
+              size: AppSpacing.space5,
+              color: AppSemanticColors.statusInfoIcon,
+            ),
           ),
           const SizedBox(width: AppSpacing.space2),
           Expanded(
@@ -3905,18 +3953,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           : CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space3,
-            vertical: AppSpacing.space2,
-          ),
+          // 사진 묶음은 말풍선 안쪽 여백 없이 사진만 둥글게 보여준다 — 여백까지 두면
+          // 내 사진에 두꺼운 초록 테두리가 둘러진 것처럼 보여 무거웠다(D4).
+          padding: photoGroup != null
+              ? EdgeInsets.zero
+              : const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space3,
+                  vertical: AppSpacing.space2,
+                ),
+          clipBehavior: photoGroup != null ? Clip.antiAlias : Clip.none,
           decoration: BoxDecoration(
-            color: sendingStatus == MessageSendingStatus.sending
-                ? bubbleColor.withValues(alpha: 0.7)
-                : bubbleColor,
+            color: photoGroup != null
+                ? AppSemanticColors.surfaceDefault
+                : sendingStatus == MessageSendingStatus.sending
+                    ? bubbleColor.withValues(alpha: 0.7)
+                    : bubbleColor,
             // 배경(gray50)과 남의 말풍선(흰색)은 명도차가 거의 없어 그냥 두면
             // 경계가 안 보인다. 검은 테두리는 앱 톤에서 튀므로 옅은 회색
-            // 실선(borderDefault) 한 겹으로만 경계를 만든다.
-            border: isMyMessage
+            // 실선(borderDefault) 한 겹으로만 경계를 만든다. 사진은 내 것도 실선 한 겹.
+            border: (isMyMessage && photoGroup == null)
                 ? null
                 : Border.all(
                     color: AppSemanticColors.borderDefault,
@@ -3937,8 +3992,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           child: photoGroup != null
               ? ChatPhotoGroup(
                   messages: photoGroup,
-                  // 말풍선 좌우 안쪽 여백(space3 * 2)을 뺀 실제 그릴 수 있는 폭
-                  maxWidth: _bubbleContentWidth(context, isMyMessage),
+                  // 사진은 여백 없이 그리므로 말풍선 폭을 그대로 쓴다(테두리 1px씩만 뺀다)
+                  maxWidth: _bubbleContentWidth(context, isMyMessage) + AppSpacing.space3 * 2 - 2,
                   onTap: (i) => _openPhotoGroup(photoGroup, i),
                   onLongPress: (i) => _showMessageOptions(photoGroup[i]),
                 )
