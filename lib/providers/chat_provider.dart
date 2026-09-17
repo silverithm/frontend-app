@@ -45,6 +45,15 @@ class ChatProvider with ChangeNotifier {
   int _currentPage = 0;
   int _totalPages = 0;
   bool _hasMoreMessages = true;
+
+  /// 화면이 지금 목록 맨 아래(최신) 근처를 보고 있는지 알려 주는 콜백. 채팅방 화면이 등록한다.
+  /// 없으면 맨 아래를 보고 있다고 본다.
+  bool Function()? viewerNearBottom;
+
+  /// 끊겼다 붙은 사이 대화가 한 페이지 넘게 쌓였는데, 화면이 옛 대화를 읽는 중이라
+  /// 목록을 갈아끼우지 않고 미뤄 둔 상태. 화면은 이걸 보고 "새 메시지 보기"를 띄운다.
+  bool _hasNewerMessages = false;
+  bool get hasNewerMessages => _hasNewerMessages;
   /// 한 번이라도 붙은 적이 있는가 — 첫 연결과 '다시 붙음'을 가른다.
   /// 다시 붙은 것일 때만 끊긴 사이에 놓친 메시지를 채운다.
   bool _hasConnectedBefore = false;
@@ -1193,6 +1202,7 @@ class ChatProvider with ChangeNotifier {
       _currentPage = 0;
       _messages.clear();
       _hasMoreMessages = true;
+      _hasNewerMessages = false;
     }
 
     if (!_hasMoreMessages && !refresh) return;
@@ -1304,6 +1314,15 @@ class ChatProvider with ChangeNotifier {
       // 보이므로, 그때는 새로 받은 구간만 남기고 위로 올려 불러오는 경로에 나머지를 맡긴다.
       final overlaps = latest.any((m) => knownIds.contains(m.id));
       if (!overlaps) {
+        // 옛 대화를 읽는 중이면 목록을 갈아끼우지 않는다 — 갈아끼우면 읽던 자리가
+        // 맨 아래(최신)로 튀어 "자꾸 최신으로 돌아간다"는 제보가 됐다. 대신 표시만 남긴다.
+        final nearBottom = viewerNearBottom?.call() ?? true;
+        if (!nearBottom) {
+          _hasNewerMessages = true;
+          print('[ChatProvider] 재연결 후 대화가 많이 밀렸지만 옛 대화를 읽는 중 — 새 메시지 보기로 미룸');
+          notifyListeners();
+          return;
+        }
         _messages = latest;
         _currentPage = 1;
         _hasMoreMessages = true;
@@ -1839,18 +1858,19 @@ class ChatProvider with ChangeNotifier {
     required String userName,
   }) async {
     try {
-      // WebSocket 연결 시 WebSocket으로, 아니면 HTTP로 전송 (이중 전송 방지)
+      // 읽음은 REST로 반드시 남긴다. 전에는 소켓이 붙어 있으면 소켓으로만 보냈는데,
+      // 조용히 죽은 소켓에 보낸 읽음은 서버에 닿지 않아 "읽었는데 숫자가 안 사라진다"가 됐다.
+      // 소켓은 다른 사람 화면의 읽음 표시를 바로 갱신하는 용도로 덧붙여 보낸다.
+      await ApiService().markChatAsRead(
+        roomId: roomId,
+        lastMessageId: lastMessageId,
+        userId: userId,
+        userName: userName,
+      );
       if (_isConnected) {
         sendReadStatus(
           roomId,
           lastMessageId,
-          userId: userId,
-          userName: userName,
-        );
-      } else {
-        await ApiService().markChatAsRead(
-          roomId: roomId,
-          lastMessageId: lastMessageId,
           userId: userId,
           userName: userName,
         );
