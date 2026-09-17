@@ -364,6 +364,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     // 지금 화면 맨 위가 며칠 대화인지 알려주는 떠 있는 배지
     _updateScrollDateBadge();
 
+    // 목록은 reverse라 pixels가 0이면 맨 아래(최신)다. 한 화면 절반쯤 올라가면 '맨 아래로'를 띄운다.
+    final away = _scrollController.position.pixels >
+        math.max(240.0, _scrollController.position.viewportDimension * 0.5);
+    if (away != _showJumpToBottom) {
+      setState(() => _showJumpToBottom = away);
+    }
+
     // 목록이 reverse:true라 maxScrollExtent 쪽이 가장 오래된 끝이다.
     // 판단 자체는 순수 함수로 빼서 단위 테스트로 고정해 뒀다
     // (test/chat_message_pagination_test.dart).
@@ -1904,6 +1911,37 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   }
 
   /// 옛 대화를 읽는 중에 재연결로 새 대화가 많이 쌓였을 때 — 목록을 튀게 하지 않고 알려 준다
+  /// 위로 올려 옛 대화를 읽는 중일 때 뜨는 '맨 아래로' 단추.
+  bool _showJumpToBottom = false;
+
+  Widget _buildJumpToBottomButton() {
+    if (!_showJumpToBottom) return const SizedBox.shrink();
+    return Material(
+      color: AppSemanticColors.surfaceDefault,
+      shape: const CircleBorder(),
+      elevation: 3,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () {
+          if (!_scrollController.hasClients) return;
+          _scrollController.animateTo(
+            0,
+            duration: AppTransitions.normal,
+            curve: Curves.easeOut,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space2),
+          child: Icon(
+            Icons.arrow_downward,
+            size: 20,
+            color: AppSemanticColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildNewerMessagesPill() {
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, _) {
@@ -3537,107 +3575,117 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
               // 메시지 목록
               Expanded(
-                child: Consumer<ChatProvider>(
-                  builder: (context, chatProvider, child) {
-                    if (chatProvider.isLoading &&
-                        chatProvider.messages.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                child: Stack(
+                  children: [
+                    Consumer<ChatProvider>(
+                      builder: (context, chatProvider, child) {
+                        if (chatProvider.isLoading &&
+                            chatProvider.messages.isEmpty) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
-                    if (chatProvider.messages.isEmpty) {
-                      return Center(
-                        child: Text(
-                          '메시지가 없습니다.\n첫 메시지를 보내보세요!',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      );
-                    }
-
-                    final messages = chatProvider.messages;
-                    // 사진 묶음은 목록 전체를 한 번 훑어야 정해지므로 여기서 한 번만 만든다.
-                    final photoGroups = buildPhotoGroupMap(messages);
-                    final hasStatusRow =
-                        chatProvider.isLoadingOlderMessages ||
-                        !chatProvider.hasMoreMessages;
-                    // 목록의 가장 오래된 끝(reverse:true라 화면 위쪽)에 상태
-                    // 한 줄을 덧붙인다. 불러오는 중인지 끝에 닿은 건지
-                    // 구분이 안 되면 느린 페이지네이션이 "고장난 것"처럼
-                    // 보인다. 문구는 웹(관리자 채팅)과 같게 맞춘다.
-                    final itemCount = messages.length + (hasStatusRow ? 1 : 0);
-
-                    // 대화가 화면보다 짧으면 위에서부터 채운다.
-                    //
-                    // reverse:true 목록은 내용이 적으면 아래에 붙고 위가 텅 빈다.
-                    // 새로 만든 방·이제 막 시작한 1:1 대화가 늘 그 모습이라
-                    // "왜 중간에서 시작하냐"가 된다. reverse를 상황에 따라 끄는
-                    // 방식은 항목 순서까지 뒤집혀 위험하므로 쓰지 않는다.
-                    // 대신 스크롤뷰에 "내용 최소 높이 = 화면 높이"만 준다.
-                    //
-                    // 경계에서 튀지 않는 이유: 내용이 화면보다 길어지는 순간
-                    // minHeight는 아무 일도 하지 않는다(이미 더 크므로).
-                    // 남는 공간이 0으로 연속적으로 줄어들 뿐이라 튀는 지점이
-                    // 아예 생기지 않는다. reverse:true도 그대로라 스크롤은
-                    // 계속 최신(아래)에 붙어 시작한다.
-                    if (!chatProvider.hasMoreMessages &&
-                        messages.length <= _topAlignMaxMessages) {
-                      return _withScrollDateBadge(
-                        LayoutBuilder(
-                        builder: (context, constraints) {
-                          const padding = EdgeInsets.all(AppSpacing.space4);
-                          final minHeight = math.max(
-                            0.0,
-                            constraints.maxHeight - padding.vertical,
-                          );
-                          return SingleChildScrollView(
-                            controller: _scrollController,
-                            reverse: true,
-                            padding: padding,
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: minHeight,
-                              ),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
-                                children: [
-                                  // Column은 위→아래, 목록 index는 reverse
-                                  // (0 = 최신)라 거꾸로 훑는다.
-                                  for (int i = itemCount - 1; i >= 0; i--)
-                                    _buildMessageListItem(
-                                      chatProvider,
-                                      i,
-                                      currentUserId: currentUserId,
-                                      isAdmin: isAdmin,
-                                      photoGroups: photoGroups,
-                                    ),
-                                ],
+                        if (chatProvider.messages.isEmpty) {
+                          return Center(
+                            child: Text(
+                              '메시지가 없습니다.\n첫 메시지를 보내보세요!',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textTertiary,
                               ),
                             ),
                           );
-                        },
-                      ),
-                      );
-                    }
+                        }
 
-                    return _withScrollDateBadge(
-                      ListView.builder(
-                        controller: _scrollController,
-                        reverse: true,
-                        padding: const EdgeInsets.all(AppSpacing.space4),
-                        itemCount: itemCount,
-                        itemBuilder: (context, index) => _buildMessageListItem(
-                          chatProvider,
-                          index,
-                          currentUserId: currentUserId,
-                          isAdmin: isAdmin,
-                          photoGroups: photoGroups,
-                        ),
-                      ),
-                    );
-                  },
+                        final messages = chatProvider.messages;
+                        // 사진 묶음은 목록 전체를 한 번 훑어야 정해지므로 여기서 한 번만 만든다.
+                        final photoGroups = buildPhotoGroupMap(messages);
+                        final hasStatusRow =
+                            chatProvider.isLoadingOlderMessages ||
+                            !chatProvider.hasMoreMessages;
+                        // 목록의 가장 오래된 끝(reverse:true라 화면 위쪽)에 상태
+                        // 한 줄을 덧붙인다. 불러오는 중인지 끝에 닿은 건지
+                        // 구분이 안 되면 느린 페이지네이션이 "고장난 것"처럼
+                        // 보인다. 문구는 웹(관리자 채팅)과 같게 맞춘다.
+                        final itemCount = messages.length + (hasStatusRow ? 1 : 0);
+
+                        // 대화가 화면보다 짧으면 위에서부터 채운다.
+                        //
+                        // reverse:true 목록은 내용이 적으면 아래에 붙고 위가 텅 빈다.
+                        // 새로 만든 방·이제 막 시작한 1:1 대화가 늘 그 모습이라
+                        // "왜 중간에서 시작하냐"가 된다. reverse를 상황에 따라 끄는
+                        // 방식은 항목 순서까지 뒤집혀 위험하므로 쓰지 않는다.
+                        // 대신 스크롤뷰에 "내용 최소 높이 = 화면 높이"만 준다.
+                        //
+                        // 경계에서 튀지 않는 이유: 내용이 화면보다 길어지는 순간
+                        // minHeight는 아무 일도 하지 않는다(이미 더 크므로).
+                        // 남는 공간이 0으로 연속적으로 줄어들 뿐이라 튀는 지점이
+                        // 아예 생기지 않는다. reverse:true도 그대로라 스크롤은
+                        // 계속 최신(아래)에 붙어 시작한다.
+                        if (!chatProvider.hasMoreMessages &&
+                            messages.length <= _topAlignMaxMessages) {
+                          return _withScrollDateBadge(
+                            LayoutBuilder(
+                            builder: (context, constraints) {
+                              const padding = EdgeInsets.all(AppSpacing.space4);
+                              final minHeight = math.max(
+                                0.0,
+                                constraints.maxHeight - padding.vertical,
+                              );
+                              return SingleChildScrollView(
+                                controller: _scrollController,
+                                reverse: true,
+                                padding: padding,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minHeight: minHeight,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      // Column은 위→아래, 목록 index는 reverse
+                                      // (0 = 최신)라 거꾸로 훑는다.
+                                      for (int i = itemCount - 1; i >= 0; i--)
+                                        _buildMessageListItem(
+                                          chatProvider,
+                                          i,
+                                          currentUserId: currentUserId,
+                                          isAdmin: isAdmin,
+                                          photoGroups: photoGroups,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          );
+                        }
+
+                        return _withScrollDateBadge(
+                          ListView.builder(
+                            controller: _scrollController,
+                            reverse: true,
+                            padding: const EdgeInsets.all(AppSpacing.space4),
+                            itemCount: itemCount,
+                            itemBuilder: (context, index) => _buildMessageListItem(
+                              chatProvider,
+                              index,
+                              currentUserId: currentUserId,
+                              isAdmin: isAdmin,
+                              photoGroups: photoGroups,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // 위로 올려 읽는 중일 때 돌아갈 길 — 자동으로 따라 내려가지 않으므로 항상 열어 둔다
+                    Positioned(
+                      right: AppSpacing.space4,
+                      bottom: AppSpacing.space3,
+                      child: _buildJumpToBottomButton(),
+                    ),
+                  ],
                 ),
               ),
 
