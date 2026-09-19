@@ -346,7 +346,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   void _markAsRead() {
     final chatProvider = context.read<ChatProvider>();
     final authProvider = context.read<AuthProvider>();
-    final messages = chatProvider.messages;
+    // 맨 앞이 보내는 중인 내 말풍선이면 번호가 임시 음수다 — 서버에 있는 가장 최신 번호를 쓴다.
+    // (음수로 읽음 처리하면 서버의 읽음 위치가 망가져 안읽음이 방 전체로 되살아났다)
+    final messages = chatProvider.messages.where((m) => m.id > 0);
     if (messages.isNotEmpty) {
       chatProvider.markAsRead(
         widget.room.id,
