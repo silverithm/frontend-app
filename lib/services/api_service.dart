@@ -1531,6 +1531,16 @@ class ApiService {
   // ===================== 사용자 정보 API =====================
 
   // 사용자 정보 조회 (구독 정보 포함)
+  /// 직원 한 명의 최신 정보 (GET /v1/members/{id}) — 자동 로그인 뒤 내 사진·직책을 새로 받을 때 쓴다
+  Future<Map<String, dynamic>> getMemberById(String memberId) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/members/$memberId');
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+      return await http.get(uri, headers: headers);
+    });
+  }
+
   Future<Map<String, dynamic>> getUserInfo() async {
     return await _makeAuthenticatedRequest(() async {
       // 1차: 일반 사용자 정보 조회 시도

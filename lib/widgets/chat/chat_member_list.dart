@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -78,6 +79,7 @@ class _ChatMemberListState extends State<ChatMemberList> {
   }
 
   Future<void> _refresh() async {
+    unawaited(context.read<AuthProvider>().refreshProfileFromServer());
     await _loadMembers();
     if (mounted) await context.read<ChatProvider>().loadOnlineUsers();
   }
@@ -205,7 +207,7 @@ class _ChatMemberListState extends State<ChatMemberList> {
   }
 
   Widget _buildMyProfileTile() {
-    final me = context.read<AuthProvider>().currentUser;
+    final me = context.watch<AuthProvider>().currentUser;
     final myPosition = (me?.position ?? '').isNotEmpty ? me!.position! : null;
     return Container(
       color: AppSemanticColors.backgroundSecondary,

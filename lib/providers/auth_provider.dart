@@ -559,6 +559,7 @@ class AuthProvider with ChangeNotifier {
         _currentUser = restored;
         _isInitialized = true;
         notifyListeners();
+        unawaited(refreshProfileFromServer());
         return;
       }
 
@@ -620,6 +621,7 @@ class AuthProvider with ChangeNotifier {
 
         _isInitialized = true;
         notifyListeners();
+        unawaited(refreshProfileFromServer());
       } catch (e) {
         print('[AuthProvider] 사용자 정보 복원 실패: $e');
         await _performLogout();
@@ -686,6 +688,40 @@ class AuthProvider with ChangeNotifier {
     // 저장해둔 로그인 응답도 같이 고쳐 둔다. 안 그러면 프로필 사진·직책을 바꾼 뒤
     // 앱을 껐다 켰을 때 옛 값(또는 이니셜)으로 되돌아간다.
     unawaited(_persistUserFields(user));
+  }
+
+  /// 자동 로그인은 휴대폰에 저장해 둔 사용자 정보로 들어온다. 웹이나 다른 기기에서 바꾼
+  /// 프로필 사진·직책·이름은 그 저장본에 없어서, 다시 로그인하기 전까지 옛 모습이 남았다
+  /// (웹에서 올린 관리자 사진이 앱 직원 목록의 '나'에 기본 그림으로 뜨던 원인, 2026-09-19).
+  /// 들어온 뒤 서버에서 한 번 새로 받아 덮어쓴다. 부가 기능이라 실패해도 로그인은 그대로 둔다.
+  Future<void> refreshProfileFromServer() async {
+    final user = _currentUser;
+    if (user == null) return;
+    try {
+      final Map<String, dynamic> res = user.isAdminAccount
+          ? await ApiService().getUserInfo()
+          : await ApiService().getMemberById(user.id);
+      final data = res['data'] is Map
+          ? Map<String, dynamic>.from(res['data'] as Map)
+          : res;
+      if (data.isEmpty) return;
+
+      final url = data['profileImageUrl']?.toString();
+      final hasUrl = url != null && url.trim().isNotEmpty;
+      final position = data['position']?.toString();
+      final name = (user.isAdminAccount ? data['userName'] : data['name'])?.toString();
+
+      // 사용자가 그새 로그아웃했거나 다른 계정으로 바꿨으면 덮어쓰지 않는다
+      if (_currentUser?.id != user.id) return;
+      updateUser(_currentUser!.copyWith(
+        profileImageUrl: hasUrl ? url : null,
+        clearProfileImageUrl: !hasUrl,
+        position: (position != null && position.trim().isNotEmpty) ? position : null,
+        name: (name != null && name.trim().isNotEmpty) ? name : null,
+      ));
+    } catch (e) {
+      print('[AuthProvider] 프로필 새로고침 실패(무시): $e');
+    }
   }
 
   Future<void> _persistUserFields(User user) async {
