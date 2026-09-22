@@ -343,6 +343,15 @@ class _AdminApprovalManagementScreenState
         context,
         message: force ? '직권 반려(전결) 처리되었습니다' : '결재가 거절되었습니다',
       );
+    } else if (mounted) {
+      // 실패를 그냥 삼키면 사용자는 거절이 됐는지 안 됐는지 알 길이 없다
+      // (이미 삭제·처리된 문서면 provider가 목록에서도 지워둔다).
+      AppSnackBar.showError(
+        context,
+        message: approvalProvider.errorMessage.isNotEmpty
+            ? approvalProvider.errorMessage
+            : '결재 거절에 실패했습니다',
+      );
     }
   }
 

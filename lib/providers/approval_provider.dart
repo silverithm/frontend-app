@@ -96,6 +96,31 @@ class ApprovalProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// 서버에 이미 없는 문서(웹에서 삭제됐거나 이미 처리된 뒤 지워진 문서)에 대한
+  /// 요청인지 — 404 또는 백엔드가 500으로 감싸 보내는 "찾을 수 없습니다" 메시지
+  /// 둘 다를 잡는다(서버가 상태 코드를 404로 고친 뒤에도 계속 동작하도록 문구
+  /// 매칭을 함께 둔다). 2026-09-22 운영 사고: 삭제된 결재 777이 기기에 계속
+  /// "내 차례"로 남아 반려 시도가 500으로 실패했다.
+  bool _isGoneError(Object e) {
+    if (e is ApiException) {
+      return e.statusCode == 404 || e.message.contains('찾을 수 없습니다');
+    }
+    return e.toString().contains('찾을 수 없습니다');
+  }
+
+  /// 서버에서 사라진 문서를 로컬 캐시(결재함·내 결재)에서도 지운다 —
+  /// 안 지우면 새로고침 전까지 개수(myTurnCount 등)에 계속 잡힌다.
+  void _purgeStaleDocument(int approvalId) {
+    _approvalRequests.removeWhere((r) => r.id == approvalId);
+    _myApprovalRequests.removeWhere((r) => r.id == approvalId);
+    if (_selectedApproval?.id == approvalId) {
+      _selectedApproval = null;
+    }
+    notifyListeners();
+  }
+
+  static const String goneDocumentMessage = '이미 삭제되었거나 처리된 결재입니다';
+
   // ===================== 결재 요청 API =====================
 
   // 관리자용 결재 요청 목록 로드
@@ -248,7 +273,14 @@ class ApprovalProvider with ChangeNotifier {
       return _selectedApproval;
     } catch (e) {
       print('[ApprovalProvider] 결재 요청 상세 로드 에러: $e');
-      setError('결재 요청을 불러오는데 실패했습니다: ${e.toString()}');
+      if (_isGoneError(e)) {
+        // 목록에서 눌러 들어온 문서가 그새 삭제·처리됐다 — 목록에서도 지워
+        // 뒤로 돌아갔을 때 또 나타나지 않게 한다.
+        _purgeStaleDocument(approvalId);
+        setError(goneDocumentMessage);
+      } else {
+        setError('결재 요청을 불러오는데 실패했습니다: ${e.toString()}');
+      }
       return null;
     } finally {
       setLoading(false);
@@ -333,7 +365,14 @@ class ApprovalProvider with ChangeNotifier {
       return true;
     } catch (e) {
       print('[ApprovalProvider] 결재 요청 승인 에러: $e');
-      setError('결재 승인에 실패했습니다: ${e.toString()}');
+      if (_isGoneError(e)) {
+        // 이미 삭제되거나 다른 사람이 먼저 처리한 문서 — 로컬에서도 지워야
+        // "내 차례" 개수가 다시 서버와 맞는다.
+        _purgeStaleDocument(approvalId);
+        setError(goneDocumentMessage);
+      } else {
+        setError('결재 승인에 실패했습니다: ${e.toString()}');
+      }
       return false;
     } finally {
       setLoading(false);
@@ -370,7 +409,12 @@ class ApprovalProvider with ChangeNotifier {
       return true;
     } catch (e) {
       print('[ApprovalProvider] 결재 요청 거절 에러: $e');
-      setError('결재 거절에 실패했습니다: ${e.toString()}');
+      if (_isGoneError(e)) {
+        _purgeStaleDocument(approvalId);
+        setError(goneDocumentMessage);
+      } else {
+        setError('결재 거절에 실패했습니다: ${e.toString()}');
+      }
       return false;
     } finally {
       setLoading(false);

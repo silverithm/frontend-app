@@ -56,14 +56,28 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
   Future<void> _loadDetail() async {
     final approvalProvider = context.read<ApprovalProvider>();
     final detail = await approvalProvider.loadApprovalDetail(approvalId: _approval.id);
-    final templateChanged = detail != null && detail.templateId != _approval.templateId;
-    if (detail != null && mounted) {
-      setState(() {
-        _approval = detail;
-        // 알림에서 들어오면 목록 정보 없이 번호만 있어 양식 번호가 비어 있다 — 새로 받을 때까지 다시 가린다
-        if (templateChanged) _templateSettled = false;
-      });
+    if (!mounted) return;
+
+    if (detail == null) {
+      // 목록에서 눌러 들어온 뒤 그새 웹에서 삭제·처리됐을 수 있다 — 죽은 문서를
+      // 계속 띄워두고 승인/반려 버튼을 살려두면 눌렀을 때 서버 오류만 만난다
+      // (2026-09-22 운영 사고: 삭제된 결재 777에서 반려 시도가 500으로 실패).
+      if (approvalProvider.errorMessage == ApprovalProvider.goneDocumentMessage) {
+        AppSnackBar.showWarning(
+          context,
+          message: ApprovalProvider.goneDocumentMessage,
+        );
+        Navigator.of(context).pop(true); // true: 호출한 목록 화면도 새로고침하라는 신호
+      }
+      return;
     }
+
+    final templateChanged = detail.templateId != _approval.templateId;
+    setState(() {
+      _approval = detail;
+      // 알림에서 들어오면 목록 정보 없이 번호만 있어 양식 번호가 비어 있다 — 새로 받을 때까지 다시 가린다
+      if (templateChanged) _templateSettled = false;
+    });
     if (templateChanged) _loadTemplate();
   }
 

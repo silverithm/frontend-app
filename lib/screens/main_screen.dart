@@ -148,6 +148,13 @@ class _MainScreenState extends State<MainScreen>
                 userId: userId,
               );
             }
+
+            // 결재 푸시(승인/반려/상신/삭제 등)를 받았을 때도 목록을 새로 받는다 —
+            // 안 그러면 웹에서 이미 삭제·처리된 문서가 기기에 계속 "내 차례"로 남는다
+            // (2026-09-22 운영 사고: 삭제된 결재 777이 앱에서 계속 표시됨).
+            if (message.data['type'] == 'approval') {
+              _refreshApprovalData();
+            }
           }
         };
       } else {
@@ -177,6 +184,11 @@ class _MainScreenState extends State<MainScreen>
           companyId: companyId,
           userId: authProvider.currentUser!.id,
         );
+
+        // 백그라운드에 있는 동안 결재 문서가 웹에서 승인/반려/삭제됐을 수 있다 —
+        // 복귀할 때마다 다시 받아 캐시를 서버와 맞춘다(안 그러면 이미 없어진
+        // 문서가 "내 차례"로 계속 남는다. 2026-09-22 운영 사고 참고).
+        _refreshApprovalData();
       }
     }
   }
@@ -188,12 +200,44 @@ class _MainScreenState extends State<MainScreen>
     super.dispose();
   }
 
+  /// 결재함·내 결재 목록을 서버에서 다시 받는다 — 개수(myTurnCount 등)가 로컬에
+  /// 남은 stale 문서 때문에 실제와 어긋나는 것을 막는 공통 새로고침.
+  Future<void> _refreshApprovalData() async {
+    final authProvider = context.read<AuthProvider>();
+    final user = authProvider.currentUser;
+    if (user == null) return;
+    final companyId = user.company?.id ?? '1';
+    final canManageApprovals = PermissionUtils.has(
+      user,
+      AppPermission.approvalManage,
+    );
+    final approvalProvider = context.read<ApprovalProvider>();
+    final futures = <Future<void>>[
+      approvalProvider.loadApprovalRequests(companyId: companyId, refresh: true),
+    ];
+    if (!canManageApprovals) {
+      futures.add(
+        approvalProvider.loadMyApprovalRequests(
+          requesterId: user.id,
+          refresh: true,
+        ),
+      );
+    }
+    await Future.wait(futures);
+  }
+
   void _onItemTapped(int index) {
     if (_currentIndex != index) {
       setState(() {
         _currentIndex = index;
       });
       _animationController.forward(from: 0);
+      // 홈·전자결재 탭은 결재 "내 차례" 강조/뱃지를 보여주는 화면이다 —
+      // 탭을 열 때마다 최신 상태로 맞춘다(가려져 있던 탭은 다시 보일 때까지
+      // 저절로 새로고침되지 않는다: IndexedStack이 위젯을 계속 살려둔다).
+      if (index == MainTabs.home || index == MainTabs.approval) {
+        _refreshApprovalData();
+      }
     }
   }
 
@@ -326,12 +370,21 @@ class _MainScreenState extends State<MainScreen>
 
   List<BottomNavigationBarItem> _buildNavItems(bool canManageApprovals) {
     // 미확인 건수 뱃지 — 전자결재는 결재+휴무+가입 대기 합산, 채팅은 미읽음
+    final authProvider = context.watch<AuthProvider>();
     final approvalProvider = context.watch<ApprovalProvider>();
     final chatProvider = context.watch<ChatProvider>();
     final vacationProvider = context.watch<VacationProvider>();
     final adminProvider = context.watch<AdminProvider>();
+    // 결재함(approvalRequests)은 관리자에게 기관 전체 문서를 보여준다(서버 설계상
+    // 의도된 동작) — 여기서 pendingCount를 그대로 쓰면 내 차례가 아닌 문서(다른
+    // 결재자 단계, 다른 관리자가 처리할 legacy 문서 등)까지 합쳐져 "처리할 게
+    // 없는데 뱃지가 뜬다"는 오탐이 생긴다. 실제로 내 차례인 건수(myTurnCount)만
+    // 센다 — 홈 화면 강조·결재함 탭 뱃지와 동일한 기준.
     final approvalBadge = canManageApprovals
-        ? approvalProvider.pendingCount +
+        ? approvalProvider.myTurnCount(
+              myId: authProvider.currentUser?.id,
+              isAdmin: canManageApprovals,
+            ) +
             vacationProvider.vacationRequests
                 .where((r) => r.status == VacationStatus.pending)
                 .length +
