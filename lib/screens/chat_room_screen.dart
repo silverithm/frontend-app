@@ -16,6 +16,7 @@ import 'package:video_compress/video_compress.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:open_filex/open_filex.dart';
 import 'package:gal/gal.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/schedule_provider.dart';
@@ -2692,28 +2693,62 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     );
   }
 
-  /// 사진을 기기 사진첩에 저장할 때 쓰는 앨범 이름.
+  /// 사진첩에 저장할 때 기본으로 쓰는 앨범 이름 — 늘 시트 맨 위에 뜬다.
   static const String _photoAlbumName = '케어브이';
 
-  /// 이미지 하나를 저장한다. Android는 "사진첩" / "폴더 선택" 중 고르게 하고,
-  /// iOS는 앨범 선택 UI가 따로 없어(사진첩이 유일한 저장소) 바로 사진첩에 담는다.
-  Future<void> _saveImage(String url, String fileName) async {
-    if (!Platform.isAndroid) {
-      await _saveImageToGallery(url, fileName);
-      return;
-    }
+  /// 최근 쓴(기본 앨범 제외) 앨범 이름을 SharedPreferences에 기억해두는 키.
+  static const String _recentAlbumsPrefsKey = 'chat_recent_photo_albums';
+  static const int _maxRecentAlbums = 4;
 
-    final choice = await _pickSaveDestination();
-    if (choice == 'gallery') {
-      await _saveImageToGallery(url, fileName);
-    } else if (choice == 'folder') {
-      await _saveImageToChosenFolder(url, fileName);
+  /// 폴더 선택(파일시스템 — 사진첩 밖) 선택지를 가리키는 내부 값.
+  static const String _folderChoice = '__folder__';
+  /// "새 앨범에 저장" 선택지를 가리키는 내부 값 — 고르면 이름 입력을 이어서 받는다.
+  static const String _newAlbumChoice = '__new_album__';
+
+  Future<List<String>> _loadRecentAlbums() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getStringList(_recentAlbumsPrefsKey) ?? const [];
+      return raw.where((a) => a.trim().isNotEmpty && a != _photoAlbumName).toList();
+    } catch (_) {
+      return const [];
     }
   }
 
-  /// "사진첩 저장" / "폴더 선택해 저장" 고르는 시트 (Android 전용)
-  Future<String?> _pickSaveDestination() {
-    return AppBottomSheet.show<String>(
+  /// 방금 쓴 앨범을 "최근 사용" 맨 앞으로 올린다(기본 앨범은 항상 뜨니 기억할 필요 없다).
+  Future<void> _rememberAlbum(String album) async {
+    if (album.trim().isEmpty || album == _photoAlbumName) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final current = prefs.getStringList(_recentAlbumsPrefsKey) ?? const [];
+      final updated = [album, ...current.where((a) => a != album)]
+          .take(_maxRecentAlbums)
+          .toList();
+      await prefs.setStringList(_recentAlbumsPrefsKey, updated);
+    } catch (_) {
+      // 최근 목록 기억에 실패해도 이번 저장 자체는 이미 끝났으니 무시한다
+    }
+  }
+
+  /// 이미지 하나를 저장한다 — 저장 앨범을 고르는 시트를 먼저 띄운다.
+  Future<void> _saveImage(String url, String fileName) async {
+    final choice = await _pickSaveDestination();
+    if (choice == null) return;
+    if (choice == _folderChoice) {
+      await _saveImageToChosenFolder(url, fileName);
+    } else {
+      await _saveImageToAlbum(url, fileName, choice);
+    }
+  }
+
+  /// 저장 앨범을 고르는 시트 — 기본 앨범('케어브이') · 최근 쓴 앨범들 ·
+  /// 새 앨범 이름 입력을 제공한다. "폴더 선택해 저장"(사진첩 밖 파일시스템)은
+  /// Android의 저장소 접근 구조상 Android에서만 의미가 있다.
+  Future<String?> _pickSaveDestination() async {
+    final recentAlbums = await _loadRecentAlbums();
+    if (!mounted) return null;
+
+    final choice = await AppBottomSheet.show<String>(
       context,
       child: SafeArea(
         child: Column(
@@ -2722,17 +2757,44 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             SeedListCell(
               title: "사진첩 '$_photoAlbumName'에 저장",
               showChevron: false,
-              onTap: () => Navigator.of(context).pop('gallery'),
+              onTap: () => Navigator.of(context).pop(_photoAlbumName),
             ),
+            for (final album in recentAlbums)
+              SeedListCell(
+                title: "사진첩 '$album'에 저장",
+                showChevron: false,
+                onTap: () => Navigator.of(context).pop(album),
+              ),
             SeedListCell(
-              title: '폴더 선택해 저장',
+              title: '새 앨범 이름 입력',
+              leadingIcon: Icons.create_new_folder_outlined,
               showChevron: false,
-              onTap: () => Navigator.of(context).pop('folder'),
+              onTap: () => Navigator.of(context).pop(_newAlbumChoice),
             ),
+            if (Platform.isAndroid)
+              SeedListCell(
+                title: '폴더 선택해 저장',
+                leadingIcon: Icons.folder_open_outlined,
+                showChevron: false,
+                onTap: () => Navigator.of(context).pop(_folderChoice),
+              ),
           ],
         ),
       ),
     );
+
+    if (choice != _newAlbumChoice) return choice;
+
+    if (!mounted) return null;
+    final input = await AppDialog.showInput(
+      context,
+      title: '새 앨범 이름',
+      hintText: '예: 어르신 사진',
+      confirmText: '저장',
+    );
+    final name = input?.trim();
+    if (name == null || name.isEmpty) return null;
+    return name;
   }
 
   Future<Uint8List?> _downloadBytes(String url) async {
@@ -2756,7 +2818,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     return fileName.substring(0, dot);
   }
 
-  Future<void> _saveImageToGallery(String url, String fileName) async {
+  Future<void> _saveImageToAlbum(String url, String fileName, String album) async {
     final bytes = await _downloadBytes(url);
     if (bytes == null) {
       if (mounted) AppSnackBar.showError(context, message: '저장에 실패했습니다');
@@ -2764,11 +2826,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     }
     try {
       // gal이 확장자를 붙이므로 이름에서 떼고 넘긴다 — 안 떼면 'a.jpg.jpg'로 저장된다
-      await Gal.putImageBytes(bytes, album: _photoAlbumName, name: _photoBaseName(fileName));
+      await Gal.putImageBytes(bytes, album: album, name: _photoBaseName(fileName));
+      await _rememberAlbum(album);
       if (!mounted) return;
       AppSnackBar.showSuccess(
         context,
-        message: "사진첩 '$_photoAlbumName' 앨범에 저장했습니다",
+        message: "사진첩 '$album' 앨범에 저장했습니다",
       );
     } catch (_) {
       if (mounted) AppSnackBar.showError(context, message: '저장에 실패했습니다');
@@ -2802,12 +2865,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   Future<void> _downloadAllImages(List<ChatImageItem> items) async {
     if (items.isEmpty) return;
 
-    String destination = 'gallery';
-    if (Platform.isAndroid) {
-      final choice = await _pickSaveDestination();
-      if (choice == null) return;
-      destination = choice;
-    }
+    final choice = await _pickSaveDestination();
+    if (choice == null) return;
 
     final total = items.length;
     var done = 0;
@@ -2815,7 +2874,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     AppSnackBar.showInfo(context, message: '$total장 저장 중...');
 
-    if (destination == 'folder') {
+    if (choice == _folderChoice) {
       final dirPath = await getDirectoryPath();
       if (dirPath == null) return; // 취소
 
@@ -2847,6 +2906,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       return;
     }
 
+    final album = choice;
     Future<void> saveOne(ChatImageItem item) async {
       final bytes = await _downloadBytes(item.imageUrl);
       if (bytes == null) {
@@ -2854,7 +2914,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         return;
       }
       try {
-        await Gal.putImageBytes(bytes, album: _photoAlbumName, name: _photoBaseName(item.fileName));
+        await Gal.putImageBytes(bytes, album: album, name: _photoBaseName(item.fileName));
         done++;
       } catch (_) {
         failed++;
@@ -2865,9 +2925,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     if (!mounted) return;
     if (failed == 0) {
+      await _rememberAlbum(album);
+      if (!mounted) return;
       AppSnackBar.showSuccess(
         context,
-        message: "사진첩 '$_photoAlbumName' 앨범에 $done장을 저장했습니다",
+        message: "사진첩 '$album' 앨범에 $done장을 저장했습니다",
       );
     } else {
       AppSnackBar.showError(
