@@ -2818,6 +2818,38 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     return fileName.substring(0, dot);
   }
 
+  /// 사진첩에 넣는다 — 이름 있는 앨범에 넣으려면 iOS가 사진 보관함 '전체 접근'을
+  /// 요구한다. 사용자가 '추가만 허용'을 골랐으면 앨범 없이 사진첩(최근 항목)에라도
+  /// 넣는다 — 그냥 실패로 끝내면 사진이 어디에도 남지 않는다.
+  /// 앨범에 들어갔으면 true, 앨범 없이 사진첩에만 들어갔으면 false. 사진첩 자체가
+  /// 막혀 있으면 예외를 그대로 던진다.
+  Future<bool> _putToGallery({
+    Uint8List? bytes,
+    String? videoPath,
+    String? name,
+    required String album,
+  }) async {
+    try {
+      if (videoPath != null) {
+        await Gal.putVideo(videoPath, album: album);
+      } else {
+        await Gal.putImageBytes(bytes!, album: album, name: name ?? 'image');
+      }
+      return true;
+    } on GalException catch (e) {
+      if (e.type != GalExceptionType.accessDenied) rethrow;
+      if (videoPath != null) {
+        await Gal.putVideo(videoPath);
+      } else {
+        await Gal.putImageBytes(bytes!, name: name ?? 'image');
+      }
+      return false;
+    }
+  }
+
+  static const String _noAlbumAccessMessage =
+      '앨범 권한이 없어 사진첩(최근 항목)에 저장했습니다';
+
   Future<void> _saveImageToAlbum(String url, String fileName, String album) async {
     final bytes = await _downloadBytes(url);
     if (bytes == null) {
@@ -2826,12 +2858,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     }
     try {
       // gal이 확장자를 붙이므로 이름에서 떼고 넘긴다 — 안 떼면 'a.jpg.jpg'로 저장된다
-      await Gal.putImageBytes(bytes, album: album, name: _photoBaseName(fileName));
+      final inAlbum = await _putToGallery(
+          bytes: bytes, album: album, name: _photoBaseName(fileName));
       await _rememberAlbum(album);
       if (!mounted) return;
       AppSnackBar.showSuccess(
         context,
-        message: "사진첩 '$album' 앨범에 저장했습니다",
+        message: inAlbum ? "사진첩 '$album' 앨범에 저장했습니다" : _noAlbumAccessMessage,
       );
     } catch (_) {
       if (mounted) AppSnackBar.showError(context, message: '저장에 실패했습니다');
@@ -2895,12 +2928,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     File? temp;
     var ok = false;
+    var inAlbum = true;
     try {
       final tempDir = await getTemporaryDirectory();
       final safeName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
       temp = File('${tempDir.path}/save_${DateTime.now().millisecondsSinceEpoch}_$safeName');
       await dio.Dio().download(url, temp.path);
-      await Gal.putVideo(temp.path, album: choice);
+      inAlbum = await _putToGallery(videoPath: temp.path, album: choice);
       await _rememberAlbum(choice);
       ok = true;
     } catch (e) {
@@ -2914,7 +2948,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     if (!mounted) return;
     Navigator.of(context).pop(); // 진행 표시 닫기
     if (ok) {
-      AppSnackBar.showSuccess(context, message: "사진첩 '$choice' 앨범에 저장했습니다");
+      AppSnackBar.showSuccess(
+        context,
+        message: inAlbum ? "사진첩 '$choice' 앨범에 저장했습니다" : _noAlbumAccessMessage,
+      );
     } else {
       AppSnackBar.showError(context, message: '동영상 저장에 실패했습니다');
     }
@@ -2970,6 +3007,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     }
 
     final album = choice;
+    var outsideAlbum = 0;
     Future<void> saveOne(ChatImageItem item) async {
       final bytes = await _downloadBytes(item.imageUrl);
       if (bytes == null) {
@@ -2977,7 +3015,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         return;
       }
       try {
-        await Gal.putImageBytes(bytes, album: album, name: _photoBaseName(item.fileName));
+        final inAlbum = await _putToGallery(
+            bytes: bytes, album: album, name: _photoBaseName(item.fileName));
+        if (!inAlbum) outsideAlbum++;
         done++;
       } catch (_) {
         failed++;
@@ -2992,7 +3032,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       if (!mounted) return;
       AppSnackBar.showSuccess(
         context,
-        message: "사진첩 '$album' 앨범에 $done장을 저장했습니다",
+        message: outsideAlbum > 0
+            ? '앨범 권한이 없어 $done장을 사진첩(최근 항목)에 저장했습니다'
+            : "사진첩 '$album' 앨범에 $done장을 저장했습니다",
       );
     } else {
       AppSnackBar.showError(
