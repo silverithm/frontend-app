@@ -74,7 +74,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           child: Scaffold(
             backgroundColor: AppSemanticColors.backgroundPrimary,
             appBar: AppBar(
-              title: Text('회원 관리', style: AppTypography.heading5),
+              title: Text('종사자 관리', style: AppTypography.heading5),
               backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
               automaticallyImplyLeading: widget.showBackButton,
@@ -124,7 +124,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                         ),
                       const Tab(
                         icon: Icon(Icons.people, size: 20),
-                        text: '전체 회원',
+                        text: '전체 종사자',
                       ),
                     ],
                   ),
@@ -146,7 +146,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   Widget _buildNoPermissionView() {
     return Scaffold(
       appBar: AppBar(
-        title: Text('회원 관리', style: AppTypography.heading5),
+        title: Text('종사자 관리', style: AppTypography.heading5),
         backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
@@ -169,7 +169,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             ),
             const SizedBox(height: AppSpacing.space2),
             Text(
-              '회원 관리 기능을 사용하려면 관리자 권한이 필요합니다.',
+              '종사자 관리 기능을 사용하려면 관리자 권한이 필요합니다.',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppSemanticColors.textSecondary,
               ),
@@ -237,7 +237,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         if (adminProvider.companyMembers.isEmpty) {
           return const AppEmptyState(
             icon: Icons.people_outline,
-            title: '등록된 회원이 없습니다',
+            title: '등록된 종사자가 없습니다',
           );
         }
 
@@ -358,7 +358,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               ],
             ),
             const SizedBox(height: AppSpacing.space3),
-            // 상태 변경·삭제는 '회원 관리' 권한자만 (조회 권한자는 목록만 본다)
+            // 상태 변경·삭제는 '종사자 관리' 권한자만 (조회 권한자는 목록만 본다)
             if (PermissionUtils.has(
               context.read<AuthProvider>().currentUser,
               AppPermission.memberManage,
@@ -499,7 +499,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
     final confirmed = await AppDialog.showConfirm(
       context,
-      title: '회원 $actionText',
+      title: '종사자 $actionText',
       message: '${user.name}님을 $actionText하시겠습니까?',
       confirmText: actionText,
       cancelText: '취소',
@@ -542,7 +542,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   Future<void> _showDeleteDialog(User user) async {
     final confirmed = await AppDialog.showConfirm(
       context,
-      title: '회원 삭제',
+      title: '종사자 삭제',
       message: '${user.name}님을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
       confirmText: '삭제',
       cancelText: '취소',
@@ -572,7 +572,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 }
 
 /// 승인 대기 사용자 목록 + 승인/거부 액션.
-/// AdminUserManagementScreen(회원 관리 > 승인 대기 탭)과
+/// AdminUserManagementScreen(종사자 관리 > 승인 대기 탭)과
 /// AdminUnifiedApprovalScreen(승인함 > 가입 승인 탭)에서 공유한다.
 /// (admin_user_management_screen.dart에서 추출 — 로직 변경 없음)
 class AdminPendingUsersTab extends StatefulWidget {

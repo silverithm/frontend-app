@@ -10,9 +10,9 @@ class AppPermission {
   static const String approvalManage = 'APPROVAL_MANAGE'; // 결재 승인/거절
   static const String approvalTemplate = 'APPROVAL_TEMPLATE'; // 결재 양식 관리
   static const String workManage = 'WORK_MANAGE'; // 근무조정(휴무) 관리
-  static const String memberView = 'MEMBER_VIEW'; // 회원 조회
-  static const String memberManage = 'MEMBER_MANAGE'; // 회원 승인/거절/상태변경
-  static const String seniorManage = 'SENIOR_MANAGE'; // 어르신 관리
+  static const String memberView = 'MEMBER_VIEW'; // 종사자 조회
+  static const String memberManage = 'MEMBER_MANAGE'; // 종사자 승인/거절/상태변경
+  static const String seniorManage = 'SENIOR_MANAGE'; // 수급자 관리
 
   static const List<String> all = [
     noticeManage,
@@ -33,9 +33,11 @@ class AppPermission {
     approvalManage: '결재 관리',
     approvalTemplate: '결재 양식 관리',
     workManage: '근무조정 관리',
-    memberView: '회원 조회',
-    memberManage: '회원 관리',
-    seniorManage: '어르신 관리',
+    // 웹(frontend-admin) UserManagement.tsx 개편과 이름을 맞췄다 — MEMBER는
+    // "종사자", SENIOR는 "수급자"로 부른다(2026-09).
+    memberView: '종사자 조회',
+    memberManage: '종사자 관리',
+    seniorManage: '수급자 관리',
   };
 }
 
