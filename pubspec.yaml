@@ -52,6 +52,12 @@ dependencies:
   # SharedPreferences를 위한 패키지
   shared_preferences: ^2.2.2
 
+  # iOS Keychain(앱 삭제 후에도 남는 저장소)에 로그인 정보를 함께 적어 두는 용도.
+  # SharedPreferences는 앱 삭제 시 함께 지워지지만 Keychain은 남는다 — 재설치 뒤
+  # 자동로그인이 풀리는 문제(2026-09) 대응. Android는 이 패키지로도 재설치 후
+  # 값이 남지 않는다(Keystore가 앱 데이터에 묶여 있음) — iOS 전용으로만 쓴다.
+  flutter_secure_storage: ^9.2.4
+
   # 날짜 포맷팅을 위한 패키지
   intl: any
   
