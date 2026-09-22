@@ -2857,6 +2857,69 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     }
   }
 
+  /// 동영상을 기기에 저장한다 — 사진과 같은 앨범 선택 시트를 거친다
+  /// (현장 요청: "원하는 폴더에 사진, 동영상 저장할 수 있게"). 동영상은 수십 MB라
+  /// 메모리에 통째로 올리지 않고 임시 파일로 받아 사진첩에 넘긴 뒤 지운다.
+  Future<void> _saveVideo(ChatMessage message) async {
+    final url = message.fileUrl;
+    if (url == null || url.isEmpty) {
+      AppSnackBar.showError(context, message: '동영상 주소가 없습니다');
+      return;
+    }
+    final fileName = (message.fileName?.trim().isNotEmpty ?? false)
+        ? message.fileName!.trim()
+        : 'video_${message.id}.mp4';
+
+    final choice = await _pickSaveDestination();
+    if (choice == null || !mounted) return;
+    if (choice == _folderChoice) {
+      await _saveImageToChosenFolder(url, fileName);
+      return;
+    }
+
+    AppDialog.showCustom<void>(
+      context,
+      barrierDismissible: false,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: AppSpacing.space4),
+            Text('동영상 저장 중...', style: AppTypography.bodyMedium),
+          ],
+        ),
+      ),
+    );
+
+    File? temp;
+    var ok = false;
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final safeName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      temp = File('${tempDir.path}/save_${DateTime.now().millisecondsSinceEpoch}_$safeName');
+      await dio.Dio().download(url, temp.path);
+      await Gal.putVideo(temp.path, album: choice);
+      await _rememberAlbum(choice);
+      ok = true;
+    } catch (e) {
+      print('[ChatRoomScreen] 동영상 저장 실패: $e');
+    } finally {
+      try {
+        if (temp != null && await temp.exists()) await temp.delete();
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // 진행 표시 닫기
+    if (ok) {
+      AppSnackBar.showSuccess(context, message: "사진첩 '$choice' 앨범에 저장했습니다");
+    } else {
+      AppSnackBar.showError(context, message: '동영상 저장에 실패했습니다');
+    }
+  }
+
   /// 사진 묶음을 한 번에 받는다.
   ///
   /// 서른 장을 한 장씩 눌러 받게 두면 기능이 있으나 마나다.
@@ -3140,6 +3203,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 }
               },
             ),
+            if (!message.isDeleted &&
+                (message.isVideoMessage ||
+                    (message.type == MessageType.file &&
+                        _isVideoFileName(message.fileName ?? ''))))
+              SeedListCell(
+                leadingIcon: Icons.download_outlined,
+                title: '동영상 저장',
+                showChevron: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  _saveVideo(message);
+                },
+              ),
             SeedListCell(
               leadingIcon: Icons.visibility,
               title: '읽은 사람 보기',
