@@ -2797,9 +2797,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     return name;
   }
 
+  /// 저장용 다운로드 클라이언트 — 시간 제한이 없으면 연결이 멈췄을 때 "저장 중"이
+  /// 끝없이 돈다(느린 서버에서 60초 넘게 멈춘 것을 기기에서 확인). 받는 도중
+  /// 60초 동안 한 바이트도 안 오면 실패로 끝내고 알린다.
+  static dio.Dio _saveClient() => dio.Dio(dio.BaseOptions(
+        connectTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(seconds: 60),
+      ));
+
   Future<Uint8List?> _downloadBytes(String url) async {
     try {
-      final response = await dio.Dio().get<List<int>>(
+      final response = await _saveClient().get<List<int>>(
         url,
         options: dio.Options(responseType: dio.ResponseType.bytes),
       );
@@ -2926,14 +2934,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       ),
     );
 
-    File? temp;
+    Directory? tempDir;
     var ok = false;
     var inAlbum = true;
     try {
-      final tempDir = await getTemporaryDirectory();
+      // 사진첩에는 임시 파일 이름이 그대로 올라간다 — 겹치지 않는 임시 폴더를 만들고
+      // 그 안에 원래 이름으로 받는다 ('save_1790…_영상.mp4'로 보이던 것)
+      final base = await getTemporaryDirectory();
+      tempDir = await Directory(
+              '${base.path}/video_save_${DateTime.now().microsecondsSinceEpoch}')
+          .create(recursive: true);
       final safeName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-      temp = File('${tempDir.path}/save_${DateTime.now().millisecondsSinceEpoch}_$safeName');
-      await dio.Dio().download(url, temp.path);
+      final temp = File('${tempDir.path}/$safeName');
+      await _saveClient().download(url, temp.path);
       inAlbum = await _putToGallery(videoPath: temp.path, album: choice);
       await _rememberAlbum(choice);
       ok = true;
@@ -2941,7 +2954,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       print('[ChatRoomScreen] 동영상 저장 실패: $e');
     } finally {
       try {
-        if (temp != null && await temp.exists()) await temp.delete();
+        if (tempDir != null && await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
       } catch (_) {}
     }
 
