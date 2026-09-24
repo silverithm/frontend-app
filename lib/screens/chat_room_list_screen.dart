@@ -261,6 +261,11 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
       title: room.name,
       actions: [
         AppSheetAction(
+          icon: room.pinned ? Icons.push_pin : Icons.push_pin_outlined,
+          label: room.pinned ? '고정 해제' : '상단 고정',
+          onSelected: () => _togglePin(room),
+        ),
+        AppSheetAction(
           icon: Icons.logout,
           label: '채팅방 나가기',
           onSelected: () => _confirmLeaveRoom(room),
@@ -274,6 +279,26 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
           ),
       ],
     );
+  }
+
+  Future<void> _togglePin(ChatRoom room) async {
+    final chatProvider = context.read<ChatProvider>();
+    final willPin = !room.pinned;
+
+    final success = await chatProvider.togglePin(room);
+    if (!mounted) return;
+
+    if (success) {
+      AppSnackBar.showSuccess(
+        context,
+        message: willPin ? '상단에 고정했어요' : '고정을 풀었어요',
+      );
+    } else {
+      final errorMessage = chatProvider.errorMessage.isNotEmpty
+          ? chatProvider.errorMessage
+          : '상단 고정 변경에 실패했습니다.';
+      AppSnackBar.showError(context, message: errorMessage);
+    }
   }
 
   Future<void> _confirmLeaveRoom(ChatRoom room) async {
@@ -362,6 +387,14 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (room.pinned) ...[
+                              Icon(
+                                Icons.push_pin,
+                                size: AppSpacing.space4,
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                              const SizedBox(width: AppSpacing.space1),
+                            ],
                             Flexible(
                               child: Text(
                                 room.name,

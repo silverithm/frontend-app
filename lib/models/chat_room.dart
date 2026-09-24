@@ -32,6 +32,12 @@ class ChatRoom {
   final String? noticeFileName;
   final String? noticeFileUrl;
 
+  // 상단 고정 — 사람마다 다르다(서버가 요청자 기준으로 내려준다).
+  // 단일 방 조회·소켓 메시지에는 이 값이 실려 오지 않으므로, provider가 방을
+  // 갱신할 때는 반드시 기존 값을 그대로 이어받아야 한다(덮어쓰면 풀린 것처럼 보인다).
+  final bool pinned;
+  final DateTime? pinnedAt;
+
   ChatRoom({
     required this.id,
     required this.name,
@@ -54,6 +60,8 @@ class ChatRoom {
     this.noticeAt,
     this.noticeFileName,
     this.noticeFileUrl,
+    this.pinned = false,
+    this.pinnedAt,
   });
 
   bool get hasNotice =>
@@ -96,6 +104,11 @@ class ChatRoom {
           : null,
       noticeFileName: json['noticeFileName']?.toString(),
       noticeFileUrl: json['noticeFileUrl']?.toString(),
+      // 구버전 서버는 필드 자체를 안 내려준다 — 없으면 고정 안 됨으로 본다.
+      pinned: json['pinned'] as bool? ?? false,
+      pinnedAt: json['pinnedAt'] != null
+          ? DateTime.tryParse(json['pinnedAt'].toString())
+          : null,
     );
   }
 
@@ -121,6 +134,8 @@ class ChatRoom {
       'noticeAt': noticeAt?.toIso8601String(),
       'noticeFileName': noticeFileName,
       'noticeFileUrl': noticeFileUrl,
+      'pinned': pinned,
+      'pinnedAt': pinnedAt?.toIso8601String(),
     };
   }
 
@@ -160,6 +175,10 @@ class ChatRoom {
     String? noticeFileUrl,
     // 공지는 '없음'으로도 되돌려야 해서 ??로는 표현이 안 된다
     bool clearNotice = false,
+    bool? pinned,
+    DateTime? pinnedAt,
+    // 고정 해제는 '없음'으로 되돌려야 해서 ??로는 표현이 안 된다
+    bool clearPinnedAt = false,
   }) {
     return ChatRoom(
       id: id ?? this.id,
@@ -185,6 +204,8 @@ class ChatRoom {
       noticeAt: clearNotice ? null : (noticeAt ?? this.noticeAt),
       noticeFileName: clearNotice ? null : (noticeFileName ?? this.noticeFileName),
       noticeFileUrl: clearNotice ? null : (noticeFileUrl ?? this.noticeFileUrl),
+      pinned: pinned ?? this.pinned,
+      pinnedAt: clearPinnedAt ? null : (pinnedAt ?? this.pinnedAt),
     );
   }
 }

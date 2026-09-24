@@ -2967,6 +2967,30 @@ class ApiService {
     });
   }
 
+  // 채팅방 상단 고정 / 고정 해제 — 사람마다 다르다(userId 기준)
+  Future<Map<String, dynamic>> setChatRoomPinned({
+    required int roomId,
+    required String userId,
+    required bool pinned,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/pin',
+      ).replace(queryParameters: {'userId': userId});
+
+      print('[API] 채팅방 상단 고정: $uri (pinned=$pinned)');
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.put(
+        uri,
+        headers: headers,
+        body: json.encode({'pinned': pinned}),
+      );
+    });
+  }
+
   // 채팅방 삭제
   Future<Map<String, dynamic>> deleteChatRoom({required int roomId}) async {
     return await _makeAuthenticatedRequest(() async {

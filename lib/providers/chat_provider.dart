@@ -13,6 +13,7 @@ import '../services/chat_outbox.dart';
 import '../services/storage_service.dart';
 import '../utils/chat_date_jump.dart';
 import '../utils/chat_message_pagination.dart';
+import '../utils/chat_room_sort.dart';
 
 class ChatProvider with ChangeNotifier {
   // State
@@ -698,12 +699,8 @@ class ChatProvider with ChangeNotifier {
           unreadCount: newUnreadCount,
         );
 
-        // 정렬 (최신 메시지 순)
-        _chatRooms.sort((a, b) {
-          final aTime = a.lastMessageAt ?? a.createdAt;
-          final bTime = b.lastMessageAt ?? b.createdAt;
-          return bTime.compareTo(aTime);
-        });
+        // 정렬 (고정 우선, 그 안에서 최신 메시지 순)
+        sortChatRooms(_chatRooms);
         notifyListeners();
       }
     } catch (e) {
@@ -923,12 +920,9 @@ class ChatProvider with ChangeNotifier {
         }
       }
 
-      // 최신 메시지 순 정렬
-      _chatRooms.sort((a, b) {
-        final aTime = a.lastMessageAt ?? a.createdAt;
-        final bTime = b.lastMessageAt ?? b.createdAt;
-        return bTime.compareTo(aTime);
-      });
+      // 정렬 (고정 우선, 그 안에서 최신 메시지 순) — 서버도 이미 이 순서로 내려주지만
+      // 클라이언트에서 다시 정렬해 두면 서버 응답 순서가 달라져도 규칙이 항상 지켜진다.
+      sortChatRooms(_chatRooms);
 
       print('[ChatProvider] 로드된 채팅방 수: ${_chatRooms.length}');
       _syncRoomListSubscriptions();
@@ -938,6 +932,64 @@ class ChatProvider with ChangeNotifier {
       setError('채팅방 목록을 불러오는데 실패했습니다: ${e.toString()}');
     } finally {
       setLoading(false);
+    }
+  }
+
+  /// 방 상단 고정 / 고정 해제 — 낙관적으로 먼저 반영하고, 서버가 실패로
+  /// 답하면 원래 상태로 되돌린다. 목록 어디서 눌러도(길게 누르기 메뉴) 이 하나만 쓴다.
+  Future<bool> togglePin(ChatRoom room) async {
+    final userId = _currentUserId;
+    if (userId == null || userId.isEmpty) return false;
+
+    final index = _chatRooms.indexWhere((r) => r.id == room.id);
+    if (index == -1) return false;
+
+    final before = _chatRooms[index];
+    final nextPinned = !before.pinned;
+    final optimistic = before.copyWith(
+      pinned: nextPinned,
+      pinnedAt: nextPinned ? DateTime.now() : null,
+      clearPinnedAt: !nextPinned,
+    );
+
+    _chatRooms[index] = optimistic;
+    sortChatRooms(_chatRooms);
+    if (_selectedRoom?.id == room.id) _selectedRoom = optimistic;
+    notifyListeners();
+
+    try {
+      final response = await ApiService().setChatRoomPinned(
+        roomId: room.id,
+        userId: userId,
+        pinned: nextPinned,
+      );
+
+      final confirmedPinned = response['pinned'] as bool? ?? nextPinned;
+      final currentIndex = _chatRooms.indexWhere((r) => r.id == room.id);
+      if (currentIndex != -1) {
+        _chatRooms[currentIndex] = _chatRooms[currentIndex].copyWith(
+          pinned: confirmedPinned,
+          pinnedAt: confirmedPinned ? optimistic.pinnedAt : null,
+          clearPinnedAt: !confirmedPinned,
+        );
+        sortChatRooms(_chatRooms);
+        if (_selectedRoom?.id == room.id) _selectedRoom = _chatRooms[currentIndex];
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      print('[ChatProvider] 상단 고정 변경 에러: $e');
+      setError('상단 고정 변경에 실패했습니다: ${e.toString()}');
+
+      // 실패 — 낙관적으로 바꿨던 것을 되돌린다
+      final revertIndex = _chatRooms.indexWhere((r) => r.id == room.id);
+      if (revertIndex != -1) {
+        _chatRooms[revertIndex] = before;
+        sortChatRooms(_chatRooms);
+        if (_selectedRoom?.id == room.id) _selectedRoom = before;
+        notifyListeners();
+      }
+      return false;
     }
   }
 
@@ -1766,8 +1818,14 @@ class ChatProvider with ChangeNotifier {
     final roomData = response['room'];
     if (roomData is! Map<String, dynamic>) return;
 
-    final updated = ChatRoom.fromJson(roomData);
+    final parsed = ChatRoom.fromJson(roomData);
+    // 단일 방 조회 응답에는 pinned/pinnedAt이 실려 오지 않으므로 기존 값을 이어받는다.
     final index = _chatRooms.indexWhere((r) => r.id == roomId);
+    final updated = index != -1
+        ? mergeRoomPreservingPin(_chatRooms[index], parsed)
+        : (_selectedRoom?.id == roomId
+              ? mergeRoomPreservingPin(_selectedRoom!, parsed)
+              : parsed);
     if (index != -1) _chatRooms[index] = updated;
     if (_selectedRoom?.id == roomId) _selectedRoom = updated;
     notifyListeners();
