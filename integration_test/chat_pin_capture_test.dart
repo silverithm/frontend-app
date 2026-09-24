@@ -15,7 +15,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   const email = String.fromEnvironment('SHOT_EMAIL');
   const password = String.fromEnvironment('SHOT_PASSWORD');
-  const targetRoom = '요양보호사 소통방';
+  const targetRoom = '전체 공지방';
 
   Future<void> settle(WidgetTester tester, {double seconds = 3}) async {
     final end = DateTime.now().add(
