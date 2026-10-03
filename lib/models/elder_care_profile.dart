@@ -395,7 +395,9 @@ class ElderCareProfile {
       if (medLunch) _medPart('점심', medLunchTime),
       if (medEvening) _medPart('저녁', medEveningTime),
     ];
-    return parts.isEmpty ? '투약 없음' : parts.join('·');
+    // 아무 칸도 안 켠 상태를 '투약 없음'이라고 적지 않는다 — 아직 안 적은 것과 약이 없는 것을
+    // 데이터로 구분할 수 없다. 약을 드시는 어르신이 '없음'으로 보이면 투약 누락으로 이어진다.
+    return parts.isEmpty ? '' : parts.join('·');
   }
 
   String _medPart(String label, String? time) =>
