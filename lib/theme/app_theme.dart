@@ -5,6 +5,44 @@ import 'app_typography.dart';
 import 'app_spacing.dart';
 
 class AppTheme {
+  /// 화면 상단 바·구분선을 앱 전체에 한 번에 입힌다.
+  /// 실제로 쓰이는 Material 테마는 ShadcnApp이 만들기 때문에(아래 lightTheme은 연결돼
+  /// 있지 않다) main.dart의 builder에서 그 테마 위에 덧씌운다.
+  static ThemeData withAppChrome(ThemeData base) {
+    return base.copyWith(
+      appBarTheme: headerTheme,
+      dividerTheme: base.dividerTheme.copyWith(
+        color: AppSemanticColors.borderSubtle,
+      ),
+    );
+  }
+
+  /// 상단 바 — 틸 바탕 + 아래 진한 틸 선. 스크롤해도 색·그림자가 바뀌지 않는다.
+  static AppBarTheme get headerTheme {
+    return AppBarTheme(
+      backgroundColor: AppSemanticColors.headerBackground,
+      foregroundColor: AppSemanticColors.headerForeground,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: AppColors.transparent,
+      shape: const Border(
+        bottom: BorderSide(color: AppSemanticColors.headerBorder),
+      ),
+      iconTheme: const IconThemeData(
+        color: AppSemanticColors.headerForeground,
+      ),
+      actionsIconTheme: const IconThemeData(
+        color: AppSemanticColors.headerForeground,
+      ),
+      titleTextStyle: AppTypography.heading5.copyWith(
+        fontFamily: AppTypography.fontFamilySans,
+        color: AppSemanticColors.headerForeground,
+      ),
+      // 상태표시줄 아이콘 밝기는 지정하지 않는다 — AppBar가 바탕 밝기로 정하게 둬야
+      // 검은 사진 뷰어 상단 바에서도 아이콘이 보인다
+    );
+  }
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

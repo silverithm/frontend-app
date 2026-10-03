@@ -145,7 +145,6 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('채팅', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
         actions: [
           IconButton(
@@ -156,9 +155,15 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppSemanticColors.interactivePrimaryDefault,
-          unselectedLabelColor: AppSemanticColors.textTertiary,
-          indicatorColor: AppSemanticColors.interactivePrimaryDefault,
+          labelColor: AppSemanticColors.headerForeground,
+          unselectedLabelColor: AppSemanticColors.headerForegroundMuted,
+          indicatorColor: AppSemanticColors.headerTabIndicator,
+          labelStyle: AppTypography.labelLarge.copyWith(
+            fontWeight: AppTypography.fontWeightBold,
+          ),
+          unselectedLabelStyle: AppTypography.labelLarge,
+          // 상단 바 아래 선은 AppBar가 긋는다
+          dividerColor: AppColors.transparent,
           tabs: const [
             Tab(text: '대화'),
             Tab(text: '직원'),

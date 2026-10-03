@@ -78,12 +78,10 @@ class _PaymentScreenState extends State<PaymentScreen>
         title: Text(
           '결제',
           style: AppTypography.heading5.copyWith(
-            color: AppSemanticColors.textInverse,
+            color: AppSemanticColors.headerForeground,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
       ),
       body: Consumer2<SubscriptionProvider, AuthProvider>(
@@ -857,11 +855,9 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
           '토스페이먼츠 결제',
           style: AppTypography.heading6.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppSemanticColors.textInverse,
+            color: AppSemanticColors.headerForeground,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(

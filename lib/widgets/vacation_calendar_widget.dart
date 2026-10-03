@@ -177,13 +177,20 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 월 네비게이션 헤더
+              // 월 네비게이션 헤더 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space4,
                   vertical: AppSpacing.space3,
                 ),
-                decoration: rowDivider,
+                decoration: const BoxDecoration(
+                  color: AppSemanticColors.subheaderBackground,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppSemanticColors.subheaderBorder,
+                    ),
+                  ),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -196,8 +203,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         size: 20,
                       ),
                       style: IconButton.styleFrom(
-                        backgroundColor: AppSemanticColors.backgroundTertiary,
-                        shape: const CircleBorder(),
+                        backgroundColor: AppSemanticColors.surfaceDefault,
+                        shape: const CircleBorder(
+                          side: BorderSide(
+                            color: AppSemanticColors.subheaderBorder,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -218,8 +229,12 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         size: 20,
                       ),
                       style: IconButton.styleFrom(
-                        backgroundColor: AppSemanticColors.backgroundTertiary,
-                        shape: const CircleBorder(),
+                        backgroundColor: AppSemanticColors.surfaceDefault,
+                        shape: const CircleBorder(
+                          side: BorderSide(
+                            color: AppSemanticColors.subheaderBorder,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -261,13 +276,16 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                   ),
                 ),
 
-              // 요일 헤더 — 같은 표면, 하단 구분선으로만 분리
+              // 요일 헤더 — 옅은 회색 면 + 하단 구분선. 틸을 쓰지 않는 건 "오늘"·승인
+              // 강조가 틸 계열이라 겹치지 않게 하려는 것
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space4,
                   vertical: AppSpacing.space3,
                 ),
-                decoration: rowDivider,
+                decoration: rowDivider.copyWith(
+                  color: AppSemanticColors.backgroundSecondary,
+                ),
                 child: Row(
                   children: _weekdays.map((weekday) {
                     final index = _weekdays.indexOf(weekday);

@@ -43,21 +43,37 @@ Future<void> showAppActionSheet(
         top: Radius.circular(AppBorderRadius.xl2),
       ),
     ),
-    builder: (sheetContext) => SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (title != null && title.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: AppSpacing.space5,
-                  right: AppSpacing.space5,
-                  bottom: AppSpacing.space2,
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
+    // 제목 띠가 둥근 모서리 밖으로 삐져나오지 않게
+    clipBehavior: Clip.antiAlias,
+    builder: (sheetContext) {
+      final hasTitle = title != null && title.isNotEmpty;
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            top: hasTitle ? 0 : AppSpacing.space4,
+            bottom: AppSpacing.space4,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (hasTitle) ...[
+                // 시트 제목 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
+                Container(
+                  decoration: const BoxDecoration(
+                    color: AppSemanticColors.subheaderBackground,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppSemanticColors.subheaderBorder,
+                      ),
+                    ),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space5,
+                    AppSpacing.space4,
+                    AppSpacing.space5,
+                    AppSpacing.space3,
+                  ),
                   child: Text(
                     title,
                     maxLines: 1,
@@ -67,12 +83,14 @@ Future<void> showAppActionSheet(
                     ),
                   ),
                 ),
-              ),
-            for (final action in actions) _ActionTile(action: action),
-          ],
+                const SizedBox(height: AppSpacing.space2),
+              ],
+              for (final action in actions) _ActionTile(action: action),
+            ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }
 

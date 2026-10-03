@@ -126,12 +126,8 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       appBar: AppBar(
         title: Text(
           '배차 설정',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
+          style: AppTypography.heading6,
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         actions: [
           if (provider.isSaving)
@@ -143,7 +139,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.white,
+                    color: AppSemanticColors.headerForeground,
                   ),
                 ),
               ),

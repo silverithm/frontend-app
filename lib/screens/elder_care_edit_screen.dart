@@ -197,7 +197,6 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
         title: Text('${widget.elderName} 정보 수정', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
       body: ListView(

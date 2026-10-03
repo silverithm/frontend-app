@@ -3730,22 +3730,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     return Text(
                       typingText,
                       style: AppTypography.labelSmall.copyWith(
-                        color: AppSemanticColors.textTertiary,
+                        color: AppSemanticColors.headerForegroundMuted,
                       ),
                     );
                   }
                   return Text(
                     '${widget.room.participantCount}명',
                     style: AppTypography.labelSmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
+                      color: AppSemanticColors.headerForegroundMuted,
                     ),
                   );
                 },
               ),
             ],
           ),
-          backgroundColor: AppSemanticColors.surfaceDefault,
-          foregroundColor: AppSemanticColors.textPrimary,
           elevation: 0,
           actions: [
             IconButton(
@@ -4100,9 +4098,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           horizontal: AppSpacing.space3,
           vertical: AppSpacing.space1,
         ),
+        // 흰 알약 + 테두리 — 회색 대화 바탕 위에서 회색 알약은 거의 보이지 않았다
         decoration: BoxDecoration(
-          color: AppSemanticColors.backgroundTertiary,
+          color: AppSemanticColors.surfaceDefault,
           borderRadius: BorderRadius.circular(AppBorderRadius.full),
+          border: Border.all(color: AppSemanticColors.borderDefault),
         ),
         child: Text(
           formatDateSeparatorLabel(date),

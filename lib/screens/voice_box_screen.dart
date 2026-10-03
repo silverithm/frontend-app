@@ -167,7 +167,6 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
         title: Text('고충·신고 · 건의함', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
       body: SafeArea(

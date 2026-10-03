@@ -53,59 +53,48 @@ class _ApprovalHubScreenState extends State<ApprovalHubScreen>
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('전자결재', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
         // 탭 루트에선 canPop=false라 자동으로 안 뜨고,
         // 알림에서 push로 열리면 뒤로가기가 생긴다
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: AppSemanticColors.borderDefault,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Consumer2<ApprovalProvider, AuthProvider>(
-              builder: (context, approvalProvider, authProvider, child) {
-                final currentUser = authProvider.currentUser;
-                final isAdmin = PermissionUtils.has(
-                  currentUser,
-                  AppPermission.approvalManage,
-                );
-                // 지금 내가 처리할 차례인 결재 건수 — 관리자·직원 모두 "내가" 처리할
-                // 건수만 센다(결재선에서 내가 현재 단계인 문서, 결재선 없는 legacy는
-                // 관리자만 처리 가능하므로 그때만). 회사 전체 대기 건수가 아니다.
-                final myTurnCount = approvalProvider.myTurnCount(
-                  myId: currentUser?.id,
-                  isAdmin: isAdmin,
-                );
+          child: Consumer2<ApprovalProvider, AuthProvider>(
+            builder: (context, approvalProvider, authProvider, child) {
+              final currentUser = authProvider.currentUser;
+              final isAdmin = PermissionUtils.has(
+                currentUser,
+                AppPermission.approvalManage,
+              );
+              // 지금 내가 처리할 차례인 결재 건수 — 관리자·직원 모두 "내가" 처리할
+              // 건수만 센다(결재선에서 내가 현재 단계인 문서, 결재선 없는 legacy는
+              // 관리자만 처리 가능하므로 그때만). 회사 전체 대기 건수가 아니다.
+              final myTurnCount = approvalProvider.myTurnCount(
+                myId: currentUser?.id,
+                isAdmin: isAdmin,
+              );
 
-                return TabBar(
-                  controller: _tabController,
-                  labelColor: AppSemanticColors.interactivePrimaryDefault,
-                  unselectedLabelColor: AppSemanticColors.textTertiary,
-                  indicatorColor: AppSemanticColors.interactivePrimaryDefault,
-                  indicatorWeight: 2,
-                  labelStyle: AppTypography.labelMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  unselectedLabelStyle: AppTypography.labelMedium,
-                  dividerColor: AppColors.transparent,
-                  tabs: [
-                    const Tab(text: '결재 신청'),
-                    Tab(
-                      child: _TabLabelWithBadge(
-                        label: '결재 관리',
-                        count: myTurnCount,
-                      ),
+              return TabBar(
+                controller: _tabController,
+                labelColor: AppSemanticColors.headerForeground,
+                unselectedLabelColor: AppSemanticColors.headerForegroundMuted,
+                indicatorColor: AppSemanticColors.headerTabIndicator,
+                indicatorWeight: 2,
+                labelStyle: AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                unselectedLabelStyle: AppTypography.labelMedium,
+                dividerColor: AppColors.transparent,
+                tabs: [
+                  const Tab(text: '결재 신청'),
+                  Tab(
+                    child: _TabLabelWithBadge(
+                      label: '결재 관리',
+                      count: myTurnCount,
                     ),
-                  ],
-                );
-              },
-            ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

@@ -311,12 +311,8 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       appBar: AppBar(
         title: Text(
           '결재 상세',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
+          style: AppTypography.heading6,
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
         actions: [
@@ -332,13 +328,13 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            AppSemanticColors.textInverse,
+                            AppSemanticColors.headerForeground,
                           ),
                         ),
                       )
                     : Icon(
                         Icons.delete_outline,
-                        color: AppSemanticColors.textInverse,
+                        color: AppSemanticColors.headerForeground,
                       ),
                 onPressed: _isDeleting ? null : _deleteApproval,
               ),

@@ -192,7 +192,8 @@ class AppSemanticColors {
 
   // Border colors (Seed stroke.neutral-*)
   static const Color borderDefault = AppColors.gray300; // stroke.neutral-weak
-  static const Color borderSubtle = AppColors.gray200;
+  // 목록 구분선·묶음 카드 테두리 — 흐려서 구분이 안 된다는 요청으로 gray200에서 한 단계 진하게
+  static const Color borderSubtle = AppColors.gray300;
   static const Color borderHover = AppColors.gray400;
   static const Color borderFocus = AppColors.teal600; // brand
   static const Color borderDisabled = AppColors.gray200;
@@ -205,6 +206,24 @@ class AppSemanticColors {
   static const Color textInverse = AppColors.white;
   static const Color textLink = AppColors.teal700; // fg.brand-contrast
   static const Color textError = AppColors.red600;
+
+  // Header — 화면 상단 바. 틸 바탕 + 진한 틸 하단선으로 본문과 확실히 갈라 놓는다
+  // (2026-10 사용자 승인 시안 D). 틸 바탕 위 글자는 대비 때문에 회색 대신 거의 검정을 쓴다:
+  // gray700은 4.3:1로 기준 미달이라 보조 글자도 gray800(8.6:1).
+  static const Color headerBackground = AppColors.teal300;
+  static const Color headerBorder = AppColors.teal600;
+  static const Color headerForeground = AppColors.gray900;
+  static const Color headerForegroundMuted = AppColors.gray800;
+  static const Color headerTabIndicator = AppColors.teal900;
+
+  // Subheader — 화면 안쪽 머리(카드 제목줄·필터 띠·시트 제목·달력 연월 줄).
+  // 상단 바보다 한 단계 약한 틸이라 "화면 머리 > 안쪽 머리" 위계가 보인다.
+  static const Color subheaderBackground = AppColors.teal50;
+  static const Color subheaderBorder = AppColors.teal200;
+  // 안쪽 머리 위 글자 링크("전체보기") — 연한 틸 면 위에서 민트 글자는 1.9:1이라 진한 틸(약 7:1)
+  static const Color subheaderLink = AppColors.teal900;
+  // 묶음 제목 앞 세로 막대("내 업무"·"소통")
+  static const Color sectionMarker = AppColors.teal600;
 
   // Brand (케어브이 틸 — Seed bg.brand-*)
   static const Color brandDefault = AppColors.teal600;

@@ -60,12 +60,8 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
       appBar: AppBar(
         title: Text(
           isEditing ? '공지사항 수정' : '공지사항 작성',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
+          style: AppTypography.heading6,
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
       ),
       body: Form(

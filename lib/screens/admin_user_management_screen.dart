@@ -75,7 +75,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             backgroundColor: AppSemanticColors.backgroundPrimary,
             appBar: AppBar(
               title: Text('종사자 관리', style: AppTypography.heading5),
-              backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
               automaticallyImplyLeading: widget.showBackButton,
               leading: widget.showBackButton
@@ -97,37 +96,28 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               ],
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(48),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: AppSemanticColors.borderDefault,
-                        width: 1,
-                      ),
-                    ),
+                child: TabBar(
+                  labelColor: AppSemanticColors.headerForeground,
+                  unselectedLabelColor:
+                      AppSemanticColors.headerForegroundMuted,
+                  indicatorColor: AppSemanticColors.headerTabIndicator,
+                  indicatorWeight: 2,
+                  labelStyle: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: TabBar(
-                    labelColor: AppSemanticColors.interactivePrimaryDefault,
-                    unselectedLabelColor: AppSemanticColors.textTertiary,
-                    indicatorColor: AppSemanticColors.interactivePrimaryDefault,
-                    indicatorWeight: 2,
-                    labelStyle: AppTypography.labelMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    unselectedLabelStyle: AppTypography.labelMedium,
-                    dividerColor: AppColors.transparent,
-                    tabs: [
-                      if (canManageMembers)
-                        const Tab(
-                          icon: Icon(Icons.pending_actions, size: 20),
-                          text: '승인 대기',
-                        ),
+                  unselectedLabelStyle: AppTypography.labelMedium,
+                  dividerColor: AppColors.transparent,
+                  tabs: [
+                    if (canManageMembers)
                       const Tab(
-                        icon: Icon(Icons.people, size: 20),
-                        text: '전체 종사자',
+                        icon: Icon(Icons.pending_actions, size: 20),
+                        text: '승인 대기',
                       ),
-                    ],
-                  ),
+                    const Tab(
+                      icon: Icon(Icons.people, size: 20),
+                      text: '전체 종사자',
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -147,7 +137,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('종사자 관리', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
       body: Center(

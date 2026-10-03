@@ -110,6 +110,8 @@ class _ChatImageViewerState extends State<ChatImageViewer> {
       appBar: AppBar(
         backgroundColor: AppColors.black,
         foregroundColor: AppColors.white,
+        // 사진 뷰어는 검은 바탕 그대로 — 앱 공통 상단 바의 틸 하단선을 끈다
+        shape: const Border(),
         elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

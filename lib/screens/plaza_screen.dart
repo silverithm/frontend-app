@@ -239,9 +239,10 @@ class _PlazaScreenState extends State<PlazaScreen>
         title: '케어브이 커뮤니티',
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppSemanticColors.brandDefault,
-          unselectedLabelColor: AppSemanticColors.textTertiary,
-          indicatorColor: AppSemanticColors.brandDefault,
+          labelColor: AppSemanticColors.headerForeground,
+          unselectedLabelColor: AppSemanticColors.headerForegroundMuted,
+          indicatorColor: AppSemanticColors.headerTabIndicator,
+          dividerColor: AppColors.transparent,
           tabs: const [
             Tab(text: '요양 소식'),
             Tab(text: '게시판'),

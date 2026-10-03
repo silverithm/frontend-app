@@ -77,10 +77,8 @@ class _ApprovalTemplateListScreenState
       appBar: AppBar(
         title: Text(
           '결재 양식 선택',
-          style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse),
+          style: AppTypography.heading6,
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
       ),
@@ -123,15 +121,16 @@ class _ApprovalTemplateListScreenState
   }
 
   Widget _buildCategoryFilterBar(List<String> categories) {
+    // 분류 필터 띠 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.space4,
         vertical: AppSpacing.space3,
       ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
+      decoration: const BoxDecoration(
+        color: AppSemanticColors.subheaderBackground,
         border: Border(
-          bottom: BorderSide(color: AppSemanticColors.borderSubtle, width: 1),
+          bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
         ),
       ),
       child: SingleChildScrollView(

@@ -153,18 +153,35 @@ class SeedListSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title != null)
+          // 묶음 제목 — 앞에 틸 세로 막대를 세워 카드 위 작은 회색 글자로 묻히지 않게 한다
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space4, // global-gutter
-              vertical: AppSpacing.space2,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space1,
+              AppSpacing.space3,
+              AppSpacing.space4,
+              AppSpacing.space2,
             ),
-            child: Text(
-              title!,
-              style: TextStyle(
-                fontSize: AppTypography.fontSizeBase, // t4
-                fontWeight: AppTypography.fontWeightMedium, // mediumWeak
-                color: AppSemanticColors.textTertiary,
-              ),
+            child: Row(
+              children: [
+                Container(
+                  width: 3,
+                  height: AppSpacing.space4,
+                  decoration: BoxDecoration(
+                    color: AppSemanticColors.sectionMarker,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.space2),
+                Expanded(
+                  child: Text(
+                    title!,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                      fontWeight: AppTypography.fontWeightBold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         Container(

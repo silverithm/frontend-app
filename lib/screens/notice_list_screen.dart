@@ -65,7 +65,6 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
       appBar: widget.showAppBar
           ? AppBar(
               title: Text('공지사항', style: AppTypography.heading5),
-              backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
             )
           : null,

@@ -56,11 +56,9 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
           '구독 결제',
           style: AppTypography.heading6.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppSemanticColors.textInverse,
+            color: AppSemanticColors.headerForeground,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         centerTitle: true,
       ),
@@ -922,11 +920,9 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
           '토스페이먼츠 결제',
           style: AppTypography.heading6.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppSemanticColors.textInverse,
+            color: AppSemanticColors.headerForeground,
           ),
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(

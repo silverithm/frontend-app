@@ -69,12 +69,8 @@ class _DispatchScreenState extends State<DispatchScreen> {
       appBar: AppBar(
         title: Text(
           '배차관리',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
+          style: AppTypography.heading6,
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
         elevation: 0,
         actions: [
           IconButton(

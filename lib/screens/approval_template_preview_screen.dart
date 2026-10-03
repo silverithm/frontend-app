@@ -163,11 +163,9 @@ class _ApprovalTemplatePreviewScreenState
       appBar: AppBar(
         title: Text(
           t.name,
-          style: AppTypography.heading6.copyWith(color: AppSemanticColors.textInverse),
+          style: AppTypography.heading6,
           overflow: TextOverflow.ellipsis,
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
       ),

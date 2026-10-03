@@ -587,15 +587,13 @@ class _AdminApprovalManagementScreenState
   }
 
   Widget _buildFilterSection(int myTurnCount) {
+    // 필터 띠 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
     return Container(
       padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
+      decoration: const BoxDecoration(
+        color: AppSemanticColors.subheaderBackground,
         border: Border(
-          bottom: BorderSide(
-            color: AppSemanticColors.borderSubtle,
-            width: 1,
-          ),
+          bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
         ),
       ),
       child: Column(

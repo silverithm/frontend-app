@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'theme/app_colors.dart';
+import 'theme/app_theme.dart';
 import 'theme/app_typography.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'localization/shadcn_fallback_localizations_delegate.dart';
@@ -123,12 +124,13 @@ class MyApp extends StatelessWidget {
                 data: MediaQuery.of(context)
                     .copyWith(textScaler: TextScaler.linear(scale)),
                 child: Theme(
-                  data: theme.copyWith(
+                  // 상단 바·구분선 색도 여기서 앱 전체에 입힌다(theme/app_theme.dart)
+                  data: AppTheme.withAppChrome(theme.copyWith(
                     textTheme: theme.textTheme
                         .apply(fontFamily: AppTypography.fontFamilySans),
                     primaryTextTheme: theme.primaryTextTheme
                         .apply(fontFamily: AppTypography.fontFamilySans),
-                  ),
+                  )),
                   child: DefaultTextStyle.merge(
                     style: const TextStyle(
                       fontFamily: AppTypography.fontFamilySans,

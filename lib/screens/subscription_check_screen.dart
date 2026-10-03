@@ -149,14 +149,14 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
       backgroundColor: AppColors.transparent,
       flexibleSpace: Container(
         decoration: const BoxDecoration(
-          color: AppSemanticColors.interactivePrimaryDefault,
+          color: AppSemanticColors.headerBackground,
         ),
         child: FlexibleSpaceBar(
           centerTitle: true,
           title: Text(
             '요금제 선택',
             style: AppTypography.heading5.copyWith(
-              color: AppSemanticColors.textInverse,
+              color: AppSemanticColors.headerForeground,
               fontWeight: FontWeight.bold,
             ),
           ),

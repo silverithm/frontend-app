@@ -168,10 +168,13 @@ class _AdminNoticeManagementScreenState
   }
 
   Widget _buildSearchBar() {
-    // 앱바가 흰 배경으로 통일되어(D6) showAppBar 여부와 무관하게 같은 밝은 톤을 쓴다.
+    // 글자는 어디서든 짙은 색. 입력칸은 상단 바(틸) 안에서는 흰색으로 띄우고,
+    // 화면 안에 들어갈 땐 기존 회색 입력칸
     final textColor = AppSemanticColors.textPrimary;
     final hintColor = AppSemanticColors.textTertiary;
-    final fillColor = AppSemanticColors.backgroundTertiary;
+    final fillColor = widget.showAppBar
+        ? AppSemanticColors.surfaceDefault
+        : AppSemanticColors.backgroundTertiary;
 
     return Container(
       padding: const EdgeInsets.symmetric(

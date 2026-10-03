@@ -91,10 +91,7 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('결재 서명 관리',
-            style: AppTypography.heading6
-                .copyWith(color: AppSemanticColors.textInverse)),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
+            style: AppTypography.heading6),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

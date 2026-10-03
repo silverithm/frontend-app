@@ -287,7 +287,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       appBar: widget.showAppBar
           ? AppBar(
               title: Text('내 휴무', style: AppTypography.heading5),
-              backgroundColor: AppSemanticColors.backgroundPrimary,
               elevation: 0,
             )
           : null,

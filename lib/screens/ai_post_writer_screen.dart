@@ -251,7 +251,6 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('AI 글쓰기 도우미', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
       body: SafeArea(

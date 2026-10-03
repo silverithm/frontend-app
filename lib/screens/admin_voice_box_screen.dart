@@ -312,7 +312,6 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('고충·건의함 관리', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
       body: SafeArea(

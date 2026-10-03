@@ -539,8 +539,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        backgroundColor: AppSemanticColors.backgroundPrimary,
-        iconTheme: IconThemeData(color: AppSemanticColors.textPrimary),
         elevation: 0,
         leading: IconButton(
           tooltip: '뒤로 가기',
@@ -2342,13 +2340,8 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
       appBar: AppBar(
         title: Text(
           '주소 검색',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
+          style: AppTypography.heading6,
         ),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
-        iconTheme: IconThemeData(color: AppSemanticColors.textInverse),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(

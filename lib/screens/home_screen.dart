@@ -179,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
         '${now.month}월 ${now.day}일 (${weekdays[now.weekday - 1]})';
 
     return _SectionCard(
+      header: _SectionHeader(title: '오늘', subtitle: dateLabel),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.space5,
         AppSpacing.space3,
@@ -188,8 +189,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(title: '오늘', subtitle: dateLabel),
-          const SizedBox(height: AppSpacing.space3),
           if (todaySchedules.isEmpty)
             Text(
               '오늘 예정된 일정이 없습니다.',
@@ -202,39 +201,55 @@ class _HomeScreenState extends State<HomeScreen> {
                 .take(2)
                 .map(
                   (schedule) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.space2),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: AppSpacing.space1_5,
-                          height: AppSpacing.space1_5,
-                          decoration: BoxDecoration(
-                            color: scheduleDisplayColor(schedule),
-                            shape: BoxShape.circle,
-                          ),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.space1),
+                    // 누르면 일정 탭으로 넘어가 월간일정의 오늘을 펴고 이 일정을 강조한다
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                      onTap: () {
+                        context.read<ScheduleProvider>().requestFocus(
+                          scheduleId: schedule.id,
+                          date: now,
+                        );
+                        widget.onNavigateToTab?.call(MainTabs.calendar);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.space1,
                         ),
-                        const SizedBox(width: AppSpacing.space2),
-                        SizedBox(
-                          width: AppSpacing.space10,
-                          child: Text(
-                            schedule.timeText,
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: AppSpacing.space1_5,
+                              height: AppSpacing.space1_5,
+                              decoration: BoxDecoration(
+                                color: scheduleDisplayColor(schedule),
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Expanded(
-                          child: Text(
-                            schedule.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontWeight: AppTypography.fontWeightMedium,
+                            const SizedBox(width: AppSpacing.space2),
+                            SizedBox(
+                              width: AppSpacing.space10,
+                              child: Text(
+                                schedule.timeText,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textSecondary,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: AppSpacing.space2),
+                            Expanded(
+                              child: Text(
+                                schedule.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontWeight: AppTypography.fontWeightMedium,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -355,16 +370,23 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SafeArea(
-                // 플랫한 표면 헤더 — 본문과 같은 backgroundPrimary를 써서
-                // 이질적인 대면적 브랜드 블록 없이 콘텐츠와 자연스럽게 이어지도록 한다.
+              // 인사말 머리줄 — 다른 화면 상단 바와 같은 틸 바탕 + 진한 틸 하단선.
+              // 상태표시줄 뒤까지 칠하려고 SafeArea 바깥에서 색을 깐다.
+              DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: AppSemanticColors.headerBackground,
+                  border: Border(
+                    bottom: BorderSide(color: AppSemanticColors.headerBorder),
+                  ),
+                ),
+                child: SafeArea(
                 bottom: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.space5,
                     AppSpacing.space2,
                     AppSpacing.space5,
-                    AppSpacing.space2,
+                    AppSpacing.space3,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,7 +410,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTypography.bodySmall.copyWith(
-                                    color: AppSemanticColors.textTertiary,
+                                    color:
+                                        AppSemanticColors.headerForegroundMuted,
                                   ),
                                 ),
                               ],
@@ -400,6 +423,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+              ),
               ),
               if (_isLoading)
                 Padding(
@@ -426,22 +450,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       // 홈은 세 칸만 — 공지사항(2건) · 전자결재(2건) · 오늘(일정+휴무자).
                       // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
                       _SectionCard(
+                        header: _SectionHeader(
+                          title: '공지사항',
+                          subtitle: '최근 공지',
+                          actionLabel: '전체보기',
+                          onAction: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => canManageNotice
+                                  ? const AdminNoticeManagementScreen()
+                                  : const NoticeListScreen(),
+                            ),
+                          ),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _SectionHeader(
-                              title: '공지사항',
-                              subtitle: '최근 공지',
-                              actionLabel: '전체보기',
-                              onAction: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => canManageNotice
-                                      ? const AdminNoticeManagementScreen()
-                                      : const NoticeListScreen(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.space3),
                             if (recentNotices.isEmpty)
                               const _EmptySectionState(
                                 icon: Icons.campaign_outlined,
@@ -477,25 +500,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: AppSpacing.space3),
 
                       _SectionCard(
+                        header: _SectionHeader(
+                          // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
+                          // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
+                          title: myTurnApprovals > 0
+                              ? '전자결재 ($myTurnApprovals)'
+                              : '전자결재',
+                          subtitle: myTurnApprovals > 0
+                              ? '지금 내가 처리할 결재 $myTurnApprovals건'
+                              : (canManageApprovals
+                                    ? '승인이 필요한 문서'
+                                    : '내 결재 진행 상황'),
+                          actionLabel: '전체보기',
+                          onAction: () =>
+                              _openApproval(hasMyTurn: myTurnApprovals > 0),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _SectionHeader(
-                              // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
-                              // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
-                              title: myTurnApprovals > 0
-                                  ? '전자결재 ($myTurnApprovals)'
-                                  : '전자결재',
-                              subtitle: myTurnApprovals > 0
-                                  ? '지금 내가 처리할 결재 $myTurnApprovals건'
-                                  : (canManageApprovals
-                                        ? '승인이 필요한 문서'
-                                        : '내 결재 진행 상황'),
-                              actionLabel: '전체보기',
-                              onAction: () =>
-                                  _openApproval(hasMyTurn: myTurnApprovals > 0),
-                            ),
-                            const SizedBox(height: AppSpacing.space3),
                             if (recentApprovals.isEmpty)
                               _EmptySectionState(
                                 icon: Icons.fact_check_outlined,
@@ -609,10 +631,13 @@ class _HomeScreenState extends State<HomeScreen> {
 /// 평평한 흰 표면 — Seed 레이아웃 원칙(카드 중첩 금지)에 따라 자체 보더 1px +
 /// xl2(16) 라운드만 사용하고, 내부에는 또 다른 보더/그림자 카드를 두지 않는다.
 class _SectionCard extends StatelessWidget {
+  /// 카드 제목줄 — 카드 가장자리까지 꽉 찬 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
+  final Widget header;
   final Widget child;
   final EdgeInsetsGeometry padding;
 
   const _SectionCard({
+    required this.header,
     required this.child,
     this.padding = const EdgeInsets.symmetric(
       horizontal: AppSpacing.space5,
@@ -624,13 +649,33 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: padding,
       decoration: BoxDecoration(
         color: AppSemanticColors.backgroundPrimary,
         borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
         border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
       ),
-      child: child,
+      // 제목줄 면이 둥근 모서리 밖으로 삐져나오지 않게
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              color: AppSemanticColors.subheaderBackground,
+              border: Border(
+                bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space5,
+              vertical: AppSpacing.space3,
+            ),
+            child: header,
+          ),
+          Padding(padding: padding, child: child),
+        ],
+      ),
     );
   }
 }
@@ -668,7 +713,7 @@ class _SectionHeader extends StatelessWidget {
               Text(
                 subtitle,
                 style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
+                  color: AppSemanticColors.textSecondary,
                 ),
               ),
             ],
@@ -691,14 +736,14 @@ class _SectionHeader extends StatelessWidget {
                     Text(
                       actionLabel!,
                       style: AppTypography.labelMedium.copyWith(
-                        color: AppSemanticColors.interactivePrimaryDefault,
+                        color: AppSemanticColors.subheaderLink,
                         fontWeight: AppTypography.fontWeightSemibold,
                       ),
                     ),
                     Icon(
                       Icons.chevron_right,
                       size: 16,
-                      color: AppSemanticColors.interactivePrimaryDefault,
+                      color: AppSemanticColors.subheaderLink,
                     ),
                   ],
                 ),

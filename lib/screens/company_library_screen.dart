@@ -357,7 +357,6 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
         title: Text('기관 자료실', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
       floatingActionButton: isAdmin

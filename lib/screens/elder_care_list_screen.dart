@@ -117,7 +117,6 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
         title: Text('어르신 정보', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
       body: Column(
@@ -160,8 +159,14 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
   Widget _buildSearchAndFilter() {
     final floors = _floors;
 
+    // 검색·층 필터 띠 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
     return Container(
-      color: AppSemanticColors.backgroundPrimary,
+      decoration: const BoxDecoration(
+        color: AppSemanticColors.subheaderBackground,
+        border: Border(
+          bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
+        ),
+      ),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.space4,
         AppSpacing.space2,

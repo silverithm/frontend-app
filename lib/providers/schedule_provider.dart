@@ -11,11 +11,34 @@ class ScheduleProvider with ChangeNotifier {
   String? _error;
   DateTime? _currentMonth;
 
+  // 다른 화면(홈 '오늘' 칸)이 "일정 탭에서 이 일정을 열어 달라"고 남긴 요청.
+  // 일정 탭은 IndexedStack 안에 늘 살아 있어 생성자 인자로는 못 넘긴다 — 여기 남기면
+  // 일정 탭이 받아 그 날짜를 펴고 그 일정을 강조한 뒤 [takeFocusRequest]로 지운다.
+  int? _focusScheduleId;
+  DateTime? _focusDate;
+
   // Getters
   List<Schedule> get schedules => _schedules;
   Map<String, List<Schedule>> get schedulesByDate => _schedulesByDate;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  /// [date]의 달력을 펴고 [scheduleId] 일정을 강조해 달라고 요청한다.
+  void requestFocus({required int scheduleId, required DateTime date}) {
+    _focusScheduleId = scheduleId;
+    _focusDate = DateTime(date.year, date.month, date.day);
+    notifyListeners();
+  }
+
+  /// 남아 있는 열기 요청을 꺼내고 지운다. 없으면 null.
+  ({int scheduleId, DateTime date})? takeFocusRequest() {
+    final id = _focusScheduleId;
+    final date = _focusDate;
+    _focusScheduleId = null;
+    _focusDate = null;
+    if (id == null || date == null) return null;
+    return (scheduleId: id, date: date);
+  }
 
   /// 월별 일정 데이터 로드
   Future<void> loadCalendarData(DateTime month, {required String companyId}) async {

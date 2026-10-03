@@ -145,9 +145,6 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
             color: AppSemanticColors.textPrimary,
           ),
         ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
-        foregroundColor: AppSemanticColors.textPrimary,
-        iconTheme: IconThemeData(color: AppSemanticColors.textPrimary),
         elevation: 0,
         actions: [
           Padding(

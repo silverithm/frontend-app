@@ -260,9 +260,10 @@ class _MainScreenState extends State<MainScreen>
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceDefault,
+              // 상단 바 아래 선과 짝을 맞춘 틸 선으로 화면 아래 끝을 닫는다
               border: Border(
                 top: BorderSide(
-                  color: AppSemanticColors.borderDefault,
+                  color: AppSemanticColors.headerBorder,
                   width: 1,
                 ),
               ),

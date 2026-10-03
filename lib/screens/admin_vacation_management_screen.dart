@@ -158,7 +158,6 @@ class _AdminVacationManagementScreenState
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('휴무 관리', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
       ),
       body: _isLoading
@@ -225,17 +224,14 @@ class _AdminVacationManagementScreenState
       onRefresh: _loadData,
       child: CustomScrollView(
         slivers: [
-          // 필터 섹션
+          // 필터 섹션 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
           SliverToBoxAdapter(
             child: Container(
               padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.surfaceDefault,
+              decoration: const BoxDecoration(
+                color: AppSemanticColors.subheaderBackground,
                 border: Border(
-                  bottom: BorderSide(
-                    color: AppSemanticColors.borderSubtle,
-                    width: 1,
-                  ),
+                  bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
                 ),
               ),
               child: Column(

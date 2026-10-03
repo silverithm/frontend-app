@@ -62,10 +62,19 @@ class _CalendarScreenState extends State<CalendarScreen>
   // 할 일이 있는 일정 항목 중 체크리스트를 펼쳐 둔 것들 (별도 상세 화면이 없어 항목 확장으로 대신한다)
   final Set<int> _expandedTaskScheduleIds = {};
 
+  // 테두리를 강조할 일정 — 알림으로 들어왔거나 홈 '오늘' 칸에서 눌러 넘어온 그 일정
+  int? _highlightedScheduleId;
+  // 강조한 일정 카드까지 화면을 내리는 데 쓴다
+  final GlobalKey _highlightedScheduleKey = GlobalKey();
+  late final ScheduleProvider _scheduleProvider;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _highlightedScheduleId = widget.highlightedScheduleId;
+    _scheduleProvider = context.read<ScheduleProvider>();
+    _scheduleProvider.addListener(_handleFocusRequest);
 
     // 알림으로 들어왔으면 일정 달력을 그 날짜에 펴 둔다
     final target = widget.initialScheduleDate;
@@ -75,7 +84,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       _tabController.index = 1; // 0=휴무 달력, 1=일정 달력
     }
     // 강조할 일정에 할 일이 있다면 체크리스트를 펼쳐서 바로 보이게 한다
-    final highlightId = widget.highlightedScheduleId;
+    final highlightId = _highlightedScheduleId;
     if (highlightId != null) {
       _expandedTaskScheduleIds.add(highlightId);
     }
@@ -117,10 +126,42 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   @override
   void dispose() {
+    _scheduleProvider.removeListener(_handleFocusRequest);
     _tabController.dispose();
     _fabAnimationController.dispose();
     _filterAnimationController.dispose();
     super.dispose();
+  }
+
+  /// 홈 '오늘' 칸에서 일정을 누르면 남기는 요청을 받아, 월간일정 탭의 그 날짜를 펴고
+  /// 그 일정을 강조한 뒤 카드가 보이도록 내린다.
+  void _handleFocusRequest() {
+    final request = _scheduleProvider.takeFocusRequest();
+    if (request == null || !mounted) return;
+    final day = request.date;
+    final monthChanged = _scheduleCurrentDate.year != day.year ||
+        _scheduleCurrentDate.month != day.month;
+    setState(() {
+      _tabController.index = 1; // 0=휴무 달력, 1=일정 달력
+      _scheduleCurrentDate = DateTime(day.year, day.month);
+      _scheduleSelectedDate = day;
+      _highlightedScheduleId = request.scheduleId;
+      _expandedTaskScheduleIds.add(request.scheduleId);
+    });
+    if (monthChanged) {
+      final companyId =
+          context.read<AuthProvider>().currentUser?.company?.id ?? '1';
+      _scheduleProvider.loadCalendarData(day, companyId: companyId);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _highlightedScheduleKey.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        duration: AppTransitions.slow,
+        alignment: 0.2,
+      );
+    });
   }
 
   void _showVacationRequestDialog() {
@@ -178,7 +219,6 @@ class _CalendarScreenState extends State<CalendarScreen>
               pinned: true,
               elevation: 0,
               toolbarHeight: 0,
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(48),
                 child: Builder(
@@ -191,16 +231,18 @@ class _CalendarScreenState extends State<CalendarScreen>
                     final accentColor =
                         AppSemanticColors.interactivePrimaryDefault;
                     return Container(
-                      color: AppSemanticColors.interactivePrimaryDefault,
+                      color: AppSemanticColors.headerBackground,
                       child: TabBar(
                         controller: _tabController,
-                        indicatorColor: AppSemanticColors.textInverse,
+                        indicatorColor: AppSemanticColors.headerTabIndicator,
                         indicatorWeight: 2,
-                        labelColor: AppSemanticColors.textInverse,
-                        unselectedLabelColor: AppSemanticColors.textInverse
-                            .withValues(alpha: 0.5),
+                        labelColor: AppSemanticColors.headerForeground,
+                        unselectedLabelColor:
+                            AppSemanticColors.headerForegroundMuted,
+                        // 상단 바 아래 선은 SliverAppBar가 긋는다
+                        dividerColor: AppColors.transparent,
                         labelStyle: AppTypography.labelLarge.copyWith(
-                          fontWeight: AppTypography.fontWeightSemibold,
+                          fontWeight: AppTypography.fontWeightBold,
                         ),
                         unselectedLabelStyle: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.normal,
@@ -279,18 +321,16 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget _buildScheduleCalendarWidget(ScheduleProvider provider) {
     return Column(
       children: [
-        // 월 네비게이션 — 흰 표면 위, 하단 구분선만으로 분리
+        // 월 네비게이션 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
         Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.space4,
             vertical: AppSpacing.space3,
           ),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
+            color: AppSemanticColors.subheaderBackground,
             border: Border(
-              bottom: BorderSide(
-                color: AppSemanticColors.borderSubtle,
-                width: 1,
-              ),
+              bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
             ),
           ),
           child: Row(
@@ -318,8 +358,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                   color: AppSemanticColors.textSecondary,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: AppSemanticColors.backgroundTertiary,
-                  shape: const CircleBorder(),
+                  backgroundColor: AppSemanticColors.surfaceDefault,
+                  shape: const CircleBorder(
+                    side: BorderSide(color: AppSemanticColors.subheaderBorder),
+                  ),
                 ),
               ),
               Text(
@@ -350,19 +392,28 @@ class _CalendarScreenState extends State<CalendarScreen>
                   color: AppSemanticColors.textSecondary,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: AppSemanticColors.backgroundTertiary,
-                  shape: const CircleBorder(),
+                  backgroundColor: AppSemanticColors.surfaceDefault,
+                  shape: const CircleBorder(
+                    side: BorderSide(color: AppSemanticColors.subheaderBorder),
+                  ),
                 ),
               ),
             ],
           ),
         ),
 
-        // 요일 헤더 — 같은 표면, 상하 space3 여백만
-        Padding(
+        // 요일 헤더 — 옅은 회색 면 + 하단 구분선. 틸을 쓰지 않는 건 오늘·선택
+        // 표시가 틸 계열이라 겹치지 않게 하려는 것
+        Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.space4,
             vertical: AppSpacing.space3,
+          ),
+          decoration: const BoxDecoration(
+            color: AppSemanticColors.backgroundSecondary,
+            border: Border(
+              bottom: BorderSide(color: AppSemanticColors.borderSubtle),
+            ),
           ),
           child: Row(
             children: ['일', '월', '화', '수', '목', '금', '토'].map((day) {
@@ -731,14 +782,15 @@ class _CalendarScreenState extends State<CalendarScreen>
         taskItems.isNotEmpty ? taskItems.where((t) => t.isCompleted).length : schedule.taskCompleted;
     final taskTotalCount = taskItems.isNotEmpty ? taskItems.length : schedule.taskTotal;
     final isTaskListExpanded = _expandedTaskScheduleIds.contains(schedule.id);
-    // 알림을 눌러 들어온 그 일정이면 테두리를 강조해 눈에 띄게 한다
-    final isHighlighted = widget.highlightedScheduleId == schedule.id;
+    // 알림이나 홈 '오늘' 칸에서 눌러 들어온 그 일정이면 테두리를 강조해 눈에 띄게 한다
+    final isHighlighted = _highlightedScheduleId == schedule.id;
 
     return GestureDetector(
       onLongPress: isMySchedule
           ? () => _showDeleteScheduleDialog(schedule)
           : null,
       child: Container(
+        key: isHighlighted ? _highlightedScheduleKey : null,
         margin: const EdgeInsets.only(bottom: AppSpacing.space2),
         padding: const EdgeInsets.all(AppSpacing.space4),
         decoration: BoxDecoration(
@@ -1789,661 +1841,687 @@ class _CalendarScreenState extends State<CalendarScreen>
           top: Radius.circular(AppBorderRadius.xl2),
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       builder: (bottomSheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             modalSetState = setModalState;
             return Padding(
               padding: EdgeInsets.only(
-                left: AppSpacing.space4,
-                right: AppSpacing.space4,
-                top: AppSpacing.space4,
-                bottom:
-                    MediaQuery.of(context).viewInsets.bottom +
-                    AppSpacing.space4,
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 핸들
-                    Center(
-                      child: Container(
-                        width: AppSpacing.space10,
-                        height: AppSpacing.space1,
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.borderDefault,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.sm,
-                          ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 시트 제목 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선).
+                  // 내용을 내려도 제목은 그 자리에 남는다
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: AppSemanticColors.subheaderBackground,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: AppSemanticColors.subheaderBorder,
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space4),
-                    // 헤더
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                      AppSpacing.space2,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '일정 등록',
-                          style: AppTypography.heading5.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: '닫기',
-                          onPressed: () => Navigator.pop(context),
-                          icon: Icon(
-                            Icons.close,
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space4),
-
-                    // 제목
-                    SeedTextField(
-                      label: '제목 *',
-                      controller: titleController,
-                      placeholder: '일정 제목을 입력하세요',
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-
-                    // 내용
-                    SeedTextField(
-                      label: '내용',
-                      controller: contentController,
-                      placeholder: '일정 내용을 입력하세요',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-
-                    // 일정 구분 — 기본 4종 + 기관 커스텀 구분. 커스텀 구분을
-                    // 고르면 그 구분의 색이 아래 색상에 바로 적용된다.
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: selectedCategory,
-                            decoration: InputDecoration(
-                              labelText: '일정 구분',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.lg,
-                                ),
-                              ),
-                            ),
-                            items: [
-                              // 기관 설정이 로드되면 이름 변경·숨김을 반영하고,
-                              // 아니면 하드코딩 4종으로 동작한다
-                              if (baseCategories.isEmpty) ...[
-                                const DropdownMenuItem(
-                                  value: 'MEETING',
-                                  child: Text('회의'),
-                                ),
-                                const DropdownMenuItem(
-                                  value: 'EVENT',
-                                  child: Text('행사'),
-                                ),
-                                const DropdownMenuItem(
-                                  value: 'TRAINING',
-                                  child: Text('교육'),
-                                ),
-                                const DropdownMenuItem(
-                                  value: 'OTHER',
-                                  child: Text('기타'),
-                                ),
-                              ] else
-                                for (final base in baseCategories.where(
-                                  (c) =>
-                                      !c.hidden ||
-                                      c.category == selectedCategory,
-                                ))
-                                  DropdownMenuItem(
-                                    value: base.category,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: BoxDecoration(
-                                            color: colorFromHex(base.color) ??
-                                                AppSemanticColors
-                                                    .interactivePrimaryDefault,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(
-                                          width: AppSpacing.space2,
-                                        ),
-                                        Text(base.name),
-                                      ],
-                                    ),
-                                  ),
-                              for (final label in customLabels)
-                                DropdownMenuItem(
-                                  value: 'label:${label.id}',
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: BoxDecoration(
-                                          color: colorFromHex(label.color) ??
-                                              AppSemanticColors
-                                                  .interactivePrimaryDefault,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        width: AppSpacing.space2,
-                                      ),
-                                      Text(label.name),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                            onChanged: (value) {
-                              setModalState(() {
-                                final wasLabel = selectedCategory.startsWith(
-                                  'label:',
-                                );
-                                selectedCategory = value ?? 'MEETING';
-                                if (value != null &&
-                                    value.startsWith('label:')) {
-                                  final id = int.tryParse(
-                                    value.substring(6),
-                                  );
-                                  for (final label in customLabels) {
-                                    if (label.id == id) {
-                                      selectedColorHex = label.color;
-                                      break;
-                                    }
-                                  }
-                                } else if (wasLabel) {
-                                  // 커스텀 구분에서 기본 구분으로 돌아오면
-                                  // 데려왔던 구분색도 내려놓는다
-                                  selectedColorHex = '';
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        SeedButton(
-                          label: '구분 관리',
-                          variant: SeedButtonVariant.neutralOutline,
-                          size: SeedButtonSize.small,
-                          onPressed: () {
-                            _showScheduleLabelManageSheet(
-                              companyId: companyId.toString(),
-                              onLabelsChanged: (labels) {
-                                customLabels = labels;
-                                // 고른 구분이 삭제됐으면 기본값으로 되돌린다
-                                if (selectedCategory.startsWith('label:') &&
-                                    !labels.any(
-                                      (l) =>
-                                          'label:${l.id}' == selectedCategory,
-                                    )) {
-                                  selectedCategory = 'MEETING';
-                                }
-                                modalSetState?.call(() {});
-                              },
-                              onBaseCategoriesChanged: (categories) {
-                                baseCategories = categories;
-                                // 고른 기본 구분이 숨겨졌으면 첫 보이는 구분으로
-                                if (!selectedCategory.startsWith('label:')) {
-                                  final current = categories
-                                      .where(
-                                        (c) => c.category == selectedCategory,
-                                      )
-                                      .toList();
-                                  if (current.isNotEmpty &&
-                                      current.first.hidden) {
-                                    final visible = categories
-                                        .where((c) => !c.hidden)
-                                        .toList();
-                                    if (visible.isNotEmpty) {
-                                      selectedCategory =
-                                          visible.first.category;
-                                    }
-                                  }
-                                }
-                                modalSetState?.call(() {});
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-
-                    // 색상 — 기본 구분일 때만. 커스텀 구분은 자기 색이 곧 일정
-                    // 색이라 따로 고를 게 없다 (다른 색은 구분 관리에서 바꾼다).
-                    if (!selectedCategory.startsWith('label:')) ...[
-                      Text(
-                        '색상',
-                        style: AppTypography.labelLarge.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space2),
-                      Wrap(
-                        spacing: AppSpacing.space2,
-                        runSpacing: AppSpacing.space2,
-                        children: [
-                          _buildScheduleColorSwatch(
-                            color: null,
-                            isSelected: selectedColorHex.isEmpty,
-                            tooltip: '색상 없음',
-                            onTap: () {
-                              setModalState(() {
-                                selectedColorHex = '';
-                              });
-                            },
-                          ),
-                          for (final option in ScheduleColorPalette.values)
-                            _buildScheduleColorSwatch(
-                              color: option.color,
-                              isSelected: selectedColorHex == option.hex,
-                              tooltip: option.name,
-                              onTap: () {
-                                setModalState(() {
-                                  selectedColorHex = option.hex;
-                                });
-                              },
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.space3),
-                    ],
-
-                    // 장소
-                    SeedTextField(
-                      label: '장소',
-                      controller: locationController,
-                      placeholder: '장소를 입력하세요',
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-
-                    // 종일 여부
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '종일',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                        Switch(
-                          value: isAllDay,
-                          onChanged: (value) {
-                            setModalState(() {
-                              isAllDay = value;
-                            });
-                          },
-                          activeTrackColor:
-                              AppSemanticColors.interactivePrimaryDefault,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space2),
-
-                    // 시작일 / 종료일
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: startDate,
-                                firstDate: DateTime(2020),
-                                lastDate: DateTime(2030),
-                              );
-                              if (picked != null) {
-                                setModalState(() {
-                                  startDate = picked;
-                                  if (endDate.isBefore(startDate)) {
-                                    endDate = startDate;
-                                  }
-                                });
-                              }
-                            },
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: '시작일',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.lg,
-                                  ),
-                                ),
-                                suffixIcon: const Icon(
-                                  Icons.calendar_today,
-                                  size: 18,
-                                ),
-                              ),
-                              child: Text(
-                                '${startDate.month}/${startDate.day}',
-                                style: AppTypography.bodyMedium,
+                        // 핸들
+                        Center(
+                          child: Container(
+                            width: AppSpacing.space10,
+                            height: AppSpacing.space1,
+                            decoration: BoxDecoration(
+                              color: AppSemanticColors.borderDefault,
+                              borderRadius: BorderRadius.circular(
+                                AppBorderRadius.sm,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: endDate,
-                                firstDate: startDate,
-                                lastDate: DateTime(2030),
-                              );
-                              if (picked != null) {
-                                setModalState(() {
-                                  endDate = picked;
-                                });
-                              }
-                            },
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: '종료일',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.lg,
-                                  ),
-                                ),
-                                suffixIcon: const Icon(
-                                  Icons.calendar_today,
-                                  size: 18,
-                                ),
-                              ),
-                              child: Text(
-                                '${endDate.month}/${endDate.day}',
-                                style: AppTypography.bodyMedium,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-
-                    // 시간 선택 (종일이 아닌 경우)
-                    if (!isAllDay) ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () async {
-                                final picked = await showTimePicker(
-                                  context: context,
-                                  initialTime: startTime,
-                                );
-                                if (picked != null) {
-                                  setModalState(() {
-                                    startTime = picked;
-                                  });
-                                }
-                              },
-                              child: InputDecorator(
-                                decoration: InputDecoration(
-                                  labelText: '시작 시간',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.lg,
-                                    ),
-                                  ),
-                                  suffixIcon: const Icon(
-                                    Icons.access_time,
-                                    size: 18,
-                                  ),
-                                ),
-                                child: Text(
-                                  '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
-                                  style: AppTypography.bodyMedium,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.space3),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () async {
-                                final picked = await showTimePicker(
-                                  context: context,
-                                  initialTime: endTime,
-                                );
-                                if (picked != null) {
-                                  setModalState(() {
-                                    endTime = picked;
-                                  });
-                                }
-                              },
-                              child: InputDecorator(
-                                decoration: InputDecoration(
-                                  labelText: '종료 시간',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.lg,
-                                    ),
-                                  ),
-                                  suffixIcon: const Icon(
-                                    Icons.access_time,
-                                    size: 18,
-                                  ),
-                                ),
-                                child: Text(
-                                  '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
-                                  style: AppTypography.bodyMedium,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.space3),
-                    ],
-
-                    // 참석자 선택
-                    Consumer<AdminProvider>(
-                      builder: (context, adminProv, _) {
-                        final members = adminProv.companyMembers
-                            .where((u) => u.status == 'active')
-                            .toList();
-                        if (members.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: AppSpacing.space4),
+                        // 헤더
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '참석자 (${selectedParticipantIds.length}명 선택)',
+                              '일정 등록',
+                              style: AppTypography.heading5.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: '닫기',
+                              onPressed: () => Navigator.pop(context),
+                              icon: Icon(
+                                Icons.close,
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(AppSpacing.space4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 제목
+                          SeedTextField(
+                            label: '제목 *',
+                            controller: titleController,
+                            placeholder: '일정 제목을 입력하세요',
+                          ),
+                          const SizedBox(height: AppSpacing.space3),
+
+                          // 내용
+                          SeedTextField(
+                            label: '내용',
+                            controller: contentController,
+                            placeholder: '일정 내용을 입력하세요',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: AppSpacing.space3),
+
+                          // 일정 구분 — 기본 4종 + 기관 커스텀 구분. 커스텀 구분을
+                          // 고르면 그 구분의 색이 아래 색상에 바로 적용된다.
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedCategory,
+                                  decoration: InputDecoration(
+                                    labelText: '일정 구분',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.lg,
+                                      ),
+                                    ),
+                                  ),
+                                  items: [
+                                    // 기관 설정이 로드되면 이름 변경·숨김을 반영하고,
+                                    // 아니면 하드코딩 4종으로 동작한다
+                                    if (baseCategories.isEmpty) ...[
+                                      const DropdownMenuItem(
+                                        value: 'MEETING',
+                                        child: Text('회의'),
+                                      ),
+                                      const DropdownMenuItem(
+                                        value: 'EVENT',
+                                        child: Text('행사'),
+                                      ),
+                                      const DropdownMenuItem(
+                                        value: 'TRAINING',
+                                        child: Text('교육'),
+                                      ),
+                                      const DropdownMenuItem(
+                                        value: 'OTHER',
+                                        child: Text('기타'),
+                                      ),
+                                    ] else
+                                      for (final base in baseCategories.where(
+                                        (c) =>
+                                            !c.hidden ||
+                                            c.category == selectedCategory,
+                                      ))
+                                        DropdownMenuItem(
+                                          value: base.category,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                width: 10,
+                                                height: 10,
+                                                decoration: BoxDecoration(
+                                                  color: colorFromHex(base.color) ??
+                                                      AppSemanticColors
+                                                          .interactivePrimaryDefault,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                width: AppSpacing.space2,
+                                              ),
+                                              Text(base.name),
+                                            ],
+                                          ),
+                                        ),
+                                    for (final label in customLabels)
+                                      DropdownMenuItem(
+                                        value: 'label:${label.id}',
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 10,
+                                              height: 10,
+                                              decoration: BoxDecoration(
+                                                color: colorFromHex(label.color) ??
+                                                    AppSemanticColors
+                                                        .interactivePrimaryDefault,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: AppSpacing.space2,
+                                            ),
+                                            Text(label.name),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                  onChanged: (value) {
+                                    setModalState(() {
+                                      final wasLabel = selectedCategory.startsWith(
+                                        'label:',
+                                      );
+                                      selectedCategory = value ?? 'MEETING';
+                                      if (value != null &&
+                                          value.startsWith('label:')) {
+                                        final id = int.tryParse(
+                                          value.substring(6),
+                                        );
+                                        for (final label in customLabels) {
+                                          if (label.id == id) {
+                                            selectedColorHex = label.color;
+                                            break;
+                                          }
+                                        }
+                                      } else if (wasLabel) {
+                                        // 커스텀 구분에서 기본 구분으로 돌아오면
+                                        // 데려왔던 구분색도 내려놓는다
+                                        selectedColorHex = '';
+                                      }
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.space2),
+                              SeedButton(
+                                label: '구분 관리',
+                                variant: SeedButtonVariant.neutralOutline,
+                                size: SeedButtonSize.small,
+                                onPressed: () {
+                                  _showScheduleLabelManageSheet(
+                                    companyId: companyId.toString(),
+                                    onLabelsChanged: (labels) {
+                                      customLabels = labels;
+                                      // 고른 구분이 삭제됐으면 기본값으로 되돌린다
+                                      if (selectedCategory.startsWith('label:') &&
+                                          !labels.any(
+                                            (l) =>
+                                                'label:${l.id}' == selectedCategory,
+                                          )) {
+                                        selectedCategory = 'MEETING';
+                                      }
+                                      modalSetState?.call(() {});
+                                    },
+                                    onBaseCategoriesChanged: (categories) {
+                                      baseCategories = categories;
+                                      // 고른 기본 구분이 숨겨졌으면 첫 보이는 구분으로
+                                      if (!selectedCategory.startsWith('label:')) {
+                                        final current = categories
+                                            .where(
+                                              (c) => c.category == selectedCategory,
+                                            )
+                                            .toList();
+                                        if (current.isNotEmpty &&
+                                            current.first.hidden) {
+                                          final visible = categories
+                                              .where((c) => !c.hidden)
+                                              .toList();
+                                          if (visible.isNotEmpty) {
+                                            selectedCategory =
+                                                visible.first.category;
+                                          }
+                                        }
+                                      }
+                                      modalSetState?.call(() {});
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.space3),
+
+                          // 색상 — 기본 구분일 때만. 커스텀 구분은 자기 색이 곧 일정
+                          // 색이라 따로 고를 게 없다 (다른 색은 구분 관리에서 바꾼다).
+                          if (!selectedCategory.startsWith('label:')) ...[
+                            Text(
+                              '색상',
                               style: AppTypography.labelLarge.copyWith(
                                 color: AppSemanticColors.textPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: AppSpacing.space2),
-                            Container(
-                              constraints: const BoxConstraints(maxHeight: 150),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: AppSemanticColors.borderDefault,
+                            Wrap(
+                              spacing: AppSpacing.space2,
+                              runSpacing: AppSpacing.space2,
+                              children: [
+                                _buildScheduleColorSwatch(
+                                  color: null,
+                                  isSelected: selectedColorHex.isEmpty,
+                                  tooltip: '색상 없음',
+                                  onTap: () {
+                                    setModalState(() {
+                                      selectedColorHex = '';
+                                    });
+                                  },
                                 ),
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.lg,
-                                ),
-                              ),
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: members.length,
-                                itemBuilder: (context, index) {
-                                  final member = members[index];
-                                  final isSelected = selectedParticipantIds
-                                      .contains(member.id.toString());
-                                  return CheckboxListTile(
-                                    dense: true,
-                                    visualDensity: VisualDensity.compact,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.space2,
-                                    ),
-                                    title: Text(
-                                      member.name,
-                                      style: AppTypography.bodySmall,
-                                    ),
-                                    subtitle: Text(
-                                      member.role == 'caregiver'
-                                          ? '요양보호사'
-                                          : '사무직',
-                                      style: AppTypography.caption.copyWith(
-                                        color: AppSemanticColors.textTertiary,
-                                      ),
-                                    ),
-                                    value: isSelected,
-                                    onChanged: (checked) {
+                                for (final option in ScheduleColorPalette.values)
+                                  _buildScheduleColorSwatch(
+                                    color: option.color,
+                                    isSelected: selectedColorHex == option.hex,
+                                    tooltip: option.name,
+                                    onTap: () {
                                       setModalState(() {
-                                        if (checked == true) {
-                                          selectedParticipantIds.add(
-                                            member.id.toString(),
-                                          );
-                                        } else {
-                                          selectedParticipantIds.remove(
-                                            member.id.toString(),
-                                          );
-                                        }
+                                        selectedColorHex = option.hex;
                                       });
                                     },
-                                    activeColor: AppSemanticColors
-                                        .interactivePrimaryDefault,
-                                  );
-                                },
-                              ),
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: AppSpacing.space3),
                           ],
-                        );
-                      },
-                    ),
 
-                    // 알림 발송
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '알림 발송',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
+                          // 장소
+                          SeedTextField(
+                            label: '장소',
+                            controller: locationController,
+                            placeholder: '장소를 입력하세요',
                           ),
-                        ),
-                        Switch(
-                          value: sendNotification,
-                          onChanged: (value) {
-                            setModalState(() {
-                              sendNotification = value;
-                            });
-                          },
-                          activeTrackColor:
-                              AppSemanticColors.interactivePrimaryDefault,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space4),
+                          const SizedBox(height: AppSpacing.space3),
 
-                    // 등록 버튼
-                    SizedBox(
-                      width: double.infinity,
-                      child: SeedButton(
-                        label: '등록',
-                        variant: SeedButtonVariant.brandSolid,
-                        size: SeedButtonSize.large,
-                        onPressed: () async {
-                          if (titleController.text.trim().isEmpty) {
-                            AppSnackBar.showWarning(context,
-                                message: '제목을 입력해주세요');
-                            return;
-                          }
-
-                          final authProvider = context.read<AuthProvider>();
-                          final scheduleProvider = context
-                              .read<ScheduleProvider>();
-                          final companyId =
-                              authProvider.currentUser?.company?.id ?? '1';
-
-                          final startDateStr =
-                              '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
-                          final endDateStr =
-                              '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
-
-                          // 커스텀 구분은 category 대신 labelId로 보낸다
-                          // (서버 category는 OTHER로 채움 — 웹과 같은 계약)
-                          final isCustomLabel = selectedCategory.startsWith(
-                            'label:',
-                          );
-                          final scheduleData = <String, dynamic>{
-                            'title': titleController.text.trim(),
-                            'content': contentController.text.trim().isEmpty
-                                ? null
-                                : contentController.text.trim(),
-                            'category': isCustomLabel
-                                ? 'OTHER'
-                                : selectedCategory,
-                            if (isCustomLabel)
-                              'labelId': int.tryParse(
-                                selectedCategory.substring(6),
+                          // 종일 여부
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '종일',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                ),
                               ),
-                            'color': selectedColorHex,
-                            'location': locationController.text.trim().isEmpty
-                                ? null
-                                : locationController.text.trim(),
-                            'startDate': startDateStr,
-                            'endDate': endDateStr,
-                            'isAllDay': isAllDay,
-                            'sendNotification': sendNotification,
-                            if (selectedParticipantIds.isNotEmpty)
-                              'participantIds': selectedParticipantIds
-                                  .map((id) => int.tryParse(id) ?? 0)
-                                  .toList(),
-                          };
+                              Switch(
+                                value: isAllDay,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    isAllDay = value;
+                                  });
+                                },
+                                activeTrackColor:
+                                    AppSemanticColors.interactivePrimaryDefault,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.space2),
 
-                          if (!isAllDay) {
-                            scheduleData['startTime'] =
-                                '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}:00';
-                            scheduleData['endTime'] =
-                                '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}:00';
-                          }
+                          // 시작일 / 종료일
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: startDate,
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime(2030),
+                                    );
+                                    if (picked != null) {
+                                      setModalState(() {
+                                        startDate = picked;
+                                        if (endDate.isBefore(startDate)) {
+                                          endDate = startDate;
+                                        }
+                                      });
+                                    }
+                                  },
+                                  child: InputDecorator(
+                                    decoration: InputDecoration(
+                                      labelText: '시작일',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppBorderRadius.lg,
+                                        ),
+                                      ),
+                                      suffixIcon: const Icon(
+                                        Icons.calendar_today,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '${startDate.month}/${startDate.day}',
+                                      style: AppTypography.bodyMedium,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.space3),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: endDate,
+                                      firstDate: startDate,
+                                      lastDate: DateTime(2030),
+                                    );
+                                    if (picked != null) {
+                                      setModalState(() {
+                                        endDate = picked;
+                                      });
+                                    }
+                                  },
+                                  child: InputDecorator(
+                                    decoration: InputDecoration(
+                                      labelText: '종료일',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppBorderRadius.lg,
+                                        ),
+                                      ),
+                                      suffixIcon: const Icon(
+                                        Icons.calendar_today,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '${endDate.month}/${endDate.day}',
+                                      style: AppTypography.bodyMedium,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.space3),
 
-                          Navigator.pop(context);
+                          // 시간 선택 (종일이 아닌 경우)
+                          if (!isAllDay) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final picked = await showTimePicker(
+                                        context: context,
+                                        initialTime: startTime,
+                                      );
+                                      if (picked != null) {
+                                        setModalState(() {
+                                          startTime = picked;
+                                        });
+                                      }
+                                    },
+                                    child: InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: '시작 시간',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBorderRadius.lg,
+                                          ),
+                                        ),
+                                        suffixIcon: const Icon(
+                                          Icons.access_time,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
+                                        style: AppTypography.bodyMedium,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.space3),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final picked = await showTimePicker(
+                                        context: context,
+                                        initialTime: endTime,
+                                      );
+                                      if (picked != null) {
+                                        setModalState(() {
+                                          endTime = picked;
+                                        });
+                                      }
+                                    },
+                                    child: InputDecorator(
+                                      decoration: InputDecoration(
+                                        labelText: '종료 시간',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBorderRadius.lg,
+                                          ),
+                                        ),
+                                        suffixIcon: const Icon(
+                                          Icons.access_time,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
+                                        style: AppTypography.bodyMedium,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.space3),
+                          ],
 
-                          final success = await scheduleProvider.createSchedule(
-                            companyId: companyId.toString(),
-                            scheduleData: scheduleData,
-                          );
+                          // 참석자 선택
+                          Consumer<AdminProvider>(
+                            builder: (context, adminProv, _) {
+                              final members = adminProv.companyMembers
+                                  .where((u) => u.status == 'active')
+                                  .toList();
+                              if (members.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '참석자 (${selectedParticipantIds.length}명 선택)',
+                                    style: AppTypography.labelLarge.copyWith(
+                                      color: AppSemanticColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.space2),
+                                  Container(
+                                    constraints: const BoxConstraints(maxHeight: 150),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppSemanticColors.borderDefault,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.lg,
+                                      ),
+                                    ),
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: members.length,
+                                      itemBuilder: (context, index) {
+                                        final member = members[index];
+                                        final isSelected = selectedParticipantIds
+                                            .contains(member.id.toString());
+                                        return CheckboxListTile(
+                                          dense: true,
+                                          visualDensity: VisualDensity.compact,
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.space2,
+                                          ),
+                                          title: Text(
+                                            member.name,
+                                            style: AppTypography.bodySmall,
+                                          ),
+                                          subtitle: Text(
+                                            member.role == 'caregiver'
+                                                ? '요양보호사'
+                                                : '사무직',
+                                            style: AppTypography.caption.copyWith(
+                                              color: AppSemanticColors.textTertiary,
+                                            ),
+                                          ),
+                                          value: isSelected,
+                                          onChanged: (checked) {
+                                            setModalState(() {
+                                              if (checked == true) {
+                                                selectedParticipantIds.add(
+                                                  member.id.toString(),
+                                                );
+                                              } else {
+                                                selectedParticipantIds.remove(
+                                                  member.id.toString(),
+                                                );
+                                              }
+                                            });
+                                          },
+                                          activeColor: AppSemanticColors
+                                              .interactivePrimaryDefault,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.space3),
+                                ],
+                              );
+                            },
+                          ),
 
-                          if (mounted) {
-                            if (success) {
-                              AppSnackBar.showSuccess(context,
-                                  message: '일정이 등록되었습니다');
-                            } else {
-                              AppSnackBar.showError(context,
-                                  message: '일정 등록에 실패했습니다');
-                            }
-                          }
-                        },
+                          // 알림 발송
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '알림 발송',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                ),
+                              ),
+                              Switch(
+                                value: sendNotification,
+                                onChanged: (value) {
+                                  setModalState(() {
+                                    sendNotification = value;
+                                  });
+                                },
+                                activeTrackColor:
+                                    AppSemanticColors.interactivePrimaryDefault,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.space4),
+
+                          // 등록 버튼
+                          SizedBox(
+                            width: double.infinity,
+                            child: SeedButton(
+                              label: '등록',
+                              variant: SeedButtonVariant.brandSolid,
+                              size: SeedButtonSize.large,
+                              onPressed: () async {
+                                if (titleController.text.trim().isEmpty) {
+                                  AppSnackBar.showWarning(context,
+                                      message: '제목을 입력해주세요');
+                                  return;
+                                }
+
+                                final authProvider = context.read<AuthProvider>();
+                                final scheduleProvider = context
+                                    .read<ScheduleProvider>();
+                                final companyId =
+                                    authProvider.currentUser?.company?.id ?? '1';
+
+                                final startDateStr =
+                                    '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+                                final endDateStr =
+                                    '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+
+                                // 커스텀 구분은 category 대신 labelId로 보낸다
+                                // (서버 category는 OTHER로 채움 — 웹과 같은 계약)
+                                final isCustomLabel = selectedCategory.startsWith(
+                                  'label:',
+                                );
+                                final scheduleData = <String, dynamic>{
+                                  'title': titleController.text.trim(),
+                                  'content': contentController.text.trim().isEmpty
+                                      ? null
+                                      : contentController.text.trim(),
+                                  'category': isCustomLabel
+                                      ? 'OTHER'
+                                      : selectedCategory,
+                                  if (isCustomLabel)
+                                    'labelId': int.tryParse(
+                                      selectedCategory.substring(6),
+                                    ),
+                                  'color': selectedColorHex,
+                                  'location': locationController.text.trim().isEmpty
+                                      ? null
+                                      : locationController.text.trim(),
+                                  'startDate': startDateStr,
+                                  'endDate': endDateStr,
+                                  'isAllDay': isAllDay,
+                                  'sendNotification': sendNotification,
+                                  if (selectedParticipantIds.isNotEmpty)
+                                    'participantIds': selectedParticipantIds
+                                        .map((id) => int.tryParse(id) ?? 0)
+                                        .toList(),
+                                };
+
+                                if (!isAllDay) {
+                                  scheduleData['startTime'] =
+                                      '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}:00';
+                                  scheduleData['endTime'] =
+                                      '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}:00';
+                                }
+
+                                Navigator.pop(context);
+
+                                final success = await scheduleProvider.createSchedule(
+                                  companyId: companyId.toString(),
+                                  scheduleData: scheduleData,
+                                );
+
+                                if (mounted) {
+                                  if (success) {
+                                    AppSnackBar.showSuccess(context,
+                                        message: '일정이 등록되었습니다');
+                                  } else {
+                                    AppSnackBar.showError(context,
+                                        message: '일정 등록에 실패했습니다');
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.space2),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space2),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -2483,6 +2561,7 @@ class _CalendarScreenState extends State<CalendarScreen>
           top: Radius.circular(AppBorderRadius.xl2),
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -2649,313 +2728,338 @@ class _CalendarScreenState extends State<CalendarScreen>
 
             return Padding(
               padding: EdgeInsets.only(
-                left: AppSpacing.space4,
-                right: AppSpacing.space4,
-                top: AppSpacing.space4,
-                bottom:
-                    MediaQuery.of(context).viewInsets.bottom +
-                    AppSpacing.space4,
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: AppSpacing.space10,
-                        height: AppSpacing.space1,
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.borderDefault,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.sm,
-                          ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 시트 제목 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선).
+                  // 내용을 내려도 제목은 그 자리에 남는다
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: AppSemanticColors.subheaderBackground,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: AppSemanticColors.subheaderBorder,
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                      AppSpacing.space2,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '일정 구분 관리',
-                          style: AppTypography.heading5.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                            fontWeight: FontWeight.bold,
+                        Center(
+                          child: Container(
+                            width: AppSpacing.space10,
+                            height: AppSpacing.space1,
+                            decoration: BoxDecoration(
+                              color: AppSemanticColors.borderDefault,
+                              borderRadius: BorderRadius.circular(
+                                AppBorderRadius.sm,
+                              ),
+                            ),
                           ),
                         ),
-                        IconButton(
-                          tooltip: '닫기',
-                          onPressed: () => Navigator.pop(sheetContext),
-                          icon: Icon(
-                            Icons.close,
+                        const SizedBox(height: AppSpacing.space4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '일정 구분 관리',
+                              style: AppTypography.heading5.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: '닫기',
+                              onPressed: () => Navigator.pop(sheetContext),
+                              icon: Icon(
+                                Icons.close,
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '구분을 고르면 일정에 그 색이 자동으로 적용됩니다',
+                          style: AppTypography.bodySmall.copyWith(
                             color: AppSemanticColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
-                    Text(
-                      '구분을 고르면 일정에 그 색이 자동으로 적용됩니다',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-
-    // 기본 구분 — 이름·색 변경과 숨김만 (기존 일정이 물고 있어 삭제는 없다)
-                    if (baseCats.isNotEmpty) ...[
-                      Text(
-                        '기본 구분',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      for (final base in baseCats)
-                        Opacity(
-                          opacity: base.hidden ? 0.45 : 1,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.space1,
+                  ),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(AppSpacing.space4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 기본 구분 — 이름·색 변경과 숨김만 (기존 일정이 물고 있어 삭제는 없다)
+                          if (baseCats.isNotEmpty) ...[
+                            Text(
+                              '기본 구분',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: AppSemanticColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 14,
-                                  height: 14,
-                                  decoration: BoxDecoration(
-                                    color: colorFromHex(base.color) ??
-                                        AppSemanticColors
-                                            .interactivePrimaryDefault,
-                                    shape: BoxShape.circle,
+                            for (final base in baseCats)
+                              Opacity(
+                                opacity: base.hidden ? 0.45 : 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: AppSpacing.space1,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 14,
+                                        height: 14,
+                                        decoration: BoxDecoration(
+                                          color: colorFromHex(base.color) ??
+                                              AppSemanticColors
+                                                  .interactivePrimaryDefault,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.space3),
+                                      Expanded(
+                                        child: Text(
+                                          base.hidden
+                                              ? '${base.name} (숨김)'
+                                              : base.name,
+                                          style: AppTypography.bodyMedium.copyWith(
+                                            color: AppSemanticColors.textPrimary,
+                                            fontWeight:
+                                                editingBase == base.category
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ),
+                                      if (base.customized)
+                                        IconButton(
+                                          onPressed: isSaving
+                                              ? null
+                                              : () => resetBase(base),
+                                          icon: Icon(
+                                            Icons.restart_alt,
+                                            size: 20,
+                                            color: AppSemanticColors.textSecondary,
+                                          ),
+                                          tooltip: '기본값으로 되돌리기',
+                                        ),
+                                      IconButton(
+                                        onPressed: isSaving
+                                            ? null
+                                            : () {
+                                                setSheetState(() {
+                                                  editingId = null;
+                                                  editingBase = base.category;
+                                                  nameController.text = base.name;
+                                                  colorHex = base.color;
+                                                });
+                                              },
+                                        icon: Icon(
+                                          Icons.edit_outlined,
+                                          size: 20,
+                                          color: AppSemanticColors
+                                              .interactivePrimaryDefault,
+                                        ),
+                                        tooltip: '수정',
+                                      ),
+                                      IconButton(
+                                        onPressed: isSaving
+                                            ? null
+                                            : () => toggleBaseHidden(base),
+                                        icon: Icon(
+                                          base.hidden
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                          size: 20,
+                                          color: AppSemanticColors.textSecondary,
+                                        ),
+                                        tooltip: base.hidden ? '보이기' : '숨기기',
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: AppSpacing.space3),
-                                Expanded(
-                                  child: Text(
-                                    base.hidden
-                                        ? '${base.name} (숨김)'
-                                        : base.name,
-                                    style: AppTypography.bodyMedium.copyWith(
-                                      color: AppSemanticColors.textPrimary,
-                                      fontWeight:
-                                          editingBase == base.category
+                              ),
+                            const SizedBox(height: AppSpacing.space3),
+                            Text(
+                              '내가 만든 구분',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: AppSemanticColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+
+                          // 기존 구분 목록
+                          if (isLoading)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(AppSpacing.space4),
+                                child: CircularProgressIndicator(
+                                  color: AppSemanticColors.interactivePrimaryDefault,
+                                ),
+                              ),
+                            )
+                          else if (labels.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.space3,
+                              ),
+                              child: Text(
+                                '아직 만든 구분이 없습니다. 아래에서 추가해보세요.',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
+                            )
+                          else
+                            for (final label in labels)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.space1,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: BoxDecoration(
+                                        color: colorFromHex(label.color) ??
+                                            AppSemanticColors
+                                                .interactivePrimaryDefault,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.space3),
+                                    Expanded(
+                                      child: Text(
+                                        label.name,
+                                        style: AppTypography.bodyMedium.copyWith(
+                                          color: AppSemanticColors.textPrimary,
+                                          fontWeight: editingId == label.id
                                               ? FontWeight.bold
                                               : FontWeight.normal,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                if (base.customized)
-                                  IconButton(
-                                    onPressed: isSaving
-                                        ? null
-                                        : () => resetBase(base),
-                                    icon: Icon(
-                                      Icons.restart_alt,
-                                      size: 20,
-                                      color: AppSemanticColors.textSecondary,
+                                    IconButton(
+                                      onPressed: isSaving
+                                          ? null
+                                          : () {
+                                              setSheetState(() {
+                                                editingBase = null;
+                                                editingId = label.id;
+                                                nameController.text = label.name;
+                                                colorHex = label.color;
+                                              });
+                                            },
+                                      icon: Icon(
+                                        Icons.edit_outlined,
+                                        size: 20,
+                                        color: AppSemanticColors
+                                            .interactivePrimaryDefault,
+                                      ),
+                                      tooltip: '수정',
                                     ),
-                                    tooltip: '기본값으로 되돌리기',
-                                  ),
-                                IconButton(
-                                  onPressed: isSaving
-                                      ? null
-                                      : () {
-                                          setSheetState(() {
-                                            editingId = null;
-                                            editingBase = base.category;
-                                            nameController.text = base.name;
-                                            colorHex = base.color;
-                                          });
-                                        },
-                                  icon: Icon(
-                                    Icons.edit_outlined,
-                                    size: 20,
-                                    color: AppSemanticColors
-                                        .interactivePrimaryDefault,
-                                  ),
-                                  tooltip: '수정',
+                                    IconButton(
+                                      onPressed: isSaving
+                                          ? null
+                                          : () => remove(label),
+                                      icon: Icon(
+                                        Icons.delete_outline,
+                                        size: 20,
+                                        color: AppSemanticColors.statusErrorIcon,
+                                      ),
+                                      tooltip: '삭제',
+                                    ),
+                                  ],
                                 ),
-                                IconButton(
-                                  onPressed: isSaving
-                                      ? null
-                                      : () => toggleBaseHidden(base),
-                                  icon: Icon(
-                                    base.hidden
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                    size: 20,
-                                    color: AppSemanticColors.textSecondary,
-                                  ),
-                                  tooltip: base.hidden ? '보이기' : '숨기기',
-                                ),
-                              ],
+                              ),
+                          const SizedBox(height: AppSpacing.space3),
+
+                          // 추가/수정 폼
+                          SeedTextField(
+                            label: editingBase != null
+                                ? '기본 구분 이름 수정'
+                                : (editingId == null ? '새 구분 이름' : '구분 이름 수정'),
+                            controller: nameController,
+                            placeholder: '예: 운영, 인사, 회계, 사업',
+                          ),
+                          const SizedBox(height: AppSpacing.space3),
+                          Text(
+                            '색상',
+                            style: AppTypography.labelLarge.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                      const SizedBox(height: AppSpacing.space3),
-                      Text(
-                        '내가 만든 구분',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-
-                    // 기존 구분 목록
-                    if (isLoading)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.space4),
-                          child: CircularProgressIndicator(
-                            color: AppSemanticColors.interactivePrimaryDefault,
-                          ),
-                        ),
-                      )
-                    else if (labels.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.space3,
-                        ),
-                        child: Text(
-                          '아직 만든 구분이 없습니다. 아래에서 추가해보세요.',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      )
-                    else
-                      for (final label in labels)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.space1,
-                          ),
-                          child: Row(
+                          const SizedBox(height: AppSpacing.space2),
+                          Wrap(
+                            spacing: AppSpacing.space2,
+                            runSpacing: AppSpacing.space2,
                             children: [
-                              Container(
-                                width: 14,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  color: colorFromHex(label.color) ??
-                                      AppSemanticColors
-                                          .interactivePrimaryDefault,
-                                  shape: BoxShape.circle,
+                              for (final option in ScheduleColorPalette.values)
+                                _buildScheduleColorSwatch(
+                                  color: option.color,
+                                  isSelected: colorHex == option.hex,
+                                  tooltip: option.name,
+                                  onTap: () {
+                                    setSheetState(() {
+                                      colorHex = option.hex;
+                                    });
+                                  },
                                 ),
-                              ),
-                              const SizedBox(width: AppSpacing.space3),
-                              Expanded(
-                                child: Text(
-                                  label.name,
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textPrimary,
-                                    fontWeight: editingId == label.id
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.space4),
+                          Row(
+                            children: [
+                              if (editingId != null || editingBase != null) ...[
+                                Expanded(
+                                  child: SeedButton(
+                                    label: '취소',
+                                    variant: SeedButtonVariant.neutralOutline,
+                                    size: SeedButtonSize.large,
+                                    onPressed: isSaving
+                                        ? null
+                                        : () => setSheetState(resetForm),
                                   ),
                                 ),
-                              ),
-                              IconButton(
-                                onPressed: isSaving
-                                    ? null
-                                    : () {
-                                        setSheetState(() {
-                                          editingBase = null;
-                                          editingId = label.id;
-                                          nameController.text = label.name;
-                                          colorHex = label.color;
-                                        });
-                                      },
-                                icon: Icon(
-                                  Icons.edit_outlined,
-                                  size: 20,
-                                  color: AppSemanticColors
-                                      .interactivePrimaryDefault,
+                                const SizedBox(width: AppSpacing.space2),
+                              ],
+                              Expanded(
+                                child: SeedButton(
+                                  label: (editingId == null && editingBase == null)
+                                      ? '추가'
+                                      : '수정 저장',
+                                  variant: SeedButtonVariant.brandSolid,
+                                  size: SeedButtonSize.large,
+                                  isLoading: isSaving,
+                                  onPressed: isSaving ? null : save,
                                 ),
-                                tooltip: '수정',
-                              ),
-                              IconButton(
-                                onPressed: isSaving
-                                    ? null
-                                    : () => remove(label),
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  size: 20,
-                                  color: AppSemanticColors.statusErrorIcon,
-                                ),
-                                tooltip: '삭제',
                               ),
                             ],
                           ),
-                        ),
-                    const SizedBox(height: AppSpacing.space3),
-
-                    // 추가/수정 폼
-                    SeedTextField(
-                      label: editingBase != null
-                          ? '기본 구분 이름 수정'
-                          : (editingId == null ? '새 구분 이름' : '구분 이름 수정'),
-                      controller: nameController,
-                      placeholder: '예: 운영, 인사, 회계, 사업',
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-                    Text(
-                      '색상',
-                      style: AppTypography.labelLarge.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                        fontWeight: FontWeight.w600,
+                          const SizedBox(height: AppSpacing.space2),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space2),
-                    Wrap(
-                      spacing: AppSpacing.space2,
-                      runSpacing: AppSpacing.space2,
-                      children: [
-                        for (final option in ScheduleColorPalette.values)
-                          _buildScheduleColorSwatch(
-                            color: option.color,
-                            isSelected: colorHex == option.hex,
-                            tooltip: option.name,
-                            onTap: () {
-                              setSheetState(() {
-                                colorHex = option.hex;
-                              });
-                            },
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space4),
-                    Row(
-                      children: [
-                        if (editingId != null || editingBase != null) ...[
-                          Expanded(
-                            child: SeedButton(
-                              label: '취소',
-                              variant: SeedButtonVariant.neutralOutline,
-                              size: SeedButtonSize.large,
-                              onPressed: isSaving
-                                  ? null
-                                  : () => setSheetState(resetForm),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.space2),
-                        ],
-                        Expanded(
-                          child: SeedButton(
-                            label: (editingId == null && editingBase == null)
-                                ? '추가'
-                                : '수정 저장',
-                            variant: SeedButtonVariant.brandSolid,
-                            size: SeedButtonSize.large,
-                            isLoading: isSaving,
-                            onPressed: isSaving ? null : save,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space2),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },

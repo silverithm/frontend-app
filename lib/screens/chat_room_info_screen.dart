@@ -154,9 +154,6 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             color: AppSemanticColors.textPrimary,
           ),
         ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
-        foregroundColor: AppSemanticColors.textPrimary,
-        iconTheme: IconThemeData(color: AppSemanticColors.textPrimary),
         elevation: 0,
       ),
       body: Column(
@@ -211,14 +208,24 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
 
           Divider(height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
 
-          // 탭바
+          // 탭바 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
           Container(
-            color: AppSemanticColors.surfaceDefault,
+            decoration: const BoxDecoration(
+              color: AppSemanticColors.subheaderBackground,
+              border: Border(
+                bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
+              ),
+            ),
             child: TabBar(
               controller: _tabController,
-              labelColor: AppSemanticColors.interactivePrimaryDefault,
-              unselectedLabelColor: AppSemanticColors.textTertiary,
-              indicatorColor: AppSemanticColors.interactivePrimaryDefault,
+              labelColor: AppSemanticColors.headerForeground,
+              unselectedLabelColor: AppSemanticColors.textSecondary,
+              indicatorColor: AppSemanticColors.sectionMarker,
+              labelStyle: AppTypography.labelLarge.copyWith(
+                fontWeight: AppTypography.fontWeightBold,
+              ),
+              unselectedLabelStyle: AppTypography.labelLarge,
+              dividerColor: AppColors.transparent,
               tabs: [
                 Tab(text: '참가자 (${widget.room.participantCount})'),
                 const Tab(text: '미디어'),

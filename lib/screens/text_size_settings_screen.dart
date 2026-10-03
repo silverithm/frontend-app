@@ -26,7 +26,6 @@ class TextSizeSettingsScreen extends StatelessWidget {
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('글자 크기'),
-        backgroundColor: AppSemanticColors.surfaceDefault,
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.space4),

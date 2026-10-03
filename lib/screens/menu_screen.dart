@@ -146,7 +146,6 @@ class MenuScreen extends StatelessWidget {
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
         title: Text('전체', style: AppTypography.heading5),
-        backgroundColor: AppSemanticColors.backgroundPrimary,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),

@@ -134,10 +134,7 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('게시글',
-            style: AppTypography.heading6
-                .copyWith(color: AppSemanticColors.textInverse)),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
+            style: AppTypography.heading6),
         actions: [
           if (post?['isMine'] == true) ...[
             IconButton(
