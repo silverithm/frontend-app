@@ -128,11 +128,9 @@ class _ElderCareDetailScreenState extends State<ElderCareDetailScreen> {
             _Section(
               title: '투약',
               rows: [
-                // 빈 값이면 '미입력' — '없음'으로 적으면 아직 안 적은 것이 '약 없음'으로 읽힌다
-                _Row(
-                  '투약 시간',
-                  p.medicationSummary.isEmpty ? '미입력' : p.medicationSummary,
-                ),
+                // 빈 값은 그대로 넘긴다 — '—'로 보이고 입력 완성도에서 미입력으로 센다
+                // ('투약 없음'으로 적으면 아직 안 적은 것이 '약 없음'으로 읽힌다)
+                _Row('투약 시간', p.medicationSummary),
                 if (p.medNote != null) _Row('특이사항', p.medNote!),
               ],
             ),
