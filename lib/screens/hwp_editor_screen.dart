@@ -186,9 +186,11 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
           if (widget.allowSave && _documentLoaded)
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.space2),
+              // 상단 바가 진한 틸이라 브랜드(민트) 버튼은 바 위에서 형광처럼 뜬다 — 밝은 버튼으로
               child: SeedButton(
                 label: _isSaving ? '저장 중...' : widget.saveLabel,
                 prefixIcon: Icons.check,
+                variant: SeedButtonVariant.neutralWeak,
                 size: SeedButtonSize.small,
                 isLoading: _isSaving,
                 onPressed: _save,

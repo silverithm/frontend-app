@@ -71,7 +71,7 @@ class _ElderCareDetailScreenState extends State<ElderCareDetailScreen> {
               child: Text(
                 '수정',
                 style: AppTypography.buttonMedium.copyWith(
-                  color: AppSemanticColors.brandDefault,
+                  color: AppSemanticColors.headerForeground,
                 ),
               ),
             ),

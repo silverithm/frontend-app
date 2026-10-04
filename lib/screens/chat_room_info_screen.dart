@@ -193,7 +193,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
         title: Text(
           '채팅방 정보',
           style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textPrimary,
+            color: AppSemanticColors.headerForeground,
           ),
         ),
         elevation: 0,
@@ -278,7 +278,8 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             ),
             child: TabBar(
               controller: _tabController,
-              labelColor: AppSemanticColors.headerForeground,
+              // 연한 안쪽 머리(subheader) 위라 상단 바 글자색(흰색)이 아니라 본문 글자색
+              labelColor: AppSemanticColors.textPrimary,
               unselectedLabelColor: AppSemanticColors.textSecondary,
               indicatorColor: AppSemanticColors.sectionMarker,
               labelStyle: AppTypography.labelLarge.copyWith(

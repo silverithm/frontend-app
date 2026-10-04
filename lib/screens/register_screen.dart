@@ -542,7 +542,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           tooltip: '뒤로 가기',
-          icon: Icon(Icons.arrow_back, color: AppSemanticColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: AppSemanticColors.headerForeground),
           onPressed: () => Navigator.pop(context),
         ),
       ),

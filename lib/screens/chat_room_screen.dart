@@ -3728,7 +3728,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 _roomName,
                 style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppSemanticColors.textPrimary,
+                  color: AppSemanticColors.headerForeground,
                 ),
               ),
               Consumer<ChatProvider>(

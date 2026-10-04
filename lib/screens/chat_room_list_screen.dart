@@ -148,7 +148,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.add, color: AppSemanticColors.textPrimary),
+            icon: Icon(Icons.add, color: AppSemanticColors.headerForeground),
             onPressed: _navigateToCreateChatRoom,
             tooltip: '새 채팅방',
           ),

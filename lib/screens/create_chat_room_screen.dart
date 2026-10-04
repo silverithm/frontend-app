@@ -142,7 +142,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
         title: Text(
           '새 채팅방',
           style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.textPrimary,
+            color: AppSemanticColors.headerForeground,
           ),
         ),
         elevation: 0,
@@ -151,7 +151,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
             padding: const EdgeInsets.only(right: AppSpacing.space2),
             child: SeedButton(
               label: '만들기',
-              variant: SeedButtonVariant.brandSolid,
+              variant: SeedButtonVariant.neutralWeak,
               size: SeedButtonSize.small,
               isDisabled: _isLoading,
               onPressed: _isLoading ? null : _createChatRoom,

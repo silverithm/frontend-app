@@ -148,6 +148,15 @@ class AppColors {
   static const Color teal800 = Color(0xFF128A67);
   static const Color teal900 = Color(0xFF0B5C45);
 
+  // Care teal — 웹(관리자)과 같은 케어브이 기본 틸 #0F766E 계열. 상단 바·화면 안쪽 머리 전용.
+  // 위 민트 스케일(#20C997)의 밝은 칸(#79E4BE)을 바탕에 깔면 형광처럼 떠 보여서(2026-10-04 시안 B 승인)
+  // 머리줄만 이 색으로 옮겼다.
+  static const Color careTeal = Color(0xFF0F766E);
+  static const Color careTealDeep = Color(0xFF0B5D57);
+  static const Color careTealInkSoft = Color(0xFFE1F0EE); // 진한 틸 위 보조 글자 (4.7:1)
+  static const Color careTealTint = Color(0xFFF1F7F6); // 기본 틸 6%
+  static const Color careTealTintLine = Color(0xFFC3DDDB); // 기본 틸 25%
+
   // Pink palette (하위 호환 유지)
   static const Color pink50 = Color(0xFFFDF2F8);
   static const Color pink100 = Color(0xFFFCE7F3);
@@ -207,19 +216,19 @@ class AppSemanticColors {
   static const Color textLink = AppColors.teal700; // fg.brand-contrast
   static const Color textError = AppColors.red600;
 
-  // Header — 화면 상단 바. 틸 바탕 + 진한 틸 하단선으로 본문과 확실히 갈라 놓는다
-  // (2026-10 사용자 승인 시안 D). 틸 바탕 위 글자는 대비 때문에 회색 대신 거의 검정을 쓴다:
-  // gray700은 4.3:1로 기준 미달이라 보조 글자도 gray800(8.6:1).
-  static const Color headerBackground = AppColors.teal300;
-  static const Color headerBorder = AppColors.teal600;
-  static const Color headerForeground = AppColors.gray900;
-  static const Color headerForegroundMuted = AppColors.gray800;
-  static const Color headerTabIndicator = AppColors.teal900;
+  // Header — 화면 상단 바. 웹과 같은 케어브이 기본 틸 바탕 + 흰 글자, 아래 한 단계 진한 틸 선.
+  // (2026-10-04 시안 B 승인 — 그 전 민트 #79E4BE 바탕은 형광처럼 떠 보였다.)
+  // 대비: 흰 글자 5.5:1, 보조 글자 #E1F0EE 4.7:1. 상태표시줄 아이콘은 AppBar가 바탕 밝기로 정한다.
+  static const Color headerBackground = AppColors.careTeal;
+  static const Color headerBorder = AppColors.careTealDeep;
+  static const Color headerForeground = AppColors.white;
+  static const Color headerForegroundMuted = AppColors.careTealInkSoft;
+  static const Color headerTabIndicator = AppColors.white;
 
   // Subheader — 화면 안쪽 머리(카드 제목줄·필터 띠·시트 제목·달력 연월 줄).
-  // 상단 바보다 한 단계 약한 틸이라 "화면 머리 > 안쪽 머리" 위계가 보인다.
-  static const Color subheaderBackground = AppColors.teal50;
-  static const Color subheaderBorder = AppColors.teal200;
+  // 같은 기본 틸을 아주 옅게(6%) 깐 면 + 25% 선. 상단 바보다 훨씬 약해 "화면 머리 > 안쪽 머리" 위계가 보인다.
+  static const Color subheaderBackground = AppColors.careTealTint;
+  static const Color subheaderBorder = AppColors.careTealTintLine;
   // 안쪽 머리 위 글자 링크("전체보기") — 연한 틸 면 위에서 민트 글자는 1.9:1이라 진한 틸(약 7:1)
   static const Color subheaderLink = AppColors.teal900;
   // 묶음 제목 앞 세로 막대("내 업무"·"소통")

@@ -89,7 +89,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   tooltip: '새로고침',
                   icon: Icon(
                     Icons.refresh,
-                    color: AppSemanticColors.textPrimary,
+                    color: AppSemanticColors.headerForeground,
                   ),
                   onPressed: _loadData,
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/approval.dart';
@@ -372,7 +373,10 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // 인사말 머리줄 — 다른 화면 상단 바와 같은 틸 바탕 + 진한 틸 하단선.
               // 상태표시줄 뒤까지 칠하려고 SafeArea 바깥에서 색을 깐다.
-              DecoratedBox(
+              // AppBar가 아니라 상태표시줄 아이콘 밝기를 직접 정한다 — 진한 틸 위라 흰 아이콘.
+              AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle.light,
+                child: DecoratedBox(
                 decoration: const BoxDecoration(
                   color: AppSemanticColors.headerBackground,
                   border: Border(
@@ -400,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Text(
                                   '${user.name}님, 안녕하세요',
                                   style: AppTypography.heading5.copyWith(
-                                    color: AppSemanticColors.textPrimary,
+                                    color: AppSemanticColors.headerForeground,
                                     fontWeight: AppTypography.fontWeightBold,
                                   ),
                                 ),
@@ -417,12 +421,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
-                          const NotificationBell(),
+                          // 진한 틸 머리줄 위 — 흰 상자 대신 투명 바탕 + 흰 종
+                          const NotificationBell(iconColor: AppSemanticColors.headerForeground),
                         ],
                       ),
                     ],
                   ),
                 ),
+              ),
               ),
               ),
               if (_isLoading)
