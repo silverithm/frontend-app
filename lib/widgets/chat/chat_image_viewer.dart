@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'chat_photo.dart';
 
+import '../../utils/share_file.dart';
+
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
@@ -86,6 +88,33 @@ class ChatImageViewer extends StatefulWidget {
 class _ChatImageViewerState extends State<ChatImageViewer> {
   late final PageController _controller;
   late int _index;
+  // 공유할 사진을 받는 중 — 두 번 눌러 공유 창이 겹쳐 뜨지 않게
+  bool _sharing = false;
+
+  /// 지금 보고 있는 사진을 카카오톡 등 다른 앱으로 보낸다.
+  Future<void> _share(ChatImageItem item, BuildContext buttonContext) async {
+    if (_sharing) return;
+    final box = buttonContext.findRenderObject() as RenderBox?;
+    final origin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+    setState(() => _sharing = true);
+    try {
+      await shareRemoteFile(
+        url: item.imageUrl,
+        fileName: item.fileName,
+        sharePositionOrigin: origin,
+      );
+    } catch (e) {
+      debugPrint('[ChatImageViewer] 사진 공유 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('사진을 공유하지 못했습니다. 잠시 후 다시 시도해 주세요')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
 
   @override
   void initState() {
@@ -133,6 +162,24 @@ class _ChatImageViewerState extends State<ChatImageViewer> {
           ],
         ),
         actions: [
+          // 카카오톡 등 다른 앱으로 바로 보내기
+          Builder(
+            builder: (buttonContext) => IconButton(
+              onPressed:
+                  _sharing ? null : () => _share(current, buttonContext),
+              icon: _sharing
+                  ? const SizedBox(
+                      width: AppSpacing.space5,
+                      height: AppSpacing.space5,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.white,
+                      ),
+                    )
+                  : const Icon(Icons.share_outlined),
+              tooltip: '공유',
+            ),
+          ),
           if (widget.onDownload != null)
             IconButton(
               onPressed: () => widget.onDownload!(current),
