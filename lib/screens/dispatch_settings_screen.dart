@@ -910,7 +910,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                   padding: const EdgeInsets.all(AppSpacing.space6),
                   child: Text(
                     _elders.isEmpty
-                        ? '등록된 어르신이 없습니다.\n회원관리에서 먼저 등록해주세요.'
+                        ? '등록된 어르신이 없습니다.\n회원관리 > 수급자 관리에서 먼저 등록해주세요.'
                         : '이 노선에 더 추가할 어르신이 없습니다.',
                     textAlign: TextAlign.center,
                     style: AppTypography.bodyMedium.copyWith(

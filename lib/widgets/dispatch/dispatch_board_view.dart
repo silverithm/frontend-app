@@ -1032,7 +1032,7 @@ class _ElderRow extends StatelessWidget {
               ),
             ),
             Text(
-              '회원관리 연결 필요',
+              '수급자 관리 연결 필요',
               style: AppTypography.caption.copyWith(
                 color: AppSemanticColors.textTertiary,
               ),

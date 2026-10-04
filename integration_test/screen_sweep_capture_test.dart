@@ -182,7 +182,7 @@ void main() {
       '회의록': '17_meeting_minutes',
       '내 휴무': '18_my_vacation',
       '결재 서명 관리': '19_signature',
-      '회원관리': '20_user_management',
+      '종사자 관리': '20_user_management',
       '휴무 승인': '21_vacation_management',
       '결재 양식 관리': '22_approval_templates',
       '휴무 한도 설정': '23_vacation_limits',

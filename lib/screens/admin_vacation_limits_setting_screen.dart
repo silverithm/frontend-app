@@ -371,7 +371,7 @@ class _AdminVacationLimitsSettingScreenState
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space6),
           child: Text(
-            '설정할 역할이 없습니다.\n회원관리의 역할관리에서 역할을 먼저 등록해주세요.',
+            '설정할 역할이 없습니다.\n웹 회원관리 > 종사자 관리의 \'역할 관리\'에서 역할을 먼저 등록해주세요.',
             textAlign: TextAlign.center,
             style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textSecondary,

@@ -92,8 +92,8 @@ class MenuScreen extends StatelessWidget {
       if (canViewMembers)
         _MenuItem(
           icon: Icons.people_outline,
-          label: '회원관리',
-          description: '가입 승인 · 직원 목록',
+          label: '종사자 관리',
+          description: '가입 승인 · 종사자 목록',
           onTap: () => _push(context, const AdminUserManagementScreen()),
         ),
       // 전자결재 탭이 신청/관리 둘로 단순해지면서(2026-08 개편)

@@ -86,7 +86,7 @@ class _DispatchElderAttendanceTileState extends State<DispatchElderAttendanceTil
 
     if (senior.elderlyId == null) {
       return Text(
-        '회원관리 연결이 필요합니다',
+        '수급자 관리 연결이 필요합니다',
         style: AppTypography.bodySmall.copyWith(
           color: AppSemanticColors.textTertiary,
         ),
