@@ -1270,10 +1270,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     }
   }
 
-  void _showRoomInfo() {
-    Navigator.of(context).push(
+  Future<void> _showRoomInfo() async {
+    await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ChatRoomInfoScreen(room: widget.room)),
     );
+    // 정보 화면에서 이름을 바꿨을 수 있다 — 제목을 다시 그린다
+    if (mounted) setState(() {});
+  }
+
+  /// 방 이름 — 정보 화면에서 바꾸면 목록(ChatProvider)에 먼저 반영되므로 그쪽을 따른다
+  String get _roomName {
+    for (final room in context.read<ChatProvider>().chatRooms) {
+      if (room.id == widget.room.id) return room.name;
+    }
+    return widget.room.name;
   }
 
   Future<void> _confirmDeleteChatRoom() async {
@@ -3715,7 +3725,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.room.name,
+                _roomName,
                 style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppSemanticColors.textPrimary,
@@ -3752,7 +3762,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               // 기본 Material 팝업 대신 앱 공통 액션 시트 (다른 ⋮ 메뉴와 같은 문법)
               onPressed: () => showAppActionSheet(
                 context,
-                title: widget.room.name,
+                title: _roomName,
                 actions: [
                   AppSheetAction(
                     icon: Icons.info_outline,

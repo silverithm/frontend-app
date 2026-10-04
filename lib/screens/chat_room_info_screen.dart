@@ -29,9 +29,14 @@ class ChatRoomInfoScreen extends StatefulWidget {
   State<ChatRoomInfoScreen> createState() => _ChatRoomInfoScreenState();
 }
 
+/// 서버(ChatService.MAX_ROOM_NAME_LENGTH)와 같은 값
+const int _maxRoomNameLength = 50;
+
 class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  // 이름을 바꾸면 이 화면에서 바로 새 이름을 보여 준다
+  late String _roomName = widget.room.name;
 
   @override
   void initState() {
@@ -134,6 +139,43 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
     }
   }
 
+  /// 이름은 방 사람 모두의 목록에 보이므로 서버와 같은 규칙으로 가린다 —
+  /// 관리자 계정·관리자 역할 직원, 또는 방을 만든 사람만.
+  bool _canRename(AuthProvider auth) {
+    final user = auth.currentUser;
+    if (user == null) return false;
+    if (user.isAdminAccount || AdminUtils.isAdmin(user)) return true;
+    return widget.room.createdBy.isNotEmpty &&
+        widget.room.createdBy == user.chatUserId;
+  }
+
+  Future<void> _renameRoom() async {
+    final input = await AppDialog.showInput(
+      context,
+      title: '채팅방 이름 바꾸기',
+      message: '바꾼 이름은 이 방 사람 모두에게 보입니다',
+      initialValue: _roomName,
+      confirmText: '저장',
+      maxLength: _maxRoomNameLength,
+      validator: (value) =>
+          (value ?? '').trim().isEmpty ? '이름을 입력해 주세요' : null,
+    );
+    final name = input?.trim();
+    if (!mounted || name == null || name.isEmpty || name == _roomName) return;
+
+    final ok = await context.read<ChatProvider>().updateChatRoom(
+      roomId: widget.room.id,
+      name: name,
+    );
+    if (!mounted) return;
+    if (ok) {
+      setState(() => _roomName = name);
+      AppSnackBar.showSuccess(context, message: '채팅방 이름을 바꿨습니다');
+    } else {
+      AppSnackBar.showError(context, message: '이름을 바꾸지 못했습니다. 잠시 후 다시 시도해 주세요');
+    }
+  }
+
   Future<void> _inviteParticipants() async {
     // TODO: 참가자 초대 화면으로 이동
     AppSnackBar.showInfo(context, message: '참가자 초대 기능은 추후 구현됩니다');
@@ -184,11 +226,29 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                   ),
                 ),
                 const SizedBox(height: AppSpacing.space3),
-                Text(
-                  widget.room.name,
-                  style: AppTypography.heading5.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _roomName,
+                        textAlign: TextAlign.center,
+                        style: AppTypography.heading5.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (_canRename(authProvider))
+                      IconButton(
+                        tooltip: '채팅방 이름 바꾸기',
+                        onPressed: _renameRoom,
+                        icon: Icon(
+                          Icons.edit_outlined,
+                          size: AppSpacing.space5,
+                          color: AppSemanticColors.textSecondary,
+                        ),
+                      ),
+                  ],
                 ),
                 if (widget.room.description != null &&
                     widget.room.description!.isNotEmpty)
