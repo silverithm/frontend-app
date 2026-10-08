@@ -2261,6 +2261,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     // 내용은 스크롤되게 한다 — 짧은 공지는 mainAxisSize.min 덕에 지금처럼 딱 맞게 뜬다.
     AppBottomSheet.show(
       context,
+      title: '공지',
       child: SafeArea(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -2273,22 +2274,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.campaign_outlined,
-                    color: AppSemanticColors.statusInfoIcon,
-                  ),
-                  const SizedBox(width: AppSpacing.space2),
-                  Text(
-                    '공지',
-                    style: AppTypography.bodyLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.space4),
               Text(room.noticeContent ?? '', style: AppTypography.bodyMedium),
               if ((room.noticeByName ?? '').isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.space3),
@@ -2355,6 +2340,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     AppBottomSheet.show(
       context,
+      title: '대화 검색',
       height: MediaQuery.of(context).size.height * 0.75,
       child: StatefulBuilder(
         builder: (context, setSheetState) {
@@ -2664,6 +2650,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     AppBottomSheet.show(
       context,
+      title: '주고받은 파일',
       height: MediaQuery.of(context).size.height * 0.7,
       child: Consumer<ChatProvider>(
         builder: (context, provider, child) {
@@ -2673,20 +2660,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             children: [
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.space4),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.folder_outlined,
-                      color: AppSemanticColors.textSecondary,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${files.length}건',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
                     ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Text(
-                      '주고받은 파일 ${files.length}건',
-                      style: AppTypography.bodyLarge.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               const Divider(height: 1),
@@ -3653,6 +3634,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     AppBottomSheet.show(
       context,
+      title: '읽은 사람',
       child: Consumer<ChatProvider>(
         builder: (context, chatProvider, child) {
           final readers = chatProvider.messageReaders;
@@ -3672,8 +3654,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.space4),
                   child: Text(
-                    '읽은 사람 (${readers.length}명)',
-                    style: AppTypography.heading6,
+                    '${readers.length}명',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
+                    ),
                   ),
                 ),
                 if (readers.isEmpty)

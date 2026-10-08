@@ -642,21 +642,12 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
 
     final picked = await AppBottomSheet.show<User>(
       context,
+      title: '주운전자 선택',
       child: Builder(
         builder: (sheetContext) => SafeArea(
           child: ListView(
             shrinkWrap: true,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                child: Text(
-                  '주운전자 선택',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
-                ),
-              ),
               ...members.map(
                 (member) => SeedListCell(
                   title: member.name,
@@ -743,21 +734,12 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
 
     final picked = await AppBottomSheet.show<User>(
       context,
+      title: index == 0 ? '주운전자 선택' : '부$index운전자 선택',
       child: Builder(
         builder: (sheetContext) => SafeArea(
           child: ListView(
             shrinkWrap: true,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                child: Text(
-                  index == 0 ? '주운전자 선택' : '부$index운전자 선택',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
-                ),
-              ),
               ...members.map(
                 (member) => SeedListCell(
                   title: member.name,
@@ -903,6 +885,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
 
     final picked = await AppBottomSheet.show<_ElderOption>(
       context,
+      title: '어르신 선택',
       child: Builder(
         builder: (sheetContext) => SafeArea(
           child: candidates.isEmpty
@@ -921,16 +904,6 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
               : ListView(
                   shrinkWrap: true,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(AppSpacing.space4),
-                      child: Text(
-                        '어르신 선택',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                          fontWeight: AppTypography.fontWeightSemibold,
-                        ),
-                      ),
-                    ),
                     ...candidates.map(
                       (elder) => SeedListCell(
                         title: elder.name,

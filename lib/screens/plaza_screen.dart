@@ -64,6 +64,7 @@ Future<bool?> showPlazaPostEditor(
 
   final saved = await AppBottomSheet.show<bool>(
     context,
+    title: isEdit ? '글 수정' : '글 쓰기',
     isScrollControlled: true,
     child: StatefulBuilder(
       builder: (context, setSheetState) {
@@ -80,10 +81,6 @@ Future<bool?> showPlazaPostEditor(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(isEdit ? '글 수정' : '글 쓰기',
-                    style: AppTypography.heading6
-                        .copyWith(fontWeight: FontWeight.bold)),
-                const SizedBox(height: AppSpacing.space3),
                 DropdownButtonFormField<String>(
                   initialValue: board,
                   // 테두리·라벨색 등은 AppTheme.inputDecorationTheme(토큰 기반)을
@@ -917,6 +914,7 @@ Future<bool?> showPlazaLibraryEditor(
 
   final saved = await AppBottomSheet.show<bool>(
     context,
+    title: isEdit ? '자료 정보 수정' : '자료 올리기',
     isScrollControlled: true,
     child: StatefulBuilder(
       builder: (context, setSheetState) => Padding(
@@ -931,10 +929,6 @@ Future<bool?> showPlazaLibraryEditor(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(isEdit ? '자료 정보 수정' : '자료 올리기',
-                  style: AppTypography.heading6
-                      .copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: AppSpacing.space3),
               DropdownButtonFormField<String>(
                 initialValue: category,
                 // 테두리·라벨색 등은 AppTheme.inputDecorationTheme(토큰 기반)을

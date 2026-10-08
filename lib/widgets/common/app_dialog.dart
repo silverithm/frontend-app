@@ -236,9 +236,12 @@ class AppDialog {
 }
 
 class AppBottomSheet {
+  /// [title]을 주면 showAppActionSheet와 같은 연한 틸 제목 띠(손잡이가 띠 맨 위)를 그린다.
+  /// 안 주면 손잡이만 있는 시트. 모서리는 둘 다 16(xl2).
   static Future<T?> show<T>(
     BuildContext context, {
     required Widget child,
+    String? title,
     bool isDismissible = true,
     bool enableDrag = true,
     double? height,
@@ -246,6 +249,17 @@ class AppBottomSheet {
     // 명시적으로 true를 넘긴다. 안 넘기면 기존과 동일하게 height 유무로 정한다.
     bool? isScrollControlled,
   }) {
+    final hasTitle = title != null && title.isNotEmpty;
+    final handle = Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: hasTitle
+            ? AppSemanticColors.subheaderBorder
+            : AppSemanticColors.borderDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      ),
+    );
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled ?? (height != null),
@@ -254,25 +268,54 @@ class AppBottomSheet {
       backgroundColor: AppColors.transparent,
       builder: (context) => Container(
         height: height,
+        clipBehavior: Clip.antiAlias,
         decoration: const BoxDecoration(
           color: AppSemanticColors.surfaceDefault,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(AppBorderRadius.xl),
-            topRight: Radius.circular(AppBorderRadius.xl),
+            topLeft: Radius.circular(AppBorderRadius.xl2),
+            topRight: Radius.circular(AppBorderRadius.xl2),
           ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.borderDefault,
-                borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            if (hasTitle)
+              Container(
+                decoration: const BoxDecoration(
+                  color: AppSemanticColors.subheaderBackground,
+                  border: Border(
+                    bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
+                  ),
+                ),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.space5,
+                  AppSpacing.space2,
+                  AppSpacing.space5,
+                  AppSpacing.space3,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(child: handle),
+                    const SizedBox(height: AppSpacing.space3),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.heading6.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+                child: Center(child: handle),
               ),
-            ),
             Flexible(child: child),
           ],
         ),

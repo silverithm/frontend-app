@@ -508,6 +508,7 @@ class _AdminVacationManagementScreenState
   void _openFilterSheet(String title, List<Widget> Function() chips) {
     AppBottomSheet.show<void>(
       context,
+      title: title,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space4),
@@ -515,13 +516,6 @@ class _AdminVacationManagementScreenState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: AppTypography.fontWeightSemibold,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space3),
               Wrap(
                 spacing: AppSpacing.space2,
                 runSpacing: AppSpacing.space2,

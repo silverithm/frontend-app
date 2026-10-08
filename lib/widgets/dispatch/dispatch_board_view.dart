@@ -107,6 +107,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
   void _showNamesSheet(String title, List<String> names) {
     AppBottomSheet.show<void>(
       context,
+      title: title,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space4),
@@ -114,13 +115,6 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: AppTypography.fontWeightSemibold,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space2),
               Wrap(
                 spacing: AppSpacing.space2,
                 runSpacing: AppSpacing.space2,
@@ -213,6 +207,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
 
     final targetRoute = await AppBottomSheet.show<DispatchRoute>(
       context,
+      title: '${senior.name}님을 옮길 차량',
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space4),
@@ -220,13 +215,6 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${senior.name}님을 옮길 차량',
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: AppTypography.fontWeightSemibold,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space2),
               for (final route in candidates)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -254,6 +242,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
       if (!mounted) return;
       targetTripOrder = await AppBottomSheet.show<int>(
         context,
+        title: '${targetRoute.name} — 몇 회차',
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.space4),
@@ -261,13 +250,6 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '${targetRoute.name} — 몇 회차',
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space2),
                 for (final trip in const [1, 2])
                   ListTile(
                     contentPadding: EdgeInsets.zero,
