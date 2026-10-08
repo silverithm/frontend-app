@@ -54,4 +54,15 @@ void main() {
     expect(material.color, AppSemanticColors.headerBackground);
     expect(material.elevation, 0);
   });
+
+  testWidgets('상단 바 제목은 기본으로 가운데 정렬된다', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.withAppChrome(ThemeData(platform: TargetPlatform.android)),
+        home: Scaffold(appBar: AppBar(title: const Text('공지사항'))),
+      ),
+    );
+    final center = tester.getCenter(find.text('공지사항')).dx;
+    expect(center, closeTo(tester.view.physicalSize.width / tester.view.devicePixelRatio / 2, 1));
+  });
 }

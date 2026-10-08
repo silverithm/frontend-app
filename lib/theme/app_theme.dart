@@ -24,6 +24,7 @@ class AppTheme {
       foregroundColor: AppSemanticColors.headerForeground,
       elevation: 0,
       scrolledUnderElevation: 0,
+      centerTitle: true,
       surfaceTintColor: AppColors.transparent,
       shape: const Border(
         bottom: BorderSide(color: AppSemanticColors.headerBorder),

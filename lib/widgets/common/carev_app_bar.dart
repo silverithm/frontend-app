@@ -17,7 +17,7 @@ class CareVAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.automaticallyImplyLeading = true,
     this.showBackButton,
     this.bottom,
-    this.centerTitle = false,
+    this.centerTitle = true,
   });
 
   final String title;
