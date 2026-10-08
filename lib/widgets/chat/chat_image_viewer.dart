@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'chat_photo.dart';
 
 import '../../utils/share_file.dart';
+import '../common/app_snackbar.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -107,8 +108,10 @@ class _ChatImageViewerState extends State<ChatImageViewer> {
     } catch (e) {
       debugPrint('[ChatImageViewer] 사진 공유 실패: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('사진을 공유하지 못했습니다. 잠시 후 다시 시도해 주세요')),
+        // 검은 바탕 위에서도 보이도록 상태색 배경을 쓰는 앱 공통 스낵바
+        AppSnackBar.showError(
+          context,
+          message: '사진을 공유하지 못했습니다. 잠시 후 다시 시도해 주세요',
         );
       }
     } finally {

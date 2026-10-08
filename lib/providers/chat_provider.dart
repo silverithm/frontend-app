@@ -1178,7 +1178,8 @@ class ChatProvider with ChangeNotifier {
 
   // ===================== 참가자 관리 =====================
 
-  Future<void> loadParticipants(int roomId) async {
+  /// 참가자 목록을 불러온다. 실패하면 false — 화면이 '불러오는 중'에 머물지 않고 다시 시도를 보이게 한다.
+  Future<bool> loadParticipants(int roomId) async {
     try {
       final response = await ApiService().getChatParticipants(roomId: roomId);
 
@@ -1196,8 +1197,10 @@ class ChatProvider with ChangeNotifier {
       }
 
       notifyListeners();
+      return true;
     } catch (e) {
       print('[ChatProvider] 참가자 목록 로드 에러: $e');
+      return false;
     }
   }
 
@@ -1878,8 +1881,9 @@ class ChatProvider with ChangeNotifier {
           .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
+      // 실패를 빈 목록으로 삼키면 화면이 '검색 결과 없음'과 구분하지 못한다 — 호출부가 처리한다.
       print('[ChatProvider] 대화 검색 에러: $e');
-      return [];
+      rethrow;
     }
   }
 

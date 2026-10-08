@@ -1,4 +1,8 @@
 class Constants {
+  /// 채팅방 이름 최대 길이 — 서버(ChatService.MAX_ROOM_NAME_LENGTH)와 같은 값.
+  /// 새 채팅방 만들기와 채팅방 이름 바꾸기가 함께 쓴다.
+  static const int maxChatRoomNameLength = 50;
+
   // API 관련 상수 - TODO: 실제 Spring Boot 서버 URL로 변경 필요
   static const String baseUrl = 'https://silverithm.site/api';
 

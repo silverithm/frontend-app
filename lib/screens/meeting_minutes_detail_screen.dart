@@ -10,6 +10,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
+import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 
 /// 회의록 상세 — 내용을 읽고, 내가 참석자면 서명한다.
@@ -93,15 +94,11 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
         _minutes = updated;
         _isSigning = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('서명을 완료했어요.')),
-      );
+      AppSnackBar.showSuccess(context, message: '서명을 완료했어요.');
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSigning = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('서명에 실패했어요. 잠시 후 다시 시도해주세요.')),
-      );
+      AppSnackBar.showError(context, message: '서명에 실패했어요. 잠시 후 다시 시도해주세요.');
     }
   }
 

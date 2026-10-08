@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../services/api_service.dart';
+import '../utils/constants.dart';
 import 'chat_room_screen.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -66,12 +67,12 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
         });
       }
     } catch (e) {
-      print('[CreateChatRoomScreen] 회원 목록 로드 에러: $e');
+      debugPrint('[CreateChatRoomScreen] 회원 목록 로드 에러: $e');
       if (mounted) {
-        AppSnackBar.showError(context, message: '회원 목록을 불러오는데 실패했습니다: $e');
+        AppSnackBar.showError(context, message: '회원 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요');
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -122,12 +123,12 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
         AppSnackBar.showError(context, message: '채팅방 생성에 실패했습니다');
       }
     } catch (e) {
-      print('[CreateChatRoomScreen] 채팅방 생성 에러: $e');
+      debugPrint('[CreateChatRoomScreen] 채팅방 생성 에러: $e');
       if (mounted) {
-        AppSnackBar.showError(context, message: '채팅방 생성에 실패했습니다: $e');
+        AppSnackBar.showError(context, message: '채팅방 생성에 실패했습니다. 잠시 후 다시 시도해 주세요');
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -171,6 +172,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                     label: '채팅방 이름',
                     controller: _nameController,
                     placeholder: '채팅방 이름을 입력하세요',
+                    maxLength: Constants.maxChatRoomNameLength,
                   ),
                   const SizedBox(height: AppSpacing.space4),
 
