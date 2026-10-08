@@ -36,6 +36,9 @@ class SeedTextField extends StatefulWidget {
   /// null(기본)이면 1줄. 2 이상이면 여러 줄 입력(예: 공지 본문).
   final int? maxLines;
 
+  /// 입력 글자 수 상한. null이면 제한 없음. 카운터는 그리지 않는다.
+  final int? maxLength;
+
   final TextCapitalization textCapitalization;
 
   /// 읽기전용 필드를 탭했을 때(예: 주소 검색 시트 열기) 동작.
@@ -70,6 +73,7 @@ class SeedTextField extends StatefulWidget {
     this.onSubmitted,
     this.validator,
     this.maxLines,
+    this.maxLength,
     this.textCapitalization = TextCapitalization.none,
     this.onTap,
     this.autovalidateMode,
@@ -216,6 +220,8 @@ class _SeedTextFieldState extends State<SeedTextField> {
                   textInputAction: widget.textInputAction,
                   onSubmitted: widget.onSubmitted,
                   maxLines: widget.obscureText ? 1 : (widget.maxLines ?? 1),
+                  maxLength: widget.maxLength,
+                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   textCapitalization: widget.textCapitalization,
                   style: TextStyle(
                     fontSize: _fontSize,

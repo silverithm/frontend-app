@@ -16,7 +16,9 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
+import '../utils/constants.dart';
 import '../utils/document_open.dart';
+import '../utils/file_download_open.dart';
 import '../widgets/chat/chat_image_viewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,14 +31,18 @@ class ChatRoomInfoScreen extends StatefulWidget {
   State<ChatRoomInfoScreen> createState() => _ChatRoomInfoScreenState();
 }
 
-/// 서버(ChatService.MAX_ROOM_NAME_LENGTH)와 같은 값
-const int _maxRoomNameLength = 50;
-
 class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   // 이름을 바꾸면 이 화면에서 바로 새 이름을 보여 준다
   late String _roomName = widget.room.name;
+
+  // 참가자 목록을 처음 불러오는 중인지 / 실패했는지 ('불러오는 중...'에 영원히 머물지 않게)
+  bool _participantsLoading = true;
+  bool _participantsFailed = false;
+
+  // 참가자 초대 화면이 아직 없다 — 구현되기 전까지 단추를 숨긴다.
+  static const bool _showInviteButton = false;
 
   @override
   void initState() {
@@ -56,7 +62,16 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
 
   Future<void> _loadParticipants() async {
     final chatProvider = context.read<ChatProvider>();
-    await chatProvider.loadParticipants(widget.room.id);
+    setState(() {
+      _participantsLoading = true;
+      _participantsFailed = false;
+    });
+    final ok = await chatProvider.loadParticipants(widget.room.id);
+    if (!mounted) return;
+    setState(() {
+      _participantsLoading = false;
+      _participantsFailed = !ok;
+    });
   }
 
   Future<void> _loadSharedMedia() async {
@@ -79,9 +94,13 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
       final userId = authProvider.currentUser?.chatUserId ?? '';
 
       final success = await chatProvider.leaveRoom(widget.room.id, userId);
-      if (success && mounted) {
+      if (!mounted) return;
+      if (success) {
         // 채팅방 화면과 정보 화면 모두 닫기
         Navigator.of(context).popUntil((route) => route.isFirst);
+      } else {
+        // 채팅방 화면의 나가기 처리와 같은 문구
+        AppSnackBar.showError(context, message: '채팅방 나가기에 실패했습니다.');
       }
     }
   }
@@ -98,11 +117,17 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
 
     if (confirmed == true && mounted) {
       final chatProvider = context.read<ChatProvider>();
-      await chatProvider.removeParticipant(
+      final ok = await chatProvider.removeParticipant(
         widget.room.id,
         participant.userId,
         isKicked: true,
       );
+      if (!ok && mounted) {
+        AppSnackBar.showError(
+          context,
+          message: '${participant.userName}님을 내보내지 못했습니다. 잠시 후 다시 시도해 주세요',
+        );
+      }
     }
   }
 
@@ -118,6 +143,11 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
         fileName: name,
         onDownload: () => _openExternally(url),
       );
+      return;
+    }
+    // 동영상은 채팅방 말풍선과 같이 내려받아 기기 기본 플레이어로 연다.
+    if (media.isVideoMessage) {
+      downloadAndOpenFile(context, url, name);
       return;
     }
     openServerDocument(
@@ -156,7 +186,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
       message: '바꾼 이름은 이 방 사람 모두에게 보입니다',
       initialValue: _roomName,
       confirmText: '저장',
-      maxLength: _maxRoomNameLength,
+      maxLength: Constants.maxChatRoomNameLength,
       validator: (value) =>
           (value ?? '').trim().isEmpty ? '이름을 입력해 주세요' : null,
     );
@@ -212,11 +242,9 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                   width: AppSpacing.space20,
                   height: AppSpacing.space20,
                   decoration: BoxDecoration(
-                    color: isAdmin
-                        ? AppSemanticColors.interactiveSecondaryDefault
-                              .withValues(alpha: 0.1)
-                        : AppSemanticColors.interactivePrimaryDefault
-                              .withValues(alpha: 0.1),
+                    // 배경과 아이콘색이 한 짝(둘 다 primary)이 되도록 — 관리자 여부로 배경만 바뀌지 않게
+                    color: AppSemanticColors.interactivePrimaryDefault
+                        .withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -346,7 +374,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
         return Column(
           children: [
             // 참가자 초대 버튼
-            if (isRoomAdmin)
+            if (_showInviteButton && isRoomAdmin)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.space4),
@@ -362,12 +390,33 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             Expanded(
               child: participants.isEmpty
                   ? Center(
-                      child: Text(
-                        '참가자 정보를 불러오는 중...',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
+                      child: _participantsFailed
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '참가자 정보를 불러오지 못했습니다',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textTertiary,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.space2),
+                                SeedButton(
+                                  label: '다시 시도',
+                                  variant: SeedButtonVariant.neutralOutline,
+                                  size: SeedButtonSize.small,
+                                  onPressed: _loadParticipants,
+                                ),
+                              ],
+                            )
+                          : Text(
+                              _participantsLoading
+                                  ? '참가자 정보를 불러오는 중...'
+                                  : '참가자가 없습니다',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(
@@ -413,13 +462,9 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                                           vertical: AppSpacing.space1,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: isAdmin
-                                              ? AppSemanticColors
-                                                    .interactiveSecondaryDefault
-                                                    .withValues(alpha: 0.1)
-                                              : AppSemanticColors
-                                                    .interactivePrimaryDefault
-                                                    .withValues(alpha: 0.1),
+                                          color: AppSemanticColors
+                                              .interactivePrimaryDefault
+                                              .withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(
                                             AppBorderRadius.base,
                                           ),
@@ -561,7 +606,9 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                   itemBuilder: (context, index) {
                     final file = files[index];
                     return SeedListCell(
-                      leadingIcon: Icons.insert_drive_file,
+                      leadingIcon: file.isVideoMessage
+                          ? Icons.videocam_outlined
+                          : Icons.insert_drive_file,
                       title: file.fileName ?? '파일',
                       description: _formatFileSize(file.fileSize),
                       showChevron: false,
