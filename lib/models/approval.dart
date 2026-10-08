@@ -14,6 +14,7 @@ class ApprovalStepModel {
   final String? signatureUrl;
   final DateTime? processedAt;
   final String? rejectReason;
+  final String? comment; // 승인 시 남긴 의견 (없으면 null)
 
   ApprovalStepModel({
     required this.id,
@@ -26,6 +27,7 @@ class ApprovalStepModel {
     this.signatureUrl,
     this.processedAt,
     this.rejectReason,
+    this.comment,
   });
 
   factory ApprovalStepModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class ApprovalStepModel {
           ? DateTime.tryParse(json['processedAt'].toString())
           : null,
       rejectReason: json['rejectReason']?.toString(),
+      comment: json['comment']?.toString(),
     );
   }
 

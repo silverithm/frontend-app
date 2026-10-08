@@ -10,6 +10,7 @@ import '../services/storage_service.dart';
 import 'auth_restore.dart';
 import '../screens/login_screen.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../utils/approval_comment.dart';
 
 /// 토큰 검증 결과 — 판정과 서버가 준 정보를 함께 들고 온다.
 class TokenCheckResult {
@@ -2484,8 +2485,10 @@ class ApiService {
     required String processedBy,
     required String processedByName,
     String? signatureBase64,
+    String? comment, // 승인 의견(선택) — 결재선 있는 문서에서만 서버가 저장한다
     bool force = false,
   }) async {
+    final body = buildApproveBody(signatureBase64: signatureBase64, comment: comment);
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/approve')
           .replace(
@@ -2501,12 +2504,8 @@ class ApiService {
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
 
-      if (signatureBase64 != null && signatureBase64.isNotEmpty) {
-        return await http.put(
-          uri,
-          headers: headers,
-          body: json.encode({'signatureBase64': signatureBase64}),
-        );
+      if (body != null) {
+        return await http.put(uri, headers: headers, body: json.encode(body));
       }
       return await http.put(uri, headers: headers);
     });

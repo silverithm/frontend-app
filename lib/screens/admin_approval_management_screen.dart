@@ -218,9 +218,17 @@ class _AdminApprovalManagementScreenState
     return '결재 요청이 없습니다';
   }
 
-  Future<void> _approveRequest(int requestId, {bool force = false}) async {
-    // 서명 확인 (등록 서명 또는 즉석 그리기)
-    final signature = await showSignatureConfirmSheet(context);
+  Future<void> _approveRequest(
+    int requestId, {
+    bool force = false,
+    bool hasApprovalLine = true,
+  }) async {
+    // 서명 확인 (등록 서명 또는 즉석 그리기) + 선택 의견.
+    // 결재선 없는 옛 문서는 서버가 의견을 저장하지 않아 입력칸을 숨긴다.
+    final signature = await showSignatureConfirmSheet(
+      context,
+      showComment: hasApprovalLine,
+    );
     if (signature == null || !mounted) return;
 
     final approvalProvider = context.read<ApprovalProvider>();
@@ -235,6 +243,7 @@ class _AdminApprovalManagementScreenState
       processedBy: processedBy,
       processedByName: processedByName,
       signatureBase64: signature.signatureBase64,
+      comment: signature.comment,
       force: force,
     );
 
@@ -997,7 +1006,10 @@ class _AdminApprovalManagementScreenState
                       Expanded(
                         child: SeedButton(
                           label: '승인',
-                          onPressed: () => _approveRequest(request.id),
+                          onPressed: () => _approveRequest(
+                            request.id,
+                            hasApprovalLine: request.approvalLine.isNotEmpty,
+                          ),
                           variant: SeedButtonVariant.brandSolid,
                           prefixIcon: Icons.check,
                         ),
@@ -1029,7 +1041,11 @@ class _AdminApprovalManagementScreenState
                           label: '직권 승인',
                           onPressed: () async {
                             if (await _confirmForceAction(request, actionLabel: '직권 승인')) {
-                              _approveRequest(request.id, force: true);
+                              _approveRequest(
+                                request.id,
+                                force: true,
+                                hasApprovalLine: request.approvalLine.isNotEmpty,
+                              );
                             }
                           },
                           variant: SeedButtonVariant.brandSolid,

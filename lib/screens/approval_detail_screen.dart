@@ -677,6 +677,59 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
               const SizedBox(height: AppSpacing.space4),
             ],
 
+            // 결재 의견 — 단계별 승인 의견. 반려 사유와 같은 카드 문법이되 상태색 없이 중립 톤
+            if (_approval.approvalLine.any((s) => (s.comment ?? '').trim().isNotEmpty)) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.space4),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.surfaceDefault,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  border: Border.all(color: AppSemanticColors.borderDefault),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 20,
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Text(
+                          '결재 의견',
+                          style: AppTypography.labelLarge.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    for (final step in _approval.approvalLine)
+                      if ((step.comment ?? '').trim().isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.space3),
+                        Text(
+                          '${step.roleText} · ${step.approverName}',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.space1),
+                        Text(
+                          step.comment!.trim(),
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space4),
+            ],
+
             // 거절 사유 - 깔끔한 디자인
             if (_approval.rejectReason != null &&
                 _approval.status == ApprovalStatus.rejected) ...[

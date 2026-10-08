@@ -4,8 +4,10 @@ import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../../utils/approval_comment.dart';
 import '../common/app_dialog.dart';
 import '../seed/seed_button.dart';
+import '../seed/seed_text_field.dart';
 import 'signature_pad.dart';
 
 /// 승인 시 서명 확인 시트.
@@ -15,30 +17,36 @@ class SignatureConfirmResult {
   final bool useRegistered;
   final String? signatureBase64;
 
-  SignatureConfirmResult.registered()
+  /// 승인 의견(선택). 입력칸을 켜지 않았거나 비웠으면 null.
+  final String? comment;
+
+  SignatureConfirmResult.registered({this.comment})
       : useRegistered = true,
         signatureBase64 = null;
 
-  SignatureConfirmResult.drawn(this.signatureBase64) : useRegistered = false;
+  SignatureConfirmResult.drawn(this.signatureBase64, {this.comment})
+      : useRegistered = false;
 }
 
 Future<SignatureConfirmResult?> showSignatureConfirmSheet(
   BuildContext context, {
   String title = '결재 승인',
+  bool showComment = false, // 결재선 있는 문서의 승인에서만 켠다 (서버가 의견을 저장하는 경우)
 }) {
   // 손조립 시트였지만 핸들바가 빠져 있었다 — 공용 AppBottomSheet.show로 교체해
   // 둥근 상단·surfaceDefault·핸들바를 다른 시트들과 통일한다.
   return AppBottomSheet.show<SignatureConfirmResult>(
     context,
     isScrollControlled: true,
-    child: _SignatureConfirmSheet(title: title),
+    child: _SignatureConfirmSheet(title: title, showComment: showComment),
   );
 }
 
 class _SignatureConfirmSheet extends StatefulWidget {
   final String title;
+  final bool showComment;
 
-  const _SignatureConfirmSheet({required this.title});
+  const _SignatureConfirmSheet({required this.title, required this.showComment});
 
   @override
   State<_SignatureConfirmSheet> createState() => _SignatureConfirmSheetState();
@@ -50,12 +58,25 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
   bool _isLoading = true;
   bool _useRegistered = true;
   bool _padEmpty = true;
+  final TextEditingController _commentController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadRegistered();
   }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  String? get _comment =>
+      widget.showComment ? normalizeApprovalComment(_commentController.text) : null;
+
+  bool get _commentTooLong =>
+      widget.showComment && isApprovalCommentTooLong(_commentController.text);
 
   Future<void> _loadRegistered() async {
     try {
@@ -81,15 +102,18 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
 
   bool get _hasRegistered => _registeredUrl != null && _registeredUrl!.isNotEmpty;
 
+  bool get _canConfirm =>
+      ((_useRegistered && _hasRegistered) || !_padEmpty) && !_commentTooLong;
+
   Future<void> _confirm() async {
     if (_useRegistered && _hasRegistered) {
-      Navigator.pop(context, SignatureConfirmResult.registered());
+      Navigator.pop(context, SignatureConfirmResult.registered(comment: _comment));
       return;
     }
     final dataUrl = await _padController.exportPngDataUrl();
     if (dataUrl == null) return;
     if (!mounted) return;
-    Navigator.pop(context, SignatureConfirmResult.drawn(dataUrl));
+    Navigator.pop(context, SignatureConfirmResult.drawn(dataUrl, comment: _comment));
   }
 
   @override
@@ -195,6 +219,21 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 controller: _padController,
                 onChanged: (isEmpty) => setState(() => _padEmpty = isEmpty),
               ),
+            if (widget.showComment) ...[
+              const SizedBox(height: AppSpacing.space3),
+              SeedTextField(
+                label: '의견 (선택)',
+                placeholder: '결재 기록에 남길 의견이 있으면 적어주세요',
+                controller: _commentController,
+                maxLines: 3,
+                textInputAction: TextInputAction.newline,
+                keyboardType: TextInputType.multiline,
+                errorText: _commentTooLong
+                    ? '의견은 $kApprovalCommentMaxLength자까지 적을 수 있어요'
+                    : null,
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
             const SizedBox(height: AppSpacing.space3),
             SizedBox(
               width: double.infinity,
@@ -202,10 +241,8 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 label: '서명하고 승인',
                 variant: SeedButtonVariant.brandSolid,
                 size: SeedButtonSize.large,
-                isDisabled: !((_useRegistered && _hasRegistered) || !_padEmpty),
-                onPressed: (_useRegistered && _hasRegistered) || !_padEmpty
-                    ? _confirm
-                    : null,
+                isDisabled: !_canConfirm,
+                onPressed: _canConfirm ? _confirm : null,
               ),
             ),
           ],

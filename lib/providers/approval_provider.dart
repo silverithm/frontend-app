@@ -343,6 +343,7 @@ class ApprovalProvider with ChangeNotifier {
     required String processedBy,
     required String processedByName,
     String? signatureBase64,
+    String? comment,
     bool force = false,
   }) async {
     try {
@@ -354,6 +355,7 @@ class ApprovalProvider with ChangeNotifier {
         processedBy: processedBy,
         processedByName: processedByName,
         signatureBase64: signatureBase64,
+        comment: comment,
         force: force,
       );
 
