@@ -14,7 +14,6 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_compress/video_compress.dart';
 import 'package:dio/dio.dart' as dio;
-import 'package:open_filex/open_filex.dart';
 import 'package:gal/gal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
@@ -31,6 +30,8 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/message_links.dart';
 import '../utils/chat_date_jump.dart';
+import '../utils/chat_time_format.dart';
+import '../utils/file_download_open.dart';
 import '../utils/chat_image_url.dart';
 import '../utils/chat_media.dart' as chat_media;
 import '../utils/chat_message_grouping.dart';
@@ -170,6 +171,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     int targetId, {
     int maxTries = 5,
     void Function(int triesSoFar)? onLoadProgress,
+    bool Function()? isCancelled,
   }) async {
     final provider = context.read<ChatProvider>();
 
@@ -184,7 +186,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       maxTries: maxTries,
     )) {
       await provider.loadMessages(roomId: widget.room.id);
-      if (!mounted) return false;
+      if (!mounted || (isCancelled?.call() ?? false)) return false;
       found = indexOf() >= 0;
       tries++;
       onLoadProgress?.call(tries);
@@ -1286,6 +1288,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     return widget.room.name;
   }
 
+  /// 최신 방 정보(ChatProvider)의 인원 수. 없으면 진입 시점 값.
+  int _participantCountOf(ChatProvider provider) {
+    for (final room in provider.chatRooms) {
+      if (room.id == widget.room.id) return room.participantCount;
+    }
+    return widget.room.participantCount;
+  }
+
+  bool _appBarTitleCentered(BuildContext context) {
+    final themed = Theme.of(context).appBarTheme.centerTitle;
+    if (themed != null) return themed;
+    final platform = Theme.of(context).platform;
+    return platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
+  }
+
   Future<void> _confirmDeleteChatRoom() async {
     final confirmed = await AppDialog.showConfirm(
       context,
@@ -1943,12 +1960,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             curve: Curves.easeOut,
           );
         },
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space2),
-          child: Icon(
-            Icons.arrow_downward,
-            size: 20,
-            color: AppSemanticColors.textSecondary,
+        child: Tooltip(
+          message: '맨 아래로',
+          child: Semantics(
+            button: true,
+            label: '맨 아래로',
+            excludeSemantics: true,
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                Icons.arrow_downward,
+                size: 20,
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
           ),
         ),
       ),
@@ -2322,6 +2348,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     List<ChatMessage> results = [];
     bool isSearching = false;
     bool hasSearched = false;
+    bool searchFailed = false;
+    bool sheetClosed = false;
+    int searchSeq = 0;
     bool didAutofocus = false;
 
     AppBottomSheet.show(
@@ -2340,15 +2369,29 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             final keyword = searchController.text.trim();
             if (keyword.isEmpty) return;
 
-            setSheetState(() => isSearching = true);
-            final found = await _chatProvider.searchMessages(
-              widget.room.id,
-              keyword,
-            );
+            final seq = ++searchSeq;
+            setSheetState(() {
+              isSearching = true;
+              searchFailed = false;
+            });
+            List<ChatMessage> found = [];
+            bool failed = false;
+            try {
+              found = await _chatProvider.searchMessages(
+                widget.room.id,
+                keyword,
+              );
+            } catch (e) {
+              debugPrint('[ChatRoom] 대화 검색 실패: $e');
+              failed = true;
+            }
+            // 시트가 닫혔거나 그 사이 입력이 바뀌어 새 검색이 시작됐으면 결과를 버린다.
+            if (sheetClosed || seq != searchSeq) return;
             setSheetState(() {
               results = found;
               isSearching = false;
               hasSearched = true;
+              searchFailed = failed;
             });
           }
 
@@ -2372,6 +2415,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                           prefixIcon: Icons.search,
                           textInputAction: TextInputAction.search,
                           onSubmitted: (_) => runSearch(),
+                          onChanged: (_) {
+                            // 입력이 바뀌면 이전 키워드의 결과를 비운다.
+                            searchSeq++;
+                            if (hasSearched || isSearching || results.isNotEmpty) {
+                              setSheetState(() {
+                                results = [];
+                                hasSearched = false;
+                                isSearching = false;
+                                searchFailed = false;
+                              });
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(width: AppSpacing.space2),
@@ -2411,6 +2466,27 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                             ),
                           ),
                         )
+                      : searchFailed
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '검색하지 못했습니다',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.space2),
+                              SeedButton(
+                                label: '다시 시도',
+                                variant: SeedButtonVariant.neutralOutline,
+                                size: SeedButtonSize.small,
+                                onPressed: runSearch,
+                              ),
+                            ],
+                          ),
+                        )
                       : results.isEmpty
                       ? Center(
                           child: Text(
@@ -2430,7 +2506,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                               description: message.displayContent,
                               showChevron: false,
                               trailing: Text(
-                                _formatMessageTime(message.createdAt),
+                                formatChatDateTime(message.createdAt),
                                 style: AppTypography.labelSmall.copyWith(
                                   color: AppSemanticColors.textTertiary,
                                 ),
@@ -2455,6 +2531,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         },
       ),
     ).whenComplete(() {
+      sheetClosed = true;
       searchController.dispose();
       searchFocusNode.dispose();
     });
@@ -2483,6 +2560,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     final userId = _authProvider.currentUser?.chatUserId;
     final progressNotifier = ValueNotifier<int>(0);
+    // 진행 창의 '취소'를 누르면 true — 이후 도착하는 요청 결과는 무시한다.
+    var cancelled = false;
 
     AppDialog.showCustom<void>(
       context,
@@ -2509,6 +2588,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   ),
                 ),
               ],
+              const SizedBox(height: AppSpacing.space4),
+              Builder(
+                builder: (dialogContext) => TextButton(
+                  onPressed: () {
+                    cancelled = true;
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('취소'),
+                ),
+              ),
             ],
           ),
         ),
@@ -2521,6 +2610,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         picked,
         userId: userId,
       );
+      if (cancelled) return;
 
       if (messageId == null) {
         if (mounted) Navigator.pop(context);
@@ -2533,8 +2623,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       final found = await _jumpToMessage(
         messageId,
         maxTries: chatDateJumpMaxLoadTries,
-        onLoadProgress: (tries) => progressNotifier.value = tries,
+        onLoadProgress: (tries) {
+          if (!cancelled) progressNotifier.value = tries;
+        },
+        isCancelled: () => cancelled,
       );
+      if (cancelled) return;
 
       if (mounted) Navigator.pop(context);
       if (!found && mounted) {
@@ -2543,12 +2637,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     } on ApiException catch (e) {
       // 서버 문구(예: 'Method Not Allowed')를 그대로 보여주면 선생님들은 무슨 뜻인지 모른다
       debugPrint('[ChatRoom] 날짜로 이동 실패: ${e.message}');
+      if (cancelled) return;
       if (mounted) Navigator.pop(context);
       if (mounted) {
         AppSnackBar.showError(context, message: '날짜로 이동하지 못했습니다. 잠시 후 다시 시도해주세요');
       }
     } catch (e) {
       debugPrint('[ChatRoom] 날짜로 이동 실패: $e');
+      if (cancelled) return;
       if (mounted) Navigator.pop(context);
       if (mounted) {
         AppSnackBar.showError(context, message: '날짜로 이동하지 못했습니다. 잠시 후 다시 시도해주세요');
@@ -2639,7 +2735,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                                   ),
                             title: file.fileName ?? '파일',
                             description:
-                                '${file.senderName} · ${_formatMessageTime(file.createdAt)}',
+                                '${file.senderName} · ${formatChatDateTime(file.createdAt)}',
                             showChevron: false,
                             onTap: () {
                               Navigator.pop(context);
@@ -3122,6 +3218,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   // 단 반응이 다른 쪽에서도 같은 이모지로 보여야 한다. 순서도 맞춰둔다.
   static const List<String> _quickEmojis = ['❤️', '👍', '😂', '😮', '😢', '✅'];
 
+  /// 스크린리더용 이모지 이름.
+  static const Map<String, String> _emojiLabels = {
+    '❤️': '하트',
+    '👍': '좋아요',
+    '😂': '웃음',
+    '😮': '놀람',
+    '😢': '슬픔',
+    '✅': '확인',
+  };
+
   /// 전송 중이거나 실패한 말풍선의 메뉴 — 다시 보내기 / 보내지 않고 삭제.
   void _showLocalMessageOptions(ChatMessage message) {
     final failed = message.sendingStatus == MessageSendingStatus.failed;
@@ -3222,7 +3328,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     final isSelected = message.reactions.any(
                       (r) => r.emoji == emoji && r.myReaction,
                     );
-                    return GestureDetector(
+                    return Semantics(
+                      button: true,
+                      selected: isSelected,
+                      label: '${_emojiLabels[emoji] ?? emoji} 반응',
+                      excludeSemantics: true,
+                      child: GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
                         _toggleReaction(message, emoji);
@@ -3242,6 +3353,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                           emoji,
                           style: const TextStyle(fontSize: 28),
                         ),
+                      ),
                       ),
                     );
                   }).toList(),
@@ -3530,78 +3642,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   }
 
   // 파일 다운로드 및 열기
-  Future<void> _downloadAndOpenFile(String? url, String fileName) async {
-    if (url == null || url.isEmpty) {
-      AppSnackBar.showError(context, message: '파일 URL이 없습니다');
-      return;
-    }
-
-    // 다운로드 진행 표시
-    AppDialog.showCustom<void>(
-      context,
-      barrierDismissible: false,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: AppSpacing.space4),
-            Text('다운로드 중...', style: AppTypography.bodyMedium),
-            const SizedBox(height: AppSpacing.space2),
-            Text(
-              fileName,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-
-    try {
-      // 저장 경로 설정
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/$fileName';
-
-      // 파일 다운로드
-      final dioClient = dio.Dio();
-      await dioClient.download(
-        url,
-        filePath,
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            print('[Download] ${(received / total * 100).toStringAsFixed(0)}%');
-          }
-        },
-      );
-
-      // 다이얼로그 닫기
-      if (mounted) Navigator.pop(context);
-
-      // 파일 열기
-      final result = await OpenFilex.open(filePath);
-
-      if (result.type != ResultType.done) {
-        if (mounted) {
-          AppSnackBar.showError(context,
-              message: '파일을 열 수 없습니다: ${result.message}');
-        }
-      }
-    } catch (e) {
-      // 다이얼로그 닫기
-      if (mounted) Navigator.pop(context);
-
-      print('[Download] 에러: $e');
-      if (mounted) {
-        AppSnackBar.showError(context, message: '다운로드 실패: $e');
-      }
-    }
-  }
+  Future<void> _downloadAndOpenFile(String? url, String fileName) =>
+      downloadAndOpenFile(context, url, fileName);
 
   void _showMessageReaders(ChatMessage message) async {
     final chatProvider = context.read<ChatProvider>();
@@ -3722,10 +3764,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         backgroundColor: AppSemanticColors.backgroundSecondary,
         appBar: AppBar(
           title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            // 제목과 인원 수가 같은 정렬이 되도록 AppBar의 제목 정렬(iOS 가운데/그 외 왼쪽)을 따른다.
+            crossAxisAlignment: _appBarTitleCentered(context)
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
             children: [
               Text(
                 _roomName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.bodyLarge.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppSemanticColors.headerForeground,
@@ -3745,7 +3792,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     );
                   }
                   return Text(
-                    '${widget.room.participantCount}명',
+                    '${_participantCountOf(chatProvider)}명',
                     style: AppTypography.labelSmall.copyWith(
                       color: AppSemanticColors.headerForegroundMuted,
                     ),
@@ -4294,7 +4341,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               behavior: HitTestBehavior.opaque,
               onTap: () => _retryFailed(photoGroup ?? [message]),
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 2),
+                // 글자 높이만으로는 누르기 어려워 위아래로 늘려 최소 32px 확보
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
                 child: Text(
                   '다시 보내기',
                   style: AppTypography.labelSmall.copyWith(
@@ -4699,13 +4747,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     }
   }
 
-  String _formatMessageTime(DateTime time) {
-    final hour = time.hour;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = hour < 12 ? '오전' : '오후';
-    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    return '$period $displayHour:$minute';
-  }
+  String _formatMessageTime(DateTime time) => formatChatClock(time);
 
   Widget _buildMessageInput(bool isAdmin) {
     return Container(
@@ -4775,31 +4817,43 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
           const SizedBox(width: AppSpacing.space2),
 
-          // 전송 버튼 — Material+InkWell로 눌림 피드백 부여
-          Material(
-            color: AppSemanticColors.interactivePrimaryDefault,
-            shape: const CircleBorder(),
-            child: Semantics(
-              button: true,
-              label: '메시지 전송',
-              child: InkWell(
-              onTap: _sendMessage,
-              customBorder: const CircleBorder(),
-              child: SizedBox(
-                width: AppSpacing.space10,
-                height: AppSpacing.space10,
-                child: Center(
-                  child: Icon(
-                    _editingMessage != null
-                        ? Icons.check_rounded
-                        : Icons.send_rounded,
-                    color: AppSemanticColors.textInverse,
-                    size: AppSpacing.space5,
+          // 전송 버튼 — Material+InkWell로 눌림 피드백 부여.
+          // 입력이 비어 있으면(첨부는 고르는 즉시 전송되어 대기분이 없다) 비활성 모양.
+          // 수정 중에는 비워도 눌러 수정을 접을 수 있으므로 활성으로 둔다.
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _messageController,
+            builder: (context, value, _) {
+              final canSend =
+                  _editingMessage != null || value.text.trim().isNotEmpty;
+              return Material(
+                color: canSend
+                    ? AppSemanticColors.interactivePrimaryDefault
+                    : AppSemanticColors.interactivePrimaryDisabled,
+                shape: const CircleBorder(),
+                child: Semantics(
+                  button: true,
+                  enabled: canSend,
+                  label: '메시지 전송',
+                  child: InkWell(
+                    onTap: canSend ? _sendMessage : null,
+                    customBorder: const CircleBorder(),
+                    child: SizedBox(
+                      width: AppSpacing.space10,
+                      height: AppSpacing.space10,
+                      child: Center(
+                        child: Icon(
+                          _editingMessage != null
+                              ? Icons.check_rounded
+                              : Icons.send_rounded,
+                          color: AppSemanticColors.textInverse,
+                          size: AppSpacing.space5,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              ),
-            ),
+              );
+            },
           ),
         ],
           ),
@@ -4916,11 +4970,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             onPressed: _cancelEditing,
             icon: Icon(
               Icons.close,
-              size: AppSpacing.space5,
+              size: AppSpacing.space4,
               color: AppSemanticColors.textTertiary,
             ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
           ),
         ],
       ),

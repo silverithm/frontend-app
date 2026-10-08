@@ -63,7 +63,12 @@ class _ElderCareDetailScreenState extends State<ElderCareDetailScreen> {
       child: Scaffold(
         backgroundColor: AppSemanticColors.backgroundSecondary,
         appBar: AppBar(
-          title: Text(widget.elder.name, style: AppTypography.heading5),
+          title: Text(
+            widget.elder.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.heading5,
+          ),
           elevation: 0,
           actions: [
             TextButton(
