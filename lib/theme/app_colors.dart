@@ -153,6 +153,7 @@ class AppColors {
   // 머리줄만 이 색으로 옮겼다.
   static const Color careTeal = Color(0xFF0F766E);
   static const Color careTealDeep = Color(0xFF0B5D57);
+  static const Color careTealDarker = Color(0xFF084843); // 눌림(active) — 주색 한 단계 더 진하게
   static const Color careTealInkSoft = Color(0xFFE1F0EE); // 진한 틸 위 보조 글자 (4.7:1)
   static const Color careTealTint = Color(0xFFF1F7F6); // 기본 틸 6%
   static const Color careTealTintLine = Color(0xFFC3DDDB); // 기본 틸 25%
@@ -197,14 +198,14 @@ class AppSemanticColors {
   static const Color surfaceHover = AppColors.gray50; // layer-default-pressed
   static const Color surfaceActive = AppColors.gray100;
   static const Color surfaceDisabled = AppColors.gray100; // bg.disabled
-  static const Color surfaceSelected = AppColors.teal50; // brand-weak
+  static const Color surfaceSelected = AppColors.careTealTint; // brand-weak
 
   // Border colors (Seed stroke.neutral-*)
   static const Color borderDefault = AppColors.gray300; // stroke.neutral-weak
   // 목록 구분선·묶음 카드 테두리 — 흐려서 구분이 안 된다는 요청으로 gray200에서 한 단계 진하게
   static const Color borderSubtle = AppColors.gray300;
   static const Color borderHover = AppColors.gray400;
-  static const Color borderFocus = AppColors.teal600; // brand
+  static const Color borderFocus = AppColors.careTeal; // brand
   static const Color borderDisabled = AppColors.gray200;
 
   // Text colors (Seed fg.neutral-*)
@@ -213,7 +214,7 @@ class AppSemanticColors {
   static const Color textTertiary = AppColors.gray600; // fg.neutral-subtle
   static const Color textDisabled = AppColors.gray500; // fg.disabled
   static const Color textInverse = AppColors.white;
-  static const Color textLink = AppColors.teal700; // fg.brand-contrast
+  static const Color textLink = AppColors.careTeal; // fg.brand-contrast (흰 바탕 5.5:1)
   static const Color textError = AppColors.red600;
 
   // Header — 화면 상단 바. 웹과 같은 케어브이 기본 틸 바탕 + 흰 글자, 아래 한 단계 진한 틸 선.
@@ -230,20 +231,20 @@ class AppSemanticColors {
   static const Color subheaderBackground = AppColors.careTealTint;
   static const Color subheaderBorder = AppColors.careTealTintLine;
   // 안쪽 머리 위 글자 링크("전체보기") — 연한 틸 면 위에서 민트 글자는 1.9:1이라 진한 틸(약 7:1)
-  static const Color subheaderLink = AppColors.teal900;
+  static const Color subheaderLink = AppColors.careTealDeep;
   // 묶음 제목 앞 세로 막대("내 업무"·"소통")
-  static const Color sectionMarker = AppColors.teal600;
+  static const Color sectionMarker = AppColors.careTeal;
 
   // Brand (케어브이 틸 — Seed bg.brand-*)
-  static const Color brandDefault = AppColors.teal600;
-  static const Color brandPressed = AppColors.teal700;
-  static const Color brandWeak = AppColors.teal50;
-  static const Color brandWeakPressed = AppColors.teal100;
+  static const Color brandDefault = AppColors.careTeal;
+  static const Color brandPressed = AppColors.careTealDeep;
+  static const Color brandWeak = AppColors.careTealTint;
+  static const Color brandWeakPressed = AppColors.careTealInkSoft;
 
   // Interactive colors — 프라이머리 액션은 브랜드 틸
-  static const Color interactivePrimaryDefault = AppColors.teal600;
-  static const Color interactivePrimaryHover = AppColors.teal700;
-  static const Color interactivePrimaryActive = AppColors.teal800;
+  static const Color interactivePrimaryDefault = AppColors.careTeal;
+  static const Color interactivePrimaryHover = AppColors.careTealDeep;
+  static const Color interactivePrimaryActive = AppColors.careTealDarker;
   static const Color interactivePrimaryDisabled = AppColors.gray400;
 
   static const Color interactiveSecondaryDefault = AppColors.gray100;

@@ -59,9 +59,9 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
   ({Color bg, Color fg, String label}) _statusStyle(String status) {
     switch (status) {
       case 'COMPLETED':
-        return (bg: AppColors.teal50, fg: AppColors.teal800, label: '완료');
+        return (bg: AppColors.careTealTint, fg: AppColors.careTealDeep, label: '완료');
       case 'REGISTERED':
-        return (bg: AppColors.gray100, fg: AppColors.teal700, label: '서명 수집 중');
+        return (bg: AppColors.gray100, fg: AppColors.careTeal, label: '서명 수집 중');
       default:
         return (bg: AppColors.gray100, fg: AppColors.gray600, label: '작성 중');
     }

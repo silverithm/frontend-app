@@ -155,19 +155,19 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                         width: double.infinity,
                         padding: const EdgeInsets.all(AppSpacing.space3),
                         decoration: BoxDecoration(
-                          color: AppColors.teal50,
+                          color: AppColors.careTealTint,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           children: [
                             Icon(Icons.draw_outlined,
-                                size: 18, color: AppColors.teal700),
+                                size: 18, color: AppColors.careTeal),
                             const SizedBox(width: AppSpacing.space2),
                             Expanded(
                               child: Text(
                                 '내 서명이 필요한 회의록이에요. 내용을 확인한 뒤 하단 버튼으로 서명해주세요.',
                                 style: AppTypography.bodySmall.copyWith(
-                                  color: AppColors.teal800,
+                                  color: AppColors.careTealDeep,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -212,7 +212,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                               Text(
                                 '[${section['label'] ?? ''}]',
                                 style: AppTypography.labelLarge
-                                    .copyWith(color: AppColors.teal800),
+                                    .copyWith(color: AppColors.careTealDeep),
                               ),
                               const SizedBox(height: AppSpacing.space2),
                               Text(
@@ -247,7 +247,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                                   Icon(
                                     signed ? Icons.check_circle : Icons.radio_button_unchecked,
                                     size: 18,
-                                    color: signed ? AppColors.teal600 : AppColors.gray400,
+                                    color: signed ? AppColors.careTeal : AppColors.gray400,
                                   ),
                                   const SizedBox(width: AppSpacing.space2),
                                   Expanded(
@@ -267,7 +267,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                                     Text(
                                       signed ? '서명 완료' : '대기',
                                       style: AppTypography.labelSmall.copyWith(
-                                        color: signed ? AppColors.teal700 : AppColors.gray500,
+                                        color: signed ? AppColors.careTeal : AppColors.gray500,
                                       ),
                                     ),
                                 ],

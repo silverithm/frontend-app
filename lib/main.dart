@@ -143,9 +143,9 @@ class MyApp extends StatelessWidget {
             // shadcn 위젯도 앱 테마(Seed 그레이 + 케어브이 틸)와 색을 맞춘다
             theme: shadcn.ThemeData(
               colorScheme: shadcn.ColorSchemes.lightZinc.copyWith(
-                primary: () => const Color(0xFF20C997),
+                primary: () => AppColors.careTeal,
                 primaryForeground: () => const Color(0xFFFFFFFF),
-                ring: () => const Color(0xFF20C997),
+                ring: () => AppColors.careTeal,
                 foreground: () => const Color(0xFF1A1C20),
                 cardForeground: () => const Color(0xFF1A1C20),
                 popoverForeground: () => const Color(0xFF1A1C20),
@@ -163,9 +163,9 @@ class MyApp extends StatelessWidget {
             ),
             darkTheme: shadcn.ThemeData(
               colorScheme: shadcn.ColorSchemes.darkZinc.copyWith(
-                primary: () => const Color(0xFF20C997),
+                primary: () => AppColors.careTeal,
                 primaryForeground: () => const Color(0xFFFFFFFF),
-                ring: () => const Color(0xFF20C997),
+                ring: () => AppColors.careTeal,
               ),
               radius: 0.5,
               typography: _appTypography,
