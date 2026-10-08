@@ -206,8 +206,20 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
             itemCount: chatProvider.chatRooms.length,
             itemBuilder: (context, index) {
-              final room = chatProvider.chatRooms[index];
-              return _buildChatRoomTile(room, isAdmin);
+              final rooms = chatProvider.chatRooms;
+              final room = rooms[index];
+              final tile = _buildChatRoomTile(room, isAdmin);
+              // 고정한 방 묶음의 끝에 구분선 — 고정 방은 목록 맨 위에 모여 있다
+              final isLastPinned = room.pinned &&
+                  (index + 1 >= rooms.length || !rooms[index + 1].pinned);
+              if (!isLastPinned) return tile;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  tile,
+                  Container(height: 1, color: AppSemanticColors.subheaderBorder),
+                ],
+              );
             },
           ),
         );
@@ -361,6 +373,8 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
           vertical: AppSpacing.space3,
         ),
         decoration: BoxDecoration(
+          // 고정한 방은 연한 틸 바탕으로 구분한다
+          color: room.pinned ? AppColors.careTealTint : null,
           border: Border(
             bottom: BorderSide(color: AppSemanticColors.borderSubtle),
           ),
@@ -391,7 +405,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
                               Icon(
                                 Icons.push_pin,
                                 size: AppSpacing.space4,
-                                color: AppSemanticColors.textTertiary,
+                                color: AppColors.careTeal,
                               ),
                               const SizedBox(width: AppSpacing.space1),
                             ],

@@ -296,6 +296,10 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
 
           Divider(height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
 
+          _buildPinRow(),
+
+          Divider(height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
+
           // 탭바 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
           Container(
             decoration: const BoxDecoration(
@@ -358,6 +362,63 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
           ),
         ],
       ),
+    );
+  }
+
+  /// '상단 고정' 스위치 줄 — 채팅 목록 길게 누르기와 같은 ChatProvider.togglePin을 쓴다.
+  Widget _buildPinRow() {
+    final provider = context.watch<ChatProvider>();
+    var pinned = widget.room.pinned;
+    ChatRoom? current;
+    for (final r in provider.chatRooms) {
+      if (r.id == widget.room.id) {
+        current = r;
+        pinned = r.pinned;
+        break;
+      }
+    }
+    return Container(
+      color: AppSemanticColors.surfaceDefault,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: AppSpacing.space1,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.push_pin_outlined,
+            size: AppSpacing.space5,
+            color: AppSemanticColors.textSecondary,
+          ),
+          const SizedBox(width: AppSpacing.space3),
+          Expanded(
+            child: Text(
+              '상단 고정',
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+          ),
+          Switch(
+            value: pinned,
+            onChanged: (_) => _togglePin(current ?? widget.room),
+            activeTrackColor: AppSemanticColors.interactivePrimaryDefault,
+            activeThumbColor: AppSemanticColors.textInverse,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _togglePin(ChatRoom room) async {
+    final provider = context.read<ChatProvider>();
+    final success = await provider.togglePin(room);
+    if (!mounted || success) return;
+    AppSnackBar.showError(
+      context,
+      message: provider.errorMessage.isNotEmpty
+          ? provider.errorMessage
+          : '상단 고정 변경에 실패했습니다.',
     );
   }
 
