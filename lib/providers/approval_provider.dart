@@ -128,6 +128,14 @@ class ApprovalProvider with ChangeNotifier {
     required String companyId,
     bool refresh = false,
   }) async {
+    // 앱을 막 켰거나 로그인 복원 중이면 사용자 정보에 기관 id가 아직 비어 있다.
+    // 그대로 부르면 서버가 `companyId=`(빈 값)를 받아 500을 돌려주고, 화면엔 "데이터 로드 실패"가
+    // 뜬다(운영 nginx 10/8·10/10). 기관 id가 채워진 뒤 다음 새로고침에서 다시 부르므로 여기선 건너뛴다.
+    if (companyId.trim().isEmpty) {
+      print('[ApprovalProvider] 기관 id가 비어 있어 결재 목록 요청을 건너뜀');
+      return;
+    }
+
     try {
       if (refresh) {
         _currentPage = 0;

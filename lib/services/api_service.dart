@@ -11,6 +11,7 @@ import 'auth_restore.dart';
 import '../screens/login_screen.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../utils/approval_comment.dart';
+import '../utils/single_flight.dart';
 
 /// 토큰 검증 결과 — 판정과 서버가 준 정보를 함께 들고 온다.
 class TokenCheckResult {
@@ -53,8 +54,15 @@ class ApiService {
     return headers;
   }
 
+  /// 토큰 갱신은 한 번에 하나만 — 동시에 401을 받은 요청들은 같은 갱신 결과를 기다린다.
+  final SingleFlight<RefreshTokenResult> _refreshFlight =
+      SingleFlight<RefreshTokenResult>();
+
   // 토큰 refresh 요청
-  Future<RefreshTokenResult> _refreshToken() async {
+  Future<RefreshTokenResult> _refreshToken() =>
+      _refreshFlight.run(_requestTokenRefresh);
+
+  Future<RefreshTokenResult> _requestTokenRefresh() async {
     try {
       final refreshToken = StorageService().getRefreshToken();
       if (refreshToken == null) {
@@ -168,14 +176,26 @@ class ApiService {
     Future<http.Response> Function() requestFunction,
   ) async {
     try {
+      // 이 요청이 실어 보낸 토큰 — 401이 왔을 때 그사이 다른 요청이 이미 갱신했는지 가린다
+      final tokenUsed = StorageService().getToken();
+
       // 첫 번째 요청 시도
       final response = await requestFunction();
 
       // 401 Unauthorized 확인
       if (response.statusCode == 401 || response.statusCode == 403) {
+        // 동시에 나간 다른 요청이 먼저 갱신을 끝냈으면 새 토큰으로 바로 다시 보낸다
+        // (갱신을 또 부르지 않는다).
+        final currentToken = StorageService().getToken();
+        if (currentToken != null && currentToken != tokenUsed) {
+          print('[API] 다른 요청이 이미 토큰을 갱신함 - 새 토큰으로 재시도');
+          final retryResponse = await requestFunction();
+          return _handleResponse(retryResponse);
+        }
+
         print('[API] 토큰 만료 감지 - refresh 시도');
 
-        // refresh token으로 새 토큰 획득 시도
+        // refresh token으로 새 토큰 획득 시도 (동시에 들어온 요청끼리 한 번만)
         final refreshResult = await _refreshToken();
 
         if (refreshResult.isSuccess) {
