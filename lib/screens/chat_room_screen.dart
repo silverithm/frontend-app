@@ -4550,10 +4550,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     // 미리 잡아둬 이미지가 뜨며 스크롤이 튀지 않게 한다.
                     final placeholderWidth = _bubbleMaxWidth(context);
                     final placeholderHeight = placeholderWidth * 0.75;
+                    final sendFailed =
+                        message.sendingStatus == MessageSendingStatus.failed;
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                       // 깨져 오면 스스로 다시 받는다 (ChatPhoto) — 앱은 깨진 응답까지 캐시에 남는다
-                      child: ChatPhoto(
+                      child: Stack(children: [ChatPhoto(
                         imageUrl: _chatImageUrl(message)!,
                         fit: BoxFit.cover,
                         // 말풍선 최대 폭보다 큰 원본을 그대로 디코드하지 않도록 제한
@@ -4577,6 +4579,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                           ),
                         ),
                       ),
+                      if (sendFailed) const ChatSendFailedOverlay(),
+                      ]),
                     );
                   },
                 ),

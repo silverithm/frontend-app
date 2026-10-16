@@ -100,22 +100,29 @@ class ChatPhotoGroup extends StatelessWidget {
         child: SizedBox(
           width: size,
           height: size,
-          child: url == null
-              ? _broken(size)
-              : ChatPhoto(
-                  imageUrl: url,
-                  fit: BoxFit.cover,
-                  width: size,
-                  height: size,
-                  // 칸보다 큰 원본을 그대로 디코드하지 않도록 제한
-                  memCacheWidth: (size * 2).round(),
-                  placeholder: (context) => Container(
-                    width: size,
-                    height: size,
-                    color: AppSemanticColors.backgroundTertiary,
-                  ),
-                  brokenBuilder: (context) => _broken(size),
-                ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              url == null
+                  ? _broken(size)
+                  : ChatPhoto(
+                      imageUrl: url,
+                      fit: BoxFit.cover,
+                      width: size,
+                      height: size,
+                      // 칸보다 큰 원본을 그대로 디코드하지 않도록 제한
+                      memCacheWidth: (size * 2).round(),
+                      placeholder: (context) => Container(
+                        width: size,
+                        height: size,
+                        color: AppSemanticColors.backgroundTertiary,
+                      ),
+                      brokenBuilder: (context) => _broken(size),
+                    ),
+              if (message.sendingStatus == MessageSendingStatus.failed)
+                const ChatSendFailedOverlay(compact: true),
+            ],
+          ),
         ),
       ),
     );
@@ -241,9 +248,7 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                 //  - 검정: 첫 프레임을 그렸거나 아직 기다리는 중(정상)
                 //  - 짙은 회색: 미리보기를 못 만들었다(아래 안내와 함께)
                 Container(
-                  color: failed
-                      ? const Color(0xFF3A3A3C)
-                      : AppColors.black,
+                  color: failed ? const Color(0xFF3A3A3C) : AppColors.black,
                 ),
                 if (thumbnail != null)
                   Image.memory(
@@ -298,21 +303,24 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                       ],
                     ),
                   ),
-                Center(
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.white.withValues(alpha: 0.22),
-                    ),
-                    child: Icon(
-                      Icons.play_arrow_rounded,
-                      color: AppColors.white,
-                      size: 34,
+                if (message.sendingStatus == MessageSendingStatus.failed)
+                  const ChatSendFailedOverlay(),
+                if (message.sendingStatus != MessageSendingStatus.failed)
+                  Center(
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.white.withValues(alpha: 0.22),
+                      ),
+                      child: Icon(
+                        Icons.play_arrow_rounded,
+                        color: AppColors.white,
+                        size: 34,
+                      ),
                     ),
                   ),
-                ),
                 Positioned(
                   left: 8,
                   right: 8,
@@ -341,6 +349,48 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 보내지 못한 사진·동영상 위에 덮는 표시.
+///
+/// 여러 장을 한꺼번에 보냈을 때 어느 것이 못 갔는지가 겉으로 안 보이면 다시 보낼 것을
+/// 골라낼 수 없다. 못 간 칸만 붉게 덮고 "전송 실패"를 적는다.
+class ChatSendFailedOverlay extends StatelessWidget {
+  /// 칸이 작을 때(사진 묶음) 글자를 줄인다.
+  final bool compact;
+
+  const ChatSendFailedOverlay({super.key, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Container(
+          color: AppColors.black.withValues(alpha: 0.45),
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: compact ? 22 : 30,
+                color: AppSemanticColors.statusErrorBackground,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '전송 실패',
+                style: TextStyle(
+                  fontSize: compact ? 11 : 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppSemanticColors.statusErrorBackground,
+                ),
+              ),
+            ],
           ),
         ),
       ),

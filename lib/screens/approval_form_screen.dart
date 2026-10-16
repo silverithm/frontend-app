@@ -309,6 +309,72 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     });
   }
 
+  /// 이전에 올린 기안 가운데 지금도 쓸 수 있는 양식의 것(임시저장 제외, 최근 30건).
+  List<ApprovalRequest> _reusableApprovals() {
+    final live =
+        context.read<ApprovalProvider>().activeTemplates.map((t) => t.id).toSet();
+    final list = context
+        .read<ApprovalProvider>()
+        .myApprovalRequests
+        .where((a) => a.status != ApprovalStatus.draft && live.contains(a.templateId))
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list.take(30).toList();
+  }
+
+  /// 이전 기안의 양식·제목·내용을 복사해 새 기안으로 시작한다.
+  /// 첨부파일은 복사하지 않고, 결재선은 그 양식의 지금 기본 결재선을 따른다.
+  void _copyFromPrevious(ApprovalRequest source) {
+    final templates = context.read<ApprovalProvider>().activeTemplates;
+    ApprovalTemplate? picked;
+    for (final t in templates) {
+      if (t.id == source.templateId) {
+        picked = t;
+        break;
+      }
+    }
+    if (picked == null) return;
+    final template = picked;
+    setState(() {
+      _selectedTemplate = template;
+      _titleController.text = source.title;
+      _formValues
+        ..clear()
+        ..addAll(source.formData ?? const {});
+      _approvalLine
+        ..clear()
+        ..addAll(template.defaultApprovalLineCandidates);
+    });
+  }
+
+  Future<void> _openPreviousPicker() async {
+    final items = _reusableApprovals();
+    if (items.isEmpty) return;
+    final nameById = {
+      for (final t in context.read<ApprovalProvider>().activeTemplates) t.id: t.name,
+    };
+    final picked = await AppBottomSheet.show<ApprovalRequest>(
+      context,
+      title: '이전 기안에서 불러오기',
+      height: MediaQuery.of(context).size.height * 0.6,
+      child: ListView.builder(
+        itemCount: items.length,
+        itemBuilder: (sheetContext, index) {
+          final a = items[index];
+          final d = a.createdAt.toLocal();
+          final date =
+              '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
+          return SeedListCell(
+            title: a.title.isEmpty ? '(제목 없음)' : a.title,
+            description: '${nameById[a.templateId] ?? ''} · $date',
+            onTap: () => Navigator.of(sheetContext).pop(a),
+          );
+        },
+      ),
+    );
+    if (picked != null && mounted) _copyFromPrevious(picked);
+  }
+
   /// 양식 목록(카드) 화면을 연다. 카드를 탭하면 미리보기로 이동하고,
   /// 미리보기에서 "이 양식으로 작성"을 누르면 그 양식이 선택된 채 돌아온다.
   Future<void> _openTemplatePicker(List<ApprovalTemplate> templates) async {
@@ -526,6 +592,19 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 새 기안을 처음 열었을 때만: 이전에 올린 기안으로 시작하는 길
+              if (!_isEditingDraft &&
+                  _selectedTemplate == null &&
+                  _titleController.text.isEmpty &&
+                  _reusableApprovals().isNotEmpty) ...[
+                SeedListCell(
+                  leadingIcon: Icons.history,
+                  title: '이전 기안에서 불러오기',
+                  description: '지난번에 올린 기안의 양식·제목·내용으로 시작해요',
+                  onTap: _openPreviousPicker,
+                ),
+                const SizedBox(height: AppSpacing.space4),
+              ],
               // 결재 양식 선택 섹션
               _buildSectionHeader(
                 '결재 양식',
