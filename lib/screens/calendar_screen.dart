@@ -9,6 +9,8 @@ import '../models/schedule.dart';
 import '../models/schedule_colors.dart';
 import '../models/user.dart';
 import '../utils/permissions.dart';
+import '../utils/schedule_repeat.dart';
+import '../widgets/schedule/schedule_repeat_fields.dart';
 import '../widgets/vacation_calendar_widget.dart';
 import '../widgets/vacation_planning_banner.dart';
 import '../widgets/vacation_request_dialog.dart';
@@ -1760,6 +1762,13 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
+  /// 반복이면 몇 건이 만들어지는지 단추에 적는다 — "일정 22건 등록"
+  String _scheduleSubmitLabel(DateTime startDate, ScheduleRepeatRule repeat) {
+    if (!repeat.isRepeating || repeat.until == null) return '등록';
+    final count = expandScheduleRepeatDates(startDate, repeat).length;
+    return count > 1 ? '일정 $count건 등록' : '등록';
+  }
+
   void _showAddScheduleDialog() {
     final titleController = TextEditingController();
     final contentController = TextEditingController();
@@ -1780,6 +1789,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     TimeOfDay startTime = const TimeOfDay(hour: 9, minute: 0);
     TimeOfDay endTime = const TimeOfDay(hour: 18, minute: 0);
     bool sendNotification = false;
+    // 반복 — 서버에는 반복이 없어 등록할 때 날짜마다 한 건씩 만든다 (버그제보방 10/16)
+    ScheduleRepeatRule repeat = ScheduleRepeatRule.none;
     Set<String> selectedParticipantIds = {};
 
     // 회원 목록 로드
@@ -2207,7 +2218,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       ),
                                     ),
                                     child: Text(
-                                      '${startDate.month}/${startDate.day}',
+                                      formatScheduleRepeatDay(startDate),
                                       style: AppTypography.bodyMedium,
                                     ),
                                   ),
@@ -2243,7 +2254,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       ),
                                     ),
                                     child: Text(
-                                      '${endDate.month}/${endDate.day}',
+                                      formatScheduleRepeatDay(endDate),
                                       style: AppTypography.bodyMedium,
                                     ),
                                   ),
@@ -2328,6 +2339,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                             const SizedBox(height: AppSpacing.space3),
                           ],
+
+                          // 반복 — 매주(요일 고르기)·매월 같은 날짜로 한 번에 여러 건
+                          ScheduleRepeatFields(
+                            startDate: startDate,
+                            value: repeat,
+                            onChanged: (next) =>
+                                setModalState(() => repeat = next),
+                          ),
+                          const SizedBox(height: AppSpacing.space4),
 
                           // 참석자 선택
                           Consumer<AdminProvider>(
@@ -2432,19 +2452,35 @@ class _CalendarScreenState extends State<CalendarScreen>
                               ),
                             ],
                           ),
+                          if (repeat.isRepeating && sendNotification)
+                            Text(
+                              '반복 일정은 첫 일정(${formatScheduleRepeatDay(expandScheduleRepeatDates(startDate, repeat).first)})에만 알림을 보냅니다',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                            ),
                           const SizedBox(height: AppSpacing.space4),
 
                           // 등록 버튼
                           SizedBox(
                             width: double.infinity,
                             child: SeedButton(
-                              label: '등록',
+                              label: _scheduleSubmitLabel(startDate, repeat),
                               variant: SeedButtonVariant.brandSolid,
                               size: SeedButtonSize.large,
                               onPressed: () async {
                                 if (titleController.text.trim().isEmpty) {
                                   AppSnackBar.showWarning(context,
                                       message: '제목을 입력해주세요');
+                                  return;
+                                }
+                                if (repeat.isRepeating &&
+                                    (repeat.until == null ||
+                                        repeat.until!.isBefore(
+                                          DateUtils.dateOnly(startDate),
+                                        ))) {
+                                  AppSnackBar.showWarning(context,
+                                      message: '반복이 끝나는 날을 시작일 뒤로 골라주세요');
                                   return;
                                 }
 
@@ -2498,6 +2534,37 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 }
 
                                 Navigator.pop(context);
+
+                                final starts = expandScheduleRepeatDates(
+                                  startDate,
+                                  repeat,
+                                );
+                                if (starts.length > 1) {
+                                  // 시트는 이미 닫혔다 — 화면 쪽 context로 알린다
+                                  final screenContext = this.context;
+                                  final result = await scheduleProvider
+                                      .createRepeatedSchedules(
+                                    companyId: companyId.toString(),
+                                    scheduleData: scheduleData,
+                                    startDate: startDate,
+                                    endDate: endDate,
+                                    starts: starts,
+                                  );
+                                  if (!screenContext.mounted) return;
+                                  if (result.created == result.total) {
+                                    AppSnackBar.showSuccess(screenContext,
+                                        message:
+                                            '반복 일정 ${result.total}건이 등록되었습니다');
+                                  } else if (result.created == 0) {
+                                    AppSnackBar.showError(screenContext,
+                                        message: '일정 등록에 실패했습니다');
+                                  } else {
+                                    AppSnackBar.showError(screenContext,
+                                        message:
+                                            '${result.total}건 중 ${result.created}건만 등록했습니다. 나머지는 다시 등록해 주세요');
+                                  }
+                                  return;
+                                }
 
                                 final success = await scheduleProvider.createSchedule(
                                   companyId: companyId.toString(),

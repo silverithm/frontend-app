@@ -1,9 +1,14 @@
 import 'package:flutter/foundation.dart';
 import '../models/schedule.dart';
 import '../services/api_service.dart';
+import '../utils/schedule_repeat.dart';
 
 class ScheduleProvider with ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService;
+
+  /// [apiService]는 테스트에서 가짜를 넣을 때만 쓴다
+  ScheduleProvider({ApiService? apiService})
+      : _apiService = apiService ?? ApiService();
 
   List<Schedule> _schedules = [];
   Map<String, List<Schedule>> _schedulesByDate = {};
@@ -173,6 +178,51 @@ class ScheduleProvider with ChangeNotifier {
       return false;
     }
   }
+
+  /// 반복 일정 등록 — [starts]의 날짜마다 한 건씩 만든다(서버에는 반복이 없다).
+  /// 여러 날 일정은 시작일과 종료일 간격을 그대로 옮기고, 알림은 첫 건에만 보낸다
+  /// (같은 알림이 수십 번 울리지 않게 — 웹 createRepeatedSchedules와 같은 규칙).
+  /// 중간에 실패하면 거기서 멈추고, 이미 만든 건 그대로 둔 채 만든 건수를 돌려준다.
+  Future<({int created, int total})> createRepeatedSchedules({
+    required String companyId,
+    required Map<String, dynamic> scheduleData,
+    required DateTime startDate,
+    required DateTime endDate,
+    required List<DateTime> starts,
+  }) async {
+    _error = null;
+    var created = 0;
+    var failed = false;
+    try {
+      for (final start in starts) {
+        final end = shiftScheduleDate(endDate, startDate, start);
+        await _apiService.createSchedule(
+          companyId: companyId,
+          scheduleData: {
+            ...scheduleData,
+            'startDate': _ymd(start),
+            'endDate': _ymd(end),
+            'sendNotification':
+                created == 0 && scheduleData['sendNotification'] == true,
+          },
+        );
+        created++;
+      }
+    } catch (e) {
+      print('[ScheduleProvider] 반복 일정 등록 에러 ($created/${starts.length}): $e');
+      failed = true;
+    }
+    // 만든 건이 있으면 달력에 보이게 다시 받는다 (다시 받기가 오류를 비우므로 오류는 그 뒤에 남긴다)
+    if (created > 0) {
+      await loadCalendarData(_currentMonth ?? DateTime.now(), companyId: companyId);
+    }
+    if (failed) _error = '일정 등록에 실패했습니다';
+    notifyListeners();
+    return (created: created, total: starts.length);
+  }
+
+  static String _ymd(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   /// 일정 삭제
   Future<bool> deleteSchedule({
