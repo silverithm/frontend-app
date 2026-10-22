@@ -122,6 +122,9 @@ class NotificationItem {
   /// 그 대상까지 못 가고 목록에서 멈췄다(채팅 알림이 방이 아니라 목록으로 가던 이유).
   final int? relatedEntityId;
 
+  /// 대상의 종류 — 일정 알림은 type이 `general`이라 이 값(schedule…)으로 갈 곳을 안다
+  final String? relatedEntityType;
+
   final DateTime createdAt;
   bool isUnread;
 
@@ -132,6 +135,7 @@ class NotificationItem {
     required this.type,
     required this.createdAt,
     this.relatedEntityId,
+    this.relatedEntityType,
     this.isUnread = true,
   });
 
@@ -142,11 +146,13 @@ class NotificationItem {
       message: json['message'] ?? '',
       type: json['type'] ?? 'system',
       relatedEntityId: int.tryParse(json['relatedEntityId']?.toString() ?? ''),
+      relatedEntityType: json['relatedEntityType']?.toString(),
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       isUnread: !(json['isRead'] ?? false),
     );
   }
 
+  /// 알림 종류마다 아이콘·색 — 예전에는 휴무 승인·반려 말고는 모두 회색 종이었다
   IconData get icon {
     switch (type) {
       case 'vacation_approved':
@@ -155,9 +161,23 @@ class NotificationItem {
         return Icons.cancel;
       case 'system':
         return Icons.info;
-      default:
-        return Icons.notifications;
+      case 'chat':
+        return Icons.chat_bubble_outline_rounded;
+      case 'approval':
+        return Icons.fact_check_outlined;
+      case 'work_task':
+        return Icons.checklist_rounded;
+      case 'notice':
+        return Icons.campaign_outlined;
+      case 'meeting_minutes':
+        return Icons.edit_note_rounded;
     }
+    if (type.startsWith('vacation')) return Icons.beach_access_outlined;
+    if (type.startsWith('member_join')) return Icons.person_add_alt_1_outlined;
+    if (relatedEntityType?.startsWith('schedule') ?? false) {
+      return Icons.event_outlined;
+    }
+    return Icons.notifications;
   }
 
   Color get color {
@@ -168,9 +188,21 @@ class NotificationItem {
         return AppSemanticColors.statusErrorIcon;
       case 'system':
         return AppSemanticColors.statusInfoIcon;
-      default:
-        return AppSemanticColors.textDisabled;
+      case 'chat':
+      case 'approval':
+      case 'notice':
+      case 'meeting_minutes':
+        return AppSemanticColors.brandDefault;
+      case 'work_task':
+        return AppSemanticColors.statusWarningIcon;
     }
+    if (type.startsWith('vacation') || type.startsWith('member_join')) {
+      return AppSemanticColors.brandDefault;
+    }
+    if (relatedEntityType?.startsWith('schedule') ?? false) {
+      return AppSemanticColors.statusInfoIcon;
+    }
+    return AppSemanticColors.textDisabled;
   }
 
   String get timeAgo {

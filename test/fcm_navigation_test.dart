@@ -1,6 +1,9 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/screens/admin_user_management_screen.dart';
 import 'package:frontend_app/screens/admin_vacation_management_screen.dart';
+import 'package:frontend_app/screens/approval_detail_loader_screen.dart';
+import 'package:frontend_app/screens/approval_hub_screen.dart';
 import 'package:frontend_app/screens/calendar_screen.dart';
 import 'package:frontend_app/screens/chat_room_list_screen.dart';
 import 'package:frontend_app/screens/meeting_minutes_detail_screen.dart';
@@ -9,6 +12,7 @@ import 'package:frontend_app/screens/my_vacation_screen.dart';
 import 'package:frontend_app/screens/notice_detail_screen.dart';
 import 'package:frontend_app/screens/notice_list_screen.dart';
 import 'package:frontend_app/screens/profile_screen.dart';
+import 'package:frontend_app/screens/work_task_list_screen.dart';
 import 'package:frontend_app/services/fcm_service.dart';
 
 /// FCM 알림 type → 이동할 화면 매핑이 깨지면 "알람은 뜨는데 눌러도 안 열리는" 사고가
@@ -72,6 +76,56 @@ void main() {
       expect(
         resolveFCMDestination('vacation_submitted'),
         FCMDestination.vacationApproval,
+      );
+    });
+
+    test('업무진행도(배정·매일 아침 알림)는 업무진행도 화면으로 간다', () {
+      expect(resolveFCMDestination('work_task'), FCMDestination.workTask);
+    });
+
+    test('휴무 리마인더(마감 임박·조정 필요·알림함의 vacation_reminder)는 내 휴무로 간다', () {
+      expect(
+        resolveFCMDestination('vacation_deadline_reminder'),
+        FCMDestination.vacation,
+      );
+      expect(
+        resolveFCMDestination('vacation_adjustment'),
+        FCMDestination.vacation,
+      );
+      expect(
+        resolveFCMDestination('vacation_reminder'),
+        FCMDestination.vacation,
+      );
+    });
+
+    test('알림함의 일정 알림은 general + relatedEntityType(schedule…)으로 일정에 간다', () {
+      // 일정 알림은 알림함 종류 칸에 자리가 없어 general로 저장된다
+      for (final kind in const [
+        'schedule',
+        'schedule_start_reminder',
+        'schedule_task_reminder',
+      ]) {
+        expect(
+          resolveFCMDestination('general', relatedEntityType: kind),
+          FCMDestination.schedule,
+          reason: kind,
+        );
+      }
+      expect(resolveFCMDestination('general'), FCMDestination.unknown);
+      expect(
+        resolveFCMDestination('general', relatedEntityType: 'notice'),
+        FCMDestination.unknown,
+      );
+    });
+
+    test('type이 알려진 종류면 relatedEntityType보다 type이 우선한다', () {
+      expect(
+        resolveFCMDestination('chat', relatedEntityType: 'schedule'),
+        FCMDestination.chat,
+      );
+      expect(
+        resolveFCMDestination('work_task', relatedEntityType: 'work_task_daily'),
+        FCMDestination.workTask,
       );
     });
 
@@ -153,8 +207,52 @@ void main() {
       expect(screen.highlightedScheduleId, 99);
     });
 
+    test('결재는 문서 번호가 있으면 그 문서를, 없으면 결재함을 연다', () {
+      final screen = screenForNotification(
+        FCMDestination.approval,
+        entityId: 990,
+      );
+      expect(screen, isA<ApprovalDetailLoaderScreen>());
+      expect((screen as ApprovalDetailLoaderScreen).approvalId, 990);
+      expect(
+        screenForNotification(FCMDestination.approval),
+        isA<ApprovalHubScreen>(),
+      );
+    });
+
+    test('업무진행도는 그 업무 창까지 연다 — 번호가 없으면 목록만', () {
+      final screen = screenForNotification(
+        FCMDestination.workTask,
+        entityId: 41,
+      );
+      expect(screen, isA<WorkTaskListScreen>());
+      expect((screen as WorkTaskListScreen).openTaskId, 41);
+      final list = screenForNotification(FCMDestination.workTask);
+      expect((list as WorkTaskListScreen).openTaskId, isNull);
+    });
+
+    test('일정에 날짜가 없으면(알림함) 번호만 넘긴다 — 달력이 일정을 받아 날짜를 찾는다', () {
+      final screen = screenForNotification(
+        FCMDestination.schedule,
+        entityId: 5,
+      );
+      expect((screen as CalendarScreen).initialScheduleDate, isNull);
+      expect(screen.highlightedScheduleId, 5);
+    });
+
     test('알 수 없는 알림은 아무 화면도 열지 않는다', () {
       expect(screenForNotification(FCMDestination.unknown), isNull);
+    });
+
+    test('모든 종류가 화면을 하나씩 갖는다 — 새 종류를 넣고 화면을 빠뜨리지 않게', () {
+      for (final destination in FCMDestination.values) {
+        final screen = screenForNotification(destination, entityId: 1);
+        if (destination == FCMDestination.unknown) {
+          expect(screen, isNull);
+        } else {
+          expect(screen, isNotNull, reason: destination.name);
+        }
+      }
     });
   });
 
@@ -177,6 +275,18 @@ void main() {
         entityIdFromFCMData(FCMDestination.schedule, {'scheduleId': '99'}),
         99,
       );
+      expect(
+        entityIdFromFCMData(FCMDestination.approval, {'requestId': '990'}),
+        990,
+      );
+      expect(
+        entityIdFromFCMData(FCMDestination.workTask, {'taskId': '41'}),
+        41,
+      );
+    });
+
+    test('숫자로 와도 읽는다', () {
+      expect(entityIdFromFCMData(FCMDestination.approval, {'requestId': 5}), 5);
     });
 
     test('키가 없거나 숫자가 아니면 null — 목록으로 떨어진다', () {
@@ -185,6 +295,120 @@ void main() {
         entityIdFromFCMData(FCMDestination.chat, {'roomId': 'abc'}),
         isNull,
       );
+    });
+  });
+
+  /// 서버가 실제로 보내는 푸시 data(서비스별 발송 코드 그대로)를 넣어 끝까지 따라간다.
+  /// 서버 키 이름과 앱 매핑이 한 군데라도 어긋나면 "알림을 누르면 목록에서 멈춘다"가 재발한다.
+  group('서버 푸시 data → 열리는 화면', () {
+    Widget? open(Map<String, dynamic> data) {
+      final destination = resolveFCMDestination(data['type'].toString());
+      return screenForNotification(
+        destination,
+        entityId: entityIdFromFCMData(destination, data),
+        scheduleDate: DateTime.tryParse(data['scheduleDate']?.toString() ?? ''),
+      );
+    }
+
+    test('채팅(ChatService) — 그 방', () {
+      final screen = open({
+        'type': 'chat',
+        'roomId': '191',
+        'messageId': '5001',
+        'mention': 'false',
+      });
+      expect((screen as ChatRoomListScreen).initialRoomId, 191);
+    });
+
+    test('결재(ApprovalRequestService) — 결재할 차례·결과 모두 그 문서', () {
+      for (final data in [
+        {'type': 'approval', 'requestId': '990'},
+        {'type': 'approval', 'requestId': '990', 'result': 'APPROVED'},
+      ]) {
+        final screen = open(data);
+        expect((screen as ApprovalDetailLoaderScreen).approvalId, 990);
+      }
+    });
+
+    test('공지(NoticeService) — 그 공지', () {
+      final screen = open({'type': 'notice', 'noticeId': '7', 'priority': 'HIGH'});
+      expect(screen, isA<NoticeDetailScreen>());
+    });
+
+    test('일정 등록·당일·미완료(ScheduleService.scheduleNotificationData) — 그날 그 일정', () {
+      final screen = open({
+        'type': 'schedule',
+        'scheduleId': '99',
+        'scheduleDate': '2026-10-23',
+      });
+      expect((screen as CalendarScreen).initialScheduleDate, DateTime(2026, 10, 23));
+      expect(screen.highlightedScheduleId, 99);
+    });
+
+    test('회의록 서명 요청(MeetingMinutesService) — 그 회의록', () {
+      expect(
+        open({'type': 'meeting_minutes', 'minutesId': '3'}),
+        isA<MeetingMinutesDetailScreen>(),
+      );
+    });
+
+    test('업무진행도(WorkTaskNotifier) — 그 업무', () {
+      final screen = open({'type': 'work_task', 'taskId': '41'});
+      expect((screen as WorkTaskListScreen).openTaskId, 41);
+    });
+
+    test('휴무 — 신청은 관리자 승인 화면, 나머지는 내 휴무', () {
+      expect(
+        open({'type': 'vacation_submitted', 'vacationId': '1'}),
+        isA<AdminVacationManagementScreen>(),
+      );
+      for (final type in const [
+        'vacation_approved',
+        'vacation_rejected',
+        'vacation_adjustment',
+        'vacation_deadline_reminder',
+      ]) {
+        expect(open({'type': type}), isA<MyVacationScreen>(), reason: type);
+      }
+    });
+
+    test('가입·탈퇴(MemberService)', () {
+      expect(
+        open({'type': 'member_join_requested'}),
+        isA<AdminUserManagementScreen>(),
+      );
+      expect(open({'type': 'member_withdrawal'}), isA<AdminUserManagementScreen>());
+      expect(open({'type': 'member_join_approved'}), isA<ProfileScreen>());
+      expect(open({'type': 'member_join_rejected'}), isA<ProfileScreen>());
+    });
+  });
+
+  /// 알림함 항목(서버 NotificationDTO: type 소문자 + relatedEntityId/Type)도 같은 화면으로 간다.
+  group('알림함 항목 → 열리는 화면', () {
+    Widget? open(String type, int? id, String? kind) => screenForNotification(
+      resolveFCMDestination(type, relatedEntityType: kind),
+      entityId: id,
+    );
+
+    test('채팅·결재·업무·일정·공지·회의록', () {
+      expect((open('chat', 191, 'chatRoom') as ChatRoomListScreen).initialRoomId, 191);
+      expect(
+        (open('approval', 990, 'approval_request') as ApprovalDetailLoaderScreen)
+            .approvalId,
+        990,
+      );
+      expect(
+        (open('work_task', 41, 'work_task_daily') as WorkTaskListScreen).openTaskId,
+        41,
+      );
+      expect(
+        (open('general', 99, 'schedule_start_reminder') as CalendarScreen)
+            .highlightedScheduleId,
+        99,
+      );
+      expect(open('notice', 7, 'notice'), isA<NoticeDetailScreen>());
+      expect(open('meeting_minutes', 3, 'meeting_minutes'), isA<MeetingMinutesDetailScreen>());
+      expect(open('vacation_reminder', null, 'vacation_adjustment'), isA<MyVacationScreen>());
     });
   });
 }

@@ -84,25 +84,29 @@ void main() {
       expect(outbox.failed, isEmpty);
     });
 
+    // 오늘을 메시지 날짜(9/14) 가까이로 고정한다 — 실제 오늘로 두면 사흘이 지나 '오래된 실패'로
+    // 걸러져, 테스트가 쓰인 날로부터 사흘 뒤부터 저절로 깨졌다.
+    DateTime sameMorning() => DateTime(2026, 9, 14, 11, 5);
+
     test('실패로 표시하면 저장소에 남고, 다시 만들면 되살아난다', () {
       final store = InMemoryOutboxStore();
-      final outbox = ChatOutbox(store);
+      final outbox = ChatOutbox(store, now: sameMorning);
       outbox.expectAck(_entry('a'));
       outbox.markFailed('a');
 
-      final revived = ChatOutbox(store);
+      final revived = ChatOutbox(store, now: sameMorning);
       expect(revived.failed.map((e) => e.localId), ['a']);
       expect(revived.failedForRoom(1).single.content, '안녕');
     });
 
     test('되살아난 실패는 자동 재전송 후보가 아니다 — 어젯밤 실패가 아침에 혼자 나가면 안 된다', () {
       final store = InMemoryOutboxStore();
-      final outbox = ChatOutbox(store);
+      final outbox = ChatOutbox(store, now: sameMorning);
       outbox.expectAck(_entry('a'));
       outbox.markFailed('a');
       expect(outbox.autoResendCandidates().map((e) => e.localId), ['a']);
 
-      final revived = ChatOutbox(store);
+      final revived = ChatOutbox(store, now: sameMorning);
       expect(revived.autoResendCandidates(), isEmpty);
       expect(revived.failedForRoom(1), hasLength(1)); // 화면에는 실패로 보인다
     });
@@ -120,12 +124,18 @@ void main() {
 
     test('보내지 않고 삭제하면 저장소에서도 사라진다', () {
       final store = InMemoryOutboxStore();
-      final outbox = ChatOutbox(store);
+      final outbox = ChatOutbox(store, now: sameMorning);
       outbox.expectAck(_entry('a'));
+      outbox.expectAck(_entry('b'));
       outbox.markFailed('a');
+      outbox.markFailed('b');
       outbox.discard('a');
 
-      expect(ChatOutbox(store).failed, isEmpty);
+      // 지우지 않은 것은 남아야 '사라졌다'가 날짜 때문이 아님을 안다
+      expect(
+        ChatOutbox(store, now: sameMorning).failed.map((e) => e.localId),
+        ['b'],
+      );
     });
 
     test('다시 보내기를 시작하면 실패에서 기다림으로 옮겨진다', () {

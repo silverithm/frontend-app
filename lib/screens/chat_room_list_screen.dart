@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import '../services/api_service.dart';
 import '../models/chat_room.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -53,20 +54,23 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
 
   /// 알림으로 지목된 방을 목록을 받은 뒤에 연다.
   /// 방 정보(이름·참여 인원)가 있어야 대화 화면을 열 수 있어 목록 로드를 기다린다.
-  void _openInitialRoomIfAny() {
+  /// 목록에 없으면(방금 초대된 방이 아직 목록에 안 잡힌 경우 등) 그 방 하나만 따로 받는다.
+  Future<void> _openInitialRoomIfAny() async {
     final roomId = widget.initialRoomId;
     if (roomId == null || !mounted) return;
 
-    ChatRoom? target;
-    for (final room in _chatProvider.chatRooms) {
-      if (room.id == roomId) {
-        target = room;
-        break;
+    var target = findChatRoomById(_chatProvider.chatRooms, roomId);
+    if (target == null) {
+      try {
+        final response = await ApiService().getChatRoomDetail(roomId: roomId);
+        final json = response['room'] ?? response;
+        if (json is Map<String, dynamic>) target = ChatRoom.fromJson(json);
+      } catch (e) {
+        // 나간 방·삭제된 방 — 목록만 보여준다. 빈 화면으로 보내지 않는다
+        debugPrint('[ChatRoomList] 알림의 방($roomId)을 찾지 못했습니다: $e');
       }
     }
-
-    // 못 찾으면(나간 방·삭제된 방) 목록만 보여준다 — 빈 화면으로 보내지 않는다
-    if (target != null) _navigateToChatRoom(target);
+    if (target != null && mounted) _navigateToChatRoom(target);
   }
 
   @override
@@ -497,4 +501,12 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
       ),
     );
   }
+}
+
+/// 알림이 가리킨 방을 받은 목록에서 찾는다(없으면 null).
+ChatRoom? findChatRoomById(List<ChatRoom> rooms, int roomId) {
+  for (final room in rooms) {
+    if (room.id == roomId) return room;
+  }
+  return null;
 }

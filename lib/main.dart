@@ -23,6 +23,7 @@ import 'providers/notice_provider.dart';
 import 'providers/approval_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/dispatch_provider.dart';
+import 'providers/work_task_provider.dart';
 import 'providers/schedule_provider.dart';
 import 'services/storage_service.dart';
 import 'services/api_service.dart';
@@ -106,6 +107,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
         ChangeNotifierProvider(create: (_) => DispatchProvider()),
+        ChangeNotifierProvider(create: (_) => WorkTaskProvider()),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, child) {

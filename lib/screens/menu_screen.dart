@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/work_task_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -31,6 +32,7 @@ import 'profile_screen.dart';
 import 'signature_manage_screen.dart';
 import 'meeting_minutes_list_screen.dart';
 import 'voice_box_screen.dart';
+import 'work_task_list_screen.dart';
 
 /// 전체 메뉴 탭 — 흩어져 있던 기능들을 역할별 그룹으로 모은 허브.
 /// 상단 프로필 카드 + (내 업무 / 소통 / 기관 관리(관리자) / 계정) 그룹.
@@ -48,9 +50,11 @@ class MenuScreen extends StatelessWidget {
       message: '정말 로그아웃하시겠습니까?',
       confirmText: '로그아웃',
     ).then((confirmed) async {
-      if (confirmed != true) return;
+      if (confirmed != true || !context.mounted) return;
 
       final authProvider = context.read<AuthProvider>();
+      // 다른 기관 계정으로 다시 들어왔을 때 옛 업무 목록이 비치지 않게
+      context.read<WorkTaskProvider>().clear();
       await authProvider.logout();
 
       if (context.mounted) {
@@ -167,6 +171,13 @@ class MenuScreen extends StatelessWidget {
           _MenuGroup(
             title: '내 업무',
             items: [
+              // 원장 요청(2026-10-22) — 웹 대시보드 오른쪽 패널의 업무진행도와 같은 목록
+              _MenuItem(
+                icon: Icons.checklist_rounded,
+                label: '업무진행도',
+                description: '담당 업무·기한·수행도를 함께 확인',
+                onTap: () => _push(context, const WorkTaskListScreen()),
+              ),
               _MenuItem(
                 icon: Icons.beach_access_outlined,
                 label: '내 휴무',

@@ -13,6 +13,7 @@ import '../providers/notice_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/vacation_provider.dart';
+import '../providers/work_task_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -28,6 +29,8 @@ import 'approval_detail_screen.dart';
 import 'main_screen.dart' show MainTabs;
 import 'notice_detail_screen.dart';
 import 'notice_list_screen.dart';
+import 'work_task_list_screen.dart';
+import '../widgets/work_task/work_task_row.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateToTab;
@@ -78,6 +81,8 @@ class _HomeScreenState extends State<HomeScreen> {
           companyId: companyId,
           refresh: true,
         ),
+        // 업무진행도 칸 — 기관 전체가 같은 목록을 본다
+        context.read<WorkTaskProvider>().load(),
       ];
 
       if (isAdmin) {
@@ -340,6 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final noticeProvider = context.watch<NoticeProvider>();
     final vacationProvider = context.watch<VacationProvider>();
     final scheduleProvider = context.watch<ScheduleProvider>();
+    final workTaskProvider = context.watch<WorkTaskProvider>();
 
     // 지금 내 차례인 결재 건수 — 기존 "전자결재" 칸 안에서 강조하는 데 쓴다
     // (새 영역을 만들지 않는다 — 알림을 놓치면 메뉴 깊숙이 숨어 안 보이던 것을
@@ -453,8 +459,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // 홈은 세 칸만 — 공지사항(2건) · 전자결재(2건) · 오늘(일정+휴무자).
+                      // 홈은 네 칸 — 공지사항(2건) · 전자결재(2건) · 업무진행도(3건) · 오늘(일정+휴무자).
                       // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
+                      // 업무진행도는 원장 요청(2026-10-22)으로 웹 대시보드 오른쪽 패널과 같이 늘 보이게 했다.
                       _SectionCard(
                         header: _SectionHeader(
                           title: '공지사항',
@@ -561,6 +568,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: AppSpacing.space3),
 
+                      _buildWorkTaskSection(workTaskProvider, user.chatUserId),
+                      const SizedBox(height: AppSpacing.space3),
+
                       // 오늘 — 오늘의 일정과 휴무자 요약
                       _buildTodayBriefing(scheduleProvider, vacationProvider),
                     ],
@@ -570,6 +580,55 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 업무진행도 칸 — 진행 중인 업무 세 건(서버가 정한 급한 순). 누르면 그 업무 창까지 연다.
+  Widget _buildWorkTaskSection(WorkTaskProvider provider, String meId) {
+    final inProgress = provider.inProgress;
+    final mine = provider.myInProgressCount(meId);
+    final today = DateTime.now();
+
+    void openList([int? taskId]) => Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => WorkTaskListScreen(openTaskId: taskId),
+      ),
+    );
+
+    return _SectionCard(
+      header: _SectionHeader(
+        title: mine > 0 ? '업무진행도 ($mine)' : '업무진행도',
+        subtitle: mine > 0
+            ? '내가 맡은 업무 $mine건'
+            : '진행 중인 업무 ${inProgress.length}건',
+        actionLabel: '전체보기',
+        onAction: openList,
+      ),
+      child: provider.status == WorkTaskLoadStatus.error && provider.tasks.isEmpty
+          ? const _EmptySectionState(
+              icon: Icons.cloud_off_outlined,
+              title: '업무를 불러오지 못했습니다',
+              subtitle: '아래로 당겨 다시 받아 주세요.',
+            )
+          : inProgress.isEmpty
+          ? const _EmptySectionState(
+              icon: Icons.checklist_rounded,
+              title: '진행 중인 업무가 없습니다',
+              subtitle: '전체보기에서 담당자·기한을 정해 업무를 올릴 수 있습니다.',
+            )
+          : Column(
+              children: [
+                for (final entry in inProgress.take(3).toList().asMap().entries) ...[
+                  if (entry.key > 0)
+                    Divider(height: 1, color: AppSemanticColors.borderSubtle),
+                  WorkTaskRow(
+                    task: entry.value,
+                    today: today,
+                    onTap: () => openList(entry.value.id),
+                  ),
+                ],
+              ],
+            ),
     );
   }
 

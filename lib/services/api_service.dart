@@ -2544,6 +2544,63 @@ class ApiService {
     });
   }
 
+  // ── 업무진행도 ──
+  // 기관은 토큰으로 정한다(companyId를 보내지 않는다). 기관 전체가 같은 목록을 본다.
+
+  Future<Map<String, dynamic>> getWorkTasks() async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/work-tasks');
+      return await http.get(uri, headers: await _getHeaders());
+    });
+  }
+
+  Future<Map<String, dynamic>> createWorkTask(Map<String, dynamic> body) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/work-tasks');
+      return await http.post(
+        uri,
+        headers: await _getHeaders(),
+        body: json.encode(body),
+      );
+    });
+  }
+
+  Future<Map<String, dynamic>> updateWorkTask(
+    int taskId,
+    Map<String, dynamic> body,
+  ) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/work-tasks/$taskId');
+      return await http.put(
+        uri,
+        headers: await _getHeaders(),
+        body: json.encode(body),
+      );
+    });
+  }
+
+  /// 수행도만 바꾼다 — 목록에서 바로 올릴 때
+  Future<Map<String, dynamic>> updateWorkTaskProgress(
+    int taskId,
+    int progress,
+  ) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/work-tasks/$taskId/progress');
+      return await http.patch(
+        uri,
+        headers: await _getHeaders(),
+        body: json.encode({'progress': progress}),
+      );
+    });
+  }
+
+  Future<Map<String, dynamic>> deleteWorkTask(int taskId) async {
+    return await _makeAuthenticatedRequest(() async {
+      final uri = Uri.parse('$_baseUrl/v1/work-tasks/$taskId');
+      return await http.delete(uri, headers: await _getHeaders());
+    });
+  }
+
   // ── 푸시 알림 수신 설정 ──
   // 직원(Member)과 관리자 가입 계정(AppUser)이 서로 다른 테이블이라 경로가 나뉜다.
 

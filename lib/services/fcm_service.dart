@@ -19,6 +19,9 @@ import '../screens/meeting_minutes_detail_screen.dart';
 import '../screens/meeting_minutes_list_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/admin_vacation_management_screen.dart';
+import '../screens/approval_detail_loader_screen.dart';
+import '../screens/work_task_list_screen.dart';
+import 'push_navigation_gate.dart';
 
 /// 알림 data의 type이 어떤 화면으로 이어져야 하는지를 나타낸다.
 enum FCMDestination {
@@ -31,17 +34,24 @@ enum FCMDestination {
   meetingMinutes,
   memberManagement,
   myProfile,
+  workTask,
   unknown,
 }
 
 /// 알림 type 문자열 → 이동할 화면 종류. Navigator/BuildContext에 의존하지 않는
 /// 순수 함수라 단위 테스트로 매핑 누락을 바로 잡아낼 수 있다.
-FCMDestination resolveFCMDestination(String type) {
-  // 백엔드 타입: vacation_*, chat, schedule, notice, approval 등
+///
+/// [relatedEntityType]은 알림함 항목에만 있다. 일정 알림은 알림함의 종류 칸에 따로 자리가 없어
+/// `general`로 저장되고, 무엇인지는 relatedEntityType(schedule·schedule_start_reminder …)이 말한다.
+/// 푸시는 data의 type이 처음부터 `schedule`이라 이 값이 필요 없다.
+FCMDestination resolveFCMDestination(String type, {String? relatedEntityType}) {
+  // 백엔드 타입: vacation_*, chat, schedule, notice, approval, work_task 등
   //
   // 휴가 '신청' 알림은 관리자에게만 간다(VacationService.sendVacationSubmittedNotificationToAdmins).
   // 받는 사람이 할 일은 승인/반려인데 '내 휴무'로 보내면 정작 그 신청을 볼 수 없다.
   if (type == 'vacation_submitted') return FCMDestination.vacationApproval;
+  // vacation_approved·rejected, 마감 임박(vacation_deadline_reminder)·조정(vacation_adjustment),
+  // 알림함의 vacation_reminder까지 — 모두 내 휴무에서 처리한다
   if (type.startsWith('vacation')) return FCMDestination.vacation;
 
   switch (type) {
@@ -61,9 +71,13 @@ FCMDestination resolveFCMDestination(String type) {
     case 'member_join_approved':
     case 'member_join_rejected':
       return FCMDestination.myProfile;
-    default:
-      return FCMDestination.unknown;
+    case 'work_task':
+      return FCMDestination.workTask;
   }
+  if (relatedEntityType != null && relatedEntityType.startsWith('schedule')) {
+    return FCMDestination.schedule;
+  }
+  return FCMDestination.unknown;
 }
 
 /// 알림에서 열어야 할 화면. **푸시(FCM)와 앱 안 알림함이 같은 함수를 쓴다.**
@@ -73,7 +87,7 @@ FCMDestination resolveFCMDestination(String type) {
 /// 규칙이 한 곳에 있어야 한쪽만 낡는 일이 없다.
 ///
 /// [entityId]는 그 알림이 가리키는 대상의 id다. 푸시는 data의 roomId/noticeId/minutesId/
-/// scheduleId로, 알림함은 저장된 relatedEntityId로 같은 값을 받는다.
+/// scheduleId/requestId/taskId로, 알림함은 저장된 relatedEntityId로 같은 값을 받는다.
 /// 대상을 못 찾으면(id 없음) 목록 화면으로라도 보내고, 목록조차 없는 종류만 null이다.
 Widget? screenForNotification(
   FCMDestination destination, {
@@ -86,7 +100,11 @@ Widget? screenForNotification(
     case FCMDestination.vacationApproval:
       return const AdminVacationManagementScreen();
     case FCMDestination.approval:
-      return const ApprovalHubScreen(initialTab: 1);
+      // 결재 알림은 문서 하나를 가리킨다(결재할 차례·승인·반려) — 결재함 목록에서 다시
+      // 찾게 하지 않고 그 문서를 연다. 번호가 없을 때만 결재함으로.
+      return entityId != null
+          ? ApprovalDetailLoaderScreen(approvalId: entityId)
+          : const ApprovalHubScreen(initialTab: 1);
     case FCMDestination.notice:
       return entityId != null
           ? NoticeDetailScreen(noticeId: entityId)
@@ -108,13 +126,16 @@ Widget? screenForNotification(
       return const AdminUserManagementScreen();
     case FCMDestination.myProfile:
       return const ProfileScreen();
+    case FCMDestination.workTask:
+      // 배정 알림은 그 업무를, 매일 아침 알림은 가장 급한 업무를 가리킨다
+      return WorkTaskListScreen(openTaskId: entityId);
     case FCMDestination.unknown:
       return null;
   }
 }
 
 /// 푸시 data에서 [screenForNotification]에 넘길 대상 id를 꺼낸다.
-/// 종류마다 키 이름이 다르다(roomId/noticeId/minutesId/scheduleId).
+/// 종류마다 키 이름이 다르다(roomId/noticeId/minutesId/scheduleId/requestId/taskId).
 int? entityIdFromFCMData(FCMDestination destination, Map<String, dynamic> data) {
   String? raw;
   switch (destination) {
@@ -129,6 +150,12 @@ int? entityIdFromFCMData(FCMDestination destination, Map<String, dynamic> data) 
       break;
     case FCMDestination.schedule:
       raw = data['scheduleId']?.toString();
+      break;
+    case FCMDestination.approval:
+      raw = data['requestId']?.toString();
+      break;
+    case FCMDestination.workTask:
+      raw = data['taskId']?.toString();
       break;
     default:
       raw = null;
@@ -159,17 +186,25 @@ class FCMService {
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
-  /// 네비게이터가 아직 준비되지 않은 시점(콜드 스타트 직후 등)에 도착한 알림 탭 데이터.
-  /// 네비게이터가 붙으면 재시도 타이머가 처리한다.
-  Map<String, dynamic>? _pendingNavigationData;
-  Timer? _pendingNavRetryTimer;
+  /// 알림 탭 이동은 로그인된 메인 화면이 뜬 뒤에만 한다([PushNavigationGate] 참고).
+  late final PushNavigationGate _navigationGate =
+      PushNavigationGate(_openScreenFor);
   void Function(RemoteMessage)? onForegroundMessage;
+
+  /// 로그인된 메인 화면이 떴다 — 그 전에 누른 알림이 있으면 이제 그 화면으로 간다.
+  void attachSession() => _navigationGate.open();
+
+  /// 메인 화면이 내려갔다(로그아웃 등) — 그 뒤 누른 알림은 다시 로그인될 때까지 기다린다.
+  void detachSession() => _navigationGate.close();
 
   /// FCM 서비스 초기화
   Future<void> initialize() async {
     try {
       // 로컬 알림 설정 (권한 요청보다 먼저)
       await _initializeLocalNotifications();
+      // 앱이 꺼진 뒤 남아 있던 로컬 알림(안드로이드 포그라운드 알림)을 눌러 켜진 경우 —
+      // 이 탭은 onDidReceiveNotificationResponse로 오지 않는다
+      await _handleLocalNotificationLaunch();
 
       // 알림 권한 요청
       await _requestPermissions();
@@ -549,11 +584,25 @@ class FCMService {
   /// 로컬 알림 클릭 처리
   void _onNotificationTapped(NotificationResponse response) {
     log('[FCM] 로컬 알림 클릭: ${response.payload}');
-    if (response.payload == null || response.payload!.isEmpty) return;
+    _handlePayload(response.payload);
+  }
 
+  Future<void> _handleLocalNotificationLaunch() async {
     try {
-      final data = json.decode(response.payload!) as Map<String, dynamic>;
-      _navigateByType(data);
+      final details = await _localNotifications.getNotificationAppLaunchDetails();
+      if (details?.didNotificationLaunchApp != true) return;
+      log('[FCM] 로컬 알림으로 앱 시작: ${details!.notificationResponse?.payload}');
+      _handlePayload(details.notificationResponse?.payload);
+    } catch (e) {
+      log('[FCM] 로컬 알림 시작 정보 확인 실패: $e');
+    }
+  }
+
+  void _handlePayload(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+    try {
+      final data = json.decode(payload) as Map<String, dynamic>;
+      _navigationGate.handle(data);
     } catch (e) {
       log('[FCM] 알림 페이로드 파싱 실패: $e');
     }
@@ -562,19 +611,16 @@ class FCMService {
   /// 알림 클릭 시 네비게이션 처리
   void _handleNotificationNavigation(RemoteMessage message) {
     log('[FCM] 알림 네비게이션: ${message.data}');
-    _navigateByType(message.data);
+    _navigationGate.handle(message.data);
   }
 
-  /// 타입별 화면 이동 (공통).
-  /// 네비게이터가 아직 준비되지 않았으면 보류 큐에 넣고 재시도 타이머를 건다.
-  void _navigateByType(Map<String, dynamic> data) {
+  /// 타입별 화면 이동 — [PushNavigationGate]가 로그인된 메인 화면이 뜬 뒤에만 부른다.
+  void _openScreenFor(Map<String, dynamic> data) {
     final type = data['type']?.toString() ?? '';
     final navigator = navigatorKey.currentState;
-
     if (navigator == null) {
-      log('[FCM] 네비게이터 미준비 — 알림 이동 보류 (type: $type, data: $data)');
-      _pendingNavigationData = data;
-      _scheduleRetryPendingNavigation();
+      // 메인 화면이 떠 있으면 네비게이터는 늘 있다 — 여기 오면 순서가 어긋난 것이다
+      log('[FCM] 네비게이터 없음 — 알림 이동 못 함 (type: $type, data: $data)');
       return;
     }
 
@@ -599,36 +645,6 @@ class FCMService {
     navigator.push(MaterialPageRoute(builder: (_) => screen));
   }
 
-  /// 네비게이터 준비 전 보류된 알림 이동을 짧은 간격으로 재시도한다.
-  /// (콜드 스타트 시 FCMService.initialize()가 runApp보다 먼저 끝나 알림이 먼저 도착할 수 있다)
-  void _scheduleRetryPendingNavigation() {
-    _pendingNavRetryTimer?.cancel();
-    var attempts = 0;
-    const maxAttempts = 20; // 300ms * 20 = 최대 6초 대기
-    _pendingNavRetryTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
-      final pending = _pendingNavigationData;
-      if (pending == null) {
-        timer.cancel();
-        return;
-      }
-
-      attempts++;
-      if (navigatorKey.currentState != null) {
-        timer.cancel();
-        _pendingNavigationData = null;
-        log('[FCM] 네비게이터 준비 완료 — 보류된 알림 이동 재개 (시도 $attempts회차)');
-        _navigateByType(pending);
-        return;
-      }
-
-      if (attempts >= maxAttempts) {
-        timer.cancel();
-        _pendingNavigationData = null;
-        log('[FCM] 네비게이터 준비 대기 시간 초과 — 알림 이동 포기 (data: $pending)');
-      }
-    });
-  }
-  
   /// 현재 FCM 토큰 반환
   String? get currentToken => _currentToken;
   

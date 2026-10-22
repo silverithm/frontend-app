@@ -331,22 +331,27 @@ void main() {
       expect(restored.seniorAbsences.single.reason, '병원');
     });
 
-    test('아직 사람을 고르지 않은 빈 운전자 자리는 저장하지 않는다', () {
-      final withBlank = DispatchSettings(
+    // 자리(인덱스)가 곧 역할이다(0=주운전자, 1=부1운전자 …). 예전에는 빈 자리를 걸러 저장했는데,
+    // 그러면 "주운전자는 비고 부운전자만 채운" 노선의 부운전자가 앞으로 당겨져 주운전자가 됐다.
+    // 관리자 웹도 걸러내지 않는다(b9ceeb1 웹↔앱 규칙 통일). 이 테스트는 그 전 규칙에 남아 있었다.
+    test('빈 운전자 자리도 그대로 저장한다 — 부운전자가 주운전자로 당겨지지 않게', () {
+      final blankMain = DispatchSettings(
         routes: [
           DispatchRoute(
             id: 'r1',
             name: 'A코스',
             type: RouteType.toWork,
-            routeDrivers: const [main1, RouteDriver()],
+            routeDrivers: const [RouteDriver(), main1],
           ),
         ],
       );
 
-      final restored = DispatchSettings.fromJson(withBlank.toJson());
+      final restored = DispatchSettings.fromJson(blankMain.toJson());
+      final drivers = restored.routes.single.routeDrivers;
 
-      expect(restored.routes.single.routeDrivers.length, 1);
-      expect(restored.routes.single.routeDrivers.single.driverName, '김영희');
+      expect(drivers.length, 2);
+      expect(drivers[0].driverName, isEmpty); // 주운전자 자리는 빈 채로
+      expect(drivers[1].driverName, '김영희'); // 부1운전자는 제자리
     });
 
     test('서버가 빈 설정을 주면 빈 상태로 읽는다', () {

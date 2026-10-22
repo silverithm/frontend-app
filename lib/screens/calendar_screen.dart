@@ -84,6 +84,11 @@ class _CalendarScreenState extends State<CalendarScreen>
       _scheduleCurrentDate = DateTime(target.year, target.month);
       _scheduleSelectedDate = DateTime(target.year, target.month, target.day);
       _tabController.index = 1; // 0=휴무 달력, 1=일정 달력
+    } else if (widget.highlightedScheduleId != null) {
+      // 알림함에서 왔다 — 일정 탭을 먼저 펴 두고, 날짜는 일정을 받아 맞춘다
+      _tabController.index = 1;
+      final id = widget.highlightedScheduleId!;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _focusScheduleById(id));
     }
     // 강조할 일정에 할 일이 있다면 체크리스트를 펼쳐서 바로 보이게 한다
     final highlightId = _highlightedScheduleId;
@@ -140,15 +145,34 @@ class _CalendarScreenState extends State<CalendarScreen>
   void _handleFocusRequest() {
     final request = _scheduleProvider.takeFocusRequest();
     if (request == null || !mounted) return;
-    final day = request.date;
+    _focusOn(request.date, request.scheduleId);
+  }
+
+  /// 알림함에서 온 일정 알림에는 날짜가 없다(번호만 남는다) — 일정을 받아 시작일을 찾는다.
+  /// 못 받으면(지워진 일정 등) 일정 달력의 이번 달을 그대로 보여 준다.
+  Future<void> _focusScheduleById(int scheduleId) async {
+    try {
+      final response = await ApiService().getScheduleDetail(
+        scheduleId: scheduleId,
+      );
+      final day = scheduleStartDateOf(response);
+      if (day == null || !mounted) return;
+      _focusOn(day, scheduleId);
+    } catch (e) {
+      debugPrint('[CalendarScreen] 알림의 일정($scheduleId)을 찾지 못했습니다: $e');
+    }
+  }
+
+  /// 월간일정 탭의 그 날짜를 펴고 그 일정을 강조한 뒤 카드가 보이도록 내린다.
+  void _focusOn(DateTime day, int scheduleId) {
     final monthChanged = _scheduleCurrentDate.year != day.year ||
         _scheduleCurrentDate.month != day.month;
     setState(() {
       _tabController.index = 1; // 0=휴무 달력, 1=일정 달력
       _scheduleCurrentDate = DateTime(day.year, day.month);
       _scheduleSelectedDate = day;
-      _highlightedScheduleId = request.scheduleId;
-      _expandedTaskScheduleIds.add(request.scheduleId);
+      _highlightedScheduleId = scheduleId;
+      _expandedTaskScheduleIds.add(scheduleId);
     });
     if (monthChanged) {
       final companyId =
@@ -3259,4 +3283,14 @@ class StarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// 일정 상세 응답({schedule: {...}} 또는 일정 그대로)에서 시작일만 꺼낸다
+DateTime? scheduleStartDateOf(Map<String, dynamic> response) {
+  final raw = response['schedule'];
+  final json = raw is Map ? raw : response;
+  final text = json['startDate']?.toString() ?? '';
+  if (text.length < 10) return null;
+  final parsed = DateTime.tryParse(text.substring(0, 10));
+  return parsed == null ? null : DateTime(parsed.year, parsed.month, parsed.day);
 }

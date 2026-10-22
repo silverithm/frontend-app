@@ -118,7 +118,12 @@ class ChatProvider with ChangeNotifier {
   // 채팅방 목록 화면에서 전체 방을 실시간 갱신하기 위한 경량 구독
   // (메시지 토픽만 — 상세 화면의 타이핑/읽음 구독과 달리 방마다 전부 걸어도 부담 없다)
   final Map<int, StompUnsubscribe> _roomListSubscriptions = {};
-  bool _isWatchingRoomList = false;
+
+  /// 목록 화면이 몇 개 떠 있는지 — 채팅 탭의 목록은 늘 살아 있고, 알림을 눌러 연 목록이
+  /// 그 위에 하나 더 뜬다. 위의 것이 닫힐 때 구독을 다 끊으면 탭 목록이 실시간 갱신을 잃는다.
+  int _roomListWatchers = 0;
+  bool get _isWatchingRoomList => _roomListWatchers > 0;
+  bool get isWatchingRoomList => _isWatchingRoomList;
   Timer? _roomListRefreshDebounce;
 
   // Set current user ID for message handling
@@ -466,13 +471,14 @@ class ChatProvider with ChangeNotifier {
   /// 채팅방 목록 화면이 떠 있는 동안 참여 중인 모든 방의 메시지 토픽을 구독한다.
   /// 상세 화면과 달리 방이 열려 있지 않아도 새 메시지의 미리보기/정렬이 즉시 반영되도록 한다.
   void subscribeToRoomList() {
-    _isWatchingRoomList = true;
+    _roomListWatchers++;
     _syncRoomListSubscriptions();
   }
 
-  /// 목록 화면을 벗어날 때 호출 — 더 이상 필요 없는 구독을 전부 해제한다.
+  /// 목록 화면을 벗어날 때 호출 — 마지막 목록 화면이 닫힐 때만 구독을 전부 해제한다.
   void unsubscribeFromRoomList() {
-    _isWatchingRoomList = false;
+    if (_roomListWatchers > 0) _roomListWatchers--;
+    if (_isWatchingRoomList) return;
     for (final unsubscribe in _roomListSubscriptions.values) {
       unsubscribe();
     }
@@ -2030,7 +2036,7 @@ class ChatProvider with ChangeNotifier {
     _cancelAllTypingTimers();
     _cancelAllAckTimers();
     _roomListRefreshDebounce?.cancel();
-    _isWatchingRoomList = false;
+    _roomListWatchers = 0;
     _chatRooms = [];
     _selectedRoom = null;
     _messages = [];

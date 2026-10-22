@@ -7,6 +7,7 @@ import '../providers/notification_provider.dart';
 import '../providers/approval_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/admin_provider.dart';
+import '../providers/work_task_provider.dart';
 import '../models/vacation_request.dart';
 import '../services/fcm_service.dart';
 import '../services/permission_sync_service.dart';
@@ -109,6 +110,8 @@ class _MainScreenState extends State<MainScreen>
               companyId: companyId,
             );
             vacationProvider.loadMyVacationRequests(userId);
+            // 구독이 막힌 관리자를 알림 탭이 결제 화면 너머로 데려가면 안 된다 — 통과한 뒤에만 연다
+            _attachPushNavigation();
           }
         } else {
           // 직원인 경우 구독 체크 없이 바로 데이터 로드
@@ -122,6 +125,7 @@ class _MainScreenState extends State<MainScreen>
           // FCM 토큰 서버 전송
           debugPrint('[MainScreen] FCM 토큰 서버 전송 시작');
           FCMService().sendTokenToServer(userId);
+          _attachPushNavigation();
         }
 
         if (!mounted) return;
@@ -145,7 +149,9 @@ class _MainScreenState extends State<MainScreen>
             if (message.data['type'] == 'chat') {
               context.read<ChatProvider>().refreshRoomListDebounced(
                 companyId: companyId,
-                userId: userId,
+                // 채팅은 관리자를 'admin_3'으로 부른다 — 숫자 id를 넘기면 내가 보낸
+                // 마지막 메시지를 남의 것으로 보고 안 읽음을 다시 켠다
+                userId: authProvider.currentUser!.chatUserId,
               );
             }
 
@@ -154,6 +160,11 @@ class _MainScreenState extends State<MainScreen>
             // (2026-09-22 운영 사고: 삭제된 결재 777이 앱에서 계속 표시됨).
             if (message.data['type'] == 'approval') {
               _refreshApprovalData();
+            }
+
+            // 업무를 맡았다는 알림 — 홈 업무진행도 칸이 다음 진입까지 옛 목록으로 남지 않게
+            if (message.data['type'] == 'work_task') {
+              context.read<WorkTaskProvider>().load();
             }
           }
         };
@@ -182,7 +193,7 @@ class _MainScreenState extends State<MainScreen>
         chatProvider.ensureConnected();
         chatProvider.loadChatRooms(
           companyId: companyId,
-          userId: authProvider.currentUser!.id,
+          userId: authProvider.currentUser!.chatUserId,
         );
 
         // 백그라운드에 있는 동안 결재 문서가 웹에서 승인/반려/삭제됐을 수 있다 —
@@ -195,9 +206,20 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void dispose() {
+    if (_pushNavigationAttached) FCMService().detachSession();
     WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     super.dispose();
+  }
+
+  bool _pushNavigationAttached = false;
+
+  /// 알림 탭 이동을 연다 — 로그인 정보가 채워진 뒤라야 채팅방·결재 문서를 찾을 수 있다.
+  /// 그 전에 누른 알림(꺼진 앱을 알림으로 켠 경우)은 지금 그 화면으로 간다.
+  void _attachPushNavigation() {
+    if (_pushNavigationAttached || !mounted) return;
+    _pushNavigationAttached = true;
+    FCMService().attachSession();
   }
 
   /// 결재함·내 결재 목록을 서버에서 다시 받는다 — 개수(myTurnCount 등)가 로컬에

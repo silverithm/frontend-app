@@ -268,6 +268,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                           context,
                           notification.type,
                           notification.relatedEntityId,
+                          relatedEntityType: notification.relatedEntityType,
                         );
                       },
                     );
@@ -287,10 +288,16 @@ class _NotificationBottomSheet extends StatelessWidget {
   /// 여기에 따로 적힌 표가 있었고 그게 뒤처져 있었다 — 채팅 알림을 눌러도 방이 아니라
   /// 목록에서 멈추고, 회의록·가입요청·일정 알림은 아무 일도 일어나지 않았다.
   ///
-  /// [entityId]는 서버가 준 relatedEntityId다(채팅방·공지·회의록 id).
-  void _navigateByType(BuildContext context, String type, int? entityId) {
+  /// [entityId]는 서버가 준 relatedEntityId다(채팅방·공지·회의록·결재 문서·업무 id).
+  /// 일정 알림은 type이 `general`이라 [relatedEntityType]으로 갈 곳을 안다.
+  void _navigateByType(
+    BuildContext context,
+    String type,
+    int? entityId, {
+    String? relatedEntityType,
+  }) {
     final target = screenForNotification(
-      resolveFCMDestination(type),
+      resolveFCMDestination(type, relatedEntityType: relatedEntityType),
       entityId: entityId,
     );
     if (target == null) return; // system 등 — 이동할 곳 없음
