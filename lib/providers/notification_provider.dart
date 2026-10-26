@@ -180,29 +180,17 @@ class NotificationItem {
     return Icons.notifications;
   }
 
+  /// 알림 머리 아이콘 색 — 색은 상태에만 쓴다(웹 DESIGN.md '색은 상태만').
+  /// 휴무 승인·거절만 결과(상태)라 초록·빨강이고, 나머지 종류는 모두 기본 틸이다 —
+  /// 예전에는 업무=노랑·일정=파랑처럼 종류마다 색을 돌려 써서 대기(노랑)·정보(파랑)와 섞였다.
   Color get color {
     switch (type) {
       case 'vacation_approved':
         return AppSemanticColors.statusSuccessIcon;
       case 'vacation_rejected':
         return AppSemanticColors.statusErrorIcon;
-      case 'system':
-        return AppSemanticColors.statusInfoIcon;
-      case 'chat':
-      case 'approval':
-      case 'notice':
-      case 'meeting_minutes':
-        return AppSemanticColors.brandDefault;
-      case 'work_task':
-        return AppSemanticColors.statusWarningIcon;
     }
-    if (type.startsWith('vacation') || type.startsWith('member_join')) {
-      return AppSemanticColors.brandDefault;
-    }
-    if (relatedEntityType?.startsWith('schedule') ?? false) {
-      return AppSemanticColors.statusInfoIcon;
-    }
-    return AppSemanticColors.textDisabled;
+    return AppSemanticColors.brandDefault;
   }
 
   String get timeAgo {

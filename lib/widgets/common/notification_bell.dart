@@ -165,12 +165,12 @@ class _NotificationBottomSheet extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.space2),
                       decoration: BoxDecoration(
-                        color: AppSemanticColors.statusInfoBackground,
+                        color: AppSemanticColors.brandWeak,
                         borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                       ),
                       child: Icon(
                         Icons.notifications,
-                        color: AppSemanticColors.statusInfoIcon,
+                        color: AppSemanticColors.brandDefault,
                         size: 20,
                       ),
                     ),
@@ -319,6 +319,7 @@ class _NotificationBottomSheet extends StatelessWidget {
     bool isUnread, {
     VoidCallback? onTap,
   }) {
+    // 카드 바탕·테두리는 한 가지 — 종류는 아이콘 모양과 제목으로, 색은 아이콘·점에만(NotificationItem.color)
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -326,13 +327,11 @@ class _NotificationBottomSheet extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.space4),
         decoration: BoxDecoration(
           color: isUnread
-              ? color.withValues(alpha: 0.05)
+              ? AppSemanticColors.surfaceDefault
               : AppSemanticColors.backgroundSecondary,
           borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
           border: Border.all(
-            color: isUnread
-                ? color.withValues(alpha: 0.2)
-                : AppSemanticColors.borderDefault,
+            color: AppSemanticColors.borderDefault,
             width: 1,
           ),
         ),

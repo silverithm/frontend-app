@@ -88,12 +88,22 @@ void main() {
 
     test('모르는 종류만 기본 종', () {
       expect(item('general').icon, Icons.notifications);
-      expect(item('general').color, AppSemanticColors.textDisabled);
     });
 
-    test('휴무 승인·반려는 예전 색 그대로', () {
+    test('색은 상태에만 — 휴무 승인 초록·거절 빨강, 나머지 종류는 모두 기본 틸', () {
       expect(item('vacation_approved').color, AppSemanticColors.statusSuccessIcon);
       expect(item('vacation_rejected').color, AppSemanticColors.statusErrorIcon);
+      for (final other in [
+        item('work_task'),
+        item('approval'),
+        item('chat'),
+        item('notice'),
+        item('system'),
+        item('general'),
+        item('general', 'schedule_start_reminder'),
+      ]) {
+        expect(other.color, AppSemanticColors.brandDefault, reason: other.type);
+      }
     });
   });
 }
