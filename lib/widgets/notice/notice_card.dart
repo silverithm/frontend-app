@@ -5,6 +5,7 @@ import '../../models/notice.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../common/app_tag.dart';
 import 'notice_priority_badge.dart';
 
 class NoticeCard extends StatelessWidget {
@@ -29,18 +30,12 @@ class NoticeCard extends StatelessWidget {
         vertical: AppSpacing.space2,
       ),
       elevation: 0,
+      // 고정 공지도 같은 카드다 — 노란 바탕·굵은 테두리 대신 '고정' 꼬리표 하나로 알린다(웹 공지 목록과 같다)
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        side: BorderSide(
-          color: notice.isPinned
-              ? AppSemanticColors.statusWarningIcon.withValues(alpha: 0.5)
-              : AppSemanticColors.borderDefault,
-          width: notice.isPinned ? 2 : 1,
-        ),
+        side: const BorderSide(color: AppSemanticColors.borderDefault),
       ),
-      color: notice.isPinned
-          ? AppSemanticColors.statusWarningBackground.withValues(alpha: 0.3)
-          : AppSemanticColors.surfaceDefault,
+      color: AppSemanticColors.surfaceDefault,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppBorderRadius.xl),
@@ -53,42 +48,18 @@ class NoticeCard extends StatelessWidget {
               Row(
                 children: [
                   if (notice.isPinned) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space2,
-                        vertical: AppSpacing.space0_5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.statusWarningIcon,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.base),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.push_pin,
-                            size: 12,
-                            color: AppSemanticColors.textInverse,
-                          ),
-                          const SizedBox(width: AppSpacing.space0_5),
-                          Text(
-                            '고정',
-                            style: AppTypography.overline.copyWith(
-                              color: AppSemanticColors.textInverse,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const AppTag(label: '고정', icon: Icons.push_pin),
                     const SizedBox(width: AppSpacing.space2),
                   ],
-                  NoticePriorityBadge(
-                    priority: notice.priority,
-                    small: true,
-                  ),
-                  if (showStatus) ...[
+                  // 일반 공지는 기본이라 꼬리표를 달지 않는다 — 긴급·낮음만 말한다
+                  if (notice.priority == NoticePriority.high) ...[
+                    const AppTag(label: '긴급', tone: AppTagTone.error),
                     const SizedBox(width: AppSpacing.space2),
+                  ] else if (notice.priority == NoticePriority.low) ...[
+                    const AppTag(label: '낮음'),
+                    const SizedBox(width: AppSpacing.space2),
+                  ],
+                  if (showStatus) ...[
                     NoticeStatusBadge(
                       status: notice.status,
                       small: true,
@@ -182,116 +153,6 @@ class NoticeCard extends StatelessWidget {
         return '${difference.inMinutes}분 전';
       }
       return '${difference.inHours}시간 전';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}일 전';
-    } else {
-      return DateFormat('MM/dd').format(date);
-    }
-  }
-}
-
-class NoticeCardCompact extends StatelessWidget {
-  final Notice notice;
-  final VoidCallback? onTap;
-
-  const NoticeCardCompact({
-    super.key,
-    required this.notice,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space4,
-          vertical: AppSpacing.space3,
-        ),
-        child: Row(
-          children: [
-            // Priority indicator
-            Container(
-              width: AppSpacing.space1,
-              height: AppSpacing.space10,
-              decoration: BoxDecoration(
-                color: _priorityColor,
-                borderRadius: BorderRadius.circular(AppBorderRadius.sm),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.space3),
-
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      if (notice.isPinned) ...[
-                        Icon(
-                          Icons.push_pin,
-                          size: 14,
-                          color: AppSemanticColors.statusWarningIcon,
-                        ),
-                        const SizedBox(width: AppSpacing.space1),
-                      ],
-                      Expanded(
-                        child: Text(
-                          notice.title,
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                            fontWeight: notice.isPinned ? FontWeight.w600 : FontWeight.normal,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.space1),
-                  Text(
-                    _formatDate(notice.createdAt),
-                    style: AppTypography.caption.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Chevron
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: AppSemanticColors.textTertiary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color get _priorityColor {
-    switch (notice.priority) {
-      case NoticePriority.high:
-        return AppSemanticColors.statusErrorIcon;
-      case NoticePriority.normal:
-        return AppSemanticColors.statusInfoIcon;
-      case NoticePriority.low:
-        return AppSemanticColors.statusSuccessIcon;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return '오늘';
-    } else if (difference.inDays == 1) {
-      return '어제';
     } else if (difference.inDays < 7) {
       return '${difference.inDays}일 전';
     } else {
