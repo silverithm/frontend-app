@@ -649,7 +649,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                             borderRadius: BorderRadius.circular(AppBorderRadius.base),
                           ),
                           child: Text(
-                            _approval.status == ApprovalStatus.approved ? '승인' : '거절',
+                            _approval.status == ApprovalStatus.approved ? '승인' : '반려',
                             style: AppTypography.labelSmall.copyWith(
                               color: _approval.status == ApprovalStatus.approved
                                   ? AppSemanticColors.statusSuccessText
@@ -730,7 +730,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
               const SizedBox(height: AppSpacing.space4),
             ],
 
-            // 거절 사유 - 깔끔한 디자인
+            // 반려 사유 - 깔끔한 디자인
             if (_approval.rejectReason != null &&
                 _approval.status == ApprovalStatus.rejected) ...[
               Container(
@@ -754,7 +754,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         ),
                         const SizedBox(width: AppSpacing.space2),
                         Text(
-                          '거절 사유',
+                          '반려 사유',
                           style: AppTypography.labelLarge.copyWith(
                             color: AppSemanticColors.textPrimary,
                             fontWeight: FontWeight.w600,

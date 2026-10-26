@@ -335,11 +335,11 @@ class ApprovalRequest {
       case ApprovalStatus.draft:
         return '임시저장';
       case ApprovalStatus.pending:
-        return '대기중';
+        return '진행중';
       case ApprovalStatus.approved:
         return '승인됨';
       case ApprovalStatus.rejected:
-        return '거절됨';
+        return '반려됨';
     }
   }
 

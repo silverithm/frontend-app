@@ -39,7 +39,7 @@ class ApprovalStatusBadge extends StatelessWidget {
   (Color, Color, String) _getStatusStyle() {
     switch (status) {
       case ApprovalStatus.draft:
-        // 임시저장 — 아직 상신 전이라 승인/거절과 구분되는 중립 회색
+        // 임시저장 — 아직 상신 전이라 승인/반려와 구분되는 중립 회색
         return (
           AppSemanticColors.backgroundTertiary,
           AppSemanticColors.textSecondary,
@@ -49,7 +49,7 @@ class ApprovalStatusBadge extends StatelessWidget {
         return (
           AppSemanticColors.statusWarningBackground,
           AppSemanticColors.statusWarningText,
-          '대기중',
+          '진행중',
         );
       case ApprovalStatus.approved:
         return (
@@ -61,7 +61,7 @@ class ApprovalStatusBadge extends StatelessWidget {
         return (
           AppSemanticColors.statusErrorBackground,
           AppSemanticColors.statusErrorText,
-          '거절됨',
+          '반려됨',
         );
     }
   }

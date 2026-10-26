@@ -212,7 +212,7 @@ class ApprovalCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '거절 사유',
+                  '반려 사유',
                   style: AppTypography.labelSmall.copyWith(
                     color: AppSemanticColors.statusErrorText,
                   ),

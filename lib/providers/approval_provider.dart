@@ -423,7 +423,7 @@ class ApprovalProvider with ChangeNotifier {
         _purgeStaleDocument(approvalId);
         setError(goneDocumentMessage);
       } else {
-        setError('결재 거절에 실패했습니다: ${e.toString()}');
+        setError('결재 반려에 실패했습니다: ${e.toString()}');
       }
       return false;
     } finally {
@@ -490,7 +490,7 @@ class ApprovalProvider with ChangeNotifier {
       return true;
     } catch (e) {
       print('[ApprovalProvider] 결재 요청 일괄 거절 에러: $e');
-      setError('일괄 거절에 실패했습니다: ${e.toString()}');
+      setError('일괄 반려에 실패했습니다: ${e.toString()}');
       return false;
     } finally {
       setLoading(false);

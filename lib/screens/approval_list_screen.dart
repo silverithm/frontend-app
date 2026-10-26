@@ -360,7 +360,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                     ],
                                     Expanded(
                                       child: _buildStatusCard(
-                                        '대기',
+                                        '진행중',
                                         pendingRequests.length,
                                         AppSemanticColors.statusWarningText,
                                         AppSemanticColors.statusWarningBackground,
@@ -386,7 +386,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                     ),
                                     Expanded(
                                       child: _buildStatusCard(
-                                        '거절',
+                                        '반려',
                                         rejectedRequests.length,
                                         AppSemanticColors.statusErrorText,
                                         AppSemanticColors.statusErrorBackground,
@@ -458,7 +458,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                       SlideTransition(
                         position: _slideAnimation,
                         child: _buildSectionHeader(
-                          '대기 중',
+                          '진행중',
                           pendingRequests.length,
                           AppSemanticColors.statusWarningText,
                           AppSemanticColors.statusWarningBackground,
@@ -563,7 +563,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                       SlideTransition(
                         position: _slideAnimation,
                         child: _buildSectionHeader(
-                          '거절됨',
+                          '반려됨',
                           rejectedRequests.length,
                           AppSemanticColors.statusErrorText,
                           AppSemanticColors.statusErrorBackground,

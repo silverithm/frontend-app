@@ -315,11 +315,11 @@ class _AdminApprovalManagementScreenState
   Future<void> _rejectRequest(int requestId, {bool force = false}) async {
     final reasonInput = await AppDialog.showInput(
       context,
-      title: '거절 사유',
-      message: '거절 사유를 입력해주세요.',
-      hintText: '거절 사유를 입력하세요',
+      title: '반려 사유',
+      message: '반려 사유를 입력해주세요.',
+      hintText: '반려 사유를 입력하세요',
       maxLines: 3,
-      confirmText: '거절',
+      confirmText: '반려',
       cancelText: '취소',
     );
 
@@ -327,7 +327,7 @@ class _AdminApprovalManagementScreenState
 
     final reason = reasonInput.trim();
     if (reason.isEmpty) {
-      AppSnackBar.showWarning(context, message: '거절 사유를 입력해주세요');
+      AppSnackBar.showWarning(context, message: '반려 사유를 입력해주세요');
       return;
     }
 
@@ -347,19 +347,19 @@ class _AdminApprovalManagementScreenState
     );
 
     if (success && mounted) {
-      // 거절은 비파괴적 부정 결과 — 경고 톤이지 오류가 아니다
+      // 반려는 비파괴적 부정 결과 — 경고 톤이지 오류가 아니다
       AppSnackBar.showWarning(
         context,
-        message: force ? '직권 반려(전결) 처리되었습니다' : '결재가 거절되었습니다',
+        message: force ? '직권 반려(전결) 처리되었습니다' : '결재가 반려되었습니다',
       );
     } else if (mounted) {
-      // 실패를 그냥 삼키면 사용자는 거절이 됐는지 안 됐는지 알 길이 없다
+      // 실패를 그냥 삼키면 사용자는 반려가 됐는지 안 됐는지 알 길이 없다
       // (이미 삭제·처리된 문서면 provider가 목록에서도 지워둔다).
       AppSnackBar.showError(
         context,
         message: approvalProvider.errorMessage.isNotEmpty
             ? approvalProvider.errorMessage
-            : '결재 거절에 실패했습니다',
+            : '결재 반려에 실패했습니다',
       );
     }
   }
@@ -413,11 +413,11 @@ class _AdminApprovalManagementScreenState
 
     final reasonInput = await AppDialog.showInput(
       context,
-      title: '일괄 거절',
-      message: '선택한 ${_selectedRequests.length}개의 결재 요청을 모두 거절하시겠습니까?',
-      hintText: '거절 사유를 입력하세요',
+      title: '일괄 반려',
+      message: '선택한 ${_selectedRequests.length}개의 결재 요청을 모두 반려하시겠습니까?',
+      hintText: '반려 사유를 입력하세요',
       maxLines: 3,
-      confirmText: '거절',
+      confirmText: '반려',
       cancelText: '취소',
     );
 
@@ -425,7 +425,7 @@ class _AdminApprovalManagementScreenState
 
     final reason = reasonInput.trim();
     if (reason.isEmpty) {
-      AppSnackBar.showWarning(context, message: '거절 사유를 입력해주세요');
+      AppSnackBar.showWarning(context, message: '반려 사유를 입력해주세요');
       return;
     }
 
@@ -449,7 +449,7 @@ class _AdminApprovalManagementScreenState
       if (success && mounted) {
         AppSnackBar.showWarning(
           context,
-          message: '${_selectedRequests.length}개의 결재가 거절되었습니다',
+          message: '${_selectedRequests.length}개의 결재가 반려되었습니다',
         );
         setState(() {
           _selectedRequests.clear();
@@ -629,11 +629,11 @@ class _AdminApprovalManagementScreenState
                 ],
                 _buildStatusFilterChip('전체', 'all'),
                 const SizedBox(width: AppSpacing.space2),
-                _buildStatusFilterChip('승인 대기', 'pending'),
+                _buildStatusFilterChip('진행중', 'pending'),
                 const SizedBox(width: AppSpacing.space2),
                 _buildStatusFilterChip('승인됨', 'approved'),
                 const SizedBox(width: AppSpacing.space2),
-                _buildStatusFilterChip('거절됨', 'rejected'),
+                _buildStatusFilterChip('반려됨', 'rejected'),
               ],
             ),
           ),
@@ -749,7 +749,7 @@ class _AdminApprovalManagementScreenState
               children: [
                 Expanded(
                   child: SeedButton(
-                    label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
+                    label: _isBulkProcessing ? '처리중...' : '선택 항목 반려',
                     onPressed: _isBulkProcessing ? null : _bulkReject,
                     variant: SeedButtonVariant.neutralOutline,
                     isLoading: _isBulkProcessing,
@@ -996,7 +996,7 @@ class _AdminApprovalManagementScreenState
                     children: [
                       Expanded(
                         child: SeedButton(
-                          label: '거절',
+                          label: '반려',
                           onPressed: () => _rejectRequest(request.id),
                           variant: SeedButtonVariant.neutralOutline,
                           prefixIcon: Icons.close,
