@@ -20,8 +20,12 @@ enum SeedButtonVariant {
   /// Low emphasis — 투명 배경 + 뉴트럴 보더
   neutralOutline,
 
-  /// 위험 액션 — critical solid
+  /// 위험 액션 — critical solid (확인 창의 마지막 '삭제'처럼 한 번 더 묻는 자리)
   critical,
+
+  /// 목록 줄마다 붙는 위험 액션 — 투명 바탕 + 뉴트럴 보더 + 빨간 글자.
+  /// 줄마다 진한 빨강을 깔면 '승인' 같은 주 동작보다 눈에 먼저 띈다.
+  criticalOutline,
 }
 
 enum SeedButtonSize { xsmall, small, medium, large }
@@ -230,6 +234,18 @@ class _SeedButtonState extends State<SeedButton> {
           foreground: disabled
               ? AppSemanticColors.textDisabled
               : AppSemanticColors.textPrimary,
+        );
+      case SeedButtonVariant.criticalOutline:
+        return _SeedButtonColors(
+          background: _pressed
+              ? AppSemanticColors.statusErrorBackground
+              : AppColors.transparent,
+          border: disabled
+              ? AppSemanticColors.borderDisabled
+              : AppSemanticColors.borderDefault,
+          foreground: disabled
+              ? AppSemanticColors.textDisabled
+              : AppSemanticColors.statusErrorText,
         );
       case SeedButtonVariant.critical:
         if (disabled) {

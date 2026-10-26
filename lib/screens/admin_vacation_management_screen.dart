@@ -1071,7 +1071,7 @@ class _AdminVacationManagementScreenState
         Expanded(
           child: SeedButton(
             label: '삭제',
-            variant: SeedButtonVariant.critical,
+            variant: SeedButtonVariant.criticalOutline,
             size: SeedButtonSize.small,
             prefixIcon: Icons.delete,
             onPressed: () => _showDeleteDialog(request['id'].toString()),

@@ -545,11 +545,12 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             spacing: AppSpacing.space2,
             runSpacing: AppSpacing.space1_5,
             children: [
-              _StatChip(label: '탑승', count: carCount),
+              // 웹 배차표와 같은 색 — 탑승 틸 · 결석 빨강(DESIGN '결석'은 빨강) · 개인등하원 회색 · 미배정 노랑
+              _StatChip(label: '탑승', count: carCount, tone: _StatTone.info),
               _StatChip(
                 label: '결석',
                 count: absent.length,
-                tone: _StatTone.warning,
+                tone: _StatTone.error,
                 onTap: absent.isEmpty
                     ? null
                     : () => _showNamesSheet(
@@ -560,7 +561,6 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
               _StatChip(
                 label: personalLabel,
                 count: personal.length,
-                tone: _StatTone.info,
                 onTap: personal.isEmpty
                     ? null
                     : () => _showNamesSheet(
@@ -654,7 +654,7 @@ class _DirectionToggle extends StatelessWidget {
   }
 }
 
-enum _StatTone { neutral, warning, info }
+enum _StatTone { neutral, warning, info, error }
 
 /// 요약 줄의 작은 통계 칩. 0명이어도 자리를 지켜서 매일 같은 위치에서 읽힌다.
 class _StatChip extends StatelessWidget {
@@ -682,6 +682,14 @@ class _StatChip extends StatelessWidget {
             : AppSemanticColors.backgroundTertiary;
         foreground = active
             ? AppSemanticColors.statusWarningText
+            : AppSemanticColors.textTertiary;
+        break;
+      case _StatTone.error:
+        background = active
+            ? AppSemanticColors.statusErrorBackground
+            : AppSemanticColors.backgroundTertiary;
+        foreground = active
+            ? AppSemanticColors.statusErrorText
             : AppSemanticColors.textTertiary;
         break;
       case _StatTone.info:
@@ -1037,9 +1045,10 @@ class _ElderRow extends StatelessWidget {
         background: AppSemanticColors.statusErrorBackground,
       );
     } else if (personalChecked) {
+      // 개인 등하원은 분류라 회색 테두리 — 위 요약 칩과 같은 색
       pill = _StatusPill(
         label: personalLabel,
-        foreground: AppSemanticColors.interactivePrimaryDefault,
+        foreground: AppSemanticColors.textSecondary,
         outlined: true,
       );
     }

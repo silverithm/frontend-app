@@ -573,7 +573,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                 SeedButton(
                   label: '삭제',
                   size: SeedButtonSize.small,
-                  variant: SeedButtonVariant.critical,
+                  variant: SeedButtonVariant.criticalOutline,
                   onPressed: () => _deleteItem(item),
                 ),
               ],

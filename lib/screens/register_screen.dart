@@ -556,7 +556,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Icon(
                 Icons.person_add,
                 size: 60,
-                color: AppSemanticColors.statusInfoIcon,
+                color: AppSemanticColors.interactivePrimaryDefault,
               ),
               const SizedBox(height: AppSpacing.space4),
 
@@ -624,7 +624,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 '웹사이트 가입',
                                 '근무표 관리자가 먼저 앱 또는 carev.kr에서 가입을 완료하고 회사 코드를 확인합니다.',
                                 Icons.computer,
-                                'from-blue-400 to-indigo-500',
                               ),
                               _buildProcessCard(
                                 '2',
@@ -632,7 +631,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 '앱 가입 요청',
                                 '직원은 관리자에게 받은 회사 코드를 입력해 회원가입을 요청합니다.',
                                 Icons.phone_android,
-                                'from-indigo-400 to-purple-500',
                               ),
                               _buildProcessCard(
                                 '3',
@@ -640,7 +638,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 '가입 승인',
                                 '관리자는 앱 또는 carev.kr에서 직원의 가입 요청을 확인하고 승인합니다.',
                                 Icons.check_circle,
-                                'from-green-400 to-teal-500',
                               ),
                               _buildProcessCard(
                                 '4',
@@ -648,7 +645,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 '앱 로그인',
                                 '관리자의 승인이 완료되면, 직원은 앱에 정상적으로 로그인할 수 있습니다.',
                                 Icons.login,
-                                'from-purple-400 to-pink-100',
                               ),
                             ],
                           ),
@@ -724,14 +720,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: _userType == 'admin'
-                                            ? AppSemanticColors.statusInfoIcon
+                                            ? AppSemanticColors.interactivePrimaryDefault
                                             : AppColors.white,
                                         borderRadius: BorderRadius.circular(
                                           AppBorderRadius.xl,
                                         ),
                                         border: Border.all(
                                           color: _userType == 'admin'
-                                              ? AppSemanticColors.statusInfoIcon
+                                              ? AppSemanticColors.interactivePrimaryDefault
                                               : AppSemanticColors.borderHover,
                                           width: 2,
                                         ),
@@ -743,7 +739,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             color: _userType == 'admin'
                                                 ? AppColors.white
                                                 : AppSemanticColors
-                                                      .statusInfoIcon,
+                                                      .interactivePrimaryDefault,
                                             size: 32,
                                           ),
                                           const SizedBox(
@@ -755,7 +751,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               color: _userType == 'admin'
                                                   ? AppColors.white
                                                   : AppSemanticColors
-                                                        .statusInfoIcon,
+                                                        .interactivePrimaryDefault,
                                               fontWeight:
                                                   AppTypography.fontWeightBold,
                                               fontSize:
@@ -1041,7 +1037,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         decoration: BoxDecoration(
                                           color:
                                               _employeeJoinMethod == 'company'
-                                              ? AppSemanticColors.statusInfoIcon
+                                              ? AppSemanticColors.interactivePrimaryDefault
                                               : AppColors.white,
                                           borderRadius: BorderRadius.circular(
                                             AppBorderRadius.xl,
@@ -1050,7 +1046,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             color:
                                                 _employeeJoinMethod == 'company'
                                                 ? AppSemanticColors
-                                                      .statusInfoIcon
+                                                      .interactivePrimaryDefault
                                                 : AppSemanticColors.borderHover,
                                             width: 2,
                                           ),
@@ -1064,7 +1060,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                       'company'
                                                   ? AppColors.white
                                                   : AppSemanticColors
-                                                        .statusInfoIcon,
+                                                        .interactivePrimaryDefault,
                                               size: 28,
                                             ),
                                             const SizedBox(
@@ -1078,7 +1074,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                         'company'
                                                     ? AppColors.white
                                                     : AppSemanticColors
-                                                          .statusInfoIcon,
+                                                          .interactivePrimaryDefault,
                                                 fontWeight: AppTypography
                                                     .fontWeightBold,
                                                 fontSize:
@@ -1580,12 +1576,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           color: _agreeToPrivacyPolicy
-                                              ? AppSemanticColors.statusInfoIcon
+                                              ? AppSemanticColors.interactivePrimaryDefault
                                               : AppSemanticColors.textDisabled,
                                           width: 2,
                                         ),
                                         color: _agreeToPrivacyPolicy
-                                            ? AppSemanticColors.statusInfoIcon
+                                            ? AppSemanticColors.interactivePrimaryDefault
                                             : AppColors.transparent,
                                       ),
                                       child: _agreeToPrivacyPolicy
@@ -1693,12 +1689,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           color: _agreeToTermsOfService
-                                              ? AppSemanticColors.statusInfoIcon
+                                              ? AppSemanticColors.interactivePrimaryDefault
                                               : AppSemanticColors.textDisabled,
                                           width: 2,
                                         ),
                                         color: _agreeToTermsOfService
-                                            ? AppSemanticColors.statusInfoIcon
+                                            ? AppSemanticColors.interactivePrimaryDefault
                                             : AppColors.transparent,
                                       ),
                                       child: _agreeToTermsOfService
@@ -1935,9 +1931,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String title,
     String description,
     IconData icon,
-    String gradientColors,
   ) {
-    final colors = _getGradientColors(gradientColors);
+    // 단계마다 색을 돌려 쓰던 옛 그라디언트 이름표(Tailwind 시절)를 걷어 냈다 — 번호는 틸, 역할은 회색 꼬리표
     return Container(
       padding: const EdgeInsets.all(AppSpacing.space4),
       decoration: BoxDecoration(
@@ -1954,7 +1949,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: AppSpacing.space9,
                 height: AppSpacing.space9,
                 decoration: BoxDecoration(
-                  color: colors[0],
+                  color: AppSemanticColors.interactivePrimaryDefault,
                   borderRadius: BorderRadius.circular(10), // 스케일 밖 값 — 대응 토큰 없음
                 ),
                 child: Center(
@@ -1975,13 +1970,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   vertical: AppSpacing.space1,
                 ),
                 decoration: BoxDecoration(
-                  color: colors[0].withValues(alpha: 0.1),
+                  color: AppSemanticColors.backgroundTertiary,
                   borderRadius: BorderRadius.circular(AppBorderRadius.md),
                 ),
                 child: Text(
                   role,
                   style: TextStyle(
-                    color: colors[1],
+                    color: AppSemanticColors.textSecondary,
                     fontSize: AppTypography.fontSizeXs,
                     fontWeight: AppTypography.fontWeightBold,
                   ),
@@ -2013,36 +2008,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ],
       ),
     );
-  }
-
-  List<Color> _getGradientColors(String gradientString) {
-    switch (gradientString) {
-      case 'from-blue-400 to-indigo-500':
-        return [
-          AppSemanticColors.interactivePrimaryActive,
-          AppSemanticColors.borderFocus,
-        ];
-      case 'from-indigo-400 to-purple-500':
-        return [
-          AppSemanticColors.interactivePrimaryDefault,
-          AppSemanticColors.interactivePrimaryActive,
-        ];
-      case 'from-green-400 to-teal-500':
-        return [
-          AppSemanticColors.statusSuccessIcon,
-          AppSemanticColors.statusSuccessIcon,
-        ];
-      case 'from-purple-400 to-pink-500':
-        return [
-          AppSemanticColors.interactivePrimaryActive,
-          AppSemanticColors.statusErrorBackground,
-        ];
-      default:
-        return [
-          AppSemanticColors.interactivePrimaryActive,
-          AppSemanticColors.statusInfoIcon,
-        ];
-    }
   }
 }
 

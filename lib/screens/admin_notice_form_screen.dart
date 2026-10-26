@@ -134,7 +134,7 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
                   Icon(
                     Icons.push_pin,
                     color: _isPinned
-                        ? AppSemanticColors.statusWarningIcon
+                        ? AppSemanticColors.interactivePrimaryDefault
                         : AppSemanticColors.textTertiary,
                   ),
                   const SizedBox(width: AppSpacing.space3),
@@ -165,8 +165,6 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
                         _isPinned = value;
                       });
                     },
-                    activeTrackColor: AppSemanticColors.statusWarningIcon.withValues(alpha: 0.5),
-                    activeThumbColor: AppSemanticColors.statusWarningIcon,
                   ),
                 ],
               ),
@@ -328,10 +326,10 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
     switch (priority) {
       case NoticePriority.high:
         return AppSemanticColors.statusErrorIcon;
+      // 긴급만 상태색(빨강) — 일반·낮음은 고른 것을 브랜드 틸로만 표시한다(파랑·초록은 상태색과 섞였다)
       case NoticePriority.normal:
-        return AppSemanticColors.statusInfoIcon;
       case NoticePriority.low:
-        return AppSemanticColors.statusSuccessIcon;
+        return AppSemanticColors.interactivePrimaryDefault;
     }
   }
 

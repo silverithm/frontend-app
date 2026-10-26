@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -726,23 +727,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space2,
-                        vertical: AppSpacing.space1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.statusWarningBackground,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      ),
-                      child: Text(
-                        AdminUtils.getRoleDisplayName(user.role),
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.statusWarningText,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    // 직종은 분류라 회색 — 노랑은 '승인 대기' 상태색이다
+                    AppTag(label: AdminUtils.getRoleDisplayName(user.role)),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.space4),
@@ -834,23 +820,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                       maxLines: 1,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space2,
-                      vertical: AppSpacing.space1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusWarningBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Text(
-                      AdminUtils.getRoleDisplayName(user.role),
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppSemanticColors.statusWarningText,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  // 직종은 분류라 회색 — 노랑은 '승인 대기' 상태색이다
+                  AppTag(label: AdminUtils.getRoleDisplayName(user.role)),
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
