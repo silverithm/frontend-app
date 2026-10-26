@@ -27,8 +27,8 @@ import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'admin_vacation_limits_setting_screen.dart';
 import '../providers/notice_provider.dart';
-import 'dart:math' as math;
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/app_tag.dart';
 
 class CalendarScreen extends StatefulWidget {
   /// 일정 알림을 눌러 들어온 경우 그 일정이 있는 날로 바로 연다.
@@ -1411,10 +1411,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       AppBorderRadius.xl2,
                                     ),
                                     border: Border.all(
-                                      color: _getStatusTextColor(
-                                        vacation.status,
-                                      ).withValues(alpha: 0.2),
-                                      width: 1,
+                                      color: AppSemanticColors.borderDefault,
                                     ),
                                   ),
                                   child: Row(
@@ -1443,11 +1440,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       Expanded(
                                         child: Row(
                                           children: [
-                                            _buildVacationTypeShape(vacation),
-                                            const SizedBox(
-                                              width: AppSpacing.space2,
-                                            ),
-                                            Expanded(
+                                            Flexible(
                                               child: Text(
                                                 vacation.displayName,
                                                 style: AppTypography.bodyLarge
@@ -1459,32 +1452,22 @@ class _CalendarScreenState extends State<CalendarScreen>
                                                     ),
                                               ),
                                             ),
+                                            // 필수 휴무는 별 그림 대신 글자 꼬리표 — 분류라 회색
+                                            if (vacation.type ==
+                                                VacationType.mandatory) ...[
+                                              const SizedBox(
+                                                width: AppSpacing.space2,
+                                              ),
+                                              const AppTag(label: '필수'),
+                                            ],
                                           ],
                                         ),
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.space2,
-                                          vertical: AppSpacing.space1,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _getStatusTextColor(
-                                            vacation.status,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.lg,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          vacation.statusText,
-                                          style: AppTypography.labelSmall
-                                              .copyWith(
-                                                color: AppSemanticColors
-                                                    .textInverse,
-                                                fontWeight: AppTypography
-                                                    .fontWeightBold,
-                                              ),
-                                        ),
+                                      const SizedBox(width: AppSpacing.space2),
+                                      // 상태는 옅은 꼬리표 — 진한 바탕 알약은 웹·다른 화면과 달랐다
+                                      AppTag(
+                                        label: vacation.statusText,
+                                        tone: _statusTone(vacation.status),
                                       ),
                                     ],
                                   ),
@@ -1572,17 +1555,6 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  Color _getStatusBgColor(VacationStatus status) {
-    switch (status) {
-      case VacationStatus.approved:
-        return AppSemanticColors.statusSuccessBackground;
-      case VacationStatus.rejected:
-        return AppSemanticColors.statusErrorBackground;
-      case VacationStatus.pending:
-        return AppSemanticColors.statusWarningBackground;
-    }
-  }
-
   Color _getStatusTextColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
@@ -1605,21 +1577,15 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
-  Widget _buildVacationTypeShape(VacationRequest vacation) {
-    // 필수 휴무일 때만 별표 표시
-    if (vacation.type == VacationType.mandatory) {
-      return SizedBox(
-        width: 16,
-        height: 16,
-        child: CustomPaint(
-          painter: StarPainter(color: AppSemanticColors.statusWarningIcon),
-          size: const Size(16, 16),
-        ),
-      );
+  AppTagTone _statusTone(VacationStatus status) {
+    switch (status) {
+      case VacationStatus.approved:
+        return AppTagTone.success;
+      case VacationStatus.rejected:
+        return AppTagTone.error;
+      case VacationStatus.pending:
+        return AppTagTone.warning;
     }
-
-    // 개인 휴무(연차/반차)는 도형 없이 빈 공간
-    return const SizedBox.shrink();
   }
 
   Widget _buildStatItem(String label, String value, Color color) {
@@ -3243,46 +3209,6 @@ class _CalendarScreenState extends State<CalendarScreen>
       vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
     }
   }
-}
-
-// 별표 그리기를 위한 CustomPainter
-class StarPainter extends CustomPainter {
-  final Color color;
-
-  StarPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    final outerRadius = size.width / 2;
-    final innerRadius = outerRadius * 0.4;
-
-    for (int i = 0; i < 10; i++) {
-      // -90도부터 시작하여 별표가 위를 향하도록 수정
-      final angle = ((i * 36) - 90) * (3.14159 / 180);
-      final radius = i % 2 == 0 ? outerRadius : innerRadius;
-      final x = centerX + radius * math.cos(angle);
-      final y = centerY + radius * math.sin(angle);
-
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// 일정 상세 응답({schedule: {...}} 또는 일정 그대로)에서 시작일만 꺼낸다

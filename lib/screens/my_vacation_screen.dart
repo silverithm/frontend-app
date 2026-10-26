@@ -9,10 +9,10 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_section_header.dart';
 import '../widgets/vacation_planning_banner.dart';
-import 'dart:math' as math;
 
 class MyVacationScreen extends StatefulWidget {
   final bool showAppBar;
@@ -779,107 +779,20 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                   ),
                                 ),
                                 const SizedBox(height: AppSpacing.space2),
-                                Row(
+                                // 상태만 색(옅은 꼬리표), 연차·반차·필수 같은 분류는 회색 — 웹과 같은 규칙
+                                Wrap(
+                                  spacing: AppSpacing.space2,
+                                  runSpacing: AppSpacing.space1,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.space3,
-                                        vertical: AppSpacing.space1_5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        // 배경은 전용 배경 토큰, 텍스트는 전용 텍스트 토큰으로 역할 분리
-                                        // (이전엔 텍스트전용 토큰을 배경 채우기로 잘못 사용했음)
-                                        color: _getStatusColor(request.status),
-                                        borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.full,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        request.statusText,
-                                        style: AppTypography.labelSmall
-                                            .copyWith(
-                                              color: _getStatusTextColor(
-                                                request.status,
-                                              ),
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
+                                    AppTag(
+                                      label: request.statusText,
+                                      tone: _statusTone(request.status),
                                     ),
-                                    const SizedBox(width: AppSpacing.space2),
                                     if (request.duration !=
                                         VacationDuration.unused)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.space2,
-                                          vertical: AppSpacing.space1,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppSemanticColors
-                                              .interactivePrimaryDefault,
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.full,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          request.durationText,
-                                          style: AppTypography.labelSmall
-                                              .copyWith(
-                                                color: AppSemanticColors
-                                                    .textInverse,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                        ),
-                                      ),
-                                    if (request.type ==
-                                        VacationType.mandatory) ...[
-                                      const SizedBox(width: AppSpacing.space2),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.space3,
-                                          vertical: AppSpacing.space1_5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          // 아이콘전용 토큰을 배경 채우기로 쓰던 오용을 정정 —
-                                          // 배경은 statusWarningBackground, 텍스트/아이콘은 statusWarningText
-                                          color: AppSemanticColors
-                                              .statusWarningBackground,
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.full,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            SizedBox(
-                                              width: AppSpacing.space3_5,
-                                              height: AppSpacing.space3_5,
-                                              child: CustomPaint(
-                                                painter: StarPainter(
-                                                  color: AppSemanticColors
-                                                      .statusWarningText,
-                                                ),
-                                                size: Size(
-                                                  AppSpacing.space3_5,
-                                                  AppSpacing.space3_5,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              width: AppSpacing.space1,
-                                            ),
-                                            Text(
-                                              '필수',
-                                              style: AppTypography.labelSmall
-                                                  .copyWith(
-                                                    color: AppSemanticColors
-                                                        .statusWarningText,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                      AppTag(label: request.durationText),
+                                    if (request.type == VacationType.mandatory)
+                                      const AppTag(label: '필수'),
                                   ],
                                 ),
                               ],
@@ -1008,6 +921,17 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       );
   }
 
+  AppTagTone _statusTone(VacationStatus status) {
+    switch (status) {
+      case VacationStatus.approved:
+        return AppTagTone.success;
+      case VacationStatus.rejected:
+        return AppTagTone.error;
+      case VacationStatus.pending:
+        return AppTagTone.warning;
+    }
+  }
+
   Color _getStatusColor(VacationStatus status) {
     switch (status) {
       case VacationStatus.approved:
@@ -1029,44 +953,4 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         return AppSemanticColors.statusWarningText;
     }
   }
-}
-
-// 별표 그리기를 위한 CustomPainter
-class StarPainter extends CustomPainter {
-  final Color color;
-
-  StarPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    final outerRadius = size.width / 2;
-    final innerRadius = outerRadius * 0.4;
-
-    for (int i = 0; i < 10; i++) {
-      // -90도부터 시작하여 별표가 위를 향하도록 수정
-      final angle = ((i * 36) - 90) * (3.14159 / 180);
-      final radius = i % 2 == 0 ? outerRadius : innerRadius;
-      final x = centerX + radius * math.cos(angle);
-      final y = centerY + radius * math.sin(angle);
-
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
