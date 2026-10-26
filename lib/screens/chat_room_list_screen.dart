@@ -482,8 +482,9 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
                       horizontal: AppSpacing.space2,
                       vertical: AppSpacing.space1,
                     ),
+                    // 안 읽은 수는 아래 탭·알림 종·웹 채팅 목록과 같은 빨강 — 틸은 '누르라'는 단추 색이다
                     decoration: BoxDecoration(
-                      color: AppSemanticColors.interactivePrimaryDefault,
+                      color: AppSemanticColors.statusErrorIcon,
                       borderRadius: BorderRadius.circular(AppBorderRadius.full),
                     ),
                     child: Text(
