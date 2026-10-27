@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_typography.dart';
 import '../../theme/app_spacing.dart';
 import '../seed/seed_button.dart';
 
@@ -118,10 +119,7 @@ class _SignaturePadState extends State<SignaturePad> {
                       ? Center(
                           child: Text(
                             '여기에 서명을 그려주세요',
-                            style: TextStyle(
-                              color: AppSemanticColors.textTertiary,
-                              fontSize: 13,
-                            ),
+                            style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textTertiary),
                           ),
                         )
                       : const SizedBox.expand(),

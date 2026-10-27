@@ -226,7 +226,9 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                       value: _selectedMemberId,
                       decoration: InputDecoration(
                         hintText: '직원을 선택하세요',
-                        hintStyle: TextStyle(color: AppSemanticColors.textTertiary),
+                        hintStyle: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
                         filled: true,
                         fillColor: AppSemanticColors.backgroundSecondary,
                         border: OutlineInputBorder(
@@ -260,9 +262,8 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                             width: 2,
                           ),
                         ),
-                        errorStyle: TextStyle(
+                        errorStyle: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.statusErrorText,
-                          fontSize: AppTypography.fontSizeXs,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.space4,

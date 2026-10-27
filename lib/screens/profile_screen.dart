@@ -19,6 +19,7 @@ import 'admin_company_settings_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_tag.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/index.dart';
 import '../widgets/common/app_action_sheet.dart';
@@ -1881,20 +1882,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                   children: [
                     Text(
                       '구독 정보',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppSemanticColors.textPrimary,
-                      ),
+                      style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.textPrimary),
                     ),
                     const SizedBox(height: AppSpacing.space0_5),
                     Text(
                       '구독이 필요합니다 (탭하여 구독하기)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppSemanticColors.statusWarningIcon,
-                      ),
+                      style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.statusWarningIcon),
                     ),
                   ],
                 ),
@@ -1953,11 +1946,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 children: [
                   Text(
                     '구독 정보',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppSemanticColors.textPrimary,
-                    ),
+                    style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.textPrimary),
                   ),
                   const SizedBox(height: AppSpacing.space0_5),
                   Row(
@@ -1980,11 +1969,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ),
                         child: Text(
                           subscription.statusDisplayName,
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTag.labelStyle.copyWith(color: AppColors.white),
                         ),
                       ),
                     ],
