@@ -342,7 +342,7 @@ class _WorkTaskFormState extends State<_WorkTaskForm> {
                   for (final mark in const ['0%', '50%', '완료'])
                     Text(
                       mark,
-                      style: AppTypography.caption.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: AppSemanticColors.textTertiary,
                       ),
                     ),

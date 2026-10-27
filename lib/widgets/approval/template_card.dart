@@ -150,7 +150,7 @@ class TemplateCard extends StatelessWidget {
           Expanded(
             child: Text(
               template.fileName!,
-              style: AppTypography.caption.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppSemanticColors.textLink,
               ),
               maxLines: 1,
@@ -161,7 +161,7 @@ class TemplateCard extends StatelessWidget {
           const Spacer(),
         Text(
           '생성: ${dateFormat.format(template.createdAt)}',
-          style: AppTypography.caption.copyWith(
+          style: AppTypography.bodySmall.copyWith(
             color: AppSemanticColors.textTertiary,
           ),
         ),

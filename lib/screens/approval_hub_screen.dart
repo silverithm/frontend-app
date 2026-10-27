@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_tag.dart';
 import '../utils/permissions.dart';
 import 'admin_approval_management_screen.dart';
 import 'approval_list_screen.dart';
@@ -140,7 +141,7 @@ class _TabLabelWithBadge extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               count > 99 ? '99+' : '$count',
-              style: AppTypography.overline.copyWith(
+              style: AppTag.labelStyle.copyWith(
                 color: AppColors.white,
                 letterSpacing: 0,
                 height: 1.2,

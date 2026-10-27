@@ -42,7 +42,7 @@ class TextSizeSettingsScreen extends StatelessWidget {
               children: [
                 Text(
                   '미리보기',
-                  style: AppTypography.caption.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 ),
@@ -56,7 +56,7 @@ class TextSizeSettingsScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.space1),
                 Text(
                   '오후 4:14',
-                  style: AppTypography.caption.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 ),
@@ -77,7 +77,7 @@ class TextSizeSettingsScreen extends StatelessWidget {
           Text(
             '기기 설정의 글자 크기도 함께 반영됩니다. '
             '화면이 깨지지 않는 범위까지만 커집니다.',
-            style: AppTypography.caption.copyWith(
+            style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
           ),
@@ -122,10 +122,8 @@ class _SizeOption extends StatelessWidget {
               Expanded(
                 child: Text(
                   size.label,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
+                  style: (selected ? AppTypography.titleSmall : AppTypography.bodyMedium)
+                      .copyWith(color: AppSemanticColors.textPrimary),
                 ),
               ),
               if (selected)

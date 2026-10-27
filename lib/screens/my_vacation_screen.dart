@@ -876,9 +876,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           '거절 사유',
-                          style: AppTypography.labelSmall.copyWith(
+                          style: AppTag.labelStyle.copyWith(
                             color: AppSemanticColors.statusErrorText,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],

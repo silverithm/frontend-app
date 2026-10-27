@@ -21,6 +21,11 @@ class AppTag extends StatelessWidget {
     this.icon,
   });
 
+  /// 꼬리표·배지 숫자의 글자 — labelSmall 11에 w600. 화면에서 따로 굵기를 얹지 않고 이걸 쓴다.
+  static final TextStyle labelStyle = AppTypography.labelSmall.copyWith(
+    fontWeight: AppTypography.fontWeightSemibold,
+  );
+
   static ({Color background, Color foreground}) colorsOf(AppTagTone tone) {
     switch (tone) {
       case AppTagTone.neutral:
@@ -72,10 +77,7 @@ class AppTag extends StatelessWidget {
           ],
           Text(
             label,
-            style: AppTypography.labelSmall.copyWith(
-              color: colors.foreground,
-              fontWeight: AppTypography.fontWeightSemibold,
-            ),
+            style: labelStyle.copyWith(color: colors.foreground),
           ),
         ],
       ),

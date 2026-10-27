@@ -946,7 +946,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           padding: const EdgeInsets.only(top: AppSpacing.space1),
                           child: Text(
                             '등록: ${schedule.authorName}',
-                            style: AppTypography.caption.copyWith(
+                            style: AppTypography.bodySmall.copyWith(
                               color: AppSemanticColors.textTertiary,
                             ),
                           ),
@@ -958,9 +958,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                           padding: const EdgeInsets.only(top: AppSpacing.space1),
                           child: Text(
                             '담당: ${schedule.managerName}',
-                            style: AppTypography.caption.copyWith(
+                            style: AppTypography.bodySmall.copyWith(
                               color: AppSemanticColors.brandDefault,
-                              fontWeight: AppTypography.fontWeightMedium,
                             ),
                           ),
                         ),
@@ -998,10 +997,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   ),
                                   child: Text(
                                     '할 일 $taskDoneCount/$taskTotalCount',
-                                    style: AppTypography.caption.copyWith(
+                                    style: AppTypography.buttonSmall.copyWith(
                                       color: AppSemanticColors.statusInfoText,
-                                      fontWeight:
-                                          AppTypography.fontWeightSemibold,
                                     ),
                                   ),
                                 ),
@@ -1031,9 +1028,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                   ),
                   child: Text(
                     schedule.categoryText,
-                    style: AppTypography.labelSmall.copyWith(
+                    style: AppTag.labelStyle.copyWith(
                       color: AppSemanticColors.textInverse,
-                      fontWeight: AppTypography.fontWeightBold,
                     ),
                   ),
                 ),
@@ -1047,7 +1043,7 @@ class _CalendarScreenState extends State<CalendarScreen>
               if (taskItems.isEmpty)
                 Text(
                   '할 일 목록을 불러오지 못했습니다',
-                  style: AppTypography.caption.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 )
@@ -1118,7 +1114,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         task.assigneeName!,
-                        style: AppTypography.caption.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),
                       ),
@@ -2374,7 +2370,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                             member.role == 'caregiver'
                                                 ? '요양보호사'
                                                 : '사무직',
-                                            style: AppTypography.caption.copyWith(
+                                            style: AppTypography.bodySmall.copyWith(
                                               color: AppSemanticColors.textTertiary,
                                             ),
                                           ),
@@ -2880,7 +2876,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                             color: AppSemanticColors.textPrimary,
                                             fontWeight:
                                                 editingBase == base.category
-                                                    ? FontWeight.bold
+                                                    ? FontWeight.w600
                                                     : FontWeight.normal,
                                           ),
                                         ),
@@ -2989,7 +2985,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                         style: AppTypography.bodyMedium.copyWith(
                                           color: AppSemanticColors.textPrimary,
                                           fontWeight: editingId == label.id
-                                              ? FontWeight.bold
+                                              ? FontWeight.w600
                                               : FontWeight.normal,
                                         ),
                                       ),

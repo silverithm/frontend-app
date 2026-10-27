@@ -177,7 +177,7 @@ class ApprovalCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.space1),
               Text(
                 '${approval.processedByName}님이 ${dateFormat.format(approval.processedAt!)}에 처리',
-                style: AppTypography.caption.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textTertiary,
                 ),
               ),

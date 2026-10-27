@@ -337,13 +337,10 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                               _selectedDate != null
                                   ? '${_selectedDate!.year}년 ${_selectedDate!.month}월 ${_selectedDate!.day}일'
                                   : '날짜를 선택하세요',
-                              style: AppTypography.bodyLarge.copyWith(
+                              style: AppTypography.bodyMedium.copyWith(
                                 color: _selectedDate != null
                                     ? AppSemanticColors.textPrimary
                                     : AppSemanticColors.textSecondary,
-                                fontWeight: _selectedDate != null
-                                    ? FontWeight.w500
-                                    : FontWeight.normal,
                               ),
                             ),
                           ],

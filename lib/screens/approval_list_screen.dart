@@ -6,6 +6,7 @@ import '../models/approval.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_tag.dart';
 import '../theme/app_theme.dart';
 import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
@@ -712,10 +713,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
             ),
             child: Text(
               count.toString(),
-              style: AppTypography.labelSmall.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTag.labelStyle.copyWith(color: textColor),
             ),
           ),
         ],

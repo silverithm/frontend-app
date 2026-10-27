@@ -556,7 +556,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                                   else if (_approval.attachmentFileSize != null)
                                     Text(
                                       _formatFileSize(_approval.attachmentFileSize!),
-                                      style: AppTypography.caption.copyWith(
+                                      style: AppTypography.bodySmall.copyWith(
                                         color: AppSemanticColors.textTertiary,
                                       ),
                                     ),

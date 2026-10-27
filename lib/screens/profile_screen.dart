@@ -1156,7 +1156,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             ),
                                             child: Text(
                                               '결재선과 채팅에 이 직책으로 표시됩니다',
-                                              style: AppTypography.caption
+                                              style: AppTypography.bodySmall
                                                   .copyWith(
                                                 color: AppSemanticColors
                                                     .textTertiary,
@@ -1596,7 +1596,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: Text(
                         // 실제 앱 버전 표시 (하드코딩 금지)
                         'Version ${context.watch<AppVersionProvider>().currentVersion.isEmpty ? '-' : context.watch<AppVersionProvider>().currentVersion}',
-                        style: AppTypography.caption.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),
                       ),

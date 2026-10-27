@@ -335,7 +335,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
       case 'file':
         return Text(
           '아래 첨부파일 영역에서 올려주세요',
-          style: AppTypography.caption
+          style: AppTypography.bodySmall
               .copyWith(color: AppSemanticColors.textTertiary),
         );
 
@@ -431,7 +431,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
             const SizedBox(height: AppSpacing.space1),
             Text(
               field['description'].toString(),
-              style: AppTypography.caption
+              style: AppTypography.bodySmall
                   .copyWith(color: AppSemanticColors.textTertiary),
             ),
           ],
@@ -587,7 +587,7 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
               Flexible(
                 child: Text(
                   value['fileName']?.toString() ?? '',
-                  style: AppTypography.caption
+                  style: AppTypography.bodySmall
                       .copyWith(color: AppSemanticColors.textTertiary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -598,9 +598,8 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
                 onTap: _isUploading ? null : _pickAndUpload,
                 child: Text(
                   _isUploading ? '업로드 중...' : '다른 이미지로 바꾸기',
-                  style: AppTypography.caption.copyWith(
+                  style: AppTypography.buttonSmall.copyWith(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -656,7 +655,7 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
           const SizedBox(height: AppSpacing.space1),
           Text(
             _error!,
-            style: AppTypography.caption
+            style: AppTypography.bodySmall
                 .copyWith(color: AppSemanticColors.statusErrorIcon),
           ),
         ],

@@ -7,6 +7,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../services/fcm_service.dart';
 import '../seed/seed_button.dart';
+import 'app_tag.dart';
 
 class NotificationBell extends StatelessWidget {
   final Color? iconColor;
@@ -71,12 +72,10 @@ class NotificationBell extends StatelessWidget {
                   ),
                   child: Text(
                     unreadCount > 99 ? '99+' : unreadCount.toString(),
-                    style: AppTypography.overline.copyWith(
+                    style: AppTag.labelStyle.copyWith(
                       color: AppSemanticColors.textInverse,
-                      fontWeight: AppTypography.fontWeightBold,
-                      // 18px 원형 뱃지 안에 "99+"까지 들어가야 해서 overline 기본(11)보다
-                      // 작은 10이 필요 — 대응 토큰 없음, 의도된 값이라 유지
-                      fontSize: 10,
+                      letterSpacing: 0,
+                      height: 1.2,
                     ),
                     textAlign: TextAlign.center,
                   ),

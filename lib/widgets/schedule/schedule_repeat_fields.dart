@@ -213,11 +213,11 @@ class _WeekdayButton extends StatelessWidget {
             child: Center(
               child: Text(
                 label,
-                style: AppTypography.labelLarge.copyWith(
+                style: (selected ? AppTypography.titleSmall : AppTypography.bodyMedium)
+                    .copyWith(
                   color: selected
                       ? AppSemanticColors.textInverse
                       : AppSemanticColors.textSecondary,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ),

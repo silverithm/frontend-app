@@ -120,7 +120,7 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => Center(
                           child: Text('서명 이미지를 불러올 수 없습니다',
-                              style: AppTypography.caption.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                   color: AppSemanticColors.textTertiary)),
                         ),
                       ),

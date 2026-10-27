@@ -704,7 +704,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                                           _selectedTemplate!.description!.isNotEmpty)
                                         Text(
                                           _selectedTemplate!.description!,
-                                          style: AppTypography.caption.copyWith(
+                                          style: AppTypography.bodySmall.copyWith(
                                             color: AppSemanticColors.textTertiary,
                                           ),
                                           maxLines: 1,
@@ -871,7 +871,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                             ),
                             Text(
                               _formatFileSize(_selectedFile!.size),
-                              style: AppTypography.caption.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                 color: AppSemanticColors.textTertiary,
                               ),
                             ),
@@ -931,7 +931,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                               _keptAttachmentFileSize != null
                                   ? '${_formatFileSize(_keptAttachmentFileSize!)} · 저장된 첨부'
                                   : '저장된 첨부',
-                              style: AppTypography.caption.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                 color: AppSemanticColors.textTertiary,
                               ),
                             ),
@@ -993,7 +993,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                         const SizedBox(height: AppSpacing.space1),
                         Text(
                           'PDF, DOC, XLS, JPG, PNG (최대 10MB)',
-                          style: AppTypography.caption.copyWith(
+                          style: AppTypography.bodySmall.copyWith(
                             color: AppSemanticColors.textTertiary,
                           ),
                         ),
