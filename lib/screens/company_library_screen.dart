@@ -534,13 +534,22 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                         ),
                       ],
                       const SizedBox(height: AppSpacing.space2),
+                      Text(
+                        '${item['fileName'] ?? ''}',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.space1),
                       Row(
                         children: [
                           AppTag(label: _categoryOf(item)),
                           const SizedBox(width: AppSpacing.space2),
                           Expanded(
                             child: Text(
-                              '${item['fileName'] ?? ''} · ${_formatSize(fileSize)} · ${item['uploaderName'] ?? ''}',
+                              '${_formatSize(fileSize)} · ${item['uploaderName'] ?? ''}',
                               style: AppTypography.bodySmall.copyWith(
                                 color: AppSemanticColors.textTertiary,
                               ),
