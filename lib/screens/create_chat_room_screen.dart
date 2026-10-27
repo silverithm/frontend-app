@@ -140,22 +140,33 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text(
-          '새 채팅방',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.headerForeground,
-          ),
-        ),
+        // 상단 바 기본 제목(heading5) — 채팅 화면들 사이에서 제목 글자가 변하지 않게
+        title: const Text('새 채팅방'),
         elevation: 0,
         actions: [
+          // 앱바 안의 '만들기'는 높이가 56으로 늘어난 회색 타일이 되던 단추 대신 글자 단추.
+          // 이름이 비면 흐리게 — 주 행동이 비활성처럼 보이던 문제도 함께 풀린다.
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.space2),
-            child: SeedButton(
-              label: '만들기',
-              variant: SeedButtonVariant.neutralWeak,
-              size: SeedButtonSize.small,
-              isDisabled: _isLoading,
-              onPressed: _isLoading ? null : _createChatRoom,
+            child: Center(
+              child: ListenableBuilder(
+                listenable: _nameController,
+                builder: (context, _) {
+                  final enabled =
+                      !_isLoading && _nameController.text.trim().isNotEmpty;
+                  return TextButton(
+                    onPressed: _isLoading ? null : _createChatRoom,
+                    child: Text(
+                      '만들기',
+                      style: AppTypography.buttonMedium.copyWith(
+                        color: enabled
+                            ? AppSemanticColors.headerForeground
+                            : AppSemanticColors.headerForegroundMuted,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -191,7 +202,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                     children: [
                       Text(
                         '참가자 선택',
-                        style: AppTypography.labelLarge.copyWith(
+                        style: AppTypography.titleSmall.copyWith(
                           color: AppSemanticColors.textPrimary,
                         ),
                       ),
@@ -233,7 +244,8 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                         const SizedBox(width: AppSpacing.space2),
                         SeedButton(
                           label: '선택 해제',
-                          variant: SeedButtonVariant.neutralWeak,
+                          // '전체 선택'과 같은 모양 — 형제 단추가 한쪽은 외곽, 한쪽은 채움이던 것을 맞춤
+                          variant: SeedButtonVariant.neutralOutline,
                           size: SeedButtonSize.small,
                           onPressed: () {
                             setState(() {
@@ -273,61 +285,93 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                             final isCurrentUser = memberId == currentUserId;
                             final isSelected = _selectedParticipantIds
                                 .contains(memberId);
+                            // 직종과 역할 문구가 같은 말이면 한 번만("요양보호사 • 요양보호사" 방지)
+                            final roleText =
+                                memberRole.isEmpty ? '' : _getRoleText(memberRole);
                             final meta = [
                               if (memberPosition.isNotEmpty) memberPosition,
-                              if (memberRole.isNotEmpty)
-                                _getRoleText(memberRole),
-                            ].join(' • ');
+                              if (roleText.isNotEmpty && roleText != memberPosition)
+                                roleText,
+                            ].join(' · ');
 
-                            return SeedListCell(
-                              leading: SeedAvatar(
-                                name: memberName,
-                                // 사진을 안 넘기면 등록돼 있어도 이름 첫 글자만 나온다
-                                imageUrl:
-                                    member['profileImageUrl']?.toString(),
-                                size: SeedAvatarSize.medium,
-                              ),
-                              title: memberName + (isCurrentUser ? ' (나)' : ''),
-                              description: meta.isNotEmpty ? meta : null,
-                              showChevron: false,
-                              trailing: isCurrentUser
-                                  ? Icon(
-                                      Icons.check_circle,
-                                      color: AppSemanticColors.textDisabled,
-                                    )
-                                  : Checkbox(
-                                      value: isSelected,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          if (value == true) {
-                                            _selectedParticipantIds.add(
-                                              memberId,
-                                            );
-                                          } else {
-                                            _selectedParticipantIds.remove(
-                                              memberId,
-                                            );
-                                          }
-                                        });
-                                      },
+                            void toggle() {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedParticipantIds.remove(memberId);
+                                } else {
+                                  _selectedParticipantIds.add(memberId);
+                                }
+                              });
+                            }
+
+                            // 사람 한 줄 — 채팅 탭 직원 목록과 같은 규칙(높이 64, 이름 titleMedium + 메타 bodySmall)
+                            return InkWell(
+                              onTap: isCurrentUser ? null : toggle,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.space4,
+                                  vertical: AppSpacing.space3,
+                                ),
+                                child: Row(
+                                  children: [
+                                    SeedAvatar(
+                                      name: memberName,
+                                      // 사진을 안 넘기면 등록돼 있어도 이름 첫 글자만 나온다
+                                      imageUrl:
+                                          member['profileImageUrl']?.toString(),
+                                      size: SeedAvatarSize.medium,
+                                    ),
+                                    const SizedBox(width: AppSpacing.space3),
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              memberName +
+                                                  (isCurrentUser ? ' (나)' : ''),
+                                              style: AppTypography.titleMedium
+                                                  .copyWith(
+                                                color: AppSemanticColors
+                                                    .textPrimary,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (meta.isNotEmpty) ...[
+                                            const SizedBox(
+                                              width: AppSpacing.space2,
+                                            ),
+                                            Text(
+                                              meta,
+                                              style: AppTypography.bodySmall
+                                                  .copyWith(
+                                                color: AppSemanticColors
+                                                    .textTertiary,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                    // 기본 Checkbox는 미체크일 때 검은 2px 테두리라 틸 앱 톤에서 튀었다.
+                                    // 나는 늘 들어가므로 체크된 채 비활성으로 보여준다.
+                                    Checkbox(
+                                      value: isCurrentUser ? true : isSelected,
+                                      onChanged: isCurrentUser
+                                          ? null
+                                          : (_) => toggle(),
                                       activeColor: AppSemanticColors
                                           .interactivePrimaryDefault,
+                                      checkColor: AppSemanticColors.textInverse,
+                                      side: BorderSide(
+                                        color: AppSemanticColors.borderHover,
+                                        width: 1.5,
+                                      ),
                                     ),
-                              onTap: isCurrentUser
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        if (isSelected) {
-                                          _selectedParticipantIds.remove(
-                                            memberId,
-                                          );
-                                        } else {
-                                          _selectedParticipantIds.add(
-                                            memberId,
-                                          );
-                                        }
-                                      });
-                                    },
+                                  ],
+                                ),
+                              ),
                             );
                           }).toList(),
                         ),

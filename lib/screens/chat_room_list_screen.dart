@@ -367,139 +367,150 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     }
   }
 
+  /// 대화 목록 한 줄 — 높이 72(위아래 12 + 아바타 48).
+  /// 제목 titleMedium(15/w600, 읽음 여부로 굵기를 바꾸지 않는다) · 미리보기 bodyMedium 14 ·
+  /// 시간·인원 bodySmall 12. 고정 핀은 제목 앞이 아니라 시간 옆에 둬서 제목이 모든 줄에서
+  /// 같은 x에서 시작한다. 구분선은 글자가 시작하는 자리부터.
   Widget _buildChatRoomTile(ChatRoom room, bool isAdmin) {
-    return InkWell(
-      onTap: () => _navigateToChatRoom(room),
-      onLongPress: () => _showRoomActions(room, isAdmin),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space4,
-          vertical: AppSpacing.space3,
-        ),
-        decoration: BoxDecoration(
-          // 고정한 방은 연한 틸 바탕으로 구분한다
-          color: room.pinned ? AppColors.careTealTint : null,
-          border: Border(
-            bottom: BorderSide(color: AppSemanticColors.borderSubtle),
-          ),
-        ),
-        child: Row(
-          children: [
-            // 채팅방 아바타/썸네일
-            // 참여자 얼굴을 모아 보여준다 (카카오톡과 같은 방식).
-            // 참여자를 못 받은 방은 위젯이 알아서 방 이름 첫 글자로 그린다.
-            ChatRoomAvatarStack(
-              roomName: room.name,
-              avatars: room.avatars,
+    const avatarSize = 48.0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: () => _navigateToChatRoom(room),
+          onLongPress: () => _showRoomActions(room, isAdmin),
+          child: Container(
+            // 고정한 방은 연한 틸 바탕으로 구분한다
+            color: room.pinned ? AppColors.careTealTint : null,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space3,
             ),
-            const SizedBox(width: AppSpacing.space3),
+            child: Row(
+              children: [
+                // 채팅방 아바타/썸네일
+                // 참여자 얼굴을 모아 보여준다 (카카오톡과 같은 방식).
+                // 참여자를 못 받은 방은 위젯이 알아서 방 이름 첫 글자로 그린다.
+                ChatRoomAvatarStack(
+                  roomName: room.name,
+                  avatars: room.avatars,
+                  size: avatarSize,
+                ),
+                const SizedBox(width: AppSpacing.space3),
 
-            // 채팅방 정보
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                // 채팅방 정보
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Flexible(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (room.pinned) ...[
-                              Icon(
-                                Icons.push_pin,
-                                size: AppSpacing.space4,
-                                color: AppColors.careTeal,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              room.name,
+                              style: AppTypography.titleMedium.copyWith(
+                                color: AppSemanticColors.textPrimary,
                               ),
-                              const SizedBox(width: AppSpacing.space1),
-                            ],
-                            Flexible(
-                              child: Text(
-                                room.name,
-                                style: AppTypography.bodyLarge.copyWith(
-                                  fontWeight: room.unreadCount > 0
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: AppSemanticColors.textPrimary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (room.participantCount > 0) ...[
+                            const SizedBox(width: AppSpacing.space1),
+                            Text(
+                              '${room.participantCount}명',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textTertiary,
                               ),
                             ),
-                            if (room.participantCount > 0) ...[
-                              const SizedBox(width: AppSpacing.space1),
-                              Text(
-                                '${room.participantCount}명',
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppSemanticColors.textTertiary,
-                                ),
-                              ),
-                            ],
                           ],
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.space0_5),
+                      // 안 읽은 방은 굵기가 아니라 빨간 숫자 하나로만 알린다
+                      Text(
+                        room.lastMessage?.displayContent ?? '새로운 채팅방',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: room.unreadCount > 0
+                              ? AppSemanticColors.textSecondary
+                              : AppSemanticColors.textTertiary,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.space1),
-                  if (room.lastMessage != null)
-                    Text(
-                      room.lastMessage!.displayContent,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: room.unreadCount > 0
-                            ? AppSemanticColors.textSecondary
-                            : AppSemanticColors.textTertiary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    )
-                  else
-                    Text(
-                      '새로운 채팅방',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textTertiary,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                ],
-              ),
-            ),
+                ),
 
-            // 시간 및 안읽은 수
-            const SizedBox(width: AppSpacing.space2),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _formatLastMessageTime(room.lastMessageAt ?? room.createdAt),
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppSemanticColors.textTertiary,
+                // 시간 및 안읽은 수
+                const SizedBox(width: AppSpacing.space2),
+                SizedBox(
+                  height: avatarSize,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (room.pinned) ...[
+                            Icon(
+                              Icons.push_pin,
+                              size: AppSpacing.space3,
+                              color: AppColors.careTeal,
+                            ),
+                            const SizedBox(width: AppSpacing.space1),
+                          ],
+                          Text(
+                            _formatLastMessageTime(
+                              room.lastMessageAt ?? room.createdAt,
+                            ),
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (room.unreadCount > 0)
+                        Container(
+                          constraints: const BoxConstraints(
+                            minWidth: AppSpacing.space5,
+                            minHeight: AppSpacing.space5,
+                          ),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.space1_5,
+                          ),
+                          // 안 읽은 수는 아래 탭·알림 종·웹 채팅 목록과 같은 빨강 — 틸은 '누르라'는 단추 색이다
+                          decoration: BoxDecoration(
+                            color: AppSemanticColors.statusErrorIcon,
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.full,
+                            ),
+                          ),
+                          child: Text(
+                            room.unreadCount > 99 ? '99+' : '${room.unreadCount}',
+                            style: AppTypography.labelStrong.copyWith(
+                              color: AppSemanticColors.textInverse,
+                              height: 1.2,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.space1),
-                if (room.unreadCount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space2,
-                      vertical: AppSpacing.space1,
-                    ),
-                    // 안 읽은 수는 아래 탭·알림 종·웹 채팅 목록과 같은 빨강 — 틸은 '누르라'는 단추 색이다
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusErrorIcon,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                    ),
-                    child: Text(
-                      room.unreadCount > 99 ? '99+' : '${room.unreadCount}',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppSemanticColors.textInverse,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
+        const Divider(
+          height: 1,
+          indent: AppSpacing.space4 + avatarSize + AppSpacing.space3,
+          color: AppSemanticColors.borderSubtle,
+        ),
+      ],
     );
   }
 }

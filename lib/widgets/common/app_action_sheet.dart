@@ -7,19 +7,29 @@ import '../../theme/app_typography.dart';
 /// 카드·목록의 ⋮(더보기) 액션 메뉴 공용 시트.
 ///
 /// 기본 Material `PopupMenuButton` 대신 앱 공통 문법(둥근 상단 바텀시트 +
-/// 틴트 아이콘 + Seed 타이포)을 쓴다. 채팅 첨부·필터 시트와 같은 생김새라
-/// 화면마다 메뉴가 다르게 생기는 것을 막는다.
+/// 아이콘 한 줄 + Seed 타이포)을 쓴다. 채팅 길게 누르기·첨부·더보기 시트도 이것 하나를 쓴다.
+///
+/// 모양(2026-10-27 점검 R3-14·R1-14): 머리글은 띠 없이 작은 회색 글자, 항목은 색 칸 없이
+/// 아이콘(20·textSecondary) + bodyMedium 한 줄(높이 48). 삭제처럼 되돌릴 수 없는 항목만 빨강.
 class AppSheetAction {
   final IconData icon;
   final String label;
   final VoidCallback onSelected;
   final bool isDestructive;
 
+  /// 항목 아래 한 줄 설명(첨부 시트처럼 무엇이 열리는지 알려야 할 때). 있으면 줄이 56으로 커진다.
+  final String? description;
+
+  /// 이 항목 위에 구분선 한 줄 — 비슷한 항목끼리 묶을 때.
+  final bool hasDividerAbove;
+
   const AppSheetAction({
     required this.icon,
     required this.label,
     required this.onSelected,
     this.isDestructive = false,
+    this.description,
+    this.hasDividerAbove = false,
   });
 }
 
@@ -27,6 +37,9 @@ Future<void> showAppActionSheet(
   BuildContext context, {
   String? title,
   required List<AppSheetAction> actions,
+
+  /// 항목 위에 끼울 위젯(예: 길게 누르기 시트의 이모지 줄). 아래에 구분선이 자동으로 붙는다.
+  Widget? header,
 }) {
   return showModalBottomSheet(
     context: context,
@@ -43,49 +56,48 @@ Future<void> showAppActionSheet(
         top: Radius.circular(AppBorderRadius.xl2),
       ),
     ),
-    // 제목 띠가 둥근 모서리 밖으로 삐져나오지 않게
     clipBehavior: Clip.antiAlias,
     builder: (sheetContext) {
       final hasTitle = title != null && title.isNotEmpty;
       return SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            top: hasTitle ? 0 : AppSpacing.space4,
-            bottom: AppSpacing.space4,
+          padding: const EdgeInsets.only(
+            top: AppSpacing.space2,
+            bottom: AppSpacing.space2,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (hasTitle) ...[
-                // 시트 제목 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
-                Container(
-                  decoration: const BoxDecoration(
-                    color: AppSemanticColors.subheaderBackground,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: AppSemanticColors.subheaderBorder,
-                      ),
-                    ),
-                  ),
+              if (hasTitle)
+                Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.space5,
-                    AppSpacing.space4,
+                    AppSpacing.space2,
                     AppSpacing.space5,
-                    AppSpacing.space3,
+                    AppSpacing.space1,
                   ),
                   child: Text(
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTypography.heading6.copyWith(
-                      color: AppSemanticColors.textPrimary,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.space2),
+              if (header != null) ...[
+                header,
+                const Divider(height: 1, color: AppSemanticColors.borderSubtle),
               ],
-              for (final action in actions) _ActionTile(action: action),
+              for (final action in actions) ...[
+                if (action.hasDividerAbove)
+                  const Divider(
+                    height: 1,
+                    color: AppSemanticColors.borderSubtle,
+                  ),
+                _ActionTile(action: action),
+              ],
             ],
           ),
         ),
@@ -103,27 +115,56 @@ class _ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color iconColor = action.isDestructive
         ? AppSemanticColors.statusErrorIcon
-        : AppSemanticColors.interactivePrimaryDefault;
+        : AppSemanticColors.textSecondary;
     final Color textColor = action.isDestructive
         ? AppSemanticColors.statusErrorText
         : AppSemanticColors.textPrimary;
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(AppSpacing.space2),
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        ),
-        child: Icon(action.icon, color: iconColor),
-      ),
-      title: Text(
-        action.label,
-        style: AppTypography.bodyLarge.copyWith(color: textColor),
-      ),
+    final description = action.description;
+    return InkWell(
       onTap: () {
         Navigator.of(context).pop();
         action.onSelected();
       },
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: description == null
+              ? AppSpacing.space12
+              : AppSpacing.space14,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space5,
+            vertical: AppSpacing.space2,
+          ),
+          child: Row(
+            children: [
+              Icon(action.icon, size: AppSpacing.space5, color: iconColor),
+              const SizedBox(width: AppSpacing.space4),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action.label,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: textColor,
+                      ),
+                    ),
+                    if (description != null)
+                      Text(
+                        description,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

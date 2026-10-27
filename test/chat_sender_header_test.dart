@@ -81,10 +81,10 @@ void main() {
     expect(paragraph(tester).didExceedMaxLines, isFalse);
   });
 
-  testWidgets('직종은 이름 오른쪽에 괄호로 붙는다 — 세로로 쌓지 않는다', (tester) async {
+  testWidgets('직종은 괄호 없이 이름 오른쪽에 붙는다 — 세로로 쌓지 않는다', (tester) async {
     await pump(tester, name: '김보경', position: '사회복지사');
 
-    expect(paragraph(tester).text.toPlainText(), '김보경 (사회복지사)');
+    expect(paragraph(tester).text.toPlainText(), '김보경  사회복지사');
     expect(paragraph(tester).maxLines, 1);
   });
 
