@@ -851,7 +851,6 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
         title: Text(
           '토스페이먼츠 결제',
           style: AppTypography.heading6.copyWith(
-            fontWeight: FontWeight.bold,
             color: AppSemanticColors.headerForeground,
           ),
         ),

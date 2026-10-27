@@ -153,7 +153,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             Text(
               '관리자 권한이 필요합니다',
               style: AppTypography.heading6.copyWith(
-                fontWeight: FontWeight.bold,
                 color: AppSemanticColors.statusErrorIcon,
               ),
             ),
@@ -196,7 +195,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Text(
                   '오류 발생',
                   style: AppTypography.heading6.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),
@@ -602,7 +600,6 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                 Text(
                   '오류 발생',
                   style: AppTypography.heading6.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),

@@ -830,9 +830,7 @@ class _AdminCompanySettingsScreenState
                   Expanded(
                     child: Text(
                       '관리자 회원탈퇴',
-                      style: AppTypography.heading6.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTypography.heading6,
                     ),
                   ),
                 ],
