@@ -534,6 +534,71 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  /// 가입 유형·회사 연결 방식을 고르는 카드. 선택 모양은 한 가지다 —
+  /// brandWeak 바탕 + 틸 테두리 1.5px + 틸 아이콘(직원도 같은 틸, 예전엔 초록·노랑으로 갈렸다).
+  /// 고르지 않은 카드는 borderDefault 1px에 그림자 없이 둔다.
+  Widget _buildChoiceCard({
+    required bool selected,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+    double iconSize = 28,
+  }) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.space4),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppSemanticColors.brandWeak
+                : AppSemanticColors.surfaceDefault,
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            border: Border.all(
+              color: selected
+                  ? AppSemanticColors.interactivePrimaryDefault
+                  : AppSemanticColors.borderDefault,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: selected
+                    ? AppSemanticColors.interactivePrimaryDefault
+                    : AppSemanticColors.textSecondary,
+                size: iconSize,
+              ),
+              const SizedBox(height: AppSpacing.space2),
+              Text(
+                title,
+                style: AppTypography.titleSmall.copyWith(
+                  color: selected
+                      ? AppSemanticColors.interactivePrimaryDefault
+                      : AppSemanticColors.textPrimary,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: AppSpacing.space1),
+                Text(
+                  subtitle,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -602,11 +667,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         children: [
                           Text(
                             '회원가입 절차 안내',
-                            style: TextStyle(
-                              fontSize: AppTypography.fontSizeXl,
-                              fontWeight: AppTypography.fontWeightBold,
-                              color: AppSemanticColors.textPrimary,
-                            ),
+                            style: AppTypography.heading5.copyWith(color: AppSemanticColors.textPrimary),
                           ),
                           const SizedBox(height: AppSpacing.space5),
                           // 프로세스 그리드
@@ -701,7 +762,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: InkWell(
+                                  child: _buildChoiceCard(
+                                    selected: _userType == 'admin',
+                                    icon: Icons.admin_panel_settings,
+                                    iconSize: 32,
+                                    title: '관리자',
+                                    subtitle: '근무표 관리',
                                     onTap: () {
                                       _companyCodeDebounce?.cancel();
                                       setState(() {
@@ -711,77 +777,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       });
                                       _clearPositionState();
                                     },
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.xl,
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(
-                                        AppSpacing.space4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _userType == 'admin'
-                                            ? AppSemanticColors.interactivePrimaryDefault
-                                            : AppColors.white,
-                                        borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.xl,
-                                        ),
-                                        border: Border.all(
-                                          color: _userType == 'admin'
-                                              ? AppSemanticColors.interactivePrimaryDefault
-                                              : AppSemanticColors.borderHover,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Icon(
-                                            Icons.admin_panel_settings,
-                                            color: _userType == 'admin'
-                                                ? AppColors.white
-                                                : AppSemanticColors
-                                                      .interactivePrimaryDefault,
-                                            size: 32,
-                                          ),
-                                          const SizedBox(
-                                            height: AppSpacing.space2,
-                                          ),
-                                          Text(
-                                            '관리자',
-                                            style: TextStyle(
-                                              color: _userType == 'admin'
-                                                  ? AppColors.white
-                                                  : AppSemanticColors
-                                                        .interactivePrimaryDefault,
-                                              fontWeight:
-                                                  AppTypography.fontWeightBold,
-                                              fontSize:
-                                                  AppTypography.fontSizeBase,
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: AppSpacing.space1,
-                                          ),
-                                          Text(
-                                            '근무표 관리',
-                                            style: TextStyle(
-                                              color: _userType == 'admin'
-                                                  ? AppSemanticColors
-                                                        .textInverse
-                                                        .withValues(alpha: 0.7)
-                                                  : AppSemanticColors
-                                                        .textSecondary,
-                                              fontSize:
-                                                  AppTypography.fontSizeSm,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.space3),
                                 Expanded(
-                                  child: InkWell(
+                                  child: _buildChoiceCard(
+                                    selected: _userType == 'employee',
+                                    icon: Icons.person,
+                                    iconSize: 32,
+                                    title: '직원',
+                                    subtitle: '근무표 작성',
                                     onTap: () {
                                       setState(() {
                                         _userType = 'employee';
@@ -799,74 +804,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         );
                                       }
                                     },
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.xl,
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(
-                                        AppSpacing.space4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _userType == 'employee'
-                                            ? AppSemanticColors
-                                                  .statusSuccessIcon
-                                            : AppColors.white,
-                                        borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.xl,
-                                        ),
-                                        border: Border.all(
-                                          color: _userType == 'employee'
-                                              ? AppSemanticColors
-                                                    .statusSuccessIcon
-                                              : AppSemanticColors.borderHover,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Icon(
-                                            Icons.person,
-                                            color: _userType == 'employee'
-                                                ? AppColors.white
-                                                : AppSemanticColors
-                                                      .statusSuccessIcon,
-                                            size: 32,
-                                          ),
-                                          const SizedBox(
-                                            height: AppSpacing.space2,
-                                          ),
-                                          Text(
-                                            '직원',
-                                            style: TextStyle(
-                                              color: _userType == 'employee'
-                                                  ? AppColors.white
-                                                  : AppSemanticColors
-                                                        .statusSuccessIcon,
-                                              fontWeight:
-                                                  AppTypography.fontWeightBold,
-                                              fontSize:
-                                                  AppTypography.fontSizeBase,
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: AppSpacing.space1,
-                                          ),
-                                          Text(
-                                            '근무표 작성',
-                                            style: TextStyle(
-                                              color: _userType == 'employee'
-                                                  ? AppSemanticColors
-                                                        .textInverse
-                                                        .withValues(alpha: 0.7)
-                                                  : AppSemanticColors
-                                                        .textSecondary,
-                                              fontSize:
-                                                  AppTypography.fontSizeSm,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                   ),
                                 ),
                               ],
@@ -941,8 +878,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: InkWell(
-                                      onTap: () {
+                                    child: _buildChoiceCard(
+                                    selected: _employeeJoinMethod == 'code',
+                                    icon: Icons.key,
+                                    iconSize: 28,
+                                    title: '회사 코드',
+                                    
+                                    onTap: () {
                                         _companyCodeDebounce?.cancel();
                                         setState(() {
                                           _employeeJoinMethod = 'code';
@@ -953,67 +895,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           _companyCodeController.text,
                                         );
                                       },
-                                      borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.xl,
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(
-                                          AppSpacing.space3_5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _employeeJoinMethod == 'code'
-                                              ? AppSemanticColors
-                                                    .statusWarningIcon
-                                              : AppColors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.xl,
-                                          ),
-                                          border: Border.all(
-                                            color: _employeeJoinMethod == 'code'
-                                                ? AppSemanticColors
-                                                      .statusWarningIcon
-                                                : AppSemanticColors.borderHover,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Icon(
-                                              Icons.key,
-                                              color:
-                                                  _employeeJoinMethod == 'code'
-                                                  ? AppColors.white
-                                                  : AppSemanticColors
-                                                        .statusWarningIcon,
-                                              size: 28,
-                                            ),
-                                            const SizedBox(
-                                              height: AppSpacing.space2,
-                                            ),
-                                            Text(
-                                              '회사 코드',
-                                              style: TextStyle(
-                                                color:
-                                                    _employeeJoinMethod ==
-                                                        'code'
-                                                    ? AppColors.white
-                                                    : AppSemanticColors
-                                                          .statusWarningIcon,
-                                                fontWeight: AppTypography
-                                                    .fontWeightBold,
-                                                fontSize:
-                                                    AppTypography.fontSizeBase,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
+                                  ),
                                   ),
                                   const SizedBox(width: AppSpacing.space3),
                                   Expanded(
-                                    child: InkWell(
-                                      onTap: () {
+                                    child: _buildChoiceCard(
+                                    selected: _employeeJoinMethod == 'company',
+                                    icon: Icons.apartment,
+                                    iconSize: 28,
+                                    title: '회사 선택',
+                                    
+                                    onTap: () {
                                         _companyCodeDebounce?.cancel();
                                         setState(() {
                                           _employeeJoinMethod = 'company';
@@ -1027,64 +919,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           _clearPositionState();
                                         }
                                       },
-                                      borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.xl,
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(
-                                          AppSpacing.space3_5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              _employeeJoinMethod == 'company'
-                                              ? AppSemanticColors.interactivePrimaryDefault
-                                              : AppColors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.xl,
-                                          ),
-                                          border: Border.all(
-                                            color:
-                                                _employeeJoinMethod == 'company'
-                                                ? AppSemanticColors
-                                                      .interactivePrimaryDefault
-                                                : AppSemanticColors.borderHover,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Icon(
-                                              Icons.apartment,
-                                              color:
-                                                  _employeeJoinMethod ==
-                                                      'company'
-                                                  ? AppColors.white
-                                                  : AppSemanticColors
-                                                        .interactivePrimaryDefault,
-                                              size: 28,
-                                            ),
-                                            const SizedBox(
-                                              height: AppSpacing.space2,
-                                            ),
-                                            Text(
-                                              '회사 선택',
-                                              style: TextStyle(
-                                                color:
-                                                    _employeeJoinMethod ==
-                                                        'company'
-                                                    ? AppColors.white
-                                                    : AppSemanticColors
-                                                          .interactivePrimaryDefault,
-                                                fontWeight: AppTypography
-                                                    .fontWeightBold,
-                                                fontSize:
-                                                    AppTypography.fontSizeBase,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
+                                  ),
                                   ),
                                 ],
                               ),
@@ -1161,10 +996,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               hint: Text(
                                 '회사를 선택해주세요',
-                                style: TextStyle(
-                                  fontSize: AppTypography.fontSizeBase,
-                                  color: AppSemanticColors.textTertiary,
-                                ),
+                                style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textTertiary),
                               ),
                               selectedItemBuilder: (BuildContext context) {
                                 return context
@@ -1175,12 +1007,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         value: company,
                                         child: Text(
                                           company.name,
-                                          style: const TextStyle(
-                                            fontSize:
-                                                AppTypography.fontSizeBase,
-                                            fontWeight:
-                                                AppTypography.fontWeightMedium,
-                                          ),
+                                          style: AppTypography.bodyMedium,
                                         ),
                                       ),
                                     )
@@ -1199,22 +1026,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         children: [
                                           Text(
                                             company.name,
-                                            style: const TextStyle(
-                                              fontSize:
-                                                  AppTypography.fontSizeBase,
-                                              fontWeight: AppTypography
-                                                  .fontWeightMedium,
-                                            ),
+                                            style: AppTypography.bodyMedium,
                                           ),
                                           if (company.userEmails.isNotEmpty)
                                             Text(
                                               company.userEmails.first,
-                                              style: TextStyle(
-                                                fontSize:
-                                                    AppTypography.fontSizeSm,
-                                                color: AppSemanticColors
-                                                    .textSecondary,
-                                              ),
+                                              style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
                                             ),
                                         ],
                                       ),
@@ -1242,10 +1059,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 child: Text(
                                   _companyErrorMessage!,
-                                  style: TextStyle(
-                                    color: AppSemanticColors.statusErrorIcon,
-                                    fontSize: AppTypography.fontSizeSm,
-                                  ),
+                                  style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorIcon),
                                 ),
                               ),
                           ],
@@ -1337,10 +1151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     value: position,
                                     child: Text(
                                       position.name,
-                                      style: TextStyle(
-                                        fontSize: AppTypography.fontSizeBase,
-                                        color: AppSemanticColors.textPrimary,
-                                      ),
+                                      style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                                     ),
                                   ),
                                 )
@@ -1362,10 +1173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               child: Text(
                                 _positionErrorMessage!,
-                                style: TextStyle(
-                                  color: AppSemanticColors.statusErrorIcon,
-                                  fontSize: AppTypography.fontSizeSm,
-                                ),
+                                style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorIcon),
                               ),
                             ),
                           if (_selectedPosition?.description?.isNotEmpty ??
@@ -1377,10 +1185,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               child: Text(
                                 _selectedPosition!.description!,
-                                style: TextStyle(
-                                  color: AppSemanticColors.textSecondary,
-                                  fontSize: AppTypography.fontSizeSm,
-                                ),
+                                style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
                               ),
                             ),
                         ],
@@ -1425,20 +1230,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               value: 'CAREGIVER',
                               child: Text(
                                 '요양보호사',
-                                style: TextStyle(
-                                  fontSize: AppTypography.fontSizeBase,
-                                  color: AppSemanticColors.textPrimary,
-                                ),
+                                style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                               ),
                             ),
                             DropdownMenuItem(
                               value: 'OFFICE',
                               child: Text(
                                 '사무직',
-                                style: TextStyle(
-                                  fontSize: AppTypography.fontSizeBase,
-                                  color: AppSemanticColors.textPrimary,
-                                ),
+                                style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                               ),
                             ),
                           ],
@@ -1599,21 +1398,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           children: [
                                             TextSpan(
                                               text: '개인정보 처리방침',
-                                              style: TextStyle(
-                                                color: AppSemanticColors
-                                                    .textPrimary,
-                                                fontSize:
-                                                    AppTypography.fontSizeBase,
-                                              ),
+                                              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                                             ),
                                             TextSpan(
                                               text: '에 동의합니다',
-                                              style: TextStyle(
-                                                color: AppSemanticColors
-                                                    .textSecondary,
-                                                fontSize:
-                                                    AppTypography.fontSizeBase,
-                                              ),
+                                              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
                                             ),
                                           ],
                                         ),
@@ -1646,13 +1435,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         ),
                                         child: Text(
                                           '보기',
-                                          style: TextStyle(
-                                            color:
-                                                AppSemanticColors.textSecondary,
-                                            fontSize: AppTypography.fontSizeSm,
-                                            fontWeight:
-                                                AppTypography.fontWeightMedium,
-                                          ),
+                                          style: AppTypography.labelMedium.copyWith(color: AppSemanticColors.textSecondary),
                                         ),
                                       ),
                                     ),
@@ -1712,21 +1495,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           children: [
                                             TextSpan(
                                               text: '서비스 이용약관',
-                                              style: TextStyle(
-                                                color: AppSemanticColors
-                                                    .textPrimary,
-                                                fontSize:
-                                                    AppTypography.fontSizeBase,
-                                              ),
+                                              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                                             ),
                                             TextSpan(
                                               text: '에 동의합니다',
-                                              style: TextStyle(
-                                                color: AppSemanticColors
-                                                    .textSecondary,
-                                                fontSize:
-                                                    AppTypography.fontSizeBase,
-                                              ),
+                                              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
                                             ),
                                           ],
                                         ),
@@ -1759,13 +1532,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         ),
                                         child: Text(
                                           '보기',
-                                          style: TextStyle(
-                                            color:
-                                                AppSemanticColors.textSecondary,
-                                            fontSize: AppTypography.fontSizeSm,
-                                            fontWeight:
-                                                AppTypography.fontWeightMedium,
-                                          ),
+                                          style: AppTypography.labelMedium.copyWith(color: AppSemanticColors.textSecondary),
                                         ),
                                       ),
                                     ),
@@ -1837,12 +1604,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     const SizedBox(width: AppSpacing.space3),
                                     Text(
                                       '위 약관에 모두 동의합니다',
-                                      style: TextStyle(
-                                        color: AppSemanticColors.textPrimary,
-                                        fontSize: AppTypography.fontSizeBase,
-                                        fontWeight:
-                                            AppTypography.fontWeightSemibold,
-                                      ),
+                                      style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.textPrimary),
                                     ),
                                   ],
                                 ),
@@ -1863,11 +1625,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   Expanded(
                                     child: Text(
                                       _agreementErrorMessage!,
-                                      style: TextStyle(
-                                        color:
-                                            AppSemanticColors.statusErrorIcon,
-                                        fontSize: AppTypography.fontSizeSm,
-                                      ),
+                                      style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorIcon),
                                     ),
                                   ),
                                 ],
@@ -1932,12 +1690,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String description,
     IconData icon,
   ) {
-    // 단계마다 색을 돌려 쓰던 옛 그라디언트 이름표(Tailwind 시절)를 걷어 냈다 — 번호는 틸, 역할은 회색 꼬리표
+    // 번호는 틸 타일, 역할은 중립 AppTag(꺾쇠 괄호 글자 대신)
     return Container(
       padding: const EdgeInsets.all(AppSpacing.space4),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        color: AppSemanticColors.surfaceDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         border: Border.all(color: AppSemanticColors.borderDefault),
       ),
       child: Column(
@@ -1950,46 +1708,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: AppSpacing.space9,
                 decoration: BoxDecoration(
                   color: AppSemanticColors.interactivePrimaryDefault,
-                  borderRadius: BorderRadius.circular(10), // 스케일 밖 값 — 대응 토큰 없음
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                 ),
                 child: Center(
                   child: Text(
                     step,
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontWeight: AppTypography.fontWeightBold,
-                      fontSize: AppTypography.fontSizeXl,
+                    style: AppTypography.heading5.copyWith(
+                      color: AppSemanticColors.textInverse,
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: AppSpacing.space2),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space2,
-                  vertical: AppSpacing.space1,
-                ),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.backgroundTertiary,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                ),
-                child: Text(
-                  role,
-                  style: TextStyle(
-                    color: AppSemanticColors.textSecondary,
-                    fontSize: AppTypography.fontSizeXs,
-                    fontWeight: AppTypography.fontWeightBold,
-                  ),
-                ),
-              ),
+              AppTag(label: role.replaceAll(RegExp(r'[\[\]]'), '')),
             ],
           ),
           const SizedBox(height: AppSpacing.space3),
           Text(
             title,
-            style: const TextStyle(
-              fontWeight: AppTypography.fontWeightBold,
-              fontSize: AppTypography.fontSizeBase,
+            style: AppTypography.titleSmall.copyWith(
+              color: AppSemanticColors.textPrimary,
             ),
           ),
           const SizedBox(height: AppSpacing.space2),
@@ -1997,10 +1735,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: SingleChildScrollView(
               child: Text(
                 description,
-                style: TextStyle(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textSecondary,
-                  fontSize: AppTypography.fontSizeXs,
-                  height: 1.3, // 스케일 밖 값 — 대응 lineHeight 토큰 없음
+                  height: AppTypography.lineHeightSnug,
                 ),
               ),
             ),
