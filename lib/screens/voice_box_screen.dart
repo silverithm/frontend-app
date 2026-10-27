@@ -12,6 +12,7 @@ import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import 'voice_box_write_screen.dart';
+import '../widgets/common/app_tag.dart';
 
 /// 고충·신고 / 건의함 — 직원용.
 /// 제출은 소속 기관 인증 사용자 누구나 가능하고, 열람·처리는 기관 관리자만 할 수 있다
@@ -107,7 +108,7 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
                   const SizedBox(height: AppSpacing.space2),
                   Text(
                     message.title,
-                    style: AppTypography.heading6.copyWith(
+                    style: AppTypography.titleMedium.copyWith(
                       color: AppSemanticColors.textPrimary,
                     ),
                   ),
@@ -273,47 +274,22 @@ class _StatusBadge extends StatelessWidget {
 
   const _StatusBadge({required this.status});
 
-  Color get _color {
+  AppTagTone get _tone {
+    // 파랑은 앱 팔레트에 없다 — 접수됨은 중립, 확인중 경고, 처리완료 성공
     switch (status) {
       case VoiceMessageStatus.received:
-        return AppSemanticColors.statusInfoText;
+        return AppTagTone.neutral;
       case VoiceMessageStatus.inReview:
-        return AppSemanticColors.statusWarningText;
+        return AppTagTone.warning;
       case VoiceMessageStatus.resolved:
-        return AppSemanticColors.statusSuccessText;
+        return AppTagTone.success;
       case VoiceMessageStatus.onHold:
-        return AppSemanticColors.textTertiary;
-    }
-  }
-
-  Color get _background {
-    switch (status) {
-      case VoiceMessageStatus.received:
-        return AppSemanticColors.statusInfoBackground;
-      case VoiceMessageStatus.inReview:
-        return AppSemanticColors.statusWarningBackground;
-      case VoiceMessageStatus.resolved:
-        return AppSemanticColors.statusSuccessBackground;
-      case VoiceMessageStatus.onHold:
-        return AppSemanticColors.backgroundTertiary;
+        return AppTagTone.neutral;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2,
-        vertical: AppSpacing.space0_5,
-      ),
-      decoration: BoxDecoration(
-        color: _background,
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-      ),
-      child: Text(
-        status.label,
-        style: AppTypography.labelSmall.copyWith(color: _color),
-      ),
-    );
+    return AppTag(label: status.label, tone: _tone);
   }
 }
