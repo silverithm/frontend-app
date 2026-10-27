@@ -195,6 +195,7 @@ lib/
 | 작은 행 제목·폼 라벨·카드 안 소제목 | `titleSmall` 14/w600 |
 | 본문 | `bodyMedium` 14/w400 |
 | 부제·메타 (날짜·작성자·시간) | `bodySmall` 12 + `textSecondary`/`textTertiary` |
+| 작은 강조 (달력 날짜·상태 숫자 12/w600) | `labelStrong` |
 | 꼬리표·배지 숫자 | `labelSmall` 11 (`AppTag`) — 11은 이 자리에만 |
 | 큰 숫자 요약 | `heading4` 20/w700 |
 

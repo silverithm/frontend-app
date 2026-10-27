@@ -55,6 +55,7 @@ class AppTypography {
   //   작은 행 제목·폼 라벨      titleSmall 14/w600
   //   본문                      bodyMedium 14/w400
   //   부제·메타(날짜·작성자)    bodySmall 12/w400 (textSecondary·textTertiary)
+  //   작은 강조(달력 날짜·상태 숫자 등 12/w600)  labelStrong
   //   꼬리표·배지 숫자          labelSmall 11 (AppTag) — 11은 이 자리에만
   //   큰 숫자 요약              heading4 20/w700
   // 예전에는 같은 '목록 제목'이 14/w600·15/w500·16/w600·16/w700으로 화면마다 달라 들쭉날쭉해 보였다.
@@ -113,6 +114,15 @@ class AppTypography {
     fontSize: fontSizeBase,
     fontWeight: fontWeightSemibold,
     height: lineHeightSnug,
+    letterSpacing: letterSpacingNormal,
+  );
+
+  /// 작은 강조 글자 12/w600 — 달력 날짜 숫자·상태 숫자처럼 본문보다 작지만 눈에 띄어야 하는 자리.
+  /// (단추 토큰 buttonSmall을 빌려 쓰지 않는다)
+  static const TextStyle labelStrong = TextStyle(
+    fontSize: fontSizeSm,
+    fontWeight: fontWeightSemibold,
+    height: lineHeightNormal,
     letterSpacing: letterSpacingNormal,
   );
 
