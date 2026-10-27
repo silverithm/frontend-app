@@ -190,6 +190,8 @@ class AppSemanticColors {
   static const Color backgroundPrimary = AppColors.white; // layer-default
   static const Color backgroundSecondary = AppColors.gray50; // gray-100
   static const Color backgroundTertiary = AppColors.gray100; // layer-basement
+  // 대화방 바탕 — 남의 말풍선(흰색)이 테두리 없이도 읽히도록 한 단계 낮춘 면(흰색 대비 약 1.15:1)
+  static const Color chatBackground = AppColors.gray200;
   static const Color backgroundElevated = AppColors.white; // layer-floating
   static const Color backgroundOverlay = Color(0x80000000);
 

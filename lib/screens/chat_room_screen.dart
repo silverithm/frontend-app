@@ -36,6 +36,7 @@ import '../utils/chat_image_url.dart';
 import '../utils/chat_media.dart' as chat_media;
 import '../utils/chat_message_grouping.dart';
 import '../utils/chat_message_pagination.dart';
+import '../utils/korean_keep_all.dart';
 import 'chat_room_info_screen.dart';
 import 'document_viewer_screen.dart';
 import 'hwp_editor_screen.dart';
@@ -45,6 +46,8 @@ import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/chat/chat_bubble_layout.dart';
+import '../widgets/chat/chat_file_card.dart';
 import '../widgets/chat/chat_image_viewer.dart';
 import '../widgets/chat/chat_photo.dart';
 import '../widgets/chat/chat_photo_group.dart';
@@ -296,16 +299,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     vertical: AppSpacing.space1,
                   ),
                   decoration: BoxDecoration(
-                    // 구분선과 같은 톤이되, 대화 위에 뜨므로 불투명하게 덮는다
-                    color: AppSemanticColors.backgroundTertiary,
+                    // 날짜 구분선과 같은 알약 — 대화 위에 뜨므로 불투명하게 덮는다
+                    color: AppSemanticColors.borderDefault,
                     borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                    border: Border.all(color: AppSemanticColors.borderSubtle),
                   ),
                   child: Text(
                     _scrollDateLabel ?? '',
-                    style: AppTypography.labelSmall.copyWith(
+                    style: AppTypography.labelMedium.copyWith(
                       color: AppSemanticColors.textSecondary,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -662,38 +663,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   }
 
   void _showAttachmentOptions() {
-    AppBottomSheet.show(
+    // 길게 누르기·더보기와 같은 시트 하나를 쓴다(줄 높이·아이콘·글자가 시트마다 달랐다).
+    showAppActionSheet(
       context,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SeedListCell(
-                leadingIcon: Icons.photo_library,
-                title: '사진·동영상',
-                description: '갤러리에서 사진·동영상 선택',
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAndSendPhoto();
-                },
-              ),
-              SeedListCell(
-                leadingIcon: Icons.insert_drive_file,
-                title: '파일',
-                description: '문서, PDF 등 파일 선택',
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAndSendFile();
-                },
-              ),
-            ],
-          ),
+      actions: [
+        AppSheetAction(
+          icon: Icons.photo_library_outlined,
+          label: '사진·동영상',
+          description: '갤러리에서 사진·동영상 선택',
+          onSelected: _pickAndSendPhoto,
         ),
-      ),
+        AppSheetAction(
+          icon: Icons.insert_drive_file_outlined,
+          label: '파일',
+          description: '문서, PDF 등 파일 선택',
+          onSelected: _pickAndSendFile,
+        ),
+      ],
     );
   }
 
@@ -708,30 +694,31 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
   // 시각·읽음 표시 열이 실제로 차지하는 대략적 폭("오후 12:34" 기준).
   // 말풍선 최대 폭을 계산할 때 미리 빼두는 용도다.
-  static const double _metaColumnWidth = 56;
+  static const double _metaColumnWidth = 60;
 
   // 말풍선 최대 폭. 화면의 70%를 기본으로 하되, 좌우 고정 요소(목록 좌우 패딩,
   // 아바타 열, 사이 여백, 시각 열)를 뺀 실제 여유 폭을 넘지 않게 한다.
   // 이미지 자리표시자가 이 값을 그대로 쓰므로 넘치면 오버플로가 난다.
-  double _bubbleMaxWidth(BuildContext context) {
-    const reserved = AppSpacing.space4 * 2 + // ListView 좌우 패딩
+  //
+  // 내 말풍선은 아바타 열이 없어서 남보다 넓게 쓴다 — 같은 폭으로 묶어 두면 쓸데없이
+  // 좁아 "요" 한 글자가 둘째 줄에 남는 일이 늘었다(R1-21).
+  double _bubbleMaxWidth(BuildContext context, {bool isMine = false}) {
+    final width = MediaQuery.of(context).size.width;
+    if (isMine) {
+      const reservedMine =
+          AppSpacing.space4 * 2 + // ListView 좌우 패딩
+          AppSpacing.space1 + // 말풍선과 시각 열 사이
+          _metaColumnWidth;
+      return math.min(width * 0.78, width - reservedMine);
+    }
+    const reserved =
+        AppSpacing.space4 * 2 + // ListView 좌우 패딩
         AppSpacing.space1 + // 아바타 앞 여백
         ChatAvatarSlot.width +
         AppSpacing.space2 + // 아바타와 본문 사이
         AppSpacing.space1 + // 말풍선과 시각 열 사이
         _metaColumnWidth;
-    final width = MediaQuery.of(context).size.width;
     return math.min(width * 0.7, width - reserved);
-  }
-
-  /// 말풍선 **안쪽**에서 실제로 그릴 수 있는 폭.
-  ///
-  /// 좌우 안쪽 여백(space3)을 빼고, 남의 말풍선은 1px 테두리가 좌우로 한 겹 더
-  /// 있으므로(내 말풍선은 border: null) 그 2px까지 뺀다. 이걸 빼먹으면 격자의
-  /// 오른쪽 칸이 딱 2px 잘린다 — 사진처럼 폭을 꽉 채우는 자식에서만 드러난다.
-  double _bubbleContentWidth(BuildContext context, bool isMyMessage) {
-    final borderWidth = isMyMessage ? 0.0 : 2.0;
-    return _bubbleMaxWidth(context) - AppSpacing.space3 * 2 - borderWidth;
   }
 
   // 10MB 상수 (바이트) — 사진·문서
@@ -2083,7 +2070,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               Expanded(
                 child: Text(
                   message,
-                  style: AppTypography.labelSmall.copyWith(color: textColor),
+                  style: AppTypography.bodySmall.copyWith(color: textColor),
                 ),
               ),
             ],
@@ -2100,9 +2087,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   Widget _buildNoticeBanner(ChatRoom room, bool isAdmin) {
     if (!room.hasNotice) return const SizedBox.shrink();
 
+    // 틸 상단 바 바로 아래라 파랑(info) 대신 같은 틸의 연한 면을 쓴다(정보 화면 탭바와 같은 면).
+    // 접힘·펼침 모두 앞 아이콘(확성기)은 고정, 뒤 꺾쇠만 바뀐다 — 같은 띠의 아이콘 뜻이 뒤집히지 않게.
+    const noticeBorder = Border(
+      bottom: BorderSide(color: AppSemanticColors.subheaderBorder, width: 1),
+    );
+
     if (!_noticeExpanded) {
       return Material(
-        color: AppSemanticColors.statusInfoBackground,
+        color: AppSemanticColors.subheaderBackground,
         child: InkWell(
           onTap: () => setState(() => _noticeExpanded = true),
           child: Container(
@@ -2111,27 +2104,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               horizontal: AppSpacing.space4,
               vertical: AppSpacing.space2,
             ),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: AppSemanticColors.statusInfoBorder, width: 1),
-              ),
-            ),
+            decoration: const BoxDecoration(border: noticeBorder),
             child: Row(
               children: [
-                Icon(Icons.campaign_outlined, size: AppSpacing.space5, color: AppSemanticColors.statusInfoIcon),
+                Icon(Icons.campaign_outlined, size: AppSpacing.space5, color: AppSemanticColors.subheaderLink),
                 const SizedBox(width: AppSpacing.space2),
                 Expanded(
                   child: Text(
                     room.noticeContent ?? '',
                     style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.statusInfoText,
-                      fontWeight: FontWeight.w600,
+                      color: AppSemanticColors.textPrimary,
+                      fontWeight: AppTypography.fontWeightSemibold,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(Icons.expand_more, size: AppSpacing.space5, color: AppSemanticColors.statusInfoIcon),
+                Icon(Icons.expand_more, size: AppSpacing.space5, color: AppSemanticColors.textTertiary),
               ],
             ),
           ),
@@ -2145,27 +2134,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         horizontal: AppSpacing.space4,
         vertical: AppSpacing.space3,
       ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.statusInfoBackground,
-        border: Border(
-          bottom: BorderSide(
-            color: AppSemanticColors.statusInfoBorder,
-            width: 1,
-          ),
-        ),
+      decoration: const BoxDecoration(
+        color: AppSemanticColors.subheaderBackground,
+        border: noticeBorder,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 아이콘을 누르면 다시 한 줄로 접힌다
-          GestureDetector(
-            onTap: () => setState(() => _noticeExpanded = false),
-            behavior: HitTestBehavior.opaque,
-            child: Icon(
-              Icons.expand_less,
-              size: AppSpacing.space5,
-              color: AppSemanticColors.statusInfoIcon,
-            ),
+          Icon(
+            Icons.campaign_outlined,
+            size: AppSpacing.space5,
+            color: AppSemanticColors.subheaderLink,
           ),
           const SizedBox(width: AppSpacing.space2),
           Expanded(
@@ -2176,10 +2155,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    room.noticeContent ?? '',
+                    keepAll(room.noticeContent ?? ''),
                     style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.statusInfoText,
-                      fontWeight: FontWeight.w600,
+                      color: AppSemanticColors.textPrimary,
+                      fontWeight: AppTypography.fontWeightSemibold,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -2189,10 +2168,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         '${room.noticeByName} 등록',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.statusInfoText.withValues(
-                            alpha: 0.7,
-                          ),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
                         ),
                       ),
                     ),
@@ -2208,14 +2185,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                             Icon(
                               Icons.attach_file,
                               size: AppSpacing.space4,
-                              color: AppSemanticColors.statusInfoText,
+                              color: AppSemanticColors.textLink,
                             ),
                             const SizedBox(width: 2),
                             Flexible(
                               child: Text(
                                 room.noticeFileName ?? '파일',
-                                style: AppTypography.labelSmall.copyWith(
-                                  color: AppSemanticColors.statusInfoText,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textLink,
                                   decoration: TextDecoration.underline,
                                 ),
                                 maxLines: 1,
@@ -2245,11 +2222,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   child: Icon(
                     Icons.close,
                     size: AppSpacing.space4,
-                    color: AppSemanticColors.statusInfoText,
+                    color: AppSemanticColors.textTertiary,
                   ),
                 ),
               ),
             ),
+          // 아이콘이 아니라 꺾쇠를 눌러 접는다 — 앞 아이콘은 늘 같은 확성기다
+          GestureDetector(
+            onTap: () => setState(() => _noticeExpanded = false),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.space1),
+              child: Icon(
+                Icons.expand_less,
+                size: AppSpacing.space5,
+                color: AppSemanticColors.textTertiary,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -2274,12 +2264,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-              Text(room.noticeContent ?? '', style: AppTypography.bodyMedium),
+              Text(
+                keepAll(room.noticeContent ?? ''),
+                style: AppTypography.bodyMedium,
+              ),
               if ((room.noticeByName ?? '').isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.space3),
                 Text(
                   '${room.noticeByName} 등록',
-                  style: AppTypography.labelSmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 ),
@@ -2493,7 +2486,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                               showChevron: false,
                               trailing: Text(
                                 formatChatDateTime(message.createdAt),
-                                style: AppTypography.labelSmall.copyWith(
+                                style: AppTypography.bodySmall.copyWith(
                                   color: AppSemanticColors.textTertiary,
                                 ),
                               ),
@@ -3213,48 +3206,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   void _showLocalMessageOptions(ChatMessage message) {
     final failed = message.sendingStatus == MessageSendingStatus.failed;
     final localId = message.localId;
-    AppBottomSheet.show(
+    showAppActionSheet(
       context,
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: AppSpacing.space3,
-                horizontal: AppSpacing.space4,
-              ),
-              child: Text(
-                failed ? '보내지 못한 메시지입니다' : '보내는 중입니다',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                ),
-              ),
-            ),
-            if (failed && localId != null)
-              SeedListCell(
-                leadingIcon: Icons.refresh,
-                title: '다시 보내기',
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.read<ChatProvider>().retryMessage(localId);
-                },
-              ),
-            if (failed && localId != null)
-              SeedListCell(
-                leadingIcon: Icons.delete_outline,
-                title: '보내지 않고 삭제',
-                isDestructive: true,
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.read<ChatProvider>().discardLocalMessage(localId);
-                },
-              ),
-          ],
-        ),
-      ),
+      title: failed ? '보내지 못한 메시지입니다' : '보내는 중입니다',
+      actions: [
+        if (failed && localId != null)
+          AppSheetAction(
+            icon: Icons.refresh,
+            label: '다시 보내기',
+            onSelected: () => context.read<ChatProvider>().retryMessage(localId),
+          ),
+        if (failed && localId != null)
+          AppSheetAction(
+            icon: Icons.delete_outline,
+            label: '보내지 않고 삭제',
+            isDestructive: true,
+            onSelected: () =>
+                context.read<ChatProvider>().discardLocalMessage(localId),
+          ),
+      ],
     );
   }
 
@@ -3280,159 +3250,120 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     final isMyMessage = message.senderId == authProvider.currentUser?.chatUserId;
     final rootContext = context;
 
-    // 항목이 늘면 시트가 화면을 넘친다 — 실제로 '수정'과 '삭제'가 화면 밖으로 밀려
-    // 안 보였다("길게 눌러도 수정이 없다"). 높이를 화면의 85%로 묶고 안에서 스크롤한다.
-    // 짧을 때는 mainAxisSize.min 덕에 지금처럼 내용 높이에 딱 맞게 뜬다.
-    AppBottomSheet.show(
+    final canAct = message.type != MessageType.system && !message.isDeleted;
+    final isVideoFile = !message.isDeleted &&
+        (message.isVideoMessage ||
+            (message.type == MessageType.file &&
+                _isVideoFileName(message.fileName ?? '')));
+
+    // 첨부·더보기와 같은 시트 하나를 쓴다. 위 묶음(답장·복사·공지·일정)과 아래 묶음
+    // (읽은 사람·수정·삭제)을 구분선 한 줄로 나눠 긴 목록이 한 덩어리로 보이지 않게 한다.
+    // 항목이 늘어도 시트가 화면을 넘치지 않는다(높이 85%에서 멈추고 안에서 스크롤).
+    showAppActionSheet(
       context,
-      isScrollControlled: true,
-      child: SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(rootContext).size.height * 0.85,
-          ),
-          child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 이모지 빠른 선택
-            if (message.type != MessageType.system)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space3,
-                  horizontal: AppSpacing.space4,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: _quickEmojis.map((emoji) {
-                    // 이미 선택한 이모지인지 확인
-                    final isSelected = message.reactions.any(
-                      (r) => r.emoji == emoji && r.myReaction,
-                    );
-                    return Semantics(
-                      button: true,
-                      selected: isSelected,
-                      label: '${_emojiLabels[emoji] ?? emoji} 반응',
-                      excludeSemantics: true,
-                      child: GestureDetector(
+      // 이모지 빠른 선택 — 24px 글자를 40×40 칸에
+      header: message.type == MessageType.system
+          ? null
+          : Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.space2,
+                horizontal: AppSpacing.space4,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: _quickEmojis.map((emoji) {
+                  // 이미 선택한 이모지인지 확인
+                  final isSelected = message.reactions.any(
+                    (r) => r.emoji == emoji && r.myReaction,
+                  );
+                  return Semantics(
+                    button: true,
+                    selected: isSelected,
+                    label: '${_emojiLabels[emoji] ?? emoji} 반응',
+                    excludeSemantics: true,
+                    child: GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
                         _toggleReaction(message, emoji);
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(AppSpacing.space2),
+                        width: AppSpacing.space10,
+                        height: AppSpacing.space10,
+                        alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppSemanticColors.interactivePrimaryDefault
-                                    .withValues(alpha: 0.2)
+                              ? AppSemanticColors.brandWeak
                               : AppColors.transparent,
                           borderRadius: BorderRadius.circular(
-                            AppBorderRadius.lg,
+                            AppBorderRadius.full,
                           ),
                         ),
+                        // 이모지는 글꼴 크기를 직접 지정하는 예외(글자 역할 표 밖)
                         child: Text(
                           emoji,
-                          style: const TextStyle(fontSize: 28),
+                          style: TextStyle(fontSize: AppTypography.fontSize3xl),
                         ),
                       ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                }).toList(),
               ),
-            const Divider(height: 1),
-            if (message.type != MessageType.system && !message.isDeleted)
-              SeedListCell(
-                leadingIcon: Icons.reply,
-                title: '답장',
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  _startReplying(message);
-                },
-              ),
-            SeedListCell(
-              leadingIcon: Icons.copy,
-              title: '복사',
-              showChevron: false,
-              onTap: () {
-                Navigator.pop(context);
-                Clipboard.setData(ClipboardData(text: message.content ?? ''));
-                if (rootContext.mounted) {
-                  AppSnackBar.showSuccess(rootContext, message: '복사되었습니다');
-                }
-              },
             ),
-            if (!message.isDeleted &&
-                (message.isVideoMessage ||
-                    (message.type == MessageType.file &&
-                        _isVideoFileName(message.fileName ?? ''))))
-              SeedListCell(
-                leadingIcon: Icons.download_outlined,
-                title: '동영상 저장',
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  _saveVideo(message);
-                },
-              ),
-            SeedListCell(
-              leadingIcon: Icons.visibility,
-              title: '읽은 사람 보기',
-              showChevron: false,
-              onTap: () {
-                Navigator.pop(context);
-                _showMessageReaders(message);
-              },
-            ),
-            if (message.type != MessageType.system && !message.isDeleted)
-              SeedListCell(
-                leadingIcon: Icons.campaign_outlined,
-                title: '공지로 등록',
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  _setAsNotice(message);
-                },
-              ),
-            if (message.type != MessageType.system && !message.isDeleted)
-              SeedListCell(
-                leadingIcon: Icons.event_available_outlined,
-                title: '일정 등록',
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showAddScheduleFromMessage(message);
-                },
-              ),
-            if (isMyMessage &&
-                !message.isDeleted &&
-                message.type == MessageType.text)
-              SeedListCell(
-                leadingIcon: Icons.edit,
-                title: '수정',
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  _startEditing(message);
-                },
-              ),
-            if (isMyMessage && !message.isDeleted)
-              SeedListCell(
-                leadingIcon: Icons.delete,
-                title: '삭제',
-                isDestructive: true,
-                showChevron: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  _deleteMessage(message);
-                },
-              ),
-          ],
-        ),
+      actions: [
+        if (canAct)
+          AppSheetAction(
+            icon: Icons.reply,
+            label: '답장',
+            onSelected: () => _startReplying(message),
           ),
+        AppSheetAction(
+          icon: Icons.copy,
+          label: '복사',
+          onSelected: () {
+            Clipboard.setData(ClipboardData(text: message.content ?? ''));
+            if (rootContext.mounted) {
+              AppSnackBar.showSuccess(rootContext, message: '복사되었습니다');
+            }
+          },
         ),
-      ),
+        if (isVideoFile)
+          AppSheetAction(
+            icon: Icons.download_outlined,
+            label: '동영상 저장',
+            onSelected: () => _saveVideo(message),
+          ),
+        if (canAct)
+          AppSheetAction(
+            icon: Icons.campaign_outlined,
+            label: '공지로 등록',
+            onSelected: () => _setAsNotice(message),
+          ),
+        if (canAct)
+          AppSheetAction(
+            icon: Icons.event_available_outlined,
+            label: '일정 등록',
+            onSelected: () => _showAddScheduleFromMessage(message),
+          ),
+        AppSheetAction(
+          icon: Icons.visibility_outlined,
+          label: '읽은 사람 보기',
+          hasDividerAbove: true,
+          onSelected: () => _showMessageReaders(message),
+        ),
+        if (isMyMessage && !message.isDeleted && message.type == MessageType.text)
+          AppSheetAction(
+            icon: Icons.edit_outlined,
+            label: '수정',
+            onSelected: () => _startEditing(message),
+          ),
+        if (isMyMessage && !message.isDeleted)
+          AppSheetAction(
+            icon: Icons.delete_outline,
+            label: '삭제',
+            isDestructive: true,
+            onSelected: () => _deleteMessage(message),
+          ),
+      ],
     );
   }
 
@@ -3511,7 +3442,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     }
   }
 
-  // 리액션 표시 위젯
+  // 리액션 표시 위젯 — 말풍선 줄 아래(시각 열과 따로)에 놓는다.
+  // 남의 칩은 흰 면, 내 반응은 옅은 틸 면 + 틸 숫자. 테두리는 두지 않는다(칩만 두꺼워 보였다).
   Widget _buildReactionDisplay(ChatMessage message, bool isMyMessage) {
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.space1),
@@ -3526,39 +3458,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.space2,
-                vertical: AppSpacing.space1,
+                vertical: AppSpacing.space0_5,
               ),
               decoration: BoxDecoration(
                 color: reaction.myReaction
-                    ? AppSemanticColors.interactivePrimaryDefault.withValues(
-                        alpha: 0.2,
-                      )
-                    : AppSemanticColors.backgroundSecondary,
+                    ? AppSemanticColors.brandWeak
+                    : AppSemanticColors.surfaceDefault,
                 borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                border: Border.all(
-                  color: reaction.myReaction
-                      ? AppSemanticColors.interactivePrimaryDefault
-                      : AppSemanticColors.borderDefault,
-                  width: 1,
-                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    reaction.emoji,
-                    style: const TextStyle(fontSize: AppTypography.fontSizeBase),
-                  ),
+                  Text(reaction.emoji, style: AppTypography.bodyMedium),
                   const SizedBox(width: AppSpacing.space1),
                   Text(
                     '${reaction.count}',
-                    style: AppTypography.labelSmall.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: reaction.myReaction
                           ? AppSemanticColors.interactivePrimaryDefault
                           : AppSemanticColors.textSecondary,
                       fontWeight: reaction.myReaction
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                          ? AppTypography.fontWeightSemibold
+                          : AppTypography.fontWeightNormal,
                     ),
                   ),
                 ],
@@ -3686,7 +3607,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                         showChevron: false,
                         trailing: Text(
                           _formatReadTime(reader.readAt),
-                          style: AppTypography.labelSmall.copyWith(
+                          style: AppTypography.bodySmall.copyWith(
                             color: AppSemanticColors.textTertiary,
                           ),
                         ),
@@ -3745,7 +3666,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: AppSemanticColors.backgroundSecondary,
+        // 대화 바탕은 한 단계 낮춰 남의 흰 말풍선이 테두리 없이도 읽히게 한다
+        backgroundColor: chatOtherBubbleOutlined
+            ? AppSemanticColors.backgroundSecondary
+            : AppSemanticColors.chatBackground,
         appBar: AppBar(
           title: Column(
             // 제목과 인원 수가 같은 정렬이 되도록 AppBar의 제목 정렬(iOS 가운데/그 외 왼쪽)을 따른다.
@@ -3757,8 +3681,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 _roomName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTypography.bodyLarge.copyWith(
-                  fontWeight: FontWeight.bold,
+                // 두 줄(제목+인원)이라 상단 바 기본(heading5 18) 대신 한 단계 작은 heading6 16.
+                // 줄간격 1.75짜리 bodyLarge는 아래 인원 줄과 간격이 벌어졌다.
+                style: AppTypography.heading6.copyWith(
                   color: AppSemanticColors.headerForeground,
                 ),
               ),
@@ -3770,14 +3695,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                         : '${chatProvider.typingUsers.length}명이 입력 중...';
                     return Text(
                       typingText,
-                      style: AppTypography.labelSmall.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: AppSemanticColors.headerForegroundMuted,
+                        height: 1.2,
                       ),
                     );
                   }
                   return Text(
                     '${_participantCountOf(chatProvider)}명',
-                    style: AppTypography.labelSmall.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
+                      height: 1.2,
                       color: AppSemanticColors.headerForegroundMuted,
                     ),
                   );
@@ -4018,9 +3945,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               ],
               Text(
                 isLoadingOlder ? '이전 대화를 불러오는 중...' : '대화의 시작입니다',
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
+                style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textTertiary),
               ),
             ],
           ),
@@ -4096,6 +4021,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               isAdmin,
               chatProvider.participants,
               photoGroup: groupMessages,
+              // 간격·꼬리는 묶음의 **가장 오래된** 자리(index), 시각은 **가장 최신**
+              // 자리(groupIndices.last)를 기준으로 고른다.
+              topGap: chatBubbleTopGap(messages, index),
+              isRunStart: isSenderGroupStart(messages, index),
+              showMeta: isMinuteRunEnd(messages, groupIndices?.last ?? index),
             ),
           ),
         ],
@@ -4103,56 +4033,45 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     );
   }
 
-  /// 시스템 메시지 (가운데 정렬, 시간 없음)
-  Widget _buildSystemMessage(ChatMessage message) {
+  /// 가운데 알약 — 날짜 구분선과 시스템 안내가 같은 모양을 쓴다(R1-10).
+  /// 대화 바탕(chatBackground) 위에서 보이도록 바탕보다 한 단계 진한 옅은 면, 테두리 없음.
+  Widget _buildCenterPill(
+    String text, {
+    required TextStyle style,
+    required EdgeInsetsGeometry margin,
+  }) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-      alignment: Alignment.center,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space4,
-          vertical: AppSpacing.space2,
-        ),
-        decoration: BoxDecoration(
-          color: AppSemanticColors.backgroundTertiary,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        child: Text(
-          message.displayContent,
-          style: AppTypography.bodySmall.copyWith(
-            color: AppSemanticColors.textTertiary,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  /// 날짜 구분선 — 가운데 정렬, 옅은 배경의 알약 모양.
-  /// 시스템 메시지 알약(_buildSystemMessage)과 톤을 맞추되 글자 스타일로 구분한다.
-  Widget _buildDateSeparator(DateTime date) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+      margin: margin,
       alignment: Alignment.center,
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.space3,
           vertical: AppSpacing.space1,
         ),
-        // 흰 알약 + 테두리 — 회색 대화 바탕 위에서 회색 알약은 거의 보이지 않았다
         decoration: BoxDecoration(
-          color: AppSemanticColors.surfaceDefault,
+          color: AppSemanticColors.borderDefault,
           borderRadius: BorderRadius.circular(AppBorderRadius.full),
-          border: Border.all(color: AppSemanticColors.borderDefault),
         ),
-        child: Text(
-          formatDateSeparatorLabel(date),
-          style: AppTypography.labelSmall.copyWith(
-            color: AppSemanticColors.textSecondary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: Text(text, style: style, textAlign: TextAlign.center),
       ),
+    );
+  }
+
+  /// 시스템 메시지 (가운데 정렬, 시간 없음) — 위·아래 12px
+  Widget _buildSystemMessage(ChatMessage message) {
+    return _buildCenterPill(
+      keepAll(message.displayContent),
+      style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
+    );
+  }
+
+  /// 날짜 구분선 — 위 24px, 아래 12px. 시스템 안내와 같은 알약, 글자만 한 단계 진하게.
+  Widget _buildDateSeparator(DateTime date) {
+    return _buildCenterPill(
+      formatDateSeparatorLabel(date),
+      style: AppTypography.labelMedium.copyWith(color: AppSemanticColors.textSecondary),
+      margin: const EdgeInsets.only(top: AppSpacing.space6, bottom: AppSpacing.space3),
     );
   }
 
@@ -4184,12 +4103,27 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     List<ChatParticipant> participants, {
     /// 사진 묶음(오래된→최신). null이면 지금까지처럼 메시지 한 건짜리 말풍선.
     List<ChatMessage>? photoGroup,
+
+    /// 위 말풍선과의 간격(chatBubbleTopGap) — 같은 사람·같은 분이면 좁게, 사람이 바뀌면 넓게.
+    double topGap = 0,
+
+    /// 같은 사람 묶음의 첫 말풍선인지 — 꼬리 모서리(4px)는 여기에만 둔다.
+    bool isRunStart = true,
+
+    /// 같은 사람·같은 분 묶음의 마지막 말풍선인지 — 시각·안 읽은 수는 여기에만 붙인다.
+    bool showMeta = true,
   }) {
-    final bubbleColor = isMyMessage
+    // 지운 메시지는 남·나 모두 같은 옅은 면 + 흐린 글자(채운 색 위의 반투명 글자는 대비가 모자랐다)
+    final isDeletedBubble = photoGroup == null && message.isDeleted;
+    final bubbleColor = isDeletedBubble
+        ? AppSemanticColors.backgroundTertiary
+        : isMyMessage
         ? AppSemanticColors.interactivePrimaryDefault
         : AppSemanticColors.surfaceDefault;
 
-    final textColor = isMyMessage
+    final textColor = isDeletedBubble
+        ? AppSemanticColors.textTertiary
+        : isMyMessage
         ? AppSemanticColors.textInverse
         : AppSemanticColors.textPrimary;
 
@@ -4232,95 +4166,85 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     final sendingStatus = groupStatus();
 
-    // 말풍선(+리액션) 본체 — 내/남 메시지 공통.
-    final bubble = Column(
-      crossAxisAlignment: isMyMessage
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        Container(
-          // 사진 묶음은 말풍선 안쪽 여백 없이 사진만 둥글게 보여준다 — 여백까지 두면
-          // 내 사진에 두꺼운 초록 테두리가 둘러진 것처럼 보여 무거웠다(D4).
-          padding: photoGroup != null
-              ? EdgeInsets.zero
-              : const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space3,
-                  vertical: AppSpacing.space2,
-                ),
-          clipBehavior: photoGroup != null ? Clip.antiAlias : Clip.none,
-          decoration: BoxDecoration(
-            color: photoGroup != null
-                ? AppSemanticColors.surfaceDefault
-                : sendingStatus == MessageSendingStatus.sending
-                    ? bubbleColor.withValues(alpha: 0.7)
-                    : bubbleColor,
-            // 배경(gray50)과 남의 말풍선(흰색)은 명도차가 거의 없어 그냥 두면
-            // 경계가 안 보인다. 검은 테두리는 앱 톤에서 튀므로 옅은 회색
-            // 실선(borderDefault) 한 겹으로만 경계를 만든다. 사진은 내 것도 실선 한 겹.
-            border: (isMyMessage && photoGroup == null)
-                ? null
-                : Border.all(
-                    color: AppSemanticColors.borderDefault,
-                    width: 1,
-                  ),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(AppBorderRadius.xl),
-              topRight: const Radius.circular(AppBorderRadius.xl),
-              bottomLeft: Radius.circular(
-                isMyMessage ? AppBorderRadius.xl : AppBorderRadius.base,
-              ),
-              bottomRight: Radius.circular(
-                isMyMessage ? AppBorderRadius.base : AppBorderRadius.xl,
-              ),
-            ),
-          ),
-          constraints: BoxConstraints(maxWidth: _bubbleMaxWidth(context)),
-          child: photoGroup != null
-              ? ChatPhotoGroup(
-                  messages: photoGroup,
-                  // 사진은 여백 없이 그리므로 말풍선 폭을 그대로 쓴다(테두리 1px씩만 뺀다)
-                  maxWidth: _bubbleContentWidth(context, isMyMessage) + AppSpacing.space3 * 2 - 2,
-                  onTap: (i) => _openPhotoGroup(photoGroup, i),
-                  onLongPress: (i) => _showMessageOptions(photoGroup[i]),
-                )
-              : message.type == MessageType.system
-              ? Text(
-                  message.displayContent,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textTertiary,
-                    fontStyle: FontStyle.italic,
-                  ),
-                )
-              : _buildMessageContent(message, textColor, isMyMessage),
-        ),
-        // 리액션 표시
-        if (message.reactions.isNotEmpty)
-          _buildReactionDisplay(message, isMyMessage),
-      ],
+    // 사진·동영상은 말풍선 틀 없이 사진만 둥글게 보여준다 — 틀(여백 12 + 테두리)까지 두면
+    // 사진 둘레에 두꺼운 상자가 둘러져 무거웠다(D4). 묶음뿐 아니라 한 장짜리·동영상도 같다.
+    final isMediaBubble =
+        photoGroup != null ||
+        (!message.isDeleted && (message.type == MessageType.image || message.isVideoMessage));
+
+    final outlined = !isMyMessage && !isMediaBubble && chatOtherBubbleOutlined;
+
+    // 꼬리 모서리(작은 모서리)는 같은 사람 묶음의 첫 말풍선에만 둔다. 모든 말풍선에
+    // 같은 꼬리를 달면 도장 찍은 듯 반복돼 거칠어 보인다.
+    const big = Radius.circular(AppBorderRadius.xl);
+    const small = Radius.circular(AppBorderRadius.base);
+    final BorderRadius bubbleRadius = isMediaBubble
+        ? BorderRadius.circular(AppBorderRadius.xl2)
+        : BorderRadius.only(
+            topLeft: (!isMyMessage && isRunStart) ? small : big,
+            topRight: (isMyMessage && isRunStart) ? small : big,
+            bottomLeft: big,
+            bottomRight: big,
+          );
+
+    // 말풍선 본체
+    final bubbleBox = Container(
+      padding: isMediaBubble
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: AppSpacing.space3, vertical: AppSpacing.space2),
+      clipBehavior: isMediaBubble ? Clip.antiAlias : Clip.none,
+      decoration: BoxDecoration(
+        color: isMediaBubble
+            ? null
+            : sendingStatus == MessageSendingStatus.sending
+            ? bubbleColor.withValues(alpha: 0.7)
+            : bubbleColor,
+        // 남의 말풍선(흰색)은 대화 바탕(chatBackground)을 한 단계 낮춰 테두리 없이도 읽히게 한다.
+        // 대안(옅은 테두리)은 시안 비교용으로만 남겨 둔다.
+        border: outlined ? Border.all(color: AppColors.gray200) : null,
+        borderRadius: bubbleRadius,
+      ),
+      constraints: BoxConstraints(maxWidth: _bubbleMaxWidth(context, isMine: isMyMessage)),
+      child: photoGroup != null
+          ? ChatPhotoGroup(
+              messages: photoGroup,
+              // 사진은 여백·테두리 없이 그리므로 말풍선 폭을 그대로 쓴다
+              maxWidth: _bubbleMaxWidth(context, isMine: isMyMessage),
+              onTap: (i) => _openPhotoGroup(photoGroup, i),
+              onLongPress: (i) => _showMessageOptions(photoGroup[i]),
+            )
+          : _buildMessageContent(message, textColor, isMyMessage),
     );
 
     // 시각·읽음 표시 열.
     // 읽음 표시는 누가 보냈든 똑같이 뜬다 — 내 메시지에만 두면
     // 상대 메시지를 아직 누가 안 봤는지 알 수 없다.
+    // 같은 사람의 같은 분 묶음에서는 **마지막 말풍선에만** 시각·안 읽은 수를 붙이고,
+    // 전송 중·실패처럼 지금 알려야 하는 상태만 모든 말풍선에 남긴다(R1-03·R1-22).
+    final showFailed = isMyMessage && sendingStatus == MessageSendingStatus.failed;
+    final showSending = isMyMessage && sendingStatus == MessageSendingStatus.sending;
+    final showUnread = showMeta && unreadCount > 0 && sendingStatus != MessageSendingStatus.failed;
+    final showTime = showMeta && !showFailed;
+    final hasMeta = showFailed || showSending || showUnread || showTime;
+
     Widget metaColumn({required bool alignEnd}) {
+      final edited = message.editedAt != null && photoGroup == null;
       return Column(
-        crossAxisAlignment: alignEnd
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          if (unreadCount > 0 &&
-              sendingStatus != MessageSendingStatus.failed)
+          // 안 읽은 수는 역할(직원·관리자)과 무관하게 같은 틸 — 같은 정보는 한 색이다
+          if (showUnread)
             Text(
               '$unreadCount',
-              style: AppTypography.labelSmall.copyWith(
-                color: isAdmin
-                    ? AppSemanticColors.textSecondary
-                    : AppSemanticColors.interactivePrimaryDefault,
-                fontWeight: FontWeight.bold,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.interactivePrimaryDefault,
+                fontWeight: AppTypography.fontWeightSemibold,
+                height: 1.2,
               ),
             ),
           // 실패는 아이콘만으로는 부족하다 — 다시 타이핑하지 않고 그 자리에서 보낼 수 있어야 한다
-          if (isMyMessage && sendingStatus == MessageSendingStatus.failed)
+          if (showFailed)
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => _retryFailed(photoGroup ?? [message]),
@@ -4329,48 +4253,76 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
                 child: Text(
                   '다시 보내기',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppSemanticColors.statusErrorIcon,
-                    fontWeight: FontWeight.bold,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.statusErrorText,
+                    fontWeight: AppTypography.fontWeightSemibold,
                   ),
                 ),
               ),
             ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isMyMessage) ...[
-                _buildSendingStatusIcon(sendingStatus, isAdmin),
-                const SizedBox(width: 2),
+          if (showSending || showTime)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showSending) ...[
+                  _buildSendingStatusIcon(sendingStatus, isAdmin),
+                  if (showTime) const SizedBox(width: AppSpacing.space1),
+                ],
+                if (showTime)
+                  Text(
+                    // 수정 표시는 말풍선 안 둘째 줄이 아니라 시각 옆에 — 말풍선이 커지지 않는다
+                    edited
+                        ? '수정됨 · ${_formatMessageTime(message.createdAt)}'
+                        : _formatMessageTime(message.createdAt),
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
+                      height: 1.2,
+                    ),
+                  ),
               ],
-              Text(
-                _formatMessageTime(message.createdAt),
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
+            ),
         ],
       );
     }
 
+    // 말풍선 줄 — 시각 열은 반응 칩이 아니라 **말풍선 바닥**에 맞춘다.
+    Widget bubbleRow({required bool alignEnd}) {
+      final meta = hasMeta ? metaColumn(alignEnd: alignEnd) : null;
+      final gap = const SizedBox(width: AppSpacing.space1);
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: alignEnd
+            ? [
+                if (meta != null) ...[meta, gap],
+                Flexible(child: bubbleBox),
+              ]
+            : [
+                Flexible(child: bubbleBox),
+                if (meta != null) ...[gap, meta],
+              ],
+      );
+    }
+
+    final reactions = message.reactions.isNotEmpty
+        ? _buildReactionDisplay(message, isMyMessage)
+        : null;
+
     return GestureDetector(
       onLongPress: () => _showMessageOptions(message),
       child: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.space2),
+        margin: EdgeInsets.only(top: topGap),
         child: isMyMessage
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  metaColumn(alignEnd: true),
-                  const SizedBox(width: AppSpacing.space1),
-                  Flexible(child: bubble),
-                ],
+            ? SizedBox(
+                width: double.infinity,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [bubbleRow(alignEnd: true), if (reactions != null) reactions],
+                ),
               )
             // 남의 메시지 — 카톡 배치.
-            //   [아바타]  이름 (직종)
+            //   [아바타]  이름 직종
             //             [말풍선]
             // 아바타는 그룹 첫 메시지에만 그리고, 이어지는 메시지는 같은 폭
             // (ChatAvatarSlot.width)만 차지해 말풍선이 세로로 정렬된다.
@@ -4398,14 +4350,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                             senderName: message.senderName,
                             senderPosition: message.senderPosition,
                           ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Flexible(child: bubble),
-                            const SizedBox(width: AppSpacing.space1),
-                            metaColumn(alignEnd: false),
-                          ],
-                        ),
+                        bubbleRow(alignEnd: false),
+                        if (reactions != null) reactions,
                       ],
                     ),
                   ),
@@ -4476,6 +4422,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             _ => '파일',
           };
 
+    // 인용 블록 — 은은한 바탕 위에 글자를 알파로 흐리지 않고 두 단계로만 나눈다.
+    // (Border에 borderRadius를 주면 한쪽 선만 그릴 수 없어서 왼쪽 선은 따로 그린다.)
+    final isOnBrand = textColor == AppSemanticColors.textInverse;
     return Semantics(
       button: true,
       label: '답장 원본으로 이동',
@@ -4485,33 +4434,55 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             ? null
             : () => _jumpToRepliedMessage(message.replyToId!),
         behavior: HitTestBehavior.opaque,
-        child: Container(
-          padding: const EdgeInsets.only(left: AppSpacing.space2),
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(color: textColor.withValues(alpha: 0.35), width: 2),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          child: Container(
+            color: isOnBrand
+                ? AppSemanticColors.textInverse.withValues(alpha: 0.16)
+                : AppSemanticColors.backgroundSecondary,
+            child: IntrinsicHeight(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    width: 2,
+                    color: isOnBrand
+                        ? AppSemanticColors.textInverse.withValues(alpha: 0.5)
+                        : AppSemanticColors.borderHover,
+                  ),
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space2,
+                        vertical: AppSpacing.space1_5,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            message.replyToSenderName ?? '',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: textColor.withValues(alpha: 0.85),
+                              fontWeight: AppTypography.fontWeightSemibold,
+                            ),
+                          ),
+                          // 두 줄로 잘라 "..."을 붙이지 않는다 — 무슨 말에 답한 건지 읽는 자리인데
+                          // 정작 그 말이 잘려 있으면 소용이 없다. 길면 아래로 흐른다.
+                          Text(
+                            keepAll(preview),
+                            style: AppTypography.bodySmall.copyWith(
+                              color: textColor.withValues(alpha: 0.75),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                message.replyToSenderName ?? '',
-                style: AppTypography.labelSmall.copyWith(
-                  color: textColor.withValues(alpha: 0.75),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              // 두 줄로 잘라 "..."을 붙이지 않는다 — 무슨 말에 답한 건지 읽는 자리인데
-              // 정작 그 말이 잘려 있으면 소용이 없다. 길면 아래로 흐른다.
-              Text(
-                preview,
-                style: AppTypography.bodySmall.copyWith(
-                  color: textColor.withValues(alpha: 0.65),
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -4524,13 +4495,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     bool isMyMessage,
   ) {
     if (message.isDeleted) {
-      return Text(
-        '삭제된 메시지입니다',
-        style: AppTypography.bodyMedium.copyWith(
-          color: textColor.withValues(alpha: 0.5),
-          fontStyle: FontStyle.italic,
-        ),
-      );
+      // 이탤릭 없음 — 한글에는 기울임 글꼴이 없어 합성 기울임이 지글거린다.
+      // 색은 말풍선이 이미 옅은 면 + textTertiary로 바꿔 둔다(남·나 동일).
+      return Text('삭제된 메시지입니다', style: AppTypography.bodyMedium.copyWith(color: textColor));
     }
 
     switch (message.type) {
@@ -4539,53 +4506,52 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           button: true,
           label: '이미지 크게 보기',
           child: GestureDetector(
-          onTap: () => _openAttachment(message),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_chatImageUrl(message) != null)
-                Builder(
-                  builder: (context) {
-                    // 말풍선 최대 폭과 같은 가로/세로 4:3 자리를 로딩 중에도
-                    // 미리 잡아둬 이미지가 뜨며 스크롤이 튀지 않게 한다.
-                    final placeholderWidth = _bubbleMaxWidth(context);
-                    final placeholderHeight = placeholderWidth * 0.75;
-                    final sendFailed =
-                        message.sendingStatus == MessageSendingStatus.failed;
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      // 깨져 오면 스스로 다시 받는다 (ChatPhoto) — 앱은 깨진 응답까지 캐시에 남는다
-                      child: Stack(children: [ChatPhoto(
-                        imageUrl: _chatImageUrl(message)!,
-                        fit: BoxFit.cover,
-                        // 말풍선 최대 폭보다 큰 원본을 그대로 디코드하지 않도록 제한
-                        memCacheWidth: (placeholderWidth * 2).round(),
-                        placeholder: (context) => SizedBox(
-                          width: placeholderWidth,
-                          height: placeholderHeight,
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
-                        brokenBuilder: (context) => SizedBox(
-                          width: placeholderWidth,
-                          height: placeholderHeight,
-                          child: Container(
-                            color: AppSemanticColors.backgroundTertiary,
-                            child: Icon(
-                              Icons.broken_image,
-                              color: AppSemanticColors.textTertiary,
+            onTap: () => _openAttachment(message),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_chatImageUrl(message) != null)
+                  Builder(
+                    builder: (context) {
+                      // 말풍선 최대 폭과 같은 가로/세로 4:3 자리를 로딩 중에도
+                      // 미리 잡아둬 이미지가 뜨며 스크롤이 튀지 않게 한다.
+                      final placeholderWidth = _bubbleMaxWidth(context, isMine: isMyMessage);
+                      final placeholderHeight = placeholderWidth * 0.75;
+                      final sendFailed = message.sendingStatus == MessageSendingStatus.failed;
+                      // 바깥 말풍선이 이미 둥글게 잘라 주므로 안쪽 ClipRRect는 두지 않는다.
+                      return Stack(
+                        children: [
+                          // 깨져 오면 스스로 다시 받는다 (ChatPhoto) — 앱은 깨진 응답까지 캐시에 남는다
+                          ChatPhoto(
+                            imageUrl: _chatImageUrl(message)!,
+                            fit: BoxFit.cover,
+                            // 말풍선 최대 폭보다 큰 원본을 그대로 디코드하지 않도록 제한
+                            memCacheWidth: (placeholderWidth * 2).round(),
+                            placeholder: (context) => Container(
+                              width: placeholderWidth,
+                              height: placeholderHeight,
+                              color: AppSemanticColors.backgroundTertiary,
+                              child: const Center(child: CircularProgressIndicator()),
+                            ),
+                            brokenBuilder: (context) => SizedBox(
+                              width: placeholderWidth,
+                              height: placeholderHeight,
+                              child: Container(
+                                color: AppSemanticColors.backgroundTertiary,
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      if (sendFailed) const ChatSendFailedOverlay(),
-                      ]),
-                    );
-                  },
-                ),
-            ],
-          ),
+                          if (sendFailed) const ChatSendFailedOverlay(),
+                        ],
+                      );
+                    },
+                  ),
+              ],
+            ),
           ),
         );
 
@@ -4598,55 +4564,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         if (message.isVideoMessage) {
           return ChatVideoBubble(
             message: message,
-            maxWidth: _bubbleContentWidth(context, isMyMessage),
+            // 사진처럼 말풍선 틀 없이 그리므로 말풍선 폭 그대로
+            maxWidth: _bubbleMaxWidth(context, isMine: isMyMessage),
             onTap: () => _openAttachment(message),
           );
         }
 
         final isVideo = _isVideoFileName(message.fileName ?? '');
-        return GestureDetector(
+        return ChatFileCard(
+          name: message.fileName ?? '파일',
+          fileSize: message.fileSize,
+          isVideo: isVideo,
+          onBrand: isMyMessage,
           onTap: () => _openAttachment(message),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isVideo ? Icons.play_circle_outline : Icons.attach_file,
-                color: textColor,
-                size: 18,
-              ),
-              const SizedBox(width: AppSpacing.space1),
-              Flexible(
-                child: Text(
-                  isVideo ? '동영상 · ${message.fileName ?? ''}' : (message.fileName ?? '파일'),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: textColor,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
         );
 
       case MessageType.text:
-        if (message.editedAt != null) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTextWithMentions(message.content ?? '', textColor),
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  '수정됨',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: textColor.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-            ],
-          );
-        }
+        // '수정됨'은 시각 옆으로 옮겼다(말풍선 안 둘째 줄은 틸 위에서 흐리고 말풍선만 키웠다).
         return _buildTextWithMentions(message.content ?? '', textColor);
       case MessageType.system:
         return _buildTextWithMentions(message.content ?? '', textColor);
@@ -4672,7 +4606,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               color: textColor,
               decoration: TextDecoration.underline,
               decorationColor: textColor.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w600,
             ),
             recognizer: (TapGestureRecognizer()
               ..onTap = () => _openLink(part.url!)),
@@ -4687,7 +4620,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
       for (final match in matches) {
         if (match.start > cursor) {
-          spans.add(TextSpan(text: text.substring(cursor, match.start)));
+          spans.add(TextSpan(text: keepAll(text.substring(cursor, match.start))));
         }
 
         final mention = match.group(0)!;
@@ -4697,10 +4630,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           TextSpan(
             text: mention,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              backgroundColor: isMe
-                  ? AppSemanticColors.statusWarningBackground
-                  : null,
+              fontWeight: AppTypography.fontWeightSemibold,
+              backgroundColor: isMe ? AppSemanticColors.statusWarningBackground : null,
               color: isMe ? AppSemanticColors.statusWarningText : textColor,
             ),
           ),
@@ -4709,7 +4640,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       }
 
       if (cursor < text.length) {
-        spans.add(TextSpan(text: text.substring(cursor)));
+        spans.add(TextSpan(text: keepAll(text.substring(cursor))));
       }
     }
 
@@ -4758,16 +4689,32 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           if (_editingMessage != null) _buildEditingBanner(),
           if (_replyingTo != null) _buildReplyingBanner(),
           Row(
+        // 여러 줄로 늘어나도 첨부·전송 버튼은 입력 상자 **아래**에 붙어 있다(카톡·Slack과 같다)
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 첨부 버튼 (사진/파일)
-          IconButton(
-            tooltip: '파일 첨부',
-            onPressed: _showAttachmentOptions,
-            icon: Icon(
-              Icons.add_circle_outline,
-              color: AppSemanticColors.textTertiary,
+          // 첨부 버튼 (사진/파일) — 전송 버튼과 같은 40 지름
+          Semantics(
+            button: true,
+            label: '파일 첨부',
+            child: Material(
+              color: AppSemanticColors.backgroundTertiary,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: _showAttachmentOptions,
+                customBorder: const CircleBorder(),
+                child: SizedBox(
+                  width: AppSpacing.space10,
+                  height: AppSpacing.space10,
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: AppSpacing.space6,
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ),
             ),
           ),
+          const SizedBox(width: AppSpacing.space2),
 
           // 메시지 입력 필드
           Expanded(
@@ -4777,11 +4724,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               ),
               decoration: BoxDecoration(
                 color: AppSemanticColors.backgroundSecondary,
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
               ),
               child: TextField(
                 controller: _messageController,
                 focusNode: _focusNode,
+                // 스타일을 안 주면 테마 기본(16)이 써져 타이핑하는 순간 힌트(14)·말풍선(14)보다 커졌다
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+                cursorColor: AppSemanticColors.interactivePrimaryDefault,
                 decoration: InputDecoration(
                   hintText: '메시지를 입력하세요',
                   // 글자를 키우면 '메시지를 입력하세 / 요'로 글자 중간에서 줄이 넘어갔다 — 한 줄로 두고 줄인다
@@ -4790,8 +4742,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     color: AppSemanticColors.textTertiary,
                   ),
                   border: InputBorder.none,
+                  isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.space3,
+                    vertical: AppSpacing.space2_5,
                   ),
                 ),
                 maxLines: 4,
@@ -4863,7 +4816,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       ),
       decoration: BoxDecoration(
         color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.base),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
       ),
       child: Row(
         children: [
@@ -4882,7 +4835,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   '${target.senderName}님에게 답장',
                   style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: AppTypography.fontWeightSemibold,
                   ),
                 ),
                 Text(
@@ -4920,7 +4873,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       ),
       decoration: BoxDecoration(
         color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.base),
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
       ),
       child: Row(
         children: [
@@ -4939,7 +4892,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   '메시지 수정 중',
                   style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: AppTypography.fontWeightSemibold,
                   ),
                 ),
                 Text(

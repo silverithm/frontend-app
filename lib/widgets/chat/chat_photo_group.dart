@@ -8,6 +8,7 @@ import '../../models/chat_message.dart';
 import '../../utils/video_thumbnail_cache.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 import '../../utils/chat_image_url.dart';
 
 /// 같은 사람이 연달아 보낸 사진 여러 장을 한 말풍선 안의 격자로 그린다.
@@ -61,7 +62,7 @@ class ChatPhotoGroup extends StatelessWidget {
     final rows = (count / columns).ceil();
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
       child: SizedBox(
         width: maxWidth,
         child: Column(
@@ -237,7 +238,7 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
           child: SizedBox(
             width: width,
             height: width * 9 / 16,
@@ -294,8 +295,7 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                             '미리보기 없음',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: AppTypography.bodySmall.copyWith(
                               color: AppColors.white70,
                             ),
                           ),
@@ -338,8 +338,7 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
                           message.fileName ?? '동영상',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: AppTypography.bodySmall.copyWith(
                             color: AppColors.white,
                           ),
                         ),
