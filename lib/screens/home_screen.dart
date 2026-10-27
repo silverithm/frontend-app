@@ -21,6 +21,7 @@ import '../utils/admin_utils.dart';
 import '../utils/permissions.dart';
 import '../utils/daily_greeting.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/common/notification_bell.dart';
 import '../widgets/today_schedule_dialog.dart';
 import 'admin_notice_management_screen.dart';
@@ -796,10 +797,9 @@ class _SectionHeader extends StatelessWidget {
                   children: [
                     Text(
                       actionLabel!,
-                      style: AppTypography.labelMedium.copyWith(
+                      style: AppTypography.buttonSmall.copyWith(
                         color: AppSemanticColors.subheaderLink,
-                        fontWeight: AppTypography.fontWeightSemibold,
-                      ),
+                        ),
                     ),
                     Icon(
                       Icons.chevron_right,
@@ -841,26 +841,7 @@ class _NoticePreviewTile extends StatelessWidget {
               Row(
                 children: [
                   if (notice.isPinned) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space2,
-                        vertical: AppSpacing.space1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.interactivePrimaryDefault
-                            .withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(
-                          AppBorderRadius.full,
-                        ),
-                      ),
-                      child: Text(
-                        '고정',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.interactivePrimaryDefault,
-                          fontWeight: AppTypography.fontWeightSemibold,
-                        ),
-                      ),
-                    ),
+                    const AppTag(label: '고정', icon: Icons.push_pin),
                     const SizedBox(width: AppSpacing.space2),
                   ],
                   Expanded(
@@ -908,22 +889,22 @@ class _ApprovalPreviewTile extends StatelessWidget {
     return '${date.month}월 ${date.day}일';
   }
 
-  (String, Color) get _statusInfo {
+  (String, AppTagTone) get _statusInfo {
     switch (approval.status) {
       case ApprovalStatus.draft:
-        return ('임시저장', AppSemanticColors.textTertiary);
+        return ('임시저장', AppTagTone.neutral);
       case ApprovalStatus.pending:
-        return ('대기', AppSemanticColors.statusWarningIcon);
+        return ('대기', AppTagTone.warning);
       case ApprovalStatus.approved:
-        return ('승인', AppSemanticColors.statusSuccessIcon);
+        return ('승인', AppTagTone.success);
       case ApprovalStatus.rejected:
-        return ('반려', AppSemanticColors.statusErrorIcon);
+        return ('반려', AppTagTone.error);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final (statusLabel, statusColor) = _statusInfo;
+    final (statusLabel, statusTone) = _statusInfo;
     return Material(
       color: AppColors.transparent,
       child: InkWell(
@@ -932,23 +913,7 @@ class _ApprovalPreviewTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space2,
-                  vertical: AppSpacing.space1,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: statusColor,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
-                ),
-              ),
+              AppTag(label: statusLabel, tone: statusTone),
               const SizedBox(width: AppSpacing.space3),
               Expanded(
                 child: Column(

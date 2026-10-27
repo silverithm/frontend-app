@@ -580,7 +580,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       appBar: AppBar(
         title: Text(
           _isEditingDraft ? '임시저장 이어쓰기' : '결재 요청',
-          style: AppTypography.heading6,
+          style: AppTypography.heading5,
         ),
         elevation: 0,
         centerTitle: true,

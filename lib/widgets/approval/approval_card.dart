@@ -83,7 +83,7 @@ class ApprovalCard extends StatelessWidget {
         Expanded(
           child: Text(
             approval.title,
-            style: AppTypography.heading6.copyWith(
+            style: AppTypography.titleMedium.copyWith(
               color: AppSemanticColors.textPrimary,
             ),
             maxLines: 1,

@@ -84,7 +84,7 @@ class TemplateCard extends StatelessWidget {
             children: [
               Text(
                 template.name,
-                style: AppTypography.heading6.copyWith(
+                style: AppTypography.titleMedium.copyWith(
                   color: AppSemanticColors.textPrimary,
                 ),
                 maxLines: 1,
@@ -273,7 +273,7 @@ class TemplateSelectionCard extends StatelessWidget {
                   children: [
                     Text(
                       template.name,
-                      style: AppTypography.labelLarge.copyWith(
+                      style: AppTypography.titleSmall.copyWith(
                         color: AppSemanticColors.textPrimary,
                       ),
                     ),

@@ -268,9 +268,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         // 상단 바 아래 선은 SliverAppBar가 긋는다
                         dividerColor: AppColors.transparent,
                         labelStyle: AppTypography.titleSmall,
-                        unselectedLabelStyle: AppTypography.labelLarge.copyWith(
-                          fontWeight: FontWeight.normal,
-                        ),
+                        unselectedLabelStyle: AppTypography.bodyMedium,
                         // 웹 관리자 화면과 같은 이름 — 근무조정(휴무)·월간일정(일정)
                         tabs: const [
                           Tab(text: '근무조정'),
@@ -2849,10 +2847,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                           if (baseCats.isNotEmpty) ...[
                             Text(
                               '기본 구분',
-                              style: AppTypography.labelMedium.copyWith(
+                              style: AppTypography.buttonSmall.copyWith(
                                 color: AppSemanticColors.textSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                                ),
                             ),
                             for (final base in baseCats)
                               Opacity(
@@ -2939,10 +2936,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                             const SizedBox(height: AppSpacing.space3),
                             Text(
                               '내가 만든 구분',
-                              style: AppTypography.labelMedium.copyWith(
+                              style: AppTypography.buttonSmall.copyWith(
                                 color: AppSemanticColors.textSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                                ),
                             ),
                           ],
 

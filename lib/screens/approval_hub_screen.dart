@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/approval_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/permissions.dart';
 import 'admin_approval_management_screen.dart';
@@ -79,10 +80,8 @@ class _ApprovalHubScreenState extends State<ApprovalHubScreen>
                 unselectedLabelColor: AppSemanticColors.headerForegroundMuted,
                 indicatorColor: AppSemanticColors.headerTabIndicator,
                 indicatorWeight: 2,
-                labelStyle: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                unselectedLabelStyle: AppTypography.labelMedium,
+                labelStyle: AppTypography.titleSmall,
+                unselectedLabelStyle: AppTypography.bodyMedium,
                 dividerColor: AppColors.transparent,
                 tabs: [
                   const Tab(text: '결재 신청'),
@@ -121,45 +120,35 @@ class _TabLabelWithBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 배지가 라벨 오른쪽 위로 겹쳐 나가므로 자리를 미리 비워둔다.
-    return Padding(
-      padding: const EdgeInsets.only(top: 6, right: 10),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // 스타일은 지정하지 않는다 — TabBar가 선택 상태에 따라
-          // labelColor/labelStyle을 DefaultTextStyle로 내려준다.
-          Text(label),
-          if (count > 0)
-            Positioned(
-              top: -6,
-              right: -10,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                decoration: BoxDecoration(
-                  // 앱 토큰 중 error 계열(red600) — 눈에 띄는 경고색으로 새로 만들지 않고 기존 토큰 사용
-                  color: AppSemanticColors.statusErrorIcon,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: AppSemanticColors.backgroundPrimary,
-                    width: 1.5,
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  count > 99 ? '99+' : '$count',
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    height: 1.4,
-                  ),
-                ),
+    // 배지는 라벨 뒤에 이어 붙인다 — 예전엔 라벨 오른쪽 위로 겹쳐 나가 '관리' 글자를 가렸다.
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 스타일은 지정하지 않는다 — TabBar가 선택 상태에 따라
+        // labelColor/labelStyle을 DefaultTextStyle로 내려준다.
+        Text(label),
+        if (count > 0) ...[
+          const SizedBox(width: AppSpacing.space1),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+            decoration: BoxDecoration(
+              // 앱 토큰 중 error 계열(red600) — 눈에 띄는 경고색으로 새로 만들지 않고 기존 토큰 사용
+              color: AppSemanticColors.statusErrorIcon,
+              borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              count > 99 ? '99+' : '$count',
+              style: AppTypography.overline.copyWith(
+                color: AppColors.white,
+                letterSpacing: 0,
+                height: 1.2,
               ),
             ),
+          ),
         ],
-      ),
+      ],
     );
   }
 }

@@ -311,7 +311,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       appBar: AppBar(
         title: Text(
           '결재 상세',
-          style: AppTypography.heading6,
+          style: AppTypography.heading5,
         ),
         elevation: 0,
         centerTitle: true,

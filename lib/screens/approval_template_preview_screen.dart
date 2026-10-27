@@ -163,7 +163,7 @@ class _ApprovalTemplatePreviewScreenState
       appBar: AppBar(
         title: Text(
           t.name,
-          style: AppTypography.heading6,
+          style: AppTypography.heading5,
           overflow: TextOverflow.ellipsis,
         ),
         elevation: 0,

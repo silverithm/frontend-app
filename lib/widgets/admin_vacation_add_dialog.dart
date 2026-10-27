@@ -217,9 +217,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               // 직원 선택
               Text(
                 '직원 선택',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.buttonSmall,
               ),
               const SizedBox(height: AppSpacing.space2),
               _isLoading
@@ -299,9 +297,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               // 날짜 선택
               Text(
                 '휴무 날짜',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.buttonSmall,
               ),
               const SizedBox(height: AppSpacing.space2),
               Material(
@@ -367,9 +363,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               // 기간(연차·반차)이 한 목록에 들어 있어 고르는 순간 둘 다 정해진다.
               Text(
                 '휴무 종류',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.buttonSmall,
               ),
               const SizedBox(height: AppSpacing.space2),
               Wrap(
@@ -395,9 +389,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               // 휴무 사유
               Text(
                 '휴무 사유 (선택)',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.buttonSmall,
               ),
               const SizedBox(height: AppSpacing.space2),
               SeedTextField(
