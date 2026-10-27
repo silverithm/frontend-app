@@ -2845,7 +2845,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                               '기본 구분',
                               style: AppTypography.labelStrong.copyWith(
                                 color: AppSemanticColors.textSecondary,
-                                ),
+                              ),
                             ),
                             for (final base in baseCats)
                               Opacity(
@@ -2934,7 +2934,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                               '내가 만든 구분',
                               style: AppTypography.labelStrong.copyWith(
                                 color: AppSemanticColors.textSecondary,
-                                ),
+                              ),
                             ),
                           ],
 

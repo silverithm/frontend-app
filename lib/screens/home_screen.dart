@@ -799,7 +799,7 @@ class _SectionHeader extends StatelessWidget {
                       actionLabel!,
                       style: AppTypography.labelStrong.copyWith(
                         color: AppSemanticColors.subheaderLink,
-                        ),
+                      ),
                     ),
                     Icon(
                       Icons.chevron_right,

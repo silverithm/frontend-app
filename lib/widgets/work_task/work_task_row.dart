@@ -168,7 +168,7 @@ class WorkTaskRow extends StatelessWidget {
                           due.text,
                           style: AppTypography.labelStrong.copyWith(
                             color: dueColor,
-                            ),
+                          ),
                         ),
                       ],
                     ],

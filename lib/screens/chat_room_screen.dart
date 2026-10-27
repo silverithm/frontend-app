@@ -2113,7 +2113,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     room.noticeContent ?? '',
                     style: AppTypography.labelStrong.copyWith(
                       color: AppSemanticColors.textPrimary,
-                      ),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -2156,7 +2156,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     keepAll(room.noticeContent ?? ''),
                     style: AppTypography.labelStrong.copyWith(
                       color: AppSemanticColors.textPrimary,
-                      ),
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -4251,7 +4251,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   '다시 보내기',
                   style: AppTypography.labelStrong.copyWith(
                     color: AppSemanticColors.statusErrorText,
-                    ),
+                  ),
                 ),
               ),
             ),
@@ -4460,7 +4460,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                             message.replyToSenderName ?? '',
                             style: AppTypography.labelStrong.copyWith(
                               color: textColor.withValues(alpha: 0.85),
-                              ),
+                            ),
                           ),
                           // 두 줄로 잘라 "..."을 붙이지 않는다 — 무슨 말에 답한 건지 읽는 자리인데
                           // 정작 그 말이 잘려 있으면 소용이 없다. 길면 아래로 흐른다.
@@ -4832,7 +4832,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   '${target.senderName}님에게 답장',
                   style: AppTypography.labelStrong.copyWith(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    ),
+                  ),
                 ),
                 Text(
                   _replyPreviewText(target),
@@ -4888,7 +4888,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   '메시지 수정 중',
                   style: AppTypography.labelStrong.copyWith(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    ),
+                  ),
                 ),
                 Text(
                   editing.content ?? '',
