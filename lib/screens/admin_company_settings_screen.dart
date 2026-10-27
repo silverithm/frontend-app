@@ -62,55 +62,55 @@ class _AdminCompanySettingsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 회사 정보 카드
+                // 회사 정보 카드 — 흰 바탕에 아이콘 타일을 왼쪽에 둔 가로 배치
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.space6),
+                  padding: const EdgeInsets.all(AppSpacing.space5),
                   decoration: BoxDecoration(
-                    color: AppSemanticColors.interactivePrimaryDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                    color: AppSemanticColors.surfaceDefault,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
                     border: Border.all(
                       color: AppSemanticColors.borderDefault,
                       width: 1,
                     ),
                   ),
-                  child: Column(
+                  child: Row(
                     children: [
                       Container(
-                        width: AppSpacing.space20,
-                        height: AppSpacing.space20,
+                        width: AppSpacing.space12,
+                        height: AppSpacing.space12,
                         decoration: BoxDecoration(
-                          color: AppSemanticColors.textInverse.withValues(
-                            alpha: 0.2,
-                          ),
+                          color: AppSemanticColors.brandWeak,
                           borderRadius: BorderRadius.circular(
-                            AppBorderRadius.xl2,
+                            AppBorderRadius.lg,
                           ),
                         ),
                         child: Icon(
                           Icons.business,
-                          color: AppSemanticColors.textInverse,
-                          size: AppSpacing.space10,
+                          color: AppSemanticColors.interactivePrimaryDefault,
+                          size: AppSpacing.space6,
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.space4),
-                      Text(
-                        company.name,
-                        style: AppTypography.heading4.copyWith(
-                          color: AppSemanticColors.textInverse,
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(width: AppSpacing.space4),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              company.name,
+                              style: AppTypography.heading5.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.space0_5),
+                            Text(
+                              '관리자 계정으로 로그인됨',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppSpacing.space2),
-                      Text(
-                        '관리자 계정으로 로그인됨',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textInverse.withValues(
-                            alpha: 0.9,
-                          ),
-                        ),
-                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
@@ -144,7 +144,6 @@ class _AdminCompanySettingsScreenState
                       // 회사명
                       _buildInfoRow(
                         icon: Icons.business,
-                        iconColor: AppSemanticColors.textSecondary,
                         title: '회사명',
                         value: company.name,
                       ),
@@ -154,7 +153,6 @@ class _AdminCompanySettingsScreenState
                       // 회사 주소
                       _buildInfoRow(
                         icon: Icons.location_on,
-                        iconColor: AppSemanticColors.statusErrorIcon,
                         title: '주소',
                         value: company.addressName.isNotEmpty
                             ? company.addressName
@@ -192,7 +190,6 @@ class _AdminCompanySettingsScreenState
                       // 관리자명
                       _buildInfoRow(
                         icon: Icons.person,
-                        iconColor: AppSemanticColors.statusInfoIcon,
                         title: '이름',
                         value: user!.name,
                       ),
@@ -202,7 +199,6 @@ class _AdminCompanySettingsScreenState
                       // 역할
                       _buildInfoRow(
                         icon: Icons.admin_panel_settings,
-                        iconColor: AppSemanticColors.textSecondary,
                         title: '역할',
                         value: (user!.position?.isNotEmpty ?? false)
                             ? user.position!
@@ -261,7 +257,6 @@ class _AdminCompanySettingsScreenState
 
   Widget _buildInfoRow({
     required IconData icon,
-    required Color iconColor,
     required String title,
     required String value,
   }) {
@@ -271,10 +266,10 @@ class _AdminCompanySettingsScreenState
           width: AppSpacing.space10,
           height: AppSpacing.space10,
           decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            color: AppSemanticColors.backgroundTertiary,
+            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
           ),
-          child: Icon(icon, color: iconColor, size: 20),
+          child: Icon(icon, color: AppSemanticColors.textSecondary, size: 20),
         ),
         const SizedBox(width: AppSpacing.space4),
         Expanded(
@@ -284,15 +279,13 @@ class _AdminCompanySettingsScreenState
               Text(
                 title,
                 style: AppTypography.bodySmall.copyWith(
-                  fontWeight: FontWeight.w500,
                   color: AppSemanticColors.textSecondary,
                 ),
               ),
               const SizedBox(height: AppSpacing.space0_5),
               Text(
                 value,
-                style: AppTypography.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
+                style: AppTypography.titleSmall.copyWith(
                   color: AppSemanticColors.textPrimary,
                 ),
               ),
@@ -346,7 +339,6 @@ class _AdminCompanySettingsScreenState
         children: [
           _buildInfoRow(
             icon: Icons.info_outline,
-            iconColor: AppSemanticColors.statusWarningIcon,
             title: '구독 상태',
             value: '구독 정보 없음',
           ),
@@ -383,24 +375,16 @@ class _AdminCompanySettingsScreenState
 
     // 구독 정보가 있는 경우
     final subscription = subscriptionProvider.subscription!;
-    final statusColor = subscription.isActive
-        ? AppSemanticColors.statusSuccessIcon
-        : subscription.isExpired
-        ? AppSemanticColors.statusErrorIcon
-        : AppSemanticColors.statusWarningIcon;
-
     return Column(
       children: [
         _buildInfoRow(
           icon: Icons.workspace_premium,
-          iconColor: statusColor,
           title: '구독 플랜',
           value: subscription.planDisplayName,
         ),
         const SizedBox(height: AppSpacing.space5),
         _buildInfoRow(
           icon: Icons.assignment_turned_in,
-          iconColor: statusColor,
           title: '구독 상태',
           value: subscription.statusDisplayName,
         ),
@@ -408,7 +392,6 @@ class _AdminCompanySettingsScreenState
           const SizedBox(height: AppSpacing.space5),
           _buildInfoRow(
             icon: Icons.schedule,
-            iconColor: AppSemanticColors.statusSuccessIcon,
             title: '만료일',
             value: _formatDate(subscription.endDate!),
           ),
@@ -416,7 +399,6 @@ class _AdminCompanySettingsScreenState
             const SizedBox(height: AppSpacing.space5),
             _buildInfoRow(
               icon: Icons.timer,
-              iconColor: AppSemanticColors.statusInfoIcon,
               title: '남은 일수',
               value: '${subscription.daysRemaining}일',
             ),

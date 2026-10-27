@@ -116,10 +116,10 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPlanSummary() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space6),
+      padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
-        color: AppSemanticColors.interactivePrimaryDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+        color: AppSemanticColors.surfaceDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
         border: Border.all(
           color: AppSemanticColors.borderDefault,
           width: 1,
@@ -131,16 +131,16 @@ class _PaymentScreenState extends State<PaymentScreen>
           Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: AppSpacing.space12,
+                height: AppSpacing.space12,
                 decoration: BoxDecoration(
-                  color: AppSemanticColors.textInverse.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  color: AppSemanticColors.brandWeak,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
                 ),
                 child: Icon(
                   Icons.workspace_premium,
-                  color: AppSemanticColors.textInverse,
-                  size: 28,
+                  color: AppSemanticColors.interactivePrimaryDefault,
+                  size: AppSpacing.space6,
                 ),
               ),
               const SizedBox(width: AppSpacing.space4),
@@ -151,15 +151,14 @@ class _PaymentScreenState extends State<PaymentScreen>
                     Text(
                       widget.plan.name,
                       style: AppTypography.heading5.copyWith(
-                        color: AppSemanticColors.textInverse,
-                        fontWeight: FontWeight.bold,
+                        color: AppSemanticColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space1),
+                    const SizedBox(height: AppSpacing.space0_5),
                     Text(
                       widget.plan.description,
                       style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textInverse.withValues(alpha: 0.9),
+                        color: AppSemanticColors.textSecondary,
                       ),
                     ),
                   ],
@@ -167,28 +166,26 @@ class _PaymentScreenState extends State<PaymentScreen>
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.space5),
+          const SizedBox(height: AppSpacing.space4),
           Container(
             padding: const EdgeInsets.all(AppSpacing.space4),
             decoration: BoxDecoration(
-              color: AppSemanticColors.textInverse.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+              color: AppSemanticColors.backgroundSecondary,
+              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   '월 구독료',
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppSemanticColors.textInverse,
-                    fontWeight: FontWeight.w500,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
                   ),
                 ),
                 Text(
                   '₩${_formatPrice(widget.plan.price)}',
                   style: AppTypography.heading4.copyWith(
-                    color: AppSemanticColors.textInverse,
-                    fontWeight: FontWeight.bold,
+                    color: AppSemanticColors.textPrimary,
                   ),
                 ),
               ],
