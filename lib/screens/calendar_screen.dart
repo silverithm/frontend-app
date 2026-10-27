@@ -997,7 +997,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   ),
                                   child: Text(
                                     '할 일 $taskDoneCount/$taskTotalCount',
-                                    style: AppTypography.buttonSmall.copyWith(
+                                    style: AppTypography.labelStrong.copyWith(
                                       color: AppSemanticColors.statusInfoText,
                                     ),
                                   ),
@@ -2843,7 +2843,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           if (baseCats.isNotEmpty) ...[
                             Text(
                               '기본 구분',
-                              style: AppTypography.buttonSmall.copyWith(
+                              style: AppTypography.labelStrong.copyWith(
                                 color: AppSemanticColors.textSecondary,
                                 ),
                             ),
@@ -2932,7 +2932,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                             const SizedBox(height: AppSpacing.space3),
                             Text(
                               '내가 만든 구분',
-                              style: AppTypography.buttonSmall.copyWith(
+                              style: AppTypography.labelStrong.copyWith(
                                 color: AppSemanticColors.textSecondary,
                                 ),
                             ),

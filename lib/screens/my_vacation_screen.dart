@@ -823,10 +823,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                 decoration: BoxDecoration(
                   color: AppSemanticColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.borderSubtle,
-                    width: 1,
-                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -894,18 +890,11 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               ),
             ],
 
-            const SizedBox(height: AppSpacing.space3),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.space2),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.backgroundSecondary,
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              ),
-              child: Text(
-                '신청일: ${_formatDateTime(request.createdAt)}',
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                ),
+            const SizedBox(height: AppSpacing.space2),
+            Text(
+              '신청일 ${_formatDateTime(request.createdAt)}',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
               ),
             ),
           ],

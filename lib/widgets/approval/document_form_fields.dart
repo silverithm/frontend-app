@@ -601,7 +601,7 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
                 onTap: _isUploading ? null : _pickAndUpload,
                 child: Text(
                   _isUploading ? '업로드 중...' : '다른 이미지로 바꾸기',
-                  style: AppTypography.buttonSmall.copyWith(
+                  style: AppTypography.labelStrong.copyWith(
                     color: AppSemanticColors.interactivePrimaryDefault,
                   ),
                 ),

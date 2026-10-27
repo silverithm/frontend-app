@@ -2018,7 +2018,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 const SizedBox(width: AppSpacing.space2),
                 Text(
                   '구독 정보',
-                  style: AppTypography.heading5.copyWith(
+                  style: AppTypography.heading6.copyWith(
                     color: AppSemanticColors.textPrimary,
                   ),
                 ),

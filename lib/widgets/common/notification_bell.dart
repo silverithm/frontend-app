@@ -382,7 +382,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                   const SizedBox(height: AppSpacing.space2),
                   Text(
                     time,
-                    style: AppTypography.labelSmall.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: AppSemanticColors.textTertiary,
                     ),
                   ),

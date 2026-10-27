@@ -797,7 +797,7 @@ class _SectionHeader extends StatelessWidget {
                   children: [
                     Text(
                       actionLabel!,
-                      style: AppTypography.buttonSmall.copyWith(
+                      style: AppTypography.labelStrong.copyWith(
                         color: AppSemanticColors.subheaderLink,
                         ),
                     ),

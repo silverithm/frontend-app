@@ -457,7 +457,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         ),
         child: Text(
           kind.label,
-          style: AppTypography.buttonSmall.copyWith(
+          style: AppTypography.labelStrong.copyWith(
             color: isSelected
                 ? AppSemanticColors.textInverse
                 : AppSemanticColors.textSecondary,
@@ -821,7 +821,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             ),
                                             child: Text(
                                               detail.label,
-                                              style: AppTypography.buttonSmall
+                                              style: AppTypography.labelStrong
                                                   .copyWith(
                                                     color: isSelected
                                                         ? AppSemanticColors

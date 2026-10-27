@@ -292,7 +292,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       child: Center(
                         child: Text(
                           weekday,
-                          style: AppTypography.buttonSmall.copyWith(
+                          style: AppTypography.labelStrong.copyWith(
                             color: index == 0
                                 ? AppSemanticColors.statusErrorIcon
                                 : index == 6
@@ -369,7 +369,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             const SizedBox(width: AppSpacing.space1_5),
                             Text(
                               _isExpanded ? '숨기기' : '보기',
-                              style: AppTypography.buttonSmall.copyWith(
+                              style: AppTypography.labelStrong.copyWith(
                                 color: _isExpanded
                                     ? AppSemanticColors.brandPressed
                                     : AppSemanticColors.textSecondary,
@@ -742,7 +742,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           left: 2,
                           child: Text(
                             date.day.toString(),
-                            style: AppTypography.buttonSmall.copyWith(
+                            style: AppTypography.labelStrong.copyWith(
                               height: 1.2,
                               color: !_isSameMonth(date)
                                   ? AppSemanticColors.textDisabled
@@ -855,7 +855,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           left: 2,
                           child: Text(
                             date.day.toString(),
-                            style: AppTypography.buttonSmall.copyWith(
+                            style: AppTypography.labelStrong.copyWith(
                               height: 1.2,
                               color: !_isSameMonth(date)
                                   ? AppSemanticColors.textDisabled

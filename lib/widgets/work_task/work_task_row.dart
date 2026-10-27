@@ -166,7 +166,7 @@ class WorkTaskRow extends StatelessWidget {
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           due.text,
-                          style: AppTypography.buttonSmall.copyWith(
+                          style: AppTypography.labelStrong.copyWith(
                             color: dueColor,
                             ),
                         ),
@@ -196,7 +196,7 @@ class WorkTaskRow extends StatelessWidget {
                         child: Text(
                           task.isDone ? '완료' : '${task.progress}%',
                           textAlign: TextAlign.end,
-                          style: AppTypography.buttonSmall.copyWith(
+                          style: AppTypography.labelStrong.copyWith(
                             color: task.isDone
                                 ? AppSemanticColors.statusSuccessText
                                 : AppSemanticColors.textSecondary,
