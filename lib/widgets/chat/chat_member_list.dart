@@ -182,7 +182,7 @@ class _ChatMemberListState extends State<ChatMemberList> {
                 ),
                 child: Text(
                   '직원 ${others.length}명 · 접속 중 $onlineCount명',
-                  style: AppTypography.labelSmall.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 ),
@@ -223,6 +223,8 @@ class _ChatMemberListState extends State<ChatMemberList> {
     );
   }
 
+  /// 사람 한 줄 — 높이 64(위아래 12 + 아바타 40). 이름 titleMedium + 직종 bodySmall을 한 줄에.
+  /// 접속 중이면 아바타에 초록 점만 단다(점이 없으면 오프라인 — "오프라인" 문구를 줄마다 반복하지 않는다).
   Widget _buildMemberTile({
     required String id,
     required String name,
@@ -231,54 +233,52 @@ class _ChatMemberListState extends State<ChatMemberList> {
     required bool isOnline,
     VoidCallback? onTap,
   }) {
-    return InkWell(
-      onTap: _isOpening ? null : onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space4,
-          vertical: AppSpacing.space3,
-        ),
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                SeedAvatar(
-                  name: name,
-                  imageUrl: imageUrl,
-                  size: SeedAvatarSize.medium,
-                ),
-                // 접속 중이면 초록, 아니면 회색
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isOnline
-                          ? AppSemanticColors.statusSuccessIcon
-                          : AppSemanticColors.borderDefault,
-                      border: Border.all(
-                        color: AppSemanticColors.surfaceDefault,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: _isOpening ? null : onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space3,
             ),
-            const SizedBox(width: AppSpacing.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Row(
+              children: [
+                Stack(
+                  children: [
+                    SeedAvatar(
+                      name: name,
+                      imageUrl: imageUrl,
+                      size: SeedAvatarSize.medium,
+                    ),
+                    if (isOnline)
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: AppSpacing.space2_5,
+                          height: AppSpacing.space2_5,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppSemanticColors.statusSuccessIcon,
+                            border: Border.all(
+                              color: AppSemanticColors.surfaceDefault,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: AppSpacing.space3),
+                Expanded(
+                  child: Row(
                     children: [
                       Flexible(
                         child: Text(
                           name,
-                          style: AppTypography.bodyLarge.copyWith(
+                          style: AppTypography.titleMedium.copyWith(
                             color: AppSemanticColors.textPrimary,
                           ),
                           maxLines: 1,
@@ -296,27 +296,17 @@ class _ChatMemberListState extends State<ChatMemberList> {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isOnline ? '접속 중' : '오프라인',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: isOnline
-                          ? AppSemanticColors.statusSuccessText
-                          : AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            if (onTap != null)
-              Icon(
-                Icons.chat_bubble_outline,
-                size: AppSpacing.space5,
-                color: AppSemanticColors.textTertiary,
-              ),
-          ],
+          ),
         ),
-      ),
+        const Divider(
+          height: 1,
+          indent: AppSpacing.space4 + AppSpacing.space10 + AppSpacing.space3,
+          color: AppSemanticColors.borderSubtle,
+        ),
+      ],
     );
   }
 }

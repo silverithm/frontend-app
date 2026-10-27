@@ -13,6 +13,8 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/chat_image_url.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_tag.dart';
+import '../widgets/chat/chat_room_avatar_stack.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
@@ -220,12 +222,8 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text(
-          '채팅방 정보',
-          style: AppTypography.heading6.copyWith(
-            color: AppSemanticColors.headerForeground,
-          ),
-        ),
+        // 상단 바 기본 제목(heading5)을 그대로 — 채팅 목록 ↔ 방 ↔ 정보를 오갈 때 제목 글자가 변하지 않게
+        title: const Text('채팅방 정보'),
         elevation: 0,
       ),
       body: Column(
@@ -237,21 +235,11 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             color: AppSemanticColors.surfaceDefault,
             child: Column(
               children: [
-                // 채팅방 아이콘
-                Container(
-                  width: AppSpacing.space20,
-                  height: AppSpacing.space20,
-                  decoration: BoxDecoration(
-                    // 배경과 아이콘색이 한 짝(둘 다 primary)이 되도록 — 관리자 여부로 배경만 바뀌지 않게
-                    color: AppSemanticColors.interactivePrimaryDefault
-                        .withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.chat_bubble_rounded,
-                    color: AppSemanticColors.interactivePrimaryDefault,
-                    size: 40,
-                  ),
+                // 채팅 목록과 같은 얼굴 모음(더 크게) — 말풍선 아이콘 하나만 있던 머리를 대체
+                ChatRoomAvatarStack(
+                  roomName: _roomName,
+                  avatars: widget.room.avatars,
+                  size: 72,
                 ),
                 const SizedBox(height: AppSpacing.space3),
                 Row(
@@ -355,7 +343,8 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
               width: double.infinity,
               child: SeedButton(
                 label: '채팅방 나가기',
-                variant: SeedButtonVariant.neutralOutline,
+                // 되돌릴 수 없는 행동은 빨간 글자로 — 중립 외곽 단추는 '취소'처럼 읽혔다
+                variant: SeedButtonVariant.criticalOutline,
                 onPressed: _leaveRoom,
               ),
             ),
@@ -394,12 +383,13 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
           Expanded(
             child: Text(
               '상단 고정',
-              style: AppTypography.bodyLarge.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: AppSemanticColors.textPrimary,
               ),
             ),
           ),
           Switch(
+            trackOutlineColor: WidgetStatePropertyAll(AppColors.transparent),
             value: pinned,
             onChanged: (_) => _togglePin(current ?? widget.room),
             activeTrackColor: AppSemanticColors.interactivePrimaryDefault,
@@ -488,71 +478,93 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                         final participant = participants[index];
                         final isCurrentUser =
                             participant.userId == currentUserId;
-                        final participantMeta = [
-                          if (participant.position?.trim().isNotEmpty ?? false)
-                            participant.position!.trim(),
-                          if (participant.memberRoleText?.isNotEmpty ?? false)
-                            participant.memberRoleText!,
-                        ];
+                        // 직종과 역할 문구가 같은 말이면 한 번만("요양보호사 • 요양보호사" 방지)
+                        final participantMeta = <String>[];
+                        for (final text in [
+                          participant.position?.trim() ?? '',
+                          participant.memberRoleText ?? '',
+                        ]) {
+                          if (text.isNotEmpty && !participantMeta.contains(text)) {
+                            participantMeta.add(text);
+                          }
+                        }
 
                         final showAdminBadge =
                             participant.role == ParticipantRole.admin;
                         final showRemoveAction =
                             isRoomAdmin && !isCurrentUser;
 
-                        return SeedListCell(
-                          leading: SeedAvatar(
-                            name: participant.userName,
-                            imageUrl: participant.profileImageUrl,
-                            size: SeedAvatarSize.medium,
-                          ),
-                          title: participant.userName +
-                              (isCurrentUser ? ' (나)' : ''),
-                          description: participantMeta.isNotEmpty
-                              ? participantMeta.join(' • ')
-                              : null,
-                          showChevron: false,
-                          trailing: (showAdminBadge || showRemoveAction)
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (showAdminBadge)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.space2,
-                                          vertical: AppSpacing.space1,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppSemanticColors
-                                              .interactivePrimaryDefault
-                                              .withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.base,
+                        // 사람 한 줄 — 채팅 탭 직원 목록과 같은 규칙(높이 64, 이름 titleMedium + 메타 bodySmall)
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.space4,
+                                vertical: AppSpacing.space3,
+                              ),
+                              child: Row(
+                                children: [
+                                  SeedAvatar(
+                                    name: participant.userName,
+                                    imageUrl: participant.profileImageUrl,
+                                    size: SeedAvatarSize.medium,
+                                  ),
+                                  const SizedBox(width: AppSpacing.space3),
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            participant.userName +
+                                                (isCurrentUser ? ' (나)' : ''),
+                                            style: AppTypography.titleMedium
+                                                .copyWith(
+                                              color: AppSemanticColors.textPrimary,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        child: Text(
-                                          '방장',
-                                          style: AppTypography.labelSmall
-                                              .copyWith(
-                                            color: AppSemanticColors
-                                                .interactivePrimaryDefault,
+                                        if (participantMeta.isNotEmpty) ...[
+                                          const SizedBox(width: AppSpacing.space2),
+                                          Text(
+                                            participantMeta.join(' · '),
+                                            style: AppTypography.bodySmall.copyWith(
+                                              color: AppSemanticColors.textTertiary,
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    if (showRemoveAction)
-                                      IconButton(
-                                        tooltip: '참가자 내보내기',
-                                        icon: Icon(
-                                          Icons.remove_circle_outline,
-                                          color: AppSemanticColors
-                                              .statusErrorIcon,
-                                        ),
-                                        onPressed: () =>
-                                            _kickParticipant(participant),
-                                      ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  if (showAdminBadge) ...[
+                                    const SizedBox(width: AppSpacing.space2),
+                                    const AppTag(
+                                      label: '방장',
+                                      tone: AppTagTone.accent,
+                                    ),
                                   ],
-                                )
-                              : null,
+                                  if (showRemoveAction)
+                                    IconButton(
+                                      tooltip: '참가자 내보내기',
+                                      icon: Icon(
+                                        Icons.remove_circle_outline,
+                                        color: AppSemanticColors.statusErrorIcon,
+                                      ),
+                                      onPressed: () => _kickParticipant(participant),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const Divider(
+                              height: 1,
+                              indent: AppSpacing.space4 +
+                                  AppSpacing.space10 +
+                                  AppSpacing.space3,
+                              color: AppSemanticColors.borderSubtle,
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -603,7 +615,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
               if (images.isNotEmpty) ...[
                 Text(
                   '사진 (${images.length})',
-                  style: AppTypography.labelLarge.copyWith(
+                  style: AppTypography.heading6.copyWith(
                     color: AppSemanticColors.textPrimary,
                   ),
                 ),
@@ -655,7 +667,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
               if (files.isNotEmpty) ...[
                 Text(
                   '파일 (${files.length})',
-                  style: AppTypography.labelLarge.copyWith(
+                  style: AppTypography.heading6.copyWith(
                     color: AppSemanticColors.textPrimary,
                   ),
                 ),

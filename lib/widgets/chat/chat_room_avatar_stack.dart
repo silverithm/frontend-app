@@ -27,7 +27,7 @@ class ChatRoomAvatarStack extends StatelessWidget {
     super.key,
     required this.roomName,
     required this.avatars,
-    this.size = 56,
+    this.size = 48,
   });
 
   /// 칸 사이 실선 — 얼굴끼리 맞붙으면 한 사람처럼 보인다
@@ -37,14 +37,13 @@ class ChatRoomAvatarStack extends StatelessWidget {
   Widget build(BuildContext context) {
     final people = avatars;
 
-    if (people.isEmpty) {
-      return SeedAvatar(name: roomName, size: SeedAvatarSize.large);
-    }
-    if (people.length == 1) {
-      return SeedAvatar(
-        name: people.first.userName,
-        imageUrl: people.first.profileImageUrl,
-        size: SeedAvatarSize.large,
+    // 한 명·빈 방도 둘 이상인 방과 같은 지름 — SeedAvatar.large(56)를 쓰면 줄마다 크기가 달랐다
+    if (people.isEmpty || people.length == 1) {
+      final person = people.isEmpty
+          ? ChatRoomAvatar(userId: '', userName: roomName)
+          : people.first;
+      return ClipOval(
+        child: SizedBox(width: size, height: size, child: _face(person, single: true)),
       );
     }
 
@@ -79,9 +78,9 @@ class ChatRoomAvatarStack extends StatelessWidget {
           padding: const EdgeInsets.all(2),
           child: Text(
             '+$count',
-            style: AppTypography.labelSmall.copyWith(
+            style: AppTypography.labelMedium.copyWith(
               color: AppSemanticColors.textLink,
-              fontWeight: FontWeight.w600,
+              fontWeight: AppTypography.fontWeightSemibold,
             ),
           ),
         ),
@@ -90,7 +89,7 @@ class ChatRoomAvatarStack extends StatelessWidget {
   }
 
   /// 한 칸. 사진이 있으면 칸을 꽉 채우고, 없으면 이름 첫 글자를 브랜드 톤으로 그린다.
-  Widget _face(ChatRoomAvatar person) {
+  Widget _face(ChatRoomAvatar person, {bool single = false}) {
     final url = (person.profileImageUrl ?? '').trim();
     if (url.isEmpty) {
       return Container(
@@ -104,9 +103,10 @@ class ChatRoomAvatarStack extends StatelessWidget {
               person.userName.trim().isNotEmpty
                   ? person.userName.trim().substring(0, 1)
                   : '?',
-              style: TextStyle(
+              // 칸 하나가 원 전체인 한 명 방은 이니셜을 크게, 둘로 나뉜 칸은 작게
+              style: (single ? AppTypography.titleMedium : AppTypography.labelMedium).copyWith(
                 color: AppSemanticColors.brandPressed,
-                fontWeight: FontWeight.w600,
+                fontWeight: AppTypography.fontWeightSemibold,
               ),
             ),
           ),
@@ -119,6 +119,7 @@ class ChatRoomAvatarStack extends StatelessWidget {
       // 사진이 안 열려도 칸이 비어 보이지 않게 첫 글자로 되돌린다
       errorBuilder: (context, error, stack) => _face(
         ChatRoomAvatar(userId: person.userId, userName: person.userName),
+        single: single,
       ),
     );
   }
