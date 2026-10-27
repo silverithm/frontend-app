@@ -741,8 +741,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                             ? null
                             : () => _showApprovalDialog(user),
                         variant: SeedButtonVariant.brandSolid,
+                        size: SeedButtonSize.small,
                         isLoading: isProcessing,
-                        prefixIcon: Icons.check,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.space3),
@@ -753,8 +753,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                             ? null
                             : () => _showRejectDialog(user),
                         variant: SeedButtonVariant.neutralOutline,
+                        size: SeedButtonSize.small,
                         isLoading: isProcessing,
-                        prefixIcon: Icons.close,
                       ),
                     ),
                   ],
