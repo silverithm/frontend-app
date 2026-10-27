@@ -77,7 +77,10 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       _approvalLine.addAll(_candidatesFromSteps(draft.approvalLine));
     }
 
-    _loadTemplates();
+    // build 도중 notifyListeners가 불리지 않게 첫 프레임 뒤로 미룬다
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadTemplates();
+    });
   }
 
   /// 저장된 결재선(단계)을 다시 후보 모양으로 되돌린다.

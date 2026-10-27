@@ -263,13 +263,16 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           isExpanded: true,
           isDense: true,
           decoration: _decoration('선택하세요'),
-          style: AppTypography.bodySmall
-              .copyWith(color: AppSemanticColors.textPrimary),
+          style: AppTypography.bodySmall.copyWith(
+              fontFamily: AppTypography.fontFamilySans,
+              color: AppSemanticColors.textPrimary),
           items: options
               .map((o) => DropdownMenuItem<String>(
                     value: o['value']?.toString(),
                     child: Text(o['label']?.toString() ?? '',
-                        style: AppTypography.bodySmall),
+                        style: AppTypography.bodySmall.copyWith(
+                            fontFamily: AppTypography.fontFamilySans,
+                            color: AppSemanticColors.textPrimary)),
                   ))
               .toList(),
           onChanged: (value) {
