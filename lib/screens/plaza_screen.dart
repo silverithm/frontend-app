@@ -22,6 +22,7 @@ import '../widgets/seed/seed_text_field.dart';
 import 'plaza_post_detail_screen.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/common/carev_app_bar.dart';
 
 /// 게시판 key → 화면 표시 라벨. 목록·상세·글쓰기 시트가 공통으로 쓴다.
@@ -601,30 +602,13 @@ class _NewsTabState extends State<_NewsTab> {
                                   children: [
                                     Row(
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: AppSpacing.space2,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppSemanticColors.brandWeak,
-                                            borderRadius: BorderRadius.circular(
-                                                AppBorderRadius.full),
-                                          ),
-                                          child: Text(
-                                            item.badgeLabel,
-                                            style: AppTypography.labelSmall
-                                                .copyWith(
-                                                    color: AppSemanticColors
-                                                        .brandPressed),
-                                          ),
-                                        ),
+                                        AppTag(label: item.badgeLabel),
                                         if (item.date != null) ...[
                                           const SizedBox(
                                               width: AppSpacing.space2),
                                           Text(
                                             _formatDate(item.date),
-                                            style: AppTypography.caption
+                                            style: AppTypography.bodySmall
                                                 .copyWith(
                                                     color: AppSemanticColors
                                                         .textTertiary),
@@ -635,9 +619,8 @@ class _NewsTabState extends State<_NewsTab> {
                                     const SizedBox(height: AppSpacing.space1),
                                     Text(
                                       item.title,
-                                      style: AppTypography.bodyMedium.copyWith(
+                                      style: AppTypography.titleMedium.copyWith(
                                         color: AppSemanticColors.textPrimary,
-                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ],
@@ -674,6 +657,31 @@ class _BoardTabState extends State<_BoardTab> {
   ];
 
   String _board = '';
+
+  /// 조회·좋아요·댓글 수 — 아이콘 + 숫자로 오른쪽 끝에 모은다
+  Widget _countStat(IconData icon, Object? count, String semanticLabel) {
+    return Padding(
+      padding: const EdgeInsets.only(left: AppSpacing.space3),
+      child: Semantics(
+        label: '$semanticLabel ${count ?? 0}',
+        excludeSemantics: true,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: AppSemanticColors.textTertiary),
+            const SizedBox(width: AppSpacing.space0_5),
+            Text(
+              '${count ?? 0}',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   List<Map<String, dynamic>> _posts = [];
   bool _isLoading = true;
   bool _hasError = false;
@@ -766,9 +774,8 @@ class _BoardTabState extends State<_BoardTab> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text('아직 게시글이 없어요',
-                                style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textSecondary,
-                                    fontWeight: FontWeight.bold)),
+                                style: AppTypography.titleSmall.copyWith(
+                                    color: AppSemanticColors.textSecondary)),
                             const SizedBox(height: AppSpacing.space1_5),
                             Text('+ 버튼으로 첫 글을 남겨보세요',
                                 style: AppTypography.bodySmall.copyWith(
@@ -813,24 +820,9 @@ class _BoardTabState extends State<_BoardTab> {
                                   children: [
                                     Row(
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: AppSpacing.space1_5,
-                                              vertical: AppSpacing.space0_5),
-                                          decoration: BoxDecoration(
-                                            color: AppSemanticColors
-                                                .backgroundTertiary,
-                                            borderRadius: BorderRadius.circular(
-                                                AppBorderRadius.md),
-                                          ),
-                                          child: Text(
-                                            plazaBoardLabel(
-                                                post['board']?.toString()),
-                                            style: AppTypography.caption
-                                                .copyWith(
-                                                    color: AppSemanticColors
-                                                        .textSecondary),
-                                          ),
+                                        AppTag(
+                                          label: plazaBoardLabel(
+                                              post['board']?.toString()),
                                         ),
                                         if (post['isPinned'] == true) ...[
                                           const SizedBox(width: 4),
@@ -851,9 +843,8 @@ class _BoardTabState extends State<_BoardTab> {
                                     const SizedBox(height: AppSpacing.space1),
                                     Text(
                                       post['title']?.toString() ?? '',
-                                      style: AppTypography.bodyMedium.copyWith(
+                                      style: AppTypography.titleMedium.copyWith(
                                         color: AppSemanticColors.textPrimary,
-                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     if ((post['preview']?.toString() ?? '')
@@ -873,12 +864,29 @@ class _BoardTabState extends State<_BoardTab> {
                                       ),
                                     ],
                                     const SizedBox(height: AppSpacing.space1),
-                                    Text(
-                                      '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('MM.dd').format(createdAt)}' : ''}'
-                                      ' · 조회 ${post['viewCount'] ?? 0} · 좋아요 ${post['likeCount'] ?? 0} · 댓글 ${post['commentCount'] ?? 0}',
-                                      style: AppTypography.caption.copyWith(
-                                          color:
-                                              AppSemanticColors.textTertiary),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('MM.dd').format(createdAt)}' : ''}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style:
+                                                AppTypography.bodySmall.copyWith(
+                                              color: AppSemanticColors
+                                                  .textTertiary,
+                                            ),
+                                          ),
+                                        ),
+                                        _countStat(Icons.visibility_outlined,
+                                            post['viewCount'], '조회'),
+                                        _countStat(Icons.favorite_border,
+                                            post['likeCount'], '좋아요'),
+                                        _countStat(
+                                            Icons.chat_bubble_outline,
+                                            post['commentCount'],
+                                            '댓글'),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -1267,12 +1275,10 @@ class _LibraryTabState extends State<_LibraryTab> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text('아직 등록된 자료가 없어요',
-                                              style: AppTypography.bodyMedium
+                                              style: AppTypography.titleSmall
                                                   .copyWith(
                                                       color: AppSemanticColors
-                                                          .textSecondary,
-                                                      fontWeight:
-                                                          FontWeight.bold)),
+                                                          .textSecondary)),
                                           const SizedBox(
                                               height: AppSpacing.space1_5),
                                           Text('+ 버튼으로 첫 자료를 올려보세요',
@@ -1317,7 +1323,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                 Icon(
                                                     Icons.description_outlined,
                                                     color: AppSemanticColors
-                                                        .statusInfoIcon),
+                                                        .textSecondary),
                                                 const SizedBox(
                                                     width: AppSpacing.space3),
                                                 Expanded(
@@ -1331,19 +1337,17 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                                 ?.toString() ??
                                                             '',
                                                         style: AppTypography
-                                                            .bodyMedium
+                                                            .titleMedium
                                                             .copyWith(
                                                           color:
                                                               AppSemanticColors
                                                                   .textPrimary,
-                                                          fontWeight:
-                                                              FontWeight.w600,
                                                         ),
                                                       ),
                                                       Text(
                                                         '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드 ${item['downloadCount'] ?? 0}',
                                                         style: AppTypography
-                                                            .caption
+                                                            .bodySmall
                                                             .copyWith(
                                                                 color: AppSemanticColors
                                                                     .textTertiary),
