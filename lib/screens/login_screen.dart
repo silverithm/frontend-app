@@ -255,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppSemanticColors.interactivePrimaryDefault
+                ? AppSemanticColors.brandWeak
                 : AppColors.transparent,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(isFirst ? AppBorderRadius.lg : 0),
@@ -269,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
             textAlign: TextAlign.center,
             style: AppTypography.buttonMedium.copyWith(
               color: isSelected
-                  ? AppSemanticColors.textInverse
+                  ? AppSemanticColors.interactivePrimaryDefault
                   : AppSemanticColors.textTertiary,
             ),
           ),
@@ -359,11 +359,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 // 비밀번호 찾기 링크
                 Align(
                   alignment: Alignment.centerRight,
-                  child: SeedButton(
+                  child: _buildTextLink(
                     label: '비밀번호 찾기',
-                    variant: SeedButtonVariant.neutralWeak,
-                    size: SeedButtonSize.small,
                     onPressed: _showForgotPasswordDialog,
+                    color: AppSemanticColors.brandPressed,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.space6),
@@ -401,15 +400,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '계정이 없으신가요? ',
+                      '계정이 없으신가요?',
                       style: AppTypography.bodySmall.copyWith(
                         color: AppSemanticColors.textSecondary,
                       ),
                     ),
-                    SeedButton(
+                    _buildTextLink(
                       label: '회원가입',
-                      variant: SeedButtonVariant.neutralWeak,
-                      size: SeedButtonSize.small,
+                      color: AppSemanticColors.brandPressed,
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -421,8 +419,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
 
-                const SizedBox(height: AppSpacing.space6),
-                Divider(color: AppSemanticColors.borderSubtle, height: 1),
                 const SizedBox(height: AppSpacing.space4),
 
                 // 하단 링크들 (사용법, 웹사이트) — 위계상 폼 아래로 이동
@@ -458,7 +454,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: !_isAdminLogin
-                      ? AppSemanticColors.interactivePrimaryDefault
+                      ? AppSemanticColors.brandWeak
                       : AppColors.transparent,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(AppBorderRadius.lg),
@@ -471,7 +467,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Icon(
                       Icons.person,
                       color: !_isAdminLogin
-                          ? AppSemanticColors.textInverse
+                          ? AppSemanticColors.interactivePrimaryDefault
                           : AppSemanticColors.textTertiary,
                       size: AppSpacing.space5,
                     ),
@@ -480,7 +476,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       '직원',
                       style: AppTypography.buttonMedium.copyWith(
                         color: !_isAdminLogin
-                            ? AppSemanticColors.textInverse
+                            ? AppSemanticColors.interactivePrimaryDefault
                             : AppSemanticColors.textTertiary,
                       ),
                     ),
@@ -502,7 +498,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: _isAdminLogin
-                      ? AppSemanticColors.interactivePrimaryDefault
+                      ? AppSemanticColors.brandWeak
                       : AppColors.transparent,
                   borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(AppBorderRadius.lg),
@@ -515,7 +511,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Icon(
                       Icons.admin_panel_settings,
                       color: _isAdminLogin
-                          ? AppSemanticColors.textInverse
+                          ? AppSemanticColors.interactivePrimaryDefault
                           : AppSemanticColors.textTertiary,
                       size: AppSpacing.space5,
                     ),
@@ -524,7 +520,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       '관리자',
                       style: AppTypography.buttonMedium.copyWith(
                         color: _isAdminLogin
-                            ? AppSemanticColors.textInverse
+                            ? AppSemanticColors.interactivePrimaryDefault
                             : AppSemanticColors.textTertiary,
                       ),
                     ),
@@ -577,16 +573,37 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// 보조 링크 — 회색 상자 단추 대신 글자만. 주 행동(로그인)만 채움으로 남긴다.
+  Widget _buildTextLink({
+    required String label,
+    required VoidCallback onPressed,
+    required Color color,
+  }) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space2,
+          vertical: AppSpacing.space2,
+        ),
+        minimumSize: const Size(0, 36),
+        tapTargetSize: MaterialTapTargetSize.padded,
+        textStyle: AppTypography.labelMedium,
+      ),
+      child: Text(label),
+    );
+  }
+
   Widget _buildBottomLinks() {
     return Center(
       child: Wrap(
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          SeedButton(
+          _buildTextLink(
             label: '사용방법 보러가기',
-            variant: SeedButtonVariant.neutralWeak,
-            size: SeedButtonSize.small,
+            color: AppSemanticColors.textTertiary,
             onPressed: () async {
               const url = 'https://youtu.be/x2cJedS6vaU';
               if (await canLaunchUrl(Uri.parse(url))) {
@@ -597,16 +614,15 @@ class _LoginScreenState extends State<LoginScreen> {
               }
             },
           ),
-          Container(
-            width: 1,
-            height: AppSpacing.space3,
-            color: AppSemanticColors.borderDefault,
-            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+          Text(
+            '·',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppSemanticColors.textTertiary,
+            ),
           ),
-          SeedButton(
+          _buildTextLink(
             label: '케어브이 웹사이트',
-            variant: SeedButtonVariant.neutralWeak,
-            size: SeedButtonSize.small,
+            color: AppSemanticColors.textTertiary,
             onPressed: () async {
               const url = 'https://carev.kr';
               if (await canLaunchUrl(Uri.parse(url))) {
