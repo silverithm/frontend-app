@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
+
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -12,6 +13,7 @@ import '../widgets/plaza_html_body.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'plaza_screen.dart' show plazaBoardLabel, plazaIsJobBoard, showPlazaPostEditor;
+import '../widgets/common/app_tag.dart';
 
 /// 광장 게시글 상세 + 댓글
 class PlazaPostDetailScreen extends StatefulWidget {
@@ -162,19 +164,10 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                         child: ListView(
                           padding: const EdgeInsets.all(AppSpacing.space4),
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.space1_5,
-                                  vertical: AppSpacing.space0_5),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundTertiary,
-                                borderRadius:
-                                    BorderRadius.circular(AppBorderRadius.md),
-                              ),
-                              child: Text(
-                                plazaBoardLabel(post['board']?.toString()),
-                                style: AppTypography.caption.copyWith(
-                                    color: AppSemanticColors.textSecondary),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: AppTag(
+                                label: plazaBoardLabel(post['board']?.toString()),
                               ),
                             ),
                             const SizedBox(height: AppSpacing.space2),
@@ -182,13 +175,12 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                               post['title']?.toString() ?? '',
                               style: AppTypography.heading5.copyWith(
                                 color: AppSemanticColors.textPrimary,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: AppSpacing.space2),
                             Text(
                               '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('yyyy.MM.dd HH:mm').format(createdAt)}' : ''} · 조회 ${post['viewCount'] ?? 0}',
-                              style: AppTypography.caption.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                   color: AppSemanticColors.textTertiary),
                             ),
                             const Divider(height: AppSpacing.space6),
@@ -359,7 +351,7 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                             ),
                             Text(
                               '익명',
-                              style: AppTypography.labelSmall.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                 color: AppSemanticColors.textSecondary,
                               ),
                             ),
@@ -374,6 +366,8 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                             ),
                             IconButton(
                               tooltip: '댓글 등록',
+                              constraints: const BoxConstraints(
+                                  minWidth: 48, minHeight: 48),
                               icon: Icon(Icons.send,
                                   color: AppSemanticColors
                                       .interactivePrimaryDefault),
@@ -427,7 +421,7 @@ class _ContactInfoCard extends StatelessWidget {
                     const SizedBox(width: AppSpacing.space1_5),
                     Text(
                       isPublic ? '전체공개' : '회원공개',
-                      style: AppTypography.caption
+                      style: AppTypography.bodySmall
                           .copyWith(color: AppSemanticColors.textTertiary),
                     ),
                   ],
@@ -439,7 +433,6 @@ class _ContactInfoCard extends StatelessWidget {
                     color: hasContact
                         ? AppSemanticColors.textPrimary
                         : AppSemanticColors.textTertiary,
-                    fontWeight: hasContact ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ],
