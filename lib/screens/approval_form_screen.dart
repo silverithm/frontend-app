@@ -716,9 +716,8 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                           const SizedBox(width: AppSpacing.space2),
                           Text(
                             _selectedTemplate == null ? '양식 둘러보기' : '변경',
-                            style: AppTypography.bodySmall.copyWith(
+                            style: AppTypography.titleSmall.copyWith(
                               color: AppSemanticColors.interactivePrimaryDefault,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           Icon(
@@ -784,8 +783,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                     children: [
                       Text(
                         '결재선 (양식에 지정됨)',
-                        style: AppTypography.bodySmall.copyWith(
-                          fontWeight: FontWeight.w600,
+                        style: AppTypography.titleSmall.copyWith(
                           color: AppSemanticColors.textPrimary,
                         ),
                       ),

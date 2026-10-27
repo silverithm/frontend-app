@@ -138,8 +138,7 @@ class VacationPlanningBanner extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
+                  style: AppTypography.titleSmall.copyWith(
                     color: AppSemanticColors.textPrimary,
                   ),
                 ),

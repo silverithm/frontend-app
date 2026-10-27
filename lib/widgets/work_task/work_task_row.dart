@@ -161,11 +161,10 @@ class WorkTaskRow extends StatelessWidget {
                           task.content,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodyMedium.copyWith(
+                          style: AppTypography.titleSmall.copyWith(
                             color: task.isDone
                                 ? AppSemanticColors.textTertiary
                                 : AppSemanticColors.textPrimary,
-                            fontWeight: AppTypography.fontWeightSemibold,
                             decoration: task.isDone
                                 ? TextDecoration.lineThrough
                                 : null,

@@ -357,8 +357,7 @@ class _NotificationBottomSheet extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: AppTypography.bodyLarge.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: AppTypography.titleMedium.copyWith(
                           color: AppSemanticColors.textPrimary,
                         ),
                       ),
@@ -386,7 +385,6 @@ class _NotificationBottomSheet extends StatelessWidget {
                     time,
                     style: AppTypography.labelSmall.copyWith(
                       color: AppSemanticColors.textTertiary,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],

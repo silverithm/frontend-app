@@ -103,9 +103,8 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                   // 등록된 서명
                   if (_signatureUrl != null && _signatureUrl!.isNotEmpty) ...[
                     Text('등록된 서명',
-                        style: AppTypography.bodyMedium.copyWith(
+                        style: AppTypography.titleSmall.copyWith(
                           color: AppSemanticColors.textPrimary,
-                          fontWeight: FontWeight.w700,
                         )),
                     const SizedBox(height: AppSpacing.space2),
                     Container(
@@ -160,9 +159,8 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                   // 새 서명 그리기
                   Text(
                     _signatureUrl != null ? '새 서명 등록 (기존 서명 대체)' : '서명 그리기',
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.titleSmall.copyWith(
                       color: AppSemanticColors.textPrimary,
-                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space2),

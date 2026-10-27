@@ -208,9 +208,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   const SizedBox(width: AppSpacing.space3),
                   Text(
                     '휴무 추가',
-                    style: AppTypography.heading4.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTypography.heading4,
                   ),
                 ],
               ),

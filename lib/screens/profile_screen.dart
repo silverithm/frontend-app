@@ -1002,7 +1002,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     Text(
                                       '기본 정보',
                                       style: AppTypography.heading6.copyWith(
-                                        fontWeight: FontWeight.bold,
                                         color: AppSemanticColors.textPrimary,
                                       ),
                                     ),
@@ -1257,7 +1256,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         Text(
                                           '회사 코드',
                                           style: AppTypography.heading6.copyWith(
-                                            fontWeight: FontWeight.bold,
                                             color: AppSemanticColors.textPrimary,
                                           ),
                                         ),
@@ -1285,7 +1283,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       child: SelectableText(
                                         user.company!.companyCode!,
                                         style: AppTypography.heading5.copyWith(
-                                          fontWeight: FontWeight.bold,
                                           letterSpacing: 2,
                                           color: AppSemanticColors.textPrimary,
                                         ),
@@ -1526,7 +1523,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   Text(
                                     '약관 및 정책',
                                     style: AppTypography.heading6.copyWith(
-                                      fontWeight: FontWeight.bold,
                                       color: AppSemanticColors.textPrimary,
                                     ),
                                   ),
@@ -1761,7 +1757,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Text(
             title,
             style: AppTypography.bodySmall.copyWith(
-              fontWeight: FontWeight.w500,
               color: AppSemanticColors.textTertiary,
             ),
           ),
@@ -1773,7 +1768,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.bodyMedium.copyWith(
-              fontWeight: FontWeight.w500,
               color: AppSemanticColors.textPrimary,
             ),
           ),
@@ -1971,7 +1965,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       Text(
                         subscription.planDisplayName,
                         style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w500,
                           color: AppSemanticColors.textPrimary,
                         ),
                       ),
@@ -2114,7 +2107,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             value,
             style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textPrimary,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ),

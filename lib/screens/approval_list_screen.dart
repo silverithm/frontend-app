@@ -173,7 +173,6 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                             '데이터를 불러오는 중...',
                             style: AppTypography.bodyMedium.copyWith(
                               color: AppSemanticColors.textSecondary,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -225,7 +224,6 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                 textAlign: TextAlign.center,
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppSemanticColors.statusErrorText,
-                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.space5),
@@ -274,7 +272,6 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                 '아직 결재 내역이 없어요',
                                 style: AppTypography.heading6.copyWith(
                                   color: AppSemanticColors.textPrimary,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.space2),
@@ -334,8 +331,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                             children: [
                               Text(
                                 '결재 현황',
-                                style: AppTypography.labelLarge.copyWith(
-                                  fontWeight: FontWeight.w600,
+                                style: AppTypography.titleSmall.copyWith(
                                   color: AppSemanticColors.textPrimary,
                                 ),
                               ),
@@ -637,9 +633,8 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
           ),
           label: Text(
             '결재 요청',
-            style: AppTypography.labelLarge.copyWith(
+            style: AppTypography.titleSmall.copyWith(
               color: AppSemanticColors.textInverse,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -658,7 +653,6 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
         Text(
           count.toString(),
           style: AppTypography.heading4.copyWith(
-            fontWeight: FontWeight.w600,
             color: AppSemanticColors.textPrimary,
           ),
         ),
@@ -677,7 +671,6 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
             label,
             style: AppTypography.labelSmall.copyWith(
               color: textColor,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -702,8 +695,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
         children: [
           Text(
             title,
-            style: AppTypography.labelLarge.copyWith(
-              fontWeight: FontWeight.w600,
+            style: AppTypography.titleSmall.copyWith(
               color: AppSemanticColors.textPrimary,
             ),
           ),

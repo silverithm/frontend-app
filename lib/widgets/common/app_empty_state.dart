@@ -57,8 +57,7 @@ class AppEmptyState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium.copyWith(
-                fontWeight: AppTypography.fontWeightSemibold,
+              style: AppTypography.titleSmall.copyWith(
                 color: AppSemanticColors.textPrimary,
               ),
             ),

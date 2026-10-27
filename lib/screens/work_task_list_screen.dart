@@ -85,9 +85,8 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
         icon: const Icon(Icons.add),
         label: Text(
           '업무 등록',
-          style: AppTypography.labelLarge.copyWith(
+          style: AppTypography.titleSmall.copyWith(
             color: AppSemanticColors.textInverse,
-            fontWeight: AppTypography.fontWeightSemibold,
           ),
         ),
       ),

@@ -248,9 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 schedule.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppTypography.bodyMedium.copyWith(
-                                  fontWeight: AppTypography.fontWeightMedium,
-                                ),
+                                style: AppTypography.bodyMedium,
                               ),
                             ),
                           ],
@@ -411,7 +409,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   '${user.name}님, 안녕하세요',
                                   style: AppTypography.heading5.copyWith(
                                     color: AppSemanticColors.headerForeground,
-                                    fontWeight: AppTypography.fontWeightBold,
                                   ),
                                 ),
                                 const SizedBox(height: AppSpacing.space1),
@@ -771,7 +768,6 @@ class _SectionHeader extends StatelessWidget {
                 title,
                 style: AppTypography.heading6.copyWith(
                   color: AppSemanticColors.textPrimary,
-                  fontWeight: AppTypography.fontWeightBold,
                 ),
               ),
               const SizedBox(height: AppSpacing.space1),
@@ -872,9 +868,8 @@ class _NoticePreviewTile extends StatelessWidget {
                       notice.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.titleSmall.copyWith(
                         color: AppSemanticColors.textPrimary,
-                        fontWeight: AppTypography.fontWeightSemibold,
                       ),
                     ),
                   ),
@@ -963,9 +958,8 @@ class _ApprovalPreviewTile extends StatelessWidget {
                       approval.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodyMedium.copyWith(
+                      style: AppTypography.titleSmall.copyWith(
                         color: AppSemanticColors.textPrimary,
-                        fontWeight: AppTypography.fontWeightSemibold,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.space1),
@@ -1019,9 +1013,8 @@ class _EmptySectionState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium.copyWith(
+              style: AppTypography.titleSmall.copyWith(
                 color: AppSemanticColors.textPrimary,
-                fontWeight: AppTypography.fontWeightSemibold,
               ),
             ),
             const SizedBox(height: AppSpacing.space1),

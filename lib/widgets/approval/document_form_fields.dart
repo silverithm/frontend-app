@@ -376,8 +376,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
         children: [
           TextSpan(
             text: label,
-            style: AppTypography.bodySmall.copyWith(
-              fontWeight: FontWeight.w700,
+            style: AppTypography.titleSmall.copyWith(
               color: AppSemanticColors.textPrimary,
             ),
           ),
@@ -402,8 +401,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
       color: AppSemanticColors.backgroundTertiary,
       child: Text(
         field['label']?.toString() ?? '',
-        style: AppTypography.bodySmall.copyWith(
-          fontWeight: FontWeight.w700,
+        style: AppTypography.titleSmall.copyWith(
           color: AppSemanticColors.textSecondary,
         ),
       ),

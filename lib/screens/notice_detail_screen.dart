@@ -151,7 +151,6 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                         notice.title,
                         style: AppTypography.heading5.copyWith(
                           color: AppSemanticColors.textPrimary,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.space4),
@@ -358,9 +357,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             const SizedBox(width: AppSpacing.space2),
             Text(
               '댓글 ${comments.length}',
-              style: AppTypography.bodyMedium.copyWith(
+              style: AppTypography.titleSmall.copyWith(
                 color: AppSemanticColors.textPrimary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -428,7 +426,6 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                 comment.authorName,
                 style: AppTypography.labelMedium.copyWith(
                   color: AppSemanticColors.textPrimary,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(width: AppSpacing.space2),
@@ -552,9 +549,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             const SizedBox(width: AppSpacing.space2),
             Text(
               '첨부파일 ${attachments.length}',
-              style: AppTypography.bodyMedium.copyWith(
+              style: AppTypography.titleSmall.copyWith(
                 color: AppSemanticColors.textPrimary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],

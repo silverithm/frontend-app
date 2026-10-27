@@ -136,7 +136,6 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 widget.title,
                 style: AppTypography.heading6.copyWith(
                   color: AppSemanticColors.textPrimary,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
               IconButton(
@@ -272,11 +271,10 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
           child: Center(
             child: Text(
               text,
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.titleSmall.copyWith(
                 color: selected
                     ? AppSemanticColors.textInverse
                     : AppSemanticColors.textSecondary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),

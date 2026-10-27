@@ -267,9 +267,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                             AppSemanticColors.headerForegroundMuted,
                         // 상단 바 아래 선은 SliverAppBar가 긋는다
                         dividerColor: AppColors.transparent,
-                        labelStyle: AppTypography.labelLarge.copyWith(
-                          fontWeight: AppTypography.fontWeightBold,
-                        ),
+                        labelStyle: AppTypography.titleSmall,
                         unselectedLabelStyle: AppTypography.labelLarge.copyWith(
                           fontWeight: FontWeight.normal,
                         ),
@@ -392,9 +390,7 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
               Text(
                 '${_scheduleCurrentDate.year}년 ${_scheduleCurrentDate.month}월',
-                style: AppTypography.heading6.copyWith(
-                  fontWeight: AppTypography.fontWeightSemibold,
-                ),
+                style: AppTypography.heading6,
               ),
               IconButton(
                 tooltip: '다음 달',
@@ -455,7 +451,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                           : isSaturday
                           ? AppSemanticColors.interactivePrimaryDefault
                           : AppSemanticColors.textSecondary,
-                      fontWeight: AppTypography.fontWeightMedium,
                     ),
                   ),
                 ),
@@ -652,7 +647,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                           child: Text(
                             _formatSelectedDate(_scheduleSelectedDate!),
                             style: AppTypography.heading6.copyWith(
-                              fontWeight: AppTypography.fontWeightBold,
                               color: AppSemanticColors.textPrimary,
                             ),
                           ),
@@ -889,11 +883,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                           Expanded(
                             child: Text(
                               schedule.title,
-                              style: AppTypography.bodyLarge.copyWith(
+                              style: AppTypography.titleMedium.copyWith(
                                 color: schedule.isCompleted
                                     ? AppSemanticColors.textTertiary
                                     : AppSemanticColors.textPrimary,
-                                fontWeight: AppTypography.fontWeightSemibold,
                                 // 끝난 일과 남은 일이 한눈에 갈리도록 완료는 줄을 긋는다 (웹과 같은 표시)
                                 decoration: schedule.isCompleted
                                     ? TextDecoration.lineThrough
@@ -1309,7 +1302,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   child: Text(
                                     _formatSelectedDate(_selectedDate!),
                                     style: AppTypography.heading6.copyWith(
-                                      fontWeight: AppTypography.fontWeightBold,
                                       color: AppSemanticColors.textPrimary,
                                     ),
                                   ),
@@ -1601,9 +1593,8 @@ class _CalendarScreenState extends State<CalendarScreen>
           child: Center(
             child: Text(
               value,
-              style: AppTypography.labelLarge.copyWith(
+              style: AppTypography.titleSmall.copyWith(
                 color: color,
-                fontWeight: AppTypography.fontWeightBold,
               ),
             ),
           ),
@@ -1613,7 +1604,6 @@ class _CalendarScreenState extends State<CalendarScreen>
           label,
           style: AppTypography.bodySmall.copyWith(
             color: AppSemanticColors.textTertiary,
-            fontWeight: AppTypography.fontWeightMedium,
           ),
           textAlign: TextAlign.center,
         ),
@@ -1730,9 +1720,8 @@ class _CalendarScreenState extends State<CalendarScreen>
           ),
           label: Text(
             '휴무 추가',
-            style: AppTypography.labelLarge.copyWith(
+            style: AppTypography.titleSmall.copyWith(
               color: AppSemanticColors.textInverse,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -1897,7 +1886,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                               '일정 등록',
                               style: AppTypography.heading5.copyWith(
                                 color: AppSemanticColors.textPrimary,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             IconButton(
@@ -2105,9 +2093,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                           if (!selectedCategory.startsWith('label:')) ...[
                             Text(
                               '색상',
-                              style: AppTypography.labelLarge.copyWith(
+                              style: AppTypography.titleSmall.copyWith(
                                 color: AppSemanticColors.textPrimary,
-                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: AppSpacing.space2),
@@ -2353,9 +2340,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 children: [
                                   Text(
                                     '참석자 (${selectedParticipantIds.length}명 선택)',
-                                    style: AppTypography.labelLarge.copyWith(
+                                    style: AppTypography.titleSmall.copyWith(
                                       color: AppSemanticColors.textPrimary,
-                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.space2),
@@ -2831,7 +2817,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                               '일정 구분 관리',
                               style: AppTypography.heading5.copyWith(
                                 color: AppSemanticColors.textPrimary,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             IconButton(
@@ -3059,9 +3044,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                           const SizedBox(height: AppSpacing.space3),
                           Text(
                             '색상',
-                            style: AppTypography.labelLarge.copyWith(
+                            style: AppTypography.titleSmall.copyWith(
                               color: AppSemanticColors.textPrimary,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: AppSpacing.space2),
