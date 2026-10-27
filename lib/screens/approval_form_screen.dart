@@ -597,11 +597,32 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                   _selectedTemplate == null &&
                   _titleController.text.isEmpty &&
                   _reusableApprovals().isNotEmpty) ...[
-                SeedListCell(
-                  leadingIcon: Icons.history,
-                  title: '이전 기안에서 불러오기',
-                  description: '지난번에 올린 기안의 양식·제목·내용으로 시작해요',
+                // 제목 아래 한 줄 링크 — 큰 카드로 두면 폼의 첫 항목처럼 보인다
+                InkWell(
                   onTap: _openPreviousPicker,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.space1,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.history,
+                          size: 16,
+                          color: AppSemanticColors.interactivePrimaryDefault,
+                        ),
+                        const SizedBox(width: AppSpacing.space1_5),
+                        Text(
+                          '이전 기안에서 불러오기',
+                          style: AppTypography.titleSmall.copyWith(
+                            color: AppSemanticColors.interactivePrimaryDefault,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.space4),
               ],
@@ -1040,25 +1061,13 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     );
   }
 
+  /// 항목 제목 — 아이콘 타일 없이 글자만(titleSmall). 필수 표시는 같은 크기의 빨간 별.
   Widget _buildSectionHeader(String title, IconData icon, {required bool isRequired}) {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.space2),
-          decoration: BoxDecoration(
-            color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: AppSemanticColors.interactivePrimaryDefault,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.space3),
         Text(
           title,
-          style: AppTypography.heading6.copyWith(
+          style: AppTypography.titleSmall.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
         ),
@@ -1066,7 +1075,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
           const SizedBox(width: AppSpacing.space1),
           Text(
             '*',
-            style: AppTypography.heading6.copyWith(
+            style: AppTypography.titleSmall.copyWith(
               color: AppSemanticColors.statusErrorIcon,
             ),
           ),

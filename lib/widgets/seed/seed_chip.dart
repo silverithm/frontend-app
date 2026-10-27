@@ -72,7 +72,8 @@ class SeedChip extends StatelessWidget {
               ],
               Text(
                 label,
-                style: AppTypography.titleSmall.copyWith(color: foreground),
+                style: (selected ? AppTypography.titleSmall : AppTypography.bodyMedium)
+                    .copyWith(color: foreground),
               ),
             ],
           ),
