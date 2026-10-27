@@ -580,10 +580,7 @@ class _AdminApprovalManagementScreenState
               Expanded(
                 child: Text(
                   '지금 내가 처리할 결재 $count건이 있습니다',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.statusInfoText,
-                    fontWeight: FontWeight.w600,
-                  ),
+  XX
                 ),
               ),
               Icon(Icons.chevron_right,
@@ -713,9 +710,7 @@ class _AdminApprovalManagementScreenState
               ),
               Text(
                 '전체 선택',
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTypography.titleSmall,
               ),
               const SizedBox(width: AppSpacing.space2),
               Container(
@@ -733,7 +728,6 @@ class _AdminApprovalManagementScreenState
                 child: Text(
                   '${_selectedRequests.length}/${pendingRequests.length}',
                   style: AppTypography.labelSmall.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: _selectedRequests.isNotEmpty
                         ? AppSemanticColors.interactivePrimaryDefault
                         : AppSemanticColors.textSecondary,
@@ -862,8 +856,8 @@ class _AdminApprovalManagementScreenState
                             Expanded(
                               child: Text(
                                 request.title,
-                                style: AppTypography.bodyLarge.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                style: AppTypography.titleMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

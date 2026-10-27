@@ -54,23 +54,29 @@ class UpdateDialog extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.space6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('업데이트 알림', style: AppTypography.heading5),
-              const SizedBox(height: AppSpacing.space3),
-              Text(updateMessage, style: AppTypography.bodyMedium),
-              const SizedBox(height: AppSpacing.space4),
+              // 다른 대화상자(AppDialog)와 같은 구조 — 가운데 정렬 제목·본문
               Text(
-                '현재 버전: $currentVersion',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
+                '업데이트 알림',
+                style: AppTypography.heading5.copyWith(
+                  color: AppSemanticColors.textPrimary,
                 ),
               ),
+              const SizedBox(height: AppSpacing.space3),
               Text(
-                '최신 버전: $latestVersion',
+                updateMessage,
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppSemanticColors.textSecondary,
                 ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.space2),
+              Text(
+                '$currentVersion → $latestVersion',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppSemanticColors.textTertiary,
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.space6),
               Row(
@@ -79,7 +85,7 @@ class UpdateDialog extends StatelessWidget {
                     Expanded(
                       child: SeedButton(
                         label: '나중에',
-                        variant: SeedButtonVariant.neutralWeak,
+                        variant: SeedButtonVariant.neutralOutline,
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),

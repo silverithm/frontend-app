@@ -14,6 +14,7 @@ import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/common/app_tag.dart';
 
 class AdminVacationManagementScreen extends StatefulWidget {
   final bool showAppBar;
@@ -784,37 +785,30 @@ class _AdminVacationManagementScreenState
     final status = request['status'] ?? '';
     final isApproved = status == 'approved';
     final isPending = status == 'pending';
-    final isRejected = status == 'rejected';
 
-    Color statusColor;
-    IconData statusIcon;
-    String statusText;
-
-    Color statusBackground;
-    if (isApproved) {
-      statusColor = AppSemanticColors.statusSuccessText;
-      statusBackground = AppSemanticColors.statusSuccessBackground;
-      statusIcon = Icons.check_circle;
-      statusText = '승인됨';
-    } else if (isPending) {
-      statusColor = AppSemanticColors.statusWarningText;
-      statusBackground = AppSemanticColors.statusWarningBackground;
-      statusIcon = Icons.pending;
-      statusText = '대기중';
-    } else {
-      statusColor = AppSemanticColors.statusErrorText;
-      statusBackground = AppSemanticColors.statusErrorBackground;
-      statusIcon = Icons.cancel;
-      statusText = '거절됨';
-    }
+    final AppTagTone statusTone = isApproved
+        ? AppTagTone.success
+        : isPending
+            ? AppTagTone.warning
+            : AppTagTone.error;
+    final String statusText = isApproved
+        ? '승인됨'
+        : isPending
+            ? '대기중'
+            : '거절됨';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 종사자 관리 카드와 같은 회색 원 — 상태는 오른쪽 꼬리표 하나로만 말한다
         CircleAvatar(
-          radius: 20,
-          backgroundColor: statusBackground,
-          child: Icon(statusIcon, color: statusColor, size: 20),
+          radius: 18,
+          backgroundColor: AppSemanticColors.backgroundTertiary,
+          child: Icon(
+            Icons.person,
+            color: AppSemanticColors.textSecondary,
+            size: 18,
+          ),
         ),
         const SizedBox(width: AppSpacing.space3),
         Expanded(
@@ -827,35 +821,21 @@ class _AdminVacationManagementScreenState
                   Expanded(
                     child: Text(
                       request['userName'] ?? '알 수 없음',
-                      style: AppTypography.heading6,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.space2),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space2,
-                      vertical: AppSpacing.space1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Text(
-                      statusText,
-                      style: AppTypography.labelMedium.copyWith(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  AppTag(label: statusText, tone: statusTone),
                 ],
               ),
-              const SizedBox(height: AppSpacing.space1),
+              const SizedBox(height: AppSpacing.space0_5),
               Text(
                 '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
-                style: AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textSecondary,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -864,7 +844,7 @@ class _AdminVacationManagementScreenState
               const SizedBox(height: AppSpacing.space0_5),
               Text(
                 '신청일: ${_formatDate(request['createdAt'])}',
-                style: AppTypography.labelSmall.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textTertiary,
                 ),
                 overflow: TextOverflow.ellipsis,

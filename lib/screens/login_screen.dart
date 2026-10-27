@@ -133,17 +133,23 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '비밀번호 찾기',
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
+              // 제목·본문은 AppDialog와 같은 가운데 정렬
+              Center(
+                child: Text(
+                  '비밀번호 찾기',
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.space4),
-              Text(
-                '가입하신 이메일을 입력하시면 임시 비밀번호를 전송해드립니다.',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
+              const SizedBox(height: AppSpacing.space3),
+              Center(
+                child: Text(
+                  '가입하신 이메일을 입력하시면 임시 비밀번호를 전송해드립니다.',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.space4),
@@ -151,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // 사용자 타입 선택 토글
               Text(
                 '사용자 타입',
-                style: AppTypography.labelLarge.copyWith(
+                style: AppTypography.titleSmall.copyWith(
                   color: AppSemanticColors.textPrimary,
                 ),
               ),
