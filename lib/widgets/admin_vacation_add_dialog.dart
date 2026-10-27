@@ -208,9 +208,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                   const SizedBox(width: AppSpacing.space3),
                   Text(
                     '휴무 추가',
-                    style: AppTypography.heading4.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTypography.heading4,
                   ),
                 ],
               ),
@@ -219,9 +217,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               // 직원 선택
               Text(
                 '직원 선택',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.labelStrong,
               ),
               const SizedBox(height: AppSpacing.space2),
               _isLoading
@@ -230,7 +226,9 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                       value: _selectedMemberId,
                       decoration: InputDecoration(
                         hintText: '직원을 선택하세요',
-                        hintStyle: TextStyle(color: AppSemanticColors.textTertiary),
+                        hintStyle: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
                         filled: true,
                         fillColor: AppSemanticColors.backgroundSecondary,
                         border: OutlineInputBorder(
@@ -264,9 +262,8 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                             width: 2,
                           ),
                         ),
-                        errorStyle: TextStyle(
+                        errorStyle: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.statusErrorText,
-                          fontSize: AppTypography.fontSizeXs,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.space4,
@@ -301,9 +298,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               // 날짜 선택
               Text(
                 '휴무 날짜',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.labelStrong,
               ),
               const SizedBox(height: AppSpacing.space2),
               Material(
@@ -343,13 +338,10 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                               _selectedDate != null
                                   ? '${_selectedDate!.year}년 ${_selectedDate!.month}월 ${_selectedDate!.day}일'
                                   : '날짜를 선택하세요',
-                              style: AppTypography.bodyLarge.copyWith(
+                              style: AppTypography.bodyMedium.copyWith(
                                 color: _selectedDate != null
                                     ? AppSemanticColors.textPrimary
                                     : AppSemanticColors.textSecondary,
-                                fontWeight: _selectedDate != null
-                                    ? FontWeight.w500
-                                    : FontWeight.normal,
                               ),
                             ),
                           ],
@@ -369,9 +361,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               // 기간(연차·반차)이 한 목록에 들어 있어 고르는 순간 둘 다 정해진다.
               Text(
                 '휴무 종류',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.labelStrong,
               ),
               const SizedBox(height: AppSpacing.space2),
               Wrap(
@@ -397,9 +387,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
               // 휴무 사유
               Text(
                 '휴무 사유 (선택)',
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.labelStrong,
               ),
               const SizedBox(height: AppSpacing.space2),
               SeedTextField(

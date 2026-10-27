@@ -68,7 +68,7 @@ class NoticeCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     _formatDate(notice.createdAt),
-                    style: AppTypography.caption.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: AppSemanticColors.textTertiary,
                     ),
                   ),
@@ -79,9 +79,8 @@ class NoticeCard extends StatelessWidget {
               // Title
               Text(
                 notice.title,
-                style: AppTypography.bodyLarge.copyWith(
+                style: AppTypography.titleMedium.copyWith(
                   color: AppSemanticColors.textPrimary,
-                  fontWeight: FontWeight.w600,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -112,7 +111,7 @@ class NoticeCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.space1),
                   Text(
                     notice.authorName,
-                    style: AppTypography.caption.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: AppSemanticColors.textTertiary,
                     ),
                   ),
@@ -125,7 +124,7 @@ class NoticeCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.space1),
                   Text(
                     '${notice.viewCount}',
-                    style: AppTypography.caption.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: AppSemanticColors.textTertiary,
                     ),
                   ),

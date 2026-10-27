@@ -97,22 +97,13 @@ class _SeedListCellState extends State<SeedListCell> {
                 children: [
                   Text(
                     widget.title,
-                    style: TextStyle(
-                      fontSize: 15, // t5
-                      fontWeight: AppTypography.fontWeightMedium,
-                      color: titleColor,
-                      height: 1.4,
-                    ),
+                    style: AppTypography.titleMedium.copyWith(color: titleColor),
                   ),
                   if (widget.description != null && widget.description!.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.space0_5), // body gap
                     Text(
                       widget.description!,
-                      style: TextStyle(
-                        fontSize: 13, // t3
-                        color: descriptionColor,
-                        height: 1.4,
-                      ),
+                      style: AppTypography.bodySmall.copyWith(color: descriptionColor),
                     ),
                   ],
                 ],
@@ -175,9 +166,8 @@ class SeedListSection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title!,
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.titleSmall.copyWith(
                       color: AppSemanticColors.textSecondary,
-                      fontWeight: AppTypography.fontWeightBold,
                     ),
                   ),
                 ),

@@ -113,14 +113,22 @@ class _NotificationSettingsScreenState
               children: [
                 Card(
                   elevation: 0,
-                  color: AppSemanticColors.backgroundSecondary,
+                  color: AppSemanticColors.surfaceDefault,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    side: BorderSide(color: AppSemanticColors.borderSubtle),
                   ),
                   child: SwitchListTile(
                     value: _enabled,
                     onChanged: _isSaving ? null : _toggle,
-                    title: Text('푸시 알림 받기', style: AppTypography.bodyMedium),
+                    activeThumbColor: AppSemanticColors.textInverse,
+                    activeTrackColor: AppSemanticColors.brandDefault,
+                    title: Text(
+                      '푸시 알림 받기',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
                     subtitle: Text(
                       '휴무 승인, 결재 요청, 공지 등의 알림을 휴대폰으로 받습니다',
                       style: AppTypography.bodySmall.copyWith(

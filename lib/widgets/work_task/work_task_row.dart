@@ -4,6 +4,7 @@ import '../../models/work_task.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../common/app_tag.dart';
 
 /// 중요도 색 — 웹(빨강·노랑·회색)과 같다. 게이지도 같은 색으로 채운다.
 ({Color background, Color foreground, Color gauge}) workTaskImportanceColors(
@@ -39,23 +40,13 @@ class WorkTaskImportanceTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = workTaskImportanceColors(importance);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: colors.background,
-        borderRadius: BorderRadius.circular(AppBorderRadius.base),
-      ),
-      child: Text(
-        importance.label,
-        style: AppTypography.labelSmall.copyWith(
-          color: colors.foreground,
-          fontWeight: AppTypography.fontWeightSemibold,
-        ),
-      ),
+    return AppTag(
+      label: importance.label,
+      tone: switch (importance) {
+        WorkTaskImportance.high => AppTagTone.error,
+        WorkTaskImportance.normal => AppTagTone.warning,
+        WorkTaskImportance.low => AppTagTone.neutral,
+      },
     );
   }
 }
@@ -161,11 +152,10 @@ class WorkTaskRow extends StatelessWidget {
                           task.content,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodyMedium.copyWith(
+                          style: AppTypography.titleSmall.copyWith(
                             color: task.isDone
                                 ? AppSemanticColors.textTertiary
                                 : AppSemanticColors.textPrimary,
-                            fontWeight: AppTypography.fontWeightSemibold,
                             decoration: task.isDone
                                 ? TextDecoration.lineThrough
                                 : null,
@@ -176,10 +166,9 @@ class WorkTaskRow extends StatelessWidget {
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           due.text,
-                          style: AppTypography.labelMedium.copyWith(
+                          style: AppTypography.labelStrong.copyWith(
                             color: dueColor,
-                            fontWeight: AppTypography.fontWeightSemibold,
-                          ),
+                            ),
                         ),
                       ],
                     ],
@@ -207,12 +196,11 @@ class WorkTaskRow extends StatelessWidget {
                         child: Text(
                           task.isDone ? '완료' : '${task.progress}%',
                           textAlign: TextAlign.end,
-                          style: AppTypography.labelMedium.copyWith(
+                          style: AppTypography.labelStrong.copyWith(
                             color: task.isDone
                                 ? AppSemanticColors.statusSuccessText
                                 : AppSemanticColors.textSecondary,
-                            fontWeight: AppTypography.fontWeightSemibold,
-                          ),
+                            ),
                         ),
                       ),
                     ],

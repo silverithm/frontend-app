@@ -91,7 +91,7 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('결재 서명 관리',
-            style: AppTypography.heading6),
+            style: AppTypography.heading5),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -103,9 +103,8 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                   // 등록된 서명
                   if (_signatureUrl != null && _signatureUrl!.isNotEmpty) ...[
                     Text('등록된 서명',
-                        style: AppTypography.bodyMedium.copyWith(
+                        style: AppTypography.titleSmall.copyWith(
                           color: AppSemanticColors.textPrimary,
-                          fontWeight: FontWeight.w700,
                         )),
                     const SizedBox(height: AppSpacing.space2),
                     Container(
@@ -121,7 +120,7 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => Center(
                           child: Text('서명 이미지를 불러올 수 없습니다',
-                              style: AppTypography.caption.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                   color: AppSemanticColors.textTertiary)),
                         ),
                       ),
@@ -160,9 +159,8 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                   // 새 서명 그리기
                   Text(
                     _signatureUrl != null ? '새 서명 등록 (기존 서명 대체)' : '서명 그리기',
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.titleSmall.copyWith(
                       color: AppSemanticColors.textPrimary,
-                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space2),

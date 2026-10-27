@@ -146,9 +146,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                   Expanded(
                     child: Text(
                       '휴무 신청 삭제',
-                      style: AppTypography.heading6.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTypography.heading6,
                     ),
                   ),
                 ],
@@ -355,7 +353,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                             '데이터를 불러오는 중...',
                             style: AppTypography.bodyMedium.copyWith(
                               color: AppSemanticColors.textSecondary,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -408,7 +405,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                 textAlign: TextAlign.center,
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppSemanticColors.statusErrorText,
-                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.space5),
@@ -623,7 +619,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         Text(
           count.toString(),
           style: AppTypography.heading4.copyWith(
-            fontWeight: FontWeight.bold,
             color: color,
           ),
         ),
@@ -631,7 +626,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
           label,
           style: AppTypography.labelSmall.copyWith(
             color: color,
-            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -773,8 +767,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                               children: [
                                 Text(
                                   _formatDate(request.date),
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.bold,
+                                  style: AppTypography.titleSmall.copyWith(
                                     color: AppSemanticColors.textPrimary,
                                   ),
                                 ),
@@ -830,10 +823,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                 decoration: BoxDecoration(
                   color: AppSemanticColors.backgroundSecondary,
                   borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.borderSubtle,
-                    width: 1,
-                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -883,9 +872,8 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           '거절 사유',
-                          style: AppTypography.labelSmall.copyWith(
+                          style: AppTag.labelStyle.copyWith(
                             color: AppSemanticColors.statusErrorText,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
@@ -902,18 +890,11 @@ class _MyVacationScreenState extends State<MyVacationScreen>
               ),
             ],
 
-            const SizedBox(height: AppSpacing.space3),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.space2),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.backgroundSecondary,
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              ),
-              child: Text(
-                '신청일: ${_formatDateTime(request.createdAt)}',
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                ),
+            const SizedBox(height: AppSpacing.space2),
+            Text(
+              '신청일 ${_formatDateTime(request.createdAt)}',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
               ),
             ),
           ],

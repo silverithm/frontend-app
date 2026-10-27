@@ -309,11 +309,10 @@ class _WorkTaskFormState extends State<_WorkTaskForm> {
                 const Spacer(),
                 Text(
                   _progress >= 100 ? '완료' : '$_progress%',
-                  style: AppTypography.labelLarge.copyWith(
+                  style: AppTypography.titleSmall.copyWith(
                     color: _progress >= 100
                         ? AppSemanticColors.statusSuccessText
                         : AppSemanticColors.textPrimary,
-                    fontWeight: AppTypography.fontWeightBold,
                   ),
                 ),
               ],
@@ -343,7 +342,7 @@ class _WorkTaskFormState extends State<_WorkTaskForm> {
                   for (final mark in const ['0%', '50%', '완료'])
                     Text(
                       mark,
-                      style: AppTypography.caption.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: AppSemanticColors.textTertiary,
                       ),
                     ),
@@ -395,9 +394,8 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: AppTypography.labelLarge.copyWith(
+      style: AppTypography.titleSmall.copyWith(
         color: AppSemanticColors.textPrimary,
-        fontWeight: AppTypography.fontWeightSemibold,
       ),
     );
   }

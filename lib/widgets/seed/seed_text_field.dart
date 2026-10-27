@@ -129,8 +129,8 @@ class _SeedTextFieldState extends State<SeedTextField> {
       widget.size == SeedTextFieldSize.large ? AppBorderRadius.xl : AppBorderRadius.lg;
 
   // Font-size — spec §2: Large t5 / Medium t4
-  double get _fontSize =>
-      widget.size == SeedTextFieldSize.large ? 15 : AppTypography.fontSizeBase;
+  // 입력값은 본문 14(w400) — 라벨 titleSmall과 값이 구분되도록 크게 키우지 않는다
+  TextStyle get _inputStyle => AppTypography.bodyMedium;
 
   Color _strokeColor(bool hasError) {
     if (widget.isDisabled) return AppSemanticColors.borderDisabled;
@@ -173,9 +173,7 @@ class _SeedTextFieldState extends State<SeedTextField> {
         if (widget.showLabel) ...[
           Text(
             widget.label,
-            style: TextStyle(
-              fontSize: AppTypography.fontSizeSm,
-              fontWeight: AppTypography.fontWeightMedium,
+            style: AppTypography.titleSmall.copyWith(
               color: widget.isDisabled
                   ? AppSemanticColors.textDisabled
                   : AppSemanticColors.textSecondary,
@@ -223,8 +221,7 @@ class _SeedTextFieldState extends State<SeedTextField> {
                   maxLength: widget.maxLength,
                   buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   textCapitalization: widget.textCapitalization,
-                  style: TextStyle(
-                    fontSize: _fontSize,
+                  style: _inputStyle.copyWith(
                     color: widget.isDisabled
                         ? AppSemanticColors.textDisabled
                         : AppSemanticColors.textPrimary,
@@ -234,8 +231,7 @@ class _SeedTextFieldState extends State<SeedTextField> {
                     isCollapsed: true,
                     border: InputBorder.none,
                     hintText: widget.placeholder,
-                    hintStyle: TextStyle(
-                      fontSize: _fontSize,
+                    hintStyle: _inputStyle.copyWith(
                       color: widget.isDisabled
                           ? AppSemanticColors.textDisabled
                           : AppSemanticColors.textTertiary,
@@ -277,8 +273,7 @@ class _SeedTextFieldState extends State<SeedTextField> {
           const SizedBox(height: AppSpacing.space1_5),
           Text(
             hasError ? errorText : widget.helperText!,
-            style: TextStyle(
-              fontSize: AppTypography.fontSizeXs,
+            style: AppTypography.bodySmall.copyWith(
               color: hasError
                   ? AppSemanticColors.statusErrorText
                   : AppSemanticColors.textTertiary,

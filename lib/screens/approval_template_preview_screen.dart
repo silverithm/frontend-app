@@ -163,7 +163,7 @@ class _ApprovalTemplatePreviewScreenState
       appBar: AppBar(
         title: Text(
           t.name,
-          style: AppTypography.heading6,
+          style: AppTypography.heading5,
           overflow: TextOverflow.ellipsis,
         ),
         elevation: 0,
@@ -210,7 +210,7 @@ class _ApprovalTemplatePreviewScreenState
                       const SizedBox(height: AppSpacing.space1),
                       Text(
                         '실제 문서의 항목 구성입니다. 값은 다음 화면에서 입력합니다.',
-                        style: AppTypography.caption
+                        style: AppTypography.bodySmall
                             .copyWith(color: AppSemanticColors.textTertiary),
                       ),
                       const SizedBox(height: AppSpacing.space3),
@@ -270,7 +270,7 @@ class _ApprovalTemplatePreviewScreenState
                                       if (t.fileSize != null)
                                         Text(
                                           _formatFileSize(t.fileSize!),
-                                          style: AppTypography.caption.copyWith(
+                                          style: AppTypography.bodySmall.copyWith(
                                               color: AppSemanticColors.textTertiary),
                                         ),
                                     ],
@@ -303,7 +303,7 @@ class _ApprovalTemplatePreviewScreenState
                               const SizedBox(height: AppSpacing.space2),
                               Text(
                                 '이 형식은 앱에서 바로 미리보기를 지원하지 않아 다운로드 후 기기의 다른 앱으로 엽니다.',
-                                style: AppTypography.caption
+                                style: AppTypography.bodySmall
                                     .copyWith(color: AppSemanticColors.textTertiary),
                               ),
                             ],

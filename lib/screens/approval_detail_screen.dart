@@ -311,7 +311,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       appBar: AppBar(
         title: Text(
           '결재 상세',
-          style: AppTypography.heading6,
+          style: AppTypography.heading5,
         ),
         elevation: 0,
         centerTitle: true,
@@ -367,7 +367,6 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                           _approval.title,
                           style: AppTypography.heading5.copyWith(
                             color: AppSemanticColors.textPrimary,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -557,7 +556,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                                   else if (_approval.attachmentFileSize != null)
                                     Text(
                                       _formatFileSize(_approval.attachmentFileSize!),
-                                      style: AppTypography.caption.copyWith(
+                                      style: AppTypography.bodySmall.copyWith(
                                         color: AppSemanticColors.textTertiary,
                                       ),
                                     ),
@@ -630,9 +629,8 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           '처리 정보',
-                          style: AppTypography.labelLarge.copyWith(
+                          style: AppTypography.titleSmall.copyWith(
                             color: AppSemanticColors.textPrimary,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.space2),
@@ -700,9 +698,8 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           '결재 의견',
-                          style: AppTypography.labelLarge.copyWith(
+                          style: AppTypography.titleSmall.copyWith(
                             color: AppSemanticColors.textPrimary,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -755,9 +752,8 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           '반려 사유',
-                          style: AppTypography.labelLarge.copyWith(
+                          style: AppTypography.titleSmall.copyWith(
                             color: AppSemanticColors.textPrimary,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -799,7 +795,6 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
             value,
             style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textPrimary,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ),

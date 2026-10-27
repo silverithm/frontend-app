@@ -136,7 +136,6 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 widget.title,
                 style: AppTypography.heading6.copyWith(
                   color: AppSemanticColors.textPrimary,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
               IconButton(
@@ -186,7 +185,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 ),
                 child: Text(
                   '등록된 서명이 없습니다. 이번에는 직접 그려 승인하세요.\n프로필 > 결재 서명 관리에서 등록하면 다음부터 바로 승인할 수 있습니다.',
-                  style: AppTypography.caption.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.statusInfoIcon,
                   ),
                 ),
@@ -208,7 +207,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => Center(
                       child: Text('서명 미리보기 실패',
-                          style: AppTypography.caption
+                          style: AppTypography.bodySmall
                               .copyWith(color: AppSemanticColors.textTertiary)),
                     ),
                   ),
@@ -272,11 +271,10 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
           child: Center(
             child: Text(
               text,
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.titleSmall.copyWith(
                 color: selected
                     ? AppSemanticColors.textInverse
                     : AppSemanticColors.textSecondary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),

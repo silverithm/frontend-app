@@ -40,7 +40,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   // 유형(일반/필수/대체)과 기간(연차/반차)을 한 목록에서 함께 고르므로
   // '필수 반차' 같은 조합이 생기지 않는다.
   VacationKind _selectedKind = VacationKind.regular;
-  VacationDetailType _detailType = VacationDetailType.personal; // 연차 계열이 아닐 때만 쓰는 세부 유형
+  VacationDetailType _detailType =
+      VacationDetailType.personal; // 연차 계열이 아닐 때만 쓰는 세부 유형
   bool _isSubmitting = false;
 
   // 선택 날짜의 휴무 현황 — 제한 인원이 보여야 겹치기 전에 조정할 수 있다
@@ -134,9 +135,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
               const SizedBox(width: AppSpacing.space2),
               Text(
                 _vacationNoticeTitle,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                style: AppTypography.titleSmall.copyWith(
                   color: AppSemanticColors.textPrimary,
                 ),
               ),
@@ -151,14 +150,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                 children: [
                   Text(
                     '· ',
-                    style: TextStyle(color: AppSemanticColors.textSecondary),
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
                   ),
                   Expanded(
                     child: Text(
                       notice,
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.45,
+                      style: AppTypography.bodySmall.copyWith(
                         color: AppSemanticColors.textSecondary,
                       ),
                     ),
@@ -458,9 +457,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         ),
         child: Text(
           kind.label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+          style: AppTypography.labelStrong.copyWith(
             color: isSelected
                 ? AppSemanticColors.textInverse
                 : AppSemanticColors.textSecondary,
@@ -504,13 +501,10 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
               child: Center(
                 child: Text(
                   text,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                  style: AppTypography.titleSmall.copyWith(
                     color: isSelected
                         ? selectedTextColor.withValues(alpha: 0.9)
                         : AppSemanticColors.textSecondary,
-                    letterSpacing: -0.025,
                   ),
                 ),
               ),
@@ -578,11 +572,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                               const SizedBox(width: AppSpacing.space3),
                               Text(
                                 '휴무 신청',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
+                                style: AppTypography.heading5.copyWith(
                                   color: AppSemanticColors.textPrimary,
-                                  letterSpacing: -0.025,
                                 ),
                               ),
                             ],
@@ -656,22 +647,16 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 children: [
                                   Text(
                                     '선택된 날짜',
-                                    style: TextStyle(
+                                    style: AppTypography.bodySmall.copyWith(
                                       color: AppSemanticColors
                                           .interactivePrimaryDefault,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.025,
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.space1),
                                   Text(
                                     _formatSelectedDate(widget.selectedDate),
-                                    style: TextStyle(
+                                    style: AppTypography.titleMedium.copyWith(
                                       color: AppSemanticColors.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
-                                      letterSpacing: -0.025,
                                     ),
                                   ),
                                   // 같은 직종이 이 날 몇 명 쉬는지 — 웹 근무조정과 같은 정보
@@ -682,10 +667,9 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       _dayVacationCount! >= _dayMaxPeople!
                                           ? '휴무 인원 $_dayVacationCount/$_dayMaxPeople명 · 마감'
                                           : '휴무 인원 $_dayVacationCount/$_dayMaxPeople명',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: _dayVacationCount! >= _dayMaxPeople!
+                                      style: AppTypography.titleSmall.copyWith(
+                                        color:
+                                            _dayVacationCount! >= _dayMaxPeople!
                                             ? AppSemanticColors.statusErrorText
                                             : AppSemanticColors.textSecondary,
                                       ),
@@ -772,11 +756,8 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                 children: [
                                   Text(
                                     '휴무 종류',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                                    style: AppTypography.titleSmall.copyWith(
                                       color: AppSemanticColors.textPrimary,
-                                      letterSpacing: -0.025,
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.space3),
@@ -792,8 +773,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                   const SizedBox(height: AppSpacing.space2),
                                   Text(
                                     _selectedKind.description,
-                                    style: TextStyle(
-                                      fontSize: 12,
+                                    style: AppTypography.bodySmall.copyWith(
                                       color: AppSemanticColors.textSecondary,
                                     ),
                                   ),
@@ -806,9 +786,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                     const SizedBox(height: AppSpacing.space4),
                                     Text(
                                       '세부 유형',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
+                                      style: AppTypography.titleSmall.copyWith(
                                         color: AppSemanticColors.textSecondary,
                                       ),
                                     ),
@@ -843,15 +821,14 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                             ),
                                             child: Text(
                                               detail.label,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: isSelected
-                                                    ? AppSemanticColors
-                                                          .textInverse
-                                                    : AppSemanticColors
-                                                          .textSecondary,
-                                              ),
+                                              style: AppTypography.labelStrong
+                                                  .copyWith(
+                                                    color: isSelected
+                                                        ? AppSemanticColors
+                                                              .textInverse
+                                                        : AppSemanticColors
+                                                              .textSecondary,
+                                                  ),
                                             ),
                                           ),
                                         );
@@ -889,12 +866,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                       const SizedBox(width: AppSpacing.space2),
                                       Text(
                                         '휴무 사유',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppSemanticColors.textPrimary,
-                                          letterSpacing: -0.025,
-                                        ),
+                                        style: AppTypography.titleSmall
+                                            .copyWith(
+                                              color:
+                                                  AppSemanticColors.textPrimary,
+                                            ),
                                       ),
                                       Container(
                                         margin: const EdgeInsets.only(
@@ -918,15 +894,15 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                                           _selectedKind.reasonRequired
                                               ? '필수'
                                               : '선택사항',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: _selectedKind.reasonRequired
-                                                ? AppSemanticColors
-                                                      .statusErrorIcon
-                                                : AppSemanticColors
-                                                      .textTertiary,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: AppTypography.bodySmall
+                                              .copyWith(
+                                                color:
+                                                    _selectedKind.reasonRequired
+                                                    ? AppSemanticColors
+                                                          .statusErrorIcon
+                                                    : AppSemanticColors
+                                                          .textTertiary,
+                                              ),
                                         ),
                                       ),
                                     ],

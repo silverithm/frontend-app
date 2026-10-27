@@ -31,9 +31,8 @@ class ScheduleRepeatFields extends StatelessWidget {
       children: [
         Text(
           '반복',
-          style: AppTypography.labelLarge.copyWith(
+          style: AppTypography.titleSmall.copyWith(
             color: AppSemanticColors.textPrimary,
-            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: AppSpacing.space2),
@@ -214,11 +213,11 @@ class _WeekdayButton extends StatelessWidget {
             child: Center(
               child: Text(
                 label,
-                style: AppTypography.labelLarge.copyWith(
+                style: (selected ? AppTypography.titleSmall : AppTypography.bodyMedium)
+                    .copyWith(
                   color: selected
                       ? AppSemanticColors.textInverse
                       : AppSemanticColors.textSecondary,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ),

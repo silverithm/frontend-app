@@ -85,9 +85,8 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
         icon: const Icon(Icons.add),
         label: Text(
           '업무 등록',
-          style: AppTypography.labelLarge.copyWith(
+          style: AppTypography.titleSmall.copyWith(
             color: AppSemanticColors.textInverse,
-            fontWeight: AppTypography.fontWeightSemibold,
           ),
         ),
       ),
@@ -137,11 +136,11 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
           mine > 0
               ? '진행 중 ${inProgress.length}건 · 내가 맡은 업무 $mine건'
               : '진행 중 ${inProgress.length}건',
-          style: AppTypography.bodySmall.copyWith(
+          style: AppTypography.bodyMedium.copyWith(
             color: AppSemanticColors.textSecondary,
           ),
         ),
-        const SizedBox(height: AppSpacing.space1),
+        const SizedBox(height: AppSpacing.space2),
         if (inProgress.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
@@ -170,7 +169,7 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
                   const SizedBox(width: AppSpacing.space1),
                   Text(
                     '끝낸 업무 ${done.length}건',
-                    style: AppTypography.labelLarge.copyWith(
+                    style: AppTypography.titleSmall.copyWith(
                       color: AppSemanticColors.textSecondary,
                     ),
                   ),
@@ -184,19 +183,38 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
     );
   }
 
-  List<Widget> _rows(List<WorkTask> tasks, DateTime today) => [
-    for (final entry in tasks.asMap().entries) ...[
-      if (entry.key > 0)
-        const Divider(height: 1, color: AppSemanticColors.borderSubtle),
-      WorkTaskRow(
-        task: entry.value,
-        today: today,
-        isHighlighted: entry.value.id == _highlightedId,
-        onTap: () {
-          setState(() => _highlightedId = null);
-          _open(entry.value);
-        },
-      ),
-    ],
-  ];
+  // 다른 목록(홈·공지·결재)처럼 흰 카드 안에 행을 모은다
+  List<Widget> _rows(List<WorkTask> tasks, DateTime today) => tasks.isEmpty
+      ? const []
+      : [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+            decoration: BoxDecoration(
+              color: AppSemanticColors.surfaceDefault,
+              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+              border: Border.all(color: AppSemanticColors.borderSubtle),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (final entry in tasks.asMap().entries) ...[
+                  if (entry.key > 0)
+                    const Divider(
+                      height: 1,
+                      color: AppSemanticColors.borderSubtle,
+                    ),
+                  WorkTaskRow(
+                    task: entry.value,
+                    today: today,
+                    isHighlighted: entry.value.id == _highlightedId,
+                    onTap: () {
+                      setState(() => _highlightedId = null);
+                      _open(entry.value);
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ];
 }

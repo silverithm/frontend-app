@@ -1002,7 +1002,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     Text(
                                       '기본 정보',
                                       style: AppTypography.heading6.copyWith(
-                                        fontWeight: FontWeight.bold,
                                         color: AppSemanticColors.textPrimary,
                                       ),
                                     ),
@@ -1028,6 +1027,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                                     // 직원 유형 (기관 대표(app_user) 로그인은 members 행이 없어
                                     // 역할 변경 API가 항상 실패한다 — 사진 업로드와 같은 기준으로 숨긴다)
+                                    // 직책이 직원 유형 이름과 같으면(센터장/센터장) 한 줄만 보인다 — 직책 쪽이 바꿀 수 있는 자리다
+                                    if (!_roleSameAsPosition(user)) ...[
                                     if (_isCompanyOwnerLogin(user))
                                       _buildInfoRow(
                                         icon: _getRoleIcon(_effectiveRole(user)),
@@ -1075,6 +1076,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       ),
                                     ),
                                     const SizedBox(height: AppSpacing.space4),
+                                    ],
 
                                     // 부서 (있는 경우)
                                     if (user.department != null &&
@@ -1157,7 +1159,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             ),
                                             child: Text(
                                               '결재선과 채팅에 이 직책으로 표시됩니다',
-                                              style: AppTypography.caption
+                                              style: AppTypography.bodySmall
                                                   .copyWith(
                                                 color: AppSemanticColors
                                                     .textTertiary,
@@ -1257,7 +1259,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         Text(
                                           '회사 코드',
                                           style: AppTypography.heading6.copyWith(
-                                            fontWeight: FontWeight.bold,
                                             color: AppSemanticColors.textPrimary,
                                           ),
                                         ),
@@ -1285,7 +1286,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       child: SelectableText(
                                         user.company!.companyCode!,
                                         style: AppTypography.heading5.copyWith(
-                                          fontWeight: FontWeight.bold,
                                           letterSpacing: 2,
                                           color: AppSemanticColors.textPrimary,
                                         ),
@@ -1526,7 +1526,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   Text(
                                     '약관 및 정책',
                                     style: AppTypography.heading6.copyWith(
-                                      fontWeight: FontWeight.bold,
                                       color: AppSemanticColors.textPrimary,
                                     ),
                                   ),
@@ -1600,7 +1599,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: Text(
                         // 실제 앱 버전 표시 (하드코딩 금지)
                         'Version ${context.watch<AppVersionProvider>().currentVersion.isEmpty ? '-' : context.watch<AppVersionProvider>().currentVersion}',
-                        style: AppTypography.caption.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),
                       ),
@@ -1761,7 +1760,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Text(
             title,
             style: AppTypography.bodySmall.copyWith(
-              fontWeight: FontWeight.w500,
               color: AppSemanticColors.textTertiary,
             ),
           ),
@@ -1773,7 +1771,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.bodyMedium.copyWith(
-              fontWeight: FontWeight.w500,
               color: AppSemanticColors.textPrimary,
             ),
           ),
@@ -1811,6 +1808,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       default:
         return Icons.badge_outlined;
     }
+  }
+
+  bool _roleSameAsPosition(dynamic user) {
+    final position = (user.position as String?)?.trim() ?? '';
+    return AdminUtils.isAdmin(user) &&
+        position.isNotEmpty &&
+        position == _getRoleDisplayName(_effectiveRole(user));
   }
 
   String _getRoleDisplayName(String role) {
@@ -1887,20 +1891,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                   children: [
                     Text(
                       '구독 정보',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppSemanticColors.textPrimary,
-                      ),
+                      style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.textPrimary),
                     ),
                     const SizedBox(height: AppSpacing.space0_5),
                     Text(
                       '구독이 필요합니다 (탭하여 구독하기)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppSemanticColors.statusWarningIcon,
-                      ),
+                      style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.statusWarningIcon),
                     ),
                   ],
                 ),
@@ -1959,11 +1955,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 children: [
                   Text(
                     '구독 정보',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppSemanticColors.textPrimary,
-                    ),
+                    style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.textPrimary),
                   ),
                   const SizedBox(height: AppSpacing.space0_5),
                   Row(
@@ -1971,7 +1963,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       Text(
                         subscription.planDisplayName,
                         style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w500,
                           color: AppSemanticColors.textPrimary,
                         ),
                       ),
@@ -1987,11 +1978,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ),
                         child: Text(
                           subscription.statusDisplayName,
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTag.labelStyle.copyWith(color: AppColors.white),
                         ),
                       ),
                     ],
@@ -2031,7 +2018,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 const SizedBox(width: AppSpacing.space2),
                 Text(
                   '구독 정보',
-                  style: AppTypography.heading5.copyWith(
+                  style: AppTypography.heading6.copyWith(
                     color: AppSemanticColors.textPrimary,
                   ),
                 ),
@@ -2114,7 +2101,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             value,
             style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textPrimary,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ),

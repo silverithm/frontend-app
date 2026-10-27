@@ -10,6 +10,7 @@ import '../models/notice.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -151,7 +152,6 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                         notice.title,
                         style: AppTypography.heading5.copyWith(
                           color: AppSemanticColors.textPrimary,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.space4),
@@ -315,9 +315,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             child: Center(
               child: Text(
                 reader.userName.isNotEmpty ? reader.userName[0] : '?',
-                style: AppTypography.labelSmall.copyWith(
+                style: AppTag.labelStyle.copyWith(
                   color: AppSemanticColors.textSecondary,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -333,7 +332,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
           ),
           Text(
             DateFormat('MM.dd HH:mm').format(reader.readAt),
-            style: AppTypography.caption.copyWith(
+            style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
           ),
@@ -358,9 +357,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             const SizedBox(width: AppSpacing.space2),
             Text(
               '댓글 ${comments.length}',
-              style: AppTypography.bodyMedium.copyWith(
+              style: AppTypography.titleSmall.copyWith(
                 color: AppSemanticColors.textPrimary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -416,9 +414,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                 child: Center(
                   child: Text(
                     comment.authorName.isNotEmpty ? comment.authorName[0] : '?',
-                    style: AppTypography.labelSmall.copyWith(
+                    style: AppTag.labelStyle.copyWith(
                       color: AppSemanticColors.textSecondary,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -428,13 +425,12 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                 comment.authorName,
                 style: AppTypography.labelMedium.copyWith(
                   color: AppSemanticColors.textPrimary,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(width: AppSpacing.space2),
               Text(
                 DateFormat('MM.dd HH:mm').format(comment.createdAt),
-                style: AppTypography.caption.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textTertiary,
                 ),
               ),
@@ -552,9 +548,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             const SizedBox(width: AppSpacing.space2),
             Text(
               '첨부파일 ${attachments.length}',
-              style: AppTypography.bodyMedium.copyWith(
+              style: AppTypography.titleSmall.copyWith(
                 color: AppSemanticColors.textPrimary,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -613,7 +608,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                     const SizedBox(height: AppSpacing.space1),
                     Text(
                       attachment.fileSizeText,
-                      style: AppTypography.caption.copyWith(
+                      style: AppTypography.bodySmall.copyWith(
                         color: AppSemanticColors.textTertiary,
                       ),
                     ),

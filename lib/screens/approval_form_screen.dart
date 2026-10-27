@@ -77,7 +77,10 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       _approvalLine.addAll(_candidatesFromSteps(draft.approvalLine));
     }
 
-    _loadTemplates();
+    // build 도중 notifyListeners가 불리지 않게 첫 프레임 뒤로 미룬다
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadTemplates();
+    });
   }
 
   /// 저장된 결재선(단계)을 다시 후보 모양으로 되돌린다.
@@ -580,7 +583,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       appBar: AppBar(
         title: Text(
           _isEditingDraft ? '임시저장 이어쓰기' : '결재 요청',
-          style: AppTypography.heading6,
+          style: AppTypography.heading5,
         ),
         elevation: 0,
         centerTitle: true,
@@ -597,11 +600,32 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                   _selectedTemplate == null &&
                   _titleController.text.isEmpty &&
                   _reusableApprovals().isNotEmpty) ...[
-                SeedListCell(
-                  leadingIcon: Icons.history,
-                  title: '이전 기안에서 불러오기',
-                  description: '지난번에 올린 기안의 양식·제목·내용으로 시작해요',
+                // 제목 아래 한 줄 링크 — 큰 카드로 두면 폼의 첫 항목처럼 보인다
+                InkWell(
                   onTap: _openPreviousPicker,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.space1,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.history,
+                          size: 16,
+                          color: AppSemanticColors.interactivePrimaryDefault,
+                        ),
+                        const SizedBox(width: AppSpacing.space1_5),
+                        Text(
+                          '이전 기안에서 불러오기',
+                          style: AppTypography.titleSmall.copyWith(
+                            color: AppSemanticColors.interactivePrimaryDefault,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.space4),
               ],
@@ -704,7 +728,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                                           _selectedTemplate!.description!.isNotEmpty)
                                         Text(
                                           _selectedTemplate!.description!,
-                                          style: AppTypography.caption.copyWith(
+                                          style: AppTypography.bodySmall.copyWith(
                                             color: AppSemanticColors.textTertiary,
                                           ),
                                           maxLines: 1,
@@ -716,9 +740,8 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                           const SizedBox(width: AppSpacing.space2),
                           Text(
                             _selectedTemplate == null ? '양식 둘러보기' : '변경',
-                            style: AppTypography.bodySmall.copyWith(
+                            style: AppTypography.titleSmall.copyWith(
                               color: AppSemanticColors.interactivePrimaryDefault,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           Icon(
@@ -784,8 +807,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                     children: [
                       Text(
                         '결재선 (양식에 지정됨)',
-                        style: AppTypography.bodySmall.copyWith(
-                          fontWeight: FontWeight.w600,
+                        style: AppTypography.titleSmall.copyWith(
                           color: AppSemanticColors.textPrimary,
                         ),
                       ),
@@ -873,7 +895,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                             ),
                             Text(
                               _formatFileSize(_selectedFile!.size),
-                              style: AppTypography.caption.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                 color: AppSemanticColors.textTertiary,
                               ),
                             ),
@@ -933,7 +955,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                               _keptAttachmentFileSize != null
                                   ? '${_formatFileSize(_keptAttachmentFileSize!)} · 저장된 첨부'
                                   : '저장된 첨부',
-                              style: AppTypography.caption.copyWith(
+                              style: AppTypography.bodySmall.copyWith(
                                 color: AppSemanticColors.textTertiary,
                               ),
                             ),
@@ -995,7 +1017,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                         const SizedBox(height: AppSpacing.space1),
                         Text(
                           'PDF, DOC, XLS, JPG, PNG (최대 10MB)',
-                          style: AppTypography.caption.copyWith(
+                          style: AppTypography.bodySmall.copyWith(
                             color: AppSemanticColors.textTertiary,
                           ),
                         ),
@@ -1042,25 +1064,13 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     );
   }
 
+  /// 항목 제목 — 아이콘 타일 없이 글자만(titleSmall). 필수 표시는 같은 크기의 빨간 별.
   Widget _buildSectionHeader(String title, IconData icon, {required bool isRequired}) {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.space2),
-          decoration: BoxDecoration(
-            color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: AppSemanticColors.interactivePrimaryDefault,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.space3),
         Text(
           title,
-          style: AppTypography.heading6.copyWith(
+          style: AppTypography.titleSmall.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
         ),
@@ -1068,7 +1078,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
           const SizedBox(width: AppSpacing.space1),
           Text(
             '*',
-            style: AppTypography.heading6.copyWith(
+            style: AppTypography.titleSmall.copyWith(
               color: AppSemanticColors.statusErrorIcon,
             ),
           ),

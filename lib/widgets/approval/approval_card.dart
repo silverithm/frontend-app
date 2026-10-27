@@ -83,19 +83,12 @@ class ApprovalCard extends StatelessWidget {
         Expanded(
           child: Text(
             approval.title,
-            style: AppTypography.heading6.copyWith(
+            style: AppTypography.titleMedium.copyWith(
               color: AppSemanticColors.textPrimary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-        ),
-        const SizedBox(width: AppSpacing.space2),
-        // 카드를 누르면 공문 상세를 볼 수 있다는 신호
-        Icon(
-          Icons.visibility_outlined,
-          size: 18,
-          color: AppSemanticColors.textTertiary,
         ),
         const SizedBox(width: AppSpacing.space2),
         ApprovalStatusBadge(status: approval.status),
@@ -177,7 +170,7 @@ class ApprovalCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.space1),
               Text(
                 '${approval.processedByName}님이 ${dateFormat.format(approval.processedAt!)}에 처리',
-                style: AppTypography.caption.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textTertiary,
                 ),
               ),

@@ -71,8 +71,7 @@ class TodayScheduleDialog extends StatelessWidget {
                       schedule.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: AppTypography.titleSmall.copyWith(
                         color: AppSemanticColors.textPrimary,
                       ),
                     ),
