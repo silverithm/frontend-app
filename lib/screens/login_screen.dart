@@ -595,9 +595,9 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         minimumSize: const Size(0, 36),
         tapTargetSize: MaterialTapTargetSize.padded,
-        textStyle: AppTypography.labelMedium,
       ),
-      child: Text(label),
+      // textStyle을 버튼 스타일에 넣으면 테마의 서체(Pretendard)가 빠진다 — 글자에 직접 준다
+      child: Text(label, style: AppTypography.labelMedium),
     );
   }
 

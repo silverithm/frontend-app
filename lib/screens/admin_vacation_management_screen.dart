@@ -1051,9 +1051,8 @@ class _AdminVacationManagementScreenState
               vertical: AppSpacing.space2,
             ),
             minimumSize: const Size(0, 36),
-            textStyle: AppTypography.buttonSmall,
           ),
-          child: const Text('삭제'),
+          child: Text('삭제', style: AppTypography.buttonSmall),
         ),
         if (isPending) ...[
           const Spacer(),
