@@ -14,6 +14,7 @@ class AppTypography {
   static const double fontSizeXs = 11.0;
   static const double fontSizeSm = 12.0;
   static const double fontSizeBase = 14.0;
+  static const double fontSizeMd = 15.0;
   static const double fontSizeLg = 16.0;
   static const double fontSizeXl = 18.0;
   static const double fontSize2xl = 20.0;
@@ -23,6 +24,7 @@ class AppTypography {
 
   // Line heights
   static const double lineHeightTight = 1.25;
+  static const double lineHeightSnug = 1.4;
   static const double lineHeightNormal = 1.5;
   static const double lineHeightRelaxed = 1.75;
   static const double lineHeightLoose = 2.0;
@@ -44,6 +46,18 @@ class AppTypography {
   static const double letterSpacingWider = 0.05;
 
   // Text styles
+  //
+  // 글자 역할 표(2026-10-27) — 같은 역할은 화면이 달라도 같은 토큰 하나를 쓰고, 굵기를 덮어쓰지 않는다.
+  // 굵기는 w400(본문)·w600(제목·강조)·w700(화면·구역 제목, 큰 숫자) 세 단계만 쓴다.
+  //   화면·시트·대화상자 제목   heading5 18/w700
+  //   구역 머리                 heading6 16/w700
+  //   카드·목록 한 줄의 제목    titleMedium 15/w600
+  //   작은 행 제목·폼 라벨      titleSmall 14/w600
+  //   본문                      bodyMedium 14/w400
+  //   부제·메타(날짜·작성자)    bodySmall 12/w400 (textSecondary·textTertiary)
+  //   꼬리표·배지 숫자          labelSmall 11 (AppTag) — 11은 이 자리에만
+  //   큰 숫자 요약              heading4 20/w700
+  // 예전에는 같은 '목록 제목'이 14/w600·15/w500·16/w600·16/w700으로 화면마다 달라 들쭉날쭉해 보였다.
   static const TextStyle heading1 = TextStyle(
     fontSize: fontSize5xl,
     fontWeight: fontWeightBold,
@@ -83,6 +97,22 @@ class AppTypography {
     fontSize: fontSizeLg,
     fontWeight: fontWeightBold,
     height: lineHeightNormal,
+    letterSpacing: letterSpacingNormal,
+  );
+
+  /// 카드·목록 한 줄의 제목 — 공지·결재·알림·채팅방·게시글·어르신 카드 등
+  static const TextStyle titleMedium = TextStyle(
+    fontSize: fontSizeMd,
+    fontWeight: fontWeightSemibold,
+    height: lineHeightSnug,
+    letterSpacing: letterSpacingNormal,
+  );
+
+  /// 작은 행 제목·폼 라벨·카드 안 소제목
+  static const TextStyle titleSmall = TextStyle(
+    fontSize: fontSizeBase,
+    fontWeight: fontWeightSemibold,
+    height: lineHeightSnug,
     letterSpacing: letterSpacingNormal,
   );
 

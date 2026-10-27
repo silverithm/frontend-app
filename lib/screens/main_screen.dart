@@ -298,8 +298,9 @@ class _MainScreenState extends State<MainScreen>
               elevation: 0,
               selectedItemColor: AppSemanticColors.interactivePrimaryDefault,
               unselectedItemColor: AppSemanticColors.textTertiary,
-              selectedLabelStyle: AppTypography.labelMedium.copyWith(
-                fontWeight: FontWeight.bold,
+              // 선택·비선택 같은 크기(11) — 크기가 바뀌면 탭을 옮길 때마다 아이콘·글자가 흔들린다
+              selectedLabelStyle: AppTypography.labelSmall.copyWith(
+                fontWeight: AppTypography.fontWeightBold,
               ),
               unselectedLabelStyle: AppTypography.labelSmall,
               items: navItems,

@@ -33,9 +33,11 @@ class CareVAppBar extends StatelessWidget implements PreferredSizeWidget {
     final canPop = showBackButton ?? ModalRoute.of(context)?.canPop ?? false;
 
     return AppBar(
+      // 상단 바 제목은 앱 테마(AppTheme)와 같은 heading5 18 — 예전엔 이 위젯만 16이라
+      // 화면을 넘길 때 제목이 커졌다 작아졌다 했다(2026-10-27)
       title: Text(
         title,
-        style: AppTypography.heading6.copyWith(
+        style: AppTypography.heading5.copyWith(
           color: AppSemanticColors.headerForeground,
         ),
       ),
