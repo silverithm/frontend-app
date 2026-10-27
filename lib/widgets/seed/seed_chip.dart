@@ -72,11 +72,7 @@ class SeedChip extends StatelessWidget {
               ],
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: AppTypography.fontSizeBase, // t4
-                  fontWeight: AppTypography.fontWeightMedium,
-                  color: foreground,
-                ),
+                style: AppTypography.titleSmall.copyWith(color: foreground),
               ),
             ],
           ),

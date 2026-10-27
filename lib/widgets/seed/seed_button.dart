@@ -270,7 +270,7 @@ class _SeedButtonState extends State<SeedButton> {
     final colors = _colors;
     final textStyle = TextStyle(
       fontSize: _fontSize,
-      fontWeight: AppTypography.fontWeightBold,
+      fontWeight: AppTypography.fontWeightSemibold,
       color: colors.foreground,
     );
 

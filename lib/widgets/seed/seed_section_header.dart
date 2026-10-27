@@ -32,9 +32,7 @@ class SeedSectionHeader extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: AppTypography.fontSizeLg, // t6
-                  fontWeight: AppTypography.fontWeightBold,
+                style: AppTypography.heading6.copyWith(
                   color: AppSemanticColors.textPrimary,
                 ),
               ),
@@ -42,8 +40,7 @@ class SeedSectionHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle!,
-                  style: TextStyle(
-                    fontSize: AppTypography.fontSizeSm,
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 ),
@@ -56,9 +53,7 @@ class SeedSectionHeader extends StatelessWidget {
             onTap: onAction,
             child: Text(
               actionLabel!,
-              style: TextStyle(
-                fontSize: AppTypography.fontSizeSm,
-                fontWeight: AppTypography.fontWeightSemibold,
+              style: AppTypography.buttonSmall.copyWith(
                 color: AppSemanticColors.brandDefault,
               ),
             ),

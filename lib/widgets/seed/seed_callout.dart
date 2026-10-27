@@ -28,13 +28,18 @@ class SeedCallout extends StatelessWidget {
       case SeedCalloutVariant.neutral:
         return const _SeedCalloutColors(
           background: AppSemanticColors.backgroundSecondary,
-          foreground: AppSemanticColors.textPrimary,
+          foreground: AppSemanticColors.textSecondary,
+          titleColor: AppSemanticColors.textPrimary,
+          bodyColor: AppSemanticColors.textSecondary,
           defaultIcon: Icons.info_outline,
         );
       case SeedCalloutVariant.info:
         return const _SeedCalloutColors(
           background: AppSemanticColors.statusInfoBackground,
-          foreground: AppSemanticColors.statusInfoText,
+          foreground: AppSemanticColors.statusInfoIcon,
+          // 파랑은 아이콘에만 — 제목·본문까지 파랗게 칠하면 틸 팔레트에서 따로 놀고 읽기도 힘들다
+          titleColor: AppSemanticColors.textPrimary,
+          bodyColor: AppSemanticColors.textSecondary,
           defaultIcon: Icons.info_outline,
         );
       case SeedCalloutVariant.warning:
@@ -83,21 +88,13 @@ class SeedCallout extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: AppTypography.fontSizeBase, // t4
-                    fontWeight: AppTypography.fontWeightBold,
-                    color: colors.foreground,
-                  ),
+                  style: AppTypography.titleSmall.copyWith(color: colors.titleColor),
                 ),
                 if (description != null && description!.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.space0_5),
                   Text(
                     description!,
-                    style: TextStyle(
-                      fontSize: AppTypography.fontSizeBase, // t4
-                      fontWeight: AppTypography.fontWeightNormal,
-                      color: colors.foreground,
-                    ),
+                    style: AppTypography.bodySmall.copyWith(color: colors.bodyColor),
                   ),
                 ],
               ],
@@ -112,11 +109,19 @@ class SeedCallout extends StatelessWidget {
 class _SeedCalloutColors {
   final Color background;
   final Color foreground;
+  final Color? titleColor0;
+  final Color? bodyColor0;
   final IconData defaultIcon;
 
   const _SeedCalloutColors({
     required this.background,
     required this.foreground,
+    Color? titleColor,
+    Color? bodyColor,
     required this.defaultIcon,
-  });
+  })  : titleColor0 = titleColor,
+        bodyColor0 = bodyColor;
+
+  Color get titleColor => titleColor0 ?? foreground;
+  Color get bodyColor => bodyColor0 ?? foreground;
 }
