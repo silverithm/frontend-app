@@ -269,8 +269,8 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
 
               Text(
                 '오늘의 사진 (${_images.length}/$_maxImages)',
-                style: AppTypography.labelLarge.copyWith(
-                  color: AppSemanticColors.textSecondary,
+                style: AppTypography.titleSmall.copyWith(
+                  color: AppSemanticColors.textPrimary,
                 ),
               ),
               const SizedBox(height: AppSpacing.space2),
@@ -301,8 +301,8 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
 
               Text(
                 '어디에 올릴 글인가요?',
-                style: AppTypography.labelLarge.copyWith(
-                  color: AppSemanticColors.textSecondary,
+                style: AppTypography.titleSmall.copyWith(
+                  color: AppSemanticColors.textPrimary,
                 ),
               ),
               const SizedBox(height: AppSpacing.space2),
