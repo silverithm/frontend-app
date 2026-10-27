@@ -166,9 +166,8 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                             Expanded(
                               child: Text(
                                 '내 서명이 필요한 회의록이에요. 내용을 확인한 뒤 하단 버튼으로 서명해주세요.',
-                                style: AppTypography.bodySmall.copyWith(
+                                style: AppTypography.labelMedium.copyWith(
                                   color: AppColors.careTealDeep,
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -210,9 +209,9 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '[${section['label'] ?? ''}]',
-                                style: AppTypography.labelLarge
-                                    .copyWith(color: AppColors.careTealDeep),
+                                '${section['label'] ?? ''}',
+                                style: AppTypography.titleSmall
+                                    .copyWith(color: AppSemanticColors.textPrimary),
                               ),
                               const SizedBox(height: AppSpacing.space2),
                               Text(
@@ -266,7 +265,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                                   else
                                     Text(
                                       signed ? '서명 완료' : '대기',
-                                      style: AppTypography.labelSmall.copyWith(
+                                      style: AppTypography.bodySmall.copyWith(
                                         color: signed ? AppColors.careTeal : AppColors.gray500,
                                       ),
                                     ),

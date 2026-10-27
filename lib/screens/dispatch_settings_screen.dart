@@ -353,8 +353,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       ),
       child: Text(
         type,
-        style: AppTypography.bodySmall.copyWith(
-          fontSize: 11,
+        style: AppTypography.labelSmall.copyWith(
           color: AppSemanticColors.textSecondary,
         ),
       ),
@@ -413,8 +412,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
             ),
             child: Text(
               roleLabel,
-              style: AppTypography.bodySmall.copyWith(
-                fontSize: 11,
+              style: AppTypography.labelSmall.copyWith(
                 color: index == 0
                     ? AppSemanticColors.brandDefault
                     : AppSemanticColors.textSecondary,

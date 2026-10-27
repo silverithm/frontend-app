@@ -18,6 +18,7 @@ import '../utils/admin_utils.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 
@@ -254,9 +255,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                 children: [
                   Text(
                     '자료 올리기',
-                    style: AppTypography.bodyLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTypography.heading5,
                   ),
                   const SizedBox(height: AppSpacing.space4),
                   SeedTextField(label: '제목', controller: titleController),
@@ -269,10 +268,8 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                   const SizedBox(height: AppSpacing.space3),
                   Text(
                     '분류',
-                    style: TextStyle(
-                      fontSize: AppTypography.fontSizeSm,
-                      fontWeight: AppTypography.fontWeightMedium,
-                      color: AppSemanticColors.textSecondary,
+                    style: AppTypography.titleSmall.copyWith(
+                      color: AppSemanticColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space1_5),
@@ -475,7 +472,6 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
             color: isSelected
                 ? AppSemanticColors.textInverse
                 : AppSemanticColors.textSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),
@@ -486,100 +482,115 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
     final fileSize = (item['fileSize'] as num?)?.toInt() ?? 0;
     final description = item['description']?.toString() ?? '';
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
         AppSpacing.space4,
         0,
         AppSpacing.space4,
         AppSpacing.space3,
       ),
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
+      child: Material(
         color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(color: AppSemanticColors.borderSubtle),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.description_outlined,
-                color: AppSemanticColors.textSecondary,
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['title']?.toString() ?? '',
-                      style: AppTypography.bodyLarge.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (description.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          side: BorderSide(color: AppSemanticColors.borderSubtle),
+        ),
+        // 카드 전체가 '열기' — 열기·삭제 단추 줄을 없애 카드 높이를 줄였다(삭제는 ⋮ 메뉴)
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          onTap: () => _openItem(item),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space4,
+              AppSpacing.space4,
+              AppSpacing.space2,
+              AppSpacing.space4,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.description_outlined,
+                  color: AppSemanticColors.textSecondary,
+                ),
+                const SizedBox(width: AppSpacing.space3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        description,
+                        item['title']?.toString() ?? '',
+                        style: AppTypography.titleMedium.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                        ),
+                      ),
+                      if (description.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.space0_5),
+                        Text(
+                          description,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.space2),
+                      Text(
+                        '${item['fileName'] ?? ''}',
                         style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textSecondary,
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.space1),
+                      Row(
+                        children: [
+                          AppTag(label: _categoryOf(item)),
+                          const SizedBox(width: AppSpacing.space2),
+                          Expanded(
+                            child: Text(
+                              '${_formatSize(fileSize)} · ${item['uploaderName'] ?? ''}',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (isAdmin)
+                  PopupMenuButton<String>(
+                    tooltip: '자료 메뉴',
+                    icon: Icon(
+                      Icons.more_vert,
+                      size: 20,
+                      color: AppSemanticColors.textTertiary,
+                    ),
+                    onSelected: (value) {
+                      if (value == 'delete') _deleteItem(item);
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Text(
+                          '삭제',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.statusErrorText,
+                          ),
                         ),
                       ),
                     ],
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space2,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.backgroundTertiary,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                ),
-                child: Text(
-                  _categoryOf(item),
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space3),
-          Text(
-            '${item['fileName'] ?? ''} · ${_formatSize(fileSize)} · ${item['uploaderName'] ?? ''}',
-            style: AppTypography.labelSmall.copyWith(
-              color: AppSemanticColors.textTertiary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: AppSpacing.space3),
-          Row(
-            children: [
-              SeedButton(
-                label: '열기',
-                size: SeedButtonSize.small,
-                variant: SeedButtonVariant.neutralWeak,
-                onPressed: () => _openItem(item),
-              ),
-              if (isAdmin) ...[
-                const SizedBox(width: AppSpacing.space2),
-                SeedButton(
-                  label: '삭제',
-                  size: SeedButtonSize.small,
-                  variant: SeedButtonVariant.criticalOutline,
-                  onPressed: () => _deleteItem(item),
-                ),
+                  )
+                else
+                  const SizedBox(width: AppSpacing.space2),
               ],
-            ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

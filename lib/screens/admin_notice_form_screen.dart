@@ -6,6 +6,7 @@ import '../models/notice.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_choice_tile.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -193,144 +194,51 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: AppTypography.labelLarge.copyWith(
+      style: AppTypography.titleSmall.copyWith(
         color: AppSemanticColors.textPrimary,
-        fontWeight: FontWeight.w600,
       ),
     );
   }
 
   Widget _buildPrioritySelector() {
-    return Row(
-      children: NoticePriority.values.map((priority) {
-        final isSelected = _selectedPriority == priority;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: priority != NoticePriority.values.last ? AppSpacing.space2 : 0,
-            ),
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _selectedPriority = priority;
-                });
-              },
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space3,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? _getPriorityColor(priority).withValues(alpha: 0.1)
-                      : AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  border: Border.all(
-                    color: isSelected
-                        ? _getPriorityColor(priority)
-                        : AppSemanticColors.borderDefault,
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      _getPriorityIcon(priority),
-                      color: isSelected
-                          ? _getPriorityColor(priority)
-                          : AppSemanticColors.textTertiary,
-                      size: 20,
-                    ),
-                    const SizedBox(height: AppSpacing.space1),
-                    Text(
-                      _getPriorityText(priority),
-                      style: AppTypography.labelSmall.copyWith(
-                        color: isSelected
-                            ? _getPriorityColor(priority)
-                            : AppSemanticColors.textSecondary,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    return _buildChoiceRow(
+      NoticePriority.values.map((priority) {
+        return AppChoiceTile(
+          label: _getPriorityText(priority),
+          icon: _getPriorityIcon(priority),
+          selected: _selectedPriority == priority,
+          // 긴급만 의미 색(빨강) — 아이콘·글자에만 쓴다
+          accentColor: priority == NoticePriority.high
+              ? AppSemanticColors.statusErrorIcon
+              : null,
+          onTap: () => setState(() => _selectedPriority = priority),
         );
       }).toList(),
     );
   }
 
   Widget _buildStatusSelector() {
-    return Row(
-      children: NoticeStatus.values.map((status) {
-        final isSelected = _selectedStatus == status;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: status != NoticeStatus.values.last ? AppSpacing.space2 : 0,
-            ),
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _selectedStatus = status;
-                });
-              },
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space3,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? _getStatusColor(status).withValues(alpha: 0.1)
-                      : AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  border: Border.all(
-                    color: isSelected
-                        ? _getStatusColor(status)
-                        : AppSemanticColors.borderDefault,
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      _getStatusIcon(status),
-                      color: isSelected
-                          ? _getStatusColor(status)
-                          : AppSemanticColors.textTertiary,
-                      size: 20,
-                    ),
-                    const SizedBox(height: AppSpacing.space1),
-                    Text(
-                      _getStatusText(status),
-                      style: AppTypography.labelSmall.copyWith(
-                        color: isSelected
-                            ? _getStatusColor(status)
-                            : AppSemanticColors.textSecondary,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    return _buildChoiceRow(
+      NoticeStatus.values.map((status) {
+        return AppChoiceTile(
+          label: _getStatusText(status),
+          icon: _getStatusIcon(status),
+          selected: _selectedStatus == status,
+          onTap: () => setState(() => _selectedStatus = status),
         );
       }).toList(),
     );
   }
 
-  Color _getPriorityColor(NoticePriority priority) {
-    switch (priority) {
-      case NoticePriority.high:
-        return AppSemanticColors.statusErrorIcon;
-      // 긴급만 상태색(빨강) — 일반·낮음은 고른 것을 브랜드 틸로만 표시한다(파랑·초록은 상태색과 섞였다)
-      case NoticePriority.normal:
-      case NoticePriority.low:
-        return AppSemanticColors.interactivePrimaryDefault;
-    }
+  Widget _buildChoiceRow(List<Widget> tiles) {
+    return Row(
+      children: [
+        for (var i = 0; i < tiles.length; i++) ...[
+          if (i > 0) const SizedBox(width: AppSpacing.space2),
+          Expanded(child: tiles[i]),
+        ],
+      ],
+    );
   }
 
   IconData _getPriorityIcon(NoticePriority priority) {
@@ -352,17 +260,6 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
         return '일반';
       case NoticePriority.low:
         return '낮음';
-    }
-  }
-
-  Color _getStatusColor(NoticeStatus status) {
-    switch (status) {
-      case NoticeStatus.draft:
-        return AppSemanticColors.textSecondary;
-      case NoticeStatus.published:
-        return AppSemanticColors.statusSuccessIcon;
-      case NoticeStatus.archived:
-        return AppSemanticColors.statusWarningIcon;
     }
   }
 

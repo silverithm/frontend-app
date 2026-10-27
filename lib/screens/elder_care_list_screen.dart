@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -284,18 +285,19 @@ class _ElderRow extends StatelessWidget {
           ),
           padding: const EdgeInsets.all(AppSpacing.space4),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
                           elder.name,
-                          style: AppTypography.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w600,
+                          style: AppTypography.titleMedium.copyWith(
                             color: AppSemanticColors.textPrimary,
                           ),
                         ),
@@ -303,7 +305,7 @@ class _ElderRow extends StatelessWidget {
                           const SizedBox(width: AppSpacing.space2),
                           Text(
                             profile.seatSummary,
-                            style: AppTypography.labelSmall.copyWith(
+                            style: AppTypography.bodySmall.copyWith(
                               color: AppSemanticColors.textTertiary,
                             ),
                           ),
@@ -323,7 +325,13 @@ class _ElderRow extends StatelessWidget {
                         spacing: AppSpacing.space1,
                         runSpacing: AppSpacing.space1,
                         children: [
-                          for (final tag in profile.riskTags) _Tag(label: tag),
+                          for (final tag in profile.riskTags)
+                            AppTag(
+                              label: tag,
+                              tone: (tag == '낙상' || tag == '욕창')
+                                  ? AppTagTone.warning
+                                  : AppTagTone.neutral,
+                            ),
                         ],
                       ),
                     ],
@@ -338,38 +346,6 @@ class _ElderRow extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 작은 상태 태그. 낙상·욕창은 주의 색, 나머지는 중립 색으로 구분한다.
-class _Tag extends StatelessWidget {
-  final String label;
-
-  const _Tag({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final isAlert = label == '낙상' || label == '욕창';
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2,
-        vertical: AppSpacing.space0_5,
-      ),
-      decoration: BoxDecoration(
-        color: isAlert
-            ? AppSemanticColors.statusWarningBackground
-            : AppSemanticColors.backgroundTertiary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.md),
-      ),
-      child: Text(
-        label,
-        style: AppTypography.labelSmall.copyWith(
-          color: isAlert
-              ? AppSemanticColors.statusWarningText
-              : AppSemanticColors.textSecondary,
         ),
       ),
     );

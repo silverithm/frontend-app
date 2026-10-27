@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_tag.dart';
 import 'meeting_minutes_detail_screen.dart';
 
 /// 회의록 목록 — 서명 요청이 온 회의록을 확인하고 들어가서 서명한다.
@@ -56,14 +57,14 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
     }
   }
 
-  ({Color bg, Color fg, String label}) _statusStyle(String status) {
+  ({AppTagTone tone, String label}) _statusStyle(String status) {
     switch (status) {
       case 'COMPLETED':
-        return (bg: AppColors.careTealTint, fg: AppColors.careTealDeep, label: '완료');
+        return (tone: AppTagTone.success, label: '완료');
       case 'REGISTERED':
-        return (bg: AppColors.gray100, fg: AppColors.careTeal, label: '서명 수집 중');
+        return (tone: AppTagTone.warning, label: '서명 수집 중');
       default:
-        return (bg: AppColors.gray100, fg: AppColors.gray600, label: '작성 중');
+        return (tone: AppTagTone.neutral, label: '작성 중');
     }
   }
 
@@ -117,43 +118,34 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: AppSpacing.space2,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: status.bg,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
+                                        Expanded(
                                           child: Text(
-                                            status.label,
-                                            style: AppTypography.labelSmall
-                                                .copyWith(color: status.fg),
+                                            item['title']?.toString() ?? '',
+                                            style: AppTypography.titleMedium
+                                                .copyWith(
+                                              color: AppSemanticColors
+                                                  .textPrimary,
+                                            ),
                                           ),
                                         ),
-                                        const Spacer(),
-                                        Text(
-                                          '서명 $signed/$total',
-                                          style: AppTypography.labelSmall
-                                              .copyWith(color: AppColors.gray600),
+                                        const SizedBox(
+                                          width: AppSpacing.space2,
+                                        ),
+                                        AppTag(
+                                          label: status.label,
+                                          tone: status.tone,
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: AppSpacing.space2),
+                                    const SizedBox(height: AppSpacing.space1),
                                     Text(
-                                      item['title']?.toString() ?? '',
-                                      style: AppTypography.bodyLarge.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.gray900,
+                                      '$when · ${item['authorName'] ?? ''} · 서명 $signed/$total',
+                                      style: AppTypography.bodySmall.copyWith(
+                                        color: AppSemanticColors.textSecondary,
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '$when · ${item['authorName'] ?? ''}',
-                                      style: AppTypography.bodySmall
-                                          .copyWith(color: AppColors.gray600),
                                     ),
                                   ],
                                 ),

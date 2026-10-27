@@ -12,6 +12,7 @@ import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
+import '../widgets/common/app_tag.dart';
 
 class AdminVacationLimitsSettingScreen extends StatefulWidget {
   const AdminVacationLimitsSettingScreen({super.key});
@@ -430,35 +431,16 @@ class _AdminVacationLimitsSettingScreenState
     final weekdayNames = ['', '월', '화', '수', '목', '금', '토', '일'];
     final weekdayName = weekdayNames[date.weekday];
 
-    // 색상 결정
-    Color borderColor;
-    Color headerColor;
-    Color headerTextColor;
-    Color weekdayBgColor;
-    Color weekdayTextColor;
-
-    if (isSunday) {
-      // 일요일 - 빨간색
-      borderColor = AppSemanticColors.statusErrorBorder;
-      headerColor = AppSemanticColors.statusErrorBackground;
-      headerTextColor = AppSemanticColors.statusErrorText;
-      weekdayBgColor = AppSemanticColors.statusErrorBackground;
-      weekdayTextColor = AppSemanticColors.statusErrorIcon;
-    } else if (isSaturday) {
-      // 토요일 - 파란색
-      borderColor = AppSemanticColors.statusInfoBorder;
-      headerColor = AppSemanticColors.statusInfoBackground;
-      headerTextColor = AppSemanticColors.statusInfoText;
-      weekdayBgColor = AppSemanticColors.statusInfoBackground;
-      weekdayTextColor = AppSemanticColors.statusInfoIcon;
-    } else {
-      // 평일 - 회색
-      borderColor = AppSemanticColors.borderSubtle;
-      headerColor = AppSemanticColors.backgroundSecondary;
-      headerTextColor = AppSemanticColors.textPrimary;
-      weekdayBgColor = AppSemanticColors.backgroundSecondary;
-      weekdayTextColor = AppSemanticColors.textSecondary;
-    }
+    // 평일은 중립, 주말(토·일)만 오류색 — 파랑은 앱 팔레트에 없어 토요일도 같은 주말색으로 묶는다
+    final Color borderColor = isWeekend
+        ? AppSemanticColors.statusErrorBorder
+        : AppSemanticColors.borderSubtle;
+    final Color headerColor = isWeekend
+        ? AppSemanticColors.statusErrorBackground
+        : AppSemanticColors.backgroundSecondary;
+    final Color headerTextColor = isWeekend
+        ? AppSemanticColors.statusErrorText
+        : AppSemanticColors.textPrimary;
 
     // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
     return Container(
@@ -466,7 +448,7 @@ class _AdminVacationLimitsSettingScreenState
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceDefault,
         borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: borderColor, width: isWeekend ? 2 : 1),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.space4),
@@ -487,28 +469,15 @@ class _AdminVacationLimitsSettingScreenState
                   ),
                   child: Text(
                     '${date.month}월 ${date.day}일',
-                    style: AppTypography.bodyLarge.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: AppTypography.titleMedium.copyWith(
                       color: headerTextColor,
                     ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.space2),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space2,
-                    vertical: AppSpacing.space1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: weekdayBgColor,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                  ),
-                  child: Text(
-                    '$weekdayName요일',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: weekdayTextColor,
-                    ),
-                  ),
+                AppTag(
+                  label: '$weekdayName요일',
+                  tone: isWeekend ? AppTagTone.error : AppTagTone.neutral,
                 ),
               ],
             ),
@@ -556,12 +525,9 @@ class _AdminVacationLimitsSettingScreenState
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: AppSemanticColors.textSecondary),
-            const SizedBox(width: AppSpacing.space1_5),
             Text(
               title,
               style: AppTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
                 color: AppSemanticColors.textSecondary,
               ),
             ),
@@ -574,7 +540,7 @@ class _AdminVacationLimitsSettingScreenState
           children: [
             Text(
               '최대',
-              style: AppTypography.labelSmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppSemanticColors.textTertiary,
               ),
             ),
@@ -586,9 +552,7 @@ class _AdminVacationLimitsSettingScreenState
                 controller: controller,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: AppTypography.bodyLarge.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.titleMedium,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppBorderRadius.lg),
@@ -633,7 +597,7 @@ class _AdminVacationLimitsSettingScreenState
             const SizedBox(width: AppSpacing.space2),
             Text(
               '명',
-              style: AppTypography.labelSmall.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppSemanticColors.textTertiary,
               ),
             ),

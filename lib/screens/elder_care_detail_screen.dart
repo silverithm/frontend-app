@@ -256,8 +256,8 @@ class _Section extends StatelessWidget {
             ),
             child: Text(
               title,
-              style: AppTypography.labelMedium.copyWith(
-                color: AppSemanticColors.textTertiary,
+              style: AppTypography.titleSmall.copyWith(
+                color: AppSemanticColors.textPrimary,
               ),
             ),
           ),
@@ -290,24 +290,43 @@ class _Section extends StatelessWidget {
                           child: Text(
                             row.label,
                             style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textTertiary,
+                              color: AppSemanticColors.textSecondary,
                             ),
                           ),
                         ),
                         const SizedBox(width: AppSpacing.space2),
                         Expanded(
-                          child: Text(
-                            row.displayValue,
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: row.alert
-                                  ? AppSemanticColors.statusWarningText
-                                  : row.isEmpty
-                                      ? AppSemanticColors.textTertiary
-                                      : AppSemanticColors.textPrimary,
-                              fontWeight: row.alert
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
+                          // 주의 항목(낙상 위험 있음 등)은 글자는 다른 값과 같게 두고 앞에 작은 상태 점만 둔다
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (row.alert)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: AppSpacing.space2,
+                                    right: AppSpacing.space2,
+                                  ),
+                                  child: Container(
+                                    width: AppSpacing.space2,
+                                    height: AppSpacing.space2,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          AppSemanticColors.statusWarningIcon,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              Expanded(
+                                child: Text(
+                                  row.displayValue,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: row.isEmpty
+                                        ? AppSemanticColors.textTertiary
+                                        : AppSemanticColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

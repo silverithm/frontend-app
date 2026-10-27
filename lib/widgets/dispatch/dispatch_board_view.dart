@@ -19,6 +19,7 @@ import '../../utils/dispatch_board_text.dart';
 import '../common/app_dialog.dart';
 import 'dispatch_attendance_section.dart';
 import 'dispatch_status_style.dart';
+import '../common/app_tag.dart';
 
 const _titleWeekdayNames = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -496,7 +497,6 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
                         _formatTitleDate(_date),
                         style: AppTypography.heading6.copyWith(
                           color: AppSemanticColors.textPrimary,
-                          fontWeight: AppTypography.fontWeightBold,
                         ),
                       ),
                     ],
@@ -542,8 +542,8 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
           ),
           const SizedBox(height: AppSpacing.space2),
           Wrap(
-            spacing: AppSpacing.space2,
-            runSpacing: AppSpacing.space1_5,
+            spacing: AppSpacing.space4,
+            runSpacing: 0,
             children: [
               // 웹 배차표와 같은 색 — 탑승 틸 · 결석 빨강(DESIGN '결석'은 빨강) · 개인등하원 회색 · 미배정 노랑
               _StatChip(label: '탑승', count: carCount, tone: _StatTone.info),
@@ -673,54 +673,34 @@ class _StatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = count > 0;
-    Color background;
-    Color foreground;
+    final Color foreground;
     switch (tone) {
       case _StatTone.warning:
-        background = active
-            ? AppSemanticColors.statusWarningBackground
-            : AppSemanticColors.backgroundTertiary;
         foreground = active
             ? AppSemanticColors.statusWarningText
             : AppSemanticColors.textTertiary;
         break;
       case _StatTone.error:
-        background = active
-            ? AppSemanticColors.statusErrorBackground
-            : AppSemanticColors.backgroundTertiary;
         foreground = active
             ? AppSemanticColors.statusErrorText
             : AppSemanticColors.textTertiary;
         break;
       case _StatTone.info:
-        background = active
-            ? AppSemanticColors.brandWeak
-            : AppSemanticColors.backgroundTertiary;
         foreground = active
             ? AppSemanticColors.brandPressed
             : AppSemanticColors.textTertiary;
         break;
       case _StatTone.neutral:
-        background = AppSemanticColors.backgroundTertiary;
         foreground = AppSemanticColors.textSecondary;
         break;
     }
 
-    final chip = Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2_5,
-        vertical: AppSpacing.space1_5,
-      ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-      ),
+    // 알약 상자 대신 글자만 — 요약은 숫자가 읽히면 되고, 색은 결석(빨강)·미배정(노랑)처럼 손볼 것에만 남긴다
+    final chip = Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1_5),
       child: Text(
         '$label $count명',
-        style: AppTypography.caption.copyWith(
-          color: foreground,
-          fontWeight: AppTypography.fontWeightMedium,
-        ),
+        style: AppTypography.labelMedium.copyWith(color: foreground),
       ),
     );
 
@@ -893,31 +873,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2,
-        vertical: AppSpacing.space1,
-      ),
-      decoration: BoxDecoration(
-        color: style.background,
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        border: Border.all(color: style.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(style.icon, size: 12, color: style.foreground),
-          const SizedBox(width: AppSpacing.space1),
-          Text(
-            style.label,
-            style: AppTypography.caption.copyWith(
-              color: style.foreground,
-              fontWeight: AppTypography.fontWeightMedium,
-            ),
-          ),
-        ],
-      ),
-    );
+    return AppTag(label: style.label, tone: style.tone, icon: style.icon);
   }
 }
 
@@ -1039,18 +995,10 @@ class _ElderRow extends StatelessWidget {
 
     Widget? pill;
     if (state.isAbsent) {
-      pill = const _StatusPill(
-        label: '결석',
-        foreground: AppSemanticColors.statusErrorText,
-        background: AppSemanticColors.statusErrorBackground,
-      );
+      pill = const _StatusPill(label: '결석', tone: AppTagTone.error);
     } else if (personalChecked) {
-      // 개인 등하원은 분류라 회색 테두리 — 위 요약 칩과 같은 색
-      pill = _StatusPill(
-        label: personalLabel,
-        foreground: AppSemanticColors.textSecondary,
-        outlined: true,
-      );
+      // 개인 등하원은 분류라 중립 꼬리표
+      pill = _StatusPill(label: personalLabel);
     }
 
     final interactive = onTap != null;
@@ -1087,36 +1035,12 @@ class _ElderRow extends StatelessWidget {
 
 class _StatusPill extends StatelessWidget {
   final String label;
-  final Color foreground;
-  final Color? background;
-  final bool outlined;
+  final AppTagTone tone;
 
-  const _StatusPill({
-    required this.label,
-    required this.foreground,
-    this.background,
-    this.outlined = false,
-  });
+  const _StatusPill({required this.label, this.tone = AppTagTone.neutral});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: background ?? Colors.transparent,
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        border: outlined ? Border.all(color: foreground) : null,
-      ),
-      child: Text(
-        label,
-        style: AppTypography.caption.copyWith(
-          color: foreground,
-          fontWeight: AppTypography.fontWeightMedium,
-        ),
-      ),
-    );
+    return AppTag(label: label, tone: tone);
   }
 }

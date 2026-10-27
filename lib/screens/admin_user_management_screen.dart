@@ -153,7 +153,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             Text(
               '관리자 권한이 필요합니다',
               style: AppTypography.heading6.copyWith(
-                fontWeight: FontWeight.bold,
                 color: AppSemanticColors.statusErrorIcon,
               ),
             ),
@@ -196,7 +195,6 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 Text(
                   '오류 발생',
                   style: AppTypography.heading6.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),
@@ -275,15 +273,11 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: isActive
-                      ? AppSemanticColors.statusSuccessBackground
-                      : AppSemanticColors.backgroundSecondary,
+                  backgroundColor: AppSemanticColors.backgroundTertiary,
                   child: Icon(
                     Icons.person,
                     size: 18,
-                    color: isActive
-                        ? AppSemanticColors.statusSuccessIcon
-                        : AppSemanticColors.textSecondary,
+                    color: AppSemanticColors.textSecondary,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.space2),
@@ -293,39 +287,22 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     children: [
                       Text(
                         user.name,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: AppTypography.titleMedium.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
                       ),
                       Text(
                         user.email,
-                        style: AppTypography.caption.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.textSecondary,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space1_5,
-                    vertical: AppSpacing.space0_5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? AppSemanticColors.statusSuccessBackground
-                        : AppSemanticColors.backgroundSecondary,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  ),
-                  child: Text(
-                    AdminUtils.getStatusDisplayName(user.status),
-                    style: AppTypography.caption.copyWith(
-                      color: isActive
-                          ? AppSemanticColors.statusSuccessText
-                          : AppSemanticColors.textSecondary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                AppTag(
+                  label: AdminUtils.getStatusDisplayName(user.status),
+                  tone: isActive ? AppTagTone.success : AppTagTone.neutral,
                 ),
               ],
             ),
@@ -341,7 +318,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 const SizedBox(width: AppSpacing.space1),
                 Text(
                   AdminUtils.getRoleDisplayName(user.role),
-                  style: AppTypography.caption.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 ),
@@ -623,7 +600,6 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                 Text(
                   '오류 발생',
                   style: AppTypography.heading6.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: AppSemanticColors.statusErrorIcon,
                   ),
                 ),
@@ -700,11 +676,10 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor:
-                          AppSemanticColors.statusWarningBackground,
+                      backgroundColor: AppSemanticColors.backgroundTertiary,
                       child: Icon(
                         Icons.person,
-                        color: AppSemanticColors.statusWarningIcon,
+                        color: AppSemanticColors.textSecondary,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.space3),
@@ -714,8 +689,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                         children: [
                           Text(
                             user.name,
-                            style: AppTypography.bodyLarge.copyWith(
-                              fontWeight: FontWeight.bold,
+                            style: AppTypography.titleMedium.copyWith(
+                              color: AppSemanticColors.textPrimary,
                             ),
                           ),
                           Text(
@@ -741,8 +716,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                             ? null
                             : () => _showApprovalDialog(user),
                         variant: SeedButtonVariant.brandSolid,
+                        size: SeedButtonSize.small,
                         isLoading: isProcessing,
-                        prefixIcon: Icons.check,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.space3),
@@ -753,8 +728,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                             ? null
                             : () => _showRejectDialog(user),
                         variant: SeedButtonVariant.neutralOutline,
+                        size: SeedButtonSize.small,
                         isLoading: isProcessing,
-                        prefixIcon: Icons.close,
                       ),
                     ),
                   ],

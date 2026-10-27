@@ -14,6 +14,7 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/common/carev_app_bar.dart';
 
 /// 선택된 파일 정보를 담는 클래스
 class _TemplateFileInfo {
@@ -107,9 +108,7 @@ class _AdminApprovalTemplateScreenState
                   const SizedBox(width: AppSpacing.space3),
                   Text(
                     template == null ? '양식 추가' : '양식 수정',
-                    style: AppTypography.heading6.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTypography.heading5,
                   ),
                 ],
               ),
@@ -439,6 +438,7 @@ class _AdminApprovalTemplateScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
+      appBar: const CareVAppBar(title: '결재 양식 관리'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildContent(),

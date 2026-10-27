@@ -14,6 +14,7 @@ import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/common/app_tag.dart';
 
 class AdminVacationManagementScreen extends StatefulWidget {
   final bool showAppBar;
@@ -784,37 +785,30 @@ class _AdminVacationManagementScreenState
     final status = request['status'] ?? '';
     final isApproved = status == 'approved';
     final isPending = status == 'pending';
-    final isRejected = status == 'rejected';
 
-    Color statusColor;
-    IconData statusIcon;
-    String statusText;
-
-    Color statusBackground;
-    if (isApproved) {
-      statusColor = AppSemanticColors.statusSuccessText;
-      statusBackground = AppSemanticColors.statusSuccessBackground;
-      statusIcon = Icons.check_circle;
-      statusText = '승인됨';
-    } else if (isPending) {
-      statusColor = AppSemanticColors.statusWarningText;
-      statusBackground = AppSemanticColors.statusWarningBackground;
-      statusIcon = Icons.pending;
-      statusText = '대기중';
-    } else {
-      statusColor = AppSemanticColors.statusErrorText;
-      statusBackground = AppSemanticColors.statusErrorBackground;
-      statusIcon = Icons.cancel;
-      statusText = '거절됨';
-    }
+    final AppTagTone statusTone = isApproved
+        ? AppTagTone.success
+        : isPending
+            ? AppTagTone.warning
+            : AppTagTone.error;
+    final String statusText = isApproved
+        ? '승인됨'
+        : isPending
+            ? '대기중'
+            : '거절됨';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 종사자 관리 카드와 같은 회색 원 — 상태는 오른쪽 꼬리표 하나로만 말한다
         CircleAvatar(
-          radius: 20,
-          backgroundColor: statusBackground,
-          child: Icon(statusIcon, color: statusColor, size: 20),
+          radius: 18,
+          backgroundColor: AppSemanticColors.backgroundTertiary,
+          child: Icon(
+            Icons.person,
+            color: AppSemanticColors.textSecondary,
+            size: 18,
+          ),
         ),
         const SizedBox(width: AppSpacing.space3),
         Expanded(
@@ -827,35 +821,21 @@ class _AdminVacationManagementScreenState
                   Expanded(
                     child: Text(
                       request['userName'] ?? '알 수 없음',
-                      style: AppTypography.heading6,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.space2),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space2,
-                      vertical: AppSpacing.space1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Text(
-                      statusText,
-                      style: AppTypography.labelMedium.copyWith(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  AppTag(label: statusText, tone: statusTone),
                 ],
               ),
-              const SizedBox(height: AppSpacing.space1),
+              const SizedBox(height: AppSpacing.space0_5),
               Text(
                 '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
-                style: AppTypography.bodyMedium.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textSecondary,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -864,7 +844,7 @@ class _AdminVacationManagementScreenState
               const SizedBox(height: AppSpacing.space0_5),
               Text(
                 '신청일: ${_formatDate(request['createdAt'])}',
-                style: AppTypography.labelSmall.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textTertiary,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -884,20 +864,11 @@ class _AdminVacationManagementScreenState
         color: AppSemanticColors.backgroundSecondary,
         borderRadius: BorderRadius.circular(AppBorderRadius.lg),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.message, size: 16, color: AppSemanticColors.textSecondary),
-          const SizedBox(width: AppSpacing.space2),
-          Expanded(
-            child: Text(
-              reason,
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
+      child: Text(
+        reason,
+        style: AppTypography.bodySmall.copyWith(
+          color: AppSemanticColors.textSecondary,
+        ),
       ),
     );
   }
@@ -1065,51 +1036,49 @@ class _AdminVacationManagementScreenState
   }
 
   Widget _buildActionButtons(Map<String, dynamic> request, bool isPending) {
+    final id = request['id'].toString();
+    final isRejecting = _rejectingRequests.contains(id);
+    final isApproving = _approvingRequests.contains(id);
+    // 거절·승인 둘만 같은 크기로 나란히 두고, 파괴 행동인 삭제는 글자 단추로 낮춰 한쪽으로 뺀다
     return Row(
       children: [
-        // 삭제 버튼 (모든 상태에 대해 표시)
-        Expanded(
-          child: SeedButton(
-            label: '삭제',
-            variant: SeedButtonVariant.criticalOutline,
-            size: SeedButtonSize.small,
-            prefixIcon: Icons.delete,
-            onPressed: () => _showDeleteDialog(request['id'].toString()),
+        TextButton(
+          onPressed: () => _showDeleteDialog(id),
+          style: TextButton.styleFrom(
+            foregroundColor: AppSemanticColors.statusErrorText,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space3,
+              vertical: AppSpacing.space2,
+            ),
+            minimumSize: const Size(0, 36),
           ),
+          child: Text('삭제', style: AppTypography.buttonSmall),
         ),
         if (isPending) ...[
-          const SizedBox(width: AppSpacing.space2),
-          Expanded(
+          const Spacer(),
+          SizedBox(
+            width: 96,
             child: SeedButton(
-              label: _rejectingRequests.contains(request['id'].toString())
-                  ? '처리중...'
-                  : '거절',
+              label: isRejecting ? '처리중...' : '거절',
               variant: SeedButtonVariant.neutralOutline,
               size: SeedButtonSize.small,
-              isLoading: _rejectingRequests.contains(request['id'].toString()),
-              prefixIcon: Icons.close,
-              onPressed:
-                  _rejectingRequests.contains(request['id'].toString()) ||
-                      _approvingRequests.contains(request['id'].toString())
+              isLoading: isRejecting,
+              onPressed: isRejecting || isApproving
                   ? null
-                  : () => _rejectRequest(request['id'].toString()),
+                  : () => _rejectRequest(id),
             ),
           ),
           const SizedBox(width: AppSpacing.space2),
-          Expanded(
+          SizedBox(
+            width: 96,
             child: SeedButton(
-              label: _approvingRequests.contains(request['id'].toString())
-                  ? '처리중...'
-                  : '승인',
+              label: isApproving ? '처리중...' : '승인',
               variant: SeedButtonVariant.brandSolid,
               size: SeedButtonSize.small,
-              isLoading: _approvingRequests.contains(request['id'].toString()),
-              prefixIcon: Icons.check,
-              onPressed:
-                  _approvingRequests.contains(request['id'].toString()) ||
-                      _rejectingRequests.contains(request['id'].toString())
+              isLoading: isApproving,
+              onPressed: isApproving || isRejecting
                   ? null
-                  : () => _approveRequest(request['id'].toString()),
+                  : () => _approveRequest(id),
             ),
           ),
         ],

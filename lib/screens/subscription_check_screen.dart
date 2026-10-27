@@ -8,8 +8,8 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
-import '../widgets/seed/seed_chip.dart';
 import 'payment_screen.dart';
 import 'main_screen.dart';
 
@@ -69,6 +69,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
+      appBar: const CareVAppBar(title: '요금제 선택'),
       body: Consumer2<SubscriptionProvider, AuthProvider>(
         builder: (context, subscriptionProvider, authProvider, child) {
           if (subscriptionProvider.isLoading) {
@@ -77,7 +78,6 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
 
           return CustomScrollView(
             slivers: [
-              _buildAppBar(),
               SliverToBoxAdapter(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
@@ -140,31 +140,6 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
     );
   }
 
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: AppColors.transparent,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          color: AppSemanticColors.headerBackground,
-        ),
-        child: FlexibleSpaceBar(
-          centerTitle: true,
-          title: Text(
-            '요금제 선택',
-            style: AppTypography.heading5.copyWith(
-              color: AppSemanticColors.headerForeground,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildWelcomeSection(AuthProvider authProvider) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.space6),
@@ -179,25 +154,24 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
       child: Column(
         children: [
           Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-              color: AppSemanticColors.interactivePrimaryDefault,
-              shape: BoxShape.circle,
+            width: AppSpacing.space12,
+            height: AppSpacing.space12,
+            decoration: BoxDecoration(
+              color: AppSemanticColors.brandWeak,
+              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
             ),
             child: Icon(
               Icons.business_center,
-              color: AppSemanticColors.textInverse,
-              size: 40,
+              color: AppSemanticColors.interactivePrimaryDefault,
+              size: AppSpacing.space6,
             ),
           ),
           const SizedBox(height: AppSpacing.space4),
           Text(
             '${authProvider.currentUser?.company?.name ?? ''}에\n오신 것을 환영합니다!',
             textAlign: TextAlign.center,
-            style: AppTypography.heading4.copyWith(
+            style: AppTypography.heading5.copyWith(
               color: AppSemanticColors.textPrimary,
-              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: AppSpacing.space2),
@@ -223,7 +197,6 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
           '요금제 선택',
           style: AppTypography.heading5.copyWith(
             color: AppSemanticColors.textPrimary,
-            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: AppSpacing.space4),
@@ -342,13 +315,26 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                 ),
                 const SizedBox(height: AppSpacing.space4),
                 Wrap(
-                  spacing: AppSpacing.space2,
+                  spacing: AppSpacing.space3,
                   runSpacing: AppSpacing.space1,
                   children: plan.features
-                      .map((feature) => SeedChip(
-                            label: feature,
-                            selected: plan.isPopular,
-                            size: SeedChipSize.small,
+                      .map((feature) => Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check,
+                                size: 14,
+                                color:
+                                    AppSemanticColors.interactivePrimaryDefault,
+                              ),
+                              const SizedBox(width: AppSpacing.space1),
+                              Text(
+                                feature,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ))
                       .toList(),
                 ),
