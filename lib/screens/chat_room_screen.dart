@@ -1480,7 +1480,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                           '일정 등록',
                           style: AppTypography.heading5.copyWith(
                             color: AppSemanticColors.textPrimary,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         IconButton(
@@ -4693,7 +4692,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // 첨부 버튼 (사진/파일) — 전송 버튼과 같은 40 지름
-          Semantics(
+          Tooltip(
+            message: '파일 첨부',
+            child: Semantics(
             button: true,
             label: '파일 첨부',
             child: Material(
@@ -4712,6 +4713,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   ),
                 ),
               ),
+            ),
             ),
           ),
           const SizedBox(width: AppSpacing.space2),

@@ -158,7 +158,7 @@ class _ChatImageViewerState extends State<ChatImageViewer> {
             if (total > 1)
               Text(
                 '${_index + 1} / $total',
-                style: AppTypography.labelSmall.copyWith(
+                style: AppTypography.bodySmall.copyWith(
                   color: AppColors.white70,
                 ),
               ),
