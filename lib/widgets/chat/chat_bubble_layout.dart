@@ -47,8 +47,3 @@ bool isMinuteRunEnd(List<ChatMessage> messages, int index) {
   if (next.senderId != current.senderId) return true;
   return !isSameMinute(current.createdAt, next.createdAt);
 }
-
-/// 남의 말풍선을 옅은 테두리로 그리는 대안(시안 비교 캡처 전용).
-/// 기본은 false — 대화 바탕을 한 단계 낮추고 테두리 없이 그린다.
-// ignore: prefer_const_declarations
-bool chatOtherBubbleOutlined = false;

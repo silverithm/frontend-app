@@ -3664,9 +3664,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       },
       child: Scaffold(
         // 대화 바탕은 한 단계 낮춰 남의 흰 말풍선이 테두리 없이도 읽히게 한다
-        backgroundColor: chatOtherBubbleOutlined
-            ? AppSemanticColors.backgroundSecondary
-            : AppSemanticColors.chatBackground,
+        backgroundColor: AppSemanticColors.chatBackground,
         appBar: AppBar(
           title: Column(
             // 제목과 인원 수가 같은 정렬이 되도록 AppBar의 제목 정렬(iOS 가운데/그 외 왼쪽)을 따른다.
@@ -4169,8 +4167,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         photoGroup != null ||
         (!message.isDeleted && (message.type == MessageType.image || message.isVideoMessage));
 
-    final outlined = !isMyMessage && !isMediaBubble && chatOtherBubbleOutlined;
-
     // 꼬리 모서리(작은 모서리)는 같은 사람 묶음의 첫 말풍선에만 둔다. 모든 말풍선에
     // 같은 꼬리를 달면 도장 찍은 듯 반복돼 거칠어 보인다.
     const big = Radius.circular(AppBorderRadius.xl);
@@ -4196,9 +4192,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             : sendingStatus == MessageSendingStatus.sending
             ? bubbleColor.withValues(alpha: 0.7)
             : bubbleColor,
-        // 남의 말풍선(흰색)은 대화 바탕(chatBackground)을 한 단계 낮춰 테두리 없이도 읽히게 한다.
-        // 대안(옅은 테두리)은 시안 비교용으로만 남겨 둔다.
-        border: outlined ? Border.all(color: AppColors.gray200) : null,
+        // 남의 말풍선(흰색)은 대화 바탕(chatBackground)을 한 단계 낮춰 테두리 없이 읽히게 한다.
         borderRadius: bubbleRadius,
       ),
       constraints: BoxConstraints(maxWidth: _bubbleMaxWidth(context, isMine: isMyMessage)),
