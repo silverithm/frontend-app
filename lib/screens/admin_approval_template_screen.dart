@@ -107,9 +107,7 @@ class _AdminApprovalTemplateScreenState
                   const SizedBox(width: AppSpacing.space3),
                   Text(
                     template == null ? '양식 추가' : '양식 수정',
-                    style: AppTypography.heading6.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTypography.heading5,
                   ),
                 ],
               ),
