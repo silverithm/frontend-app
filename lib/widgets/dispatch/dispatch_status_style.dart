@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/dispatch.dart';
 import '../../theme/app_colors.dart';
+import '../common/app_tag.dart';
 
 /// 배차 상태를 색과 아이콘으로 옮긴다.
 ///
@@ -13,6 +14,7 @@ class DispatchStatusStyle {
   final Color border;
   final IconData icon;
   final String label;
+  final AppTagTone tone;
 
   const DispatchStatusStyle({
     required this.foreground,
@@ -20,6 +22,7 @@ class DispatchStatusStyle {
     required this.border,
     required this.icon,
     required this.label,
+    this.tone = AppTagTone.neutral,
   });
 
   static DispatchStatusStyle of(String status) {
@@ -31,6 +34,7 @@ class DispatchStatusStyle {
           border: AppSemanticColors.statusSuccessBorder,
           icon: Icons.check_circle_outline,
           label: '정상',
+          tone: AppTagTone.success,
         );
       case DispatchStatus.substitute:
         return const DispatchStatusStyle(
@@ -39,6 +43,7 @@ class DispatchStatusStyle {
           border: AppSemanticColors.statusWarningBorder,
           icon: Icons.swap_horiz_rounded,
           label: '대체',
+          tone: AppTagTone.warning,
         );
       case DispatchStatus.noService:
         return const DispatchStatusStyle(
@@ -47,6 +52,7 @@ class DispatchStatusStyle {
           border: AppSemanticColors.statusErrorBorder,
           icon: Icons.do_not_disturb_alt_rounded,
           label: '운행없음',
+          tone: AppTagTone.error,
         );
       default:
         return const DispatchStatusStyle(
