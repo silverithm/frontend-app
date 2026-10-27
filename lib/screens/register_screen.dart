@@ -675,7 +675,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             crossAxisCount: 2,
-                            childAspectRatio: 0.8,
+                            childAspectRatio: 0.66,
                             crossAxisSpacing: AppSpacing.space4,
                             mainAxisSpacing: AppSpacing.space4,
                             children: [
