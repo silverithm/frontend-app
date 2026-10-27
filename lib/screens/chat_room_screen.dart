@@ -2111,10 +2111,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 Expanded(
                   child: Text(
                     room.noticeContent ?? '',
-                    style: AppTypography.bodySmall.copyWith(
+                    style: AppTypography.labelStrong.copyWith(
                       color: AppSemanticColors.textPrimary,
-                      fontWeight: AppTypography.fontWeightSemibold,
-                    ),
+                      ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -2155,10 +2154,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 children: [
                   Text(
                     keepAll(room.noticeContent ?? ''),
-                    style: AppTypography.bodySmall.copyWith(
+                    style: AppTypography.labelStrong.copyWith(
                       color: AppSemanticColors.textPrimary,
-                      fontWeight: AppTypography.fontWeightSemibold,
-                    ),
+                      ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -4236,9 +4234,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           if (showUnread)
             Text(
               '$unreadCount',
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.labelStrong.copyWith(
                 color: AppSemanticColors.interactivePrimaryDefault,
-                fontWeight: AppTypography.fontWeightSemibold,
                 height: 1.2,
               ),
             ),
@@ -4252,10 +4249,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
                 child: Text(
                   '다시 보내기',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.labelStrong.copyWith(
                     color: AppSemanticColors.statusErrorText,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
+                    ),
                 ),
               ),
             ),
@@ -4462,10 +4458,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                         children: [
                           Text(
                             message.replyToSenderName ?? '',
-                            style: AppTypography.bodySmall.copyWith(
+                            style: AppTypography.labelStrong.copyWith(
                               color: textColor.withValues(alpha: 0.85),
-                              fontWeight: AppTypography.fontWeightSemibold,
-                            ),
+                              ),
                           ),
                           // 두 줄로 잘라 "..."을 붙이지 않는다 — 무슨 말에 답한 건지 읽는 자리인데
                           // 정작 그 말이 잘려 있으면 소용이 없다. 길면 아래로 흐른다.
@@ -4835,10 +4830,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               children: [
                 Text(
                   '${target.senderName}님에게 답장',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.labelStrong.copyWith(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
+                    ),
                 ),
                 Text(
                   _replyPreviewText(target),
@@ -4892,10 +4886,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               children: [
                 Text(
                   '메시지 수정 중',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.labelStrong.copyWith(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    fontWeight: AppTypography.fontWeightSemibold,
-                  ),
+                    ),
                 ),
                 Text(
                   editing.content ?? '',

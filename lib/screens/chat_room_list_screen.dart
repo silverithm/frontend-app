@@ -490,9 +490,8 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
                           ),
                           child: Text(
                             room.unreadCount > 99 ? '99+' : '${room.unreadCount}',
-                            style: AppTypography.bodySmall.copyWith(
+                            style: AppTypography.labelStrong.copyWith(
                               color: AppSemanticColors.textInverse,
-                              fontWeight: AppTypography.fontWeightSemibold,
                               height: 1.2,
                             ),
                           ),

@@ -75,10 +75,9 @@ class ChatSenderHeader extends StatelessWidget {
           children: [
             TextSpan(
               text: senderName,
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.labelStrong.copyWith(
                 color: AppSemanticColors.textSecondary,
-                fontWeight: AppTypography.fontWeightSemibold,
-              ),
+                ),
             ),
             // 직종은 괄호 없이 이름 뒤 한 칸 띄워 — 이름보다 가볍게(w400·textTertiary)
             if (hasPosition)
