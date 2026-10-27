@@ -215,7 +215,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                     Text(
                       _formatYearMonth(widget.currentDate),
                       style: AppTypography.heading6.copyWith(
-                        fontWeight: AppTypography.fontWeightBold,
                         color: AppSemanticColors.textPrimary,
                       ),
                     ),
@@ -293,8 +292,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       child: Center(
                         child: Text(
                           weekday,
-                          style: AppTypography.labelMedium.copyWith(
-                            fontWeight: AppTypography.fontWeightBold,
+                          style: AppTypography.buttonSmall.copyWith(
                             color: index == 0
                                 ? AppSemanticColors.statusErrorIcon
                                 : index == 6
@@ -329,7 +327,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                         Text(
                           '휴무자 이름 표시',
                           style: AppTypography.bodySmall.copyWith(
-                            fontWeight: AppTypography.fontWeightSemibold,
                             color: AppSemanticColors.textSecondary,
                           ),
                         ),
@@ -372,8 +369,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             const SizedBox(width: AppSpacing.space1_5),
                             Text(
                               _isExpanded ? '숨기기' : '보기',
-                              style: AppTypography.labelSmall.copyWith(
-                                fontWeight: AppTypography.fontWeightSemibold,
+                              style: AppTypography.buttonSmall.copyWith(
                                 color: _isExpanded
                                     ? AppSemanticColors.brandPressed
                                     : AppSemanticColors.textSecondary,
@@ -746,9 +742,8 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           left: 2,
                           child: Text(
                             date.day.toString(),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                            style: AppTypography.buttonSmall.copyWith(
+                              height: 1.2,
                               color: !_isSameMonth(date)
                                   ? AppSemanticColors.textDisabled
                                   : isSelected
@@ -860,9 +855,8 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           left: 2,
                           child: Text(
                             date.day.toString(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
+                            style: AppTypography.buttonSmall.copyWith(
+                              height: 1.2,
                               color: !_isSameMonth(date)
                                   ? AppSemanticColors.textDisabled
                                   : isSelected
@@ -1305,9 +1299,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+          style: AppTypography.bodySmall.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
         ),
@@ -1344,9 +1336,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+          style: AppTypography.bodySmall.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
         ),
@@ -1386,9 +1376,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+          style: AppTypography.bodySmall.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
         ),
@@ -1450,9 +1438,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             // ),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+              style: AppTypography.titleSmall.copyWith(
                 color: isSelected
                     ? AppSemanticColors.textInverse
                     : AppSemanticColors.textPrimary,
