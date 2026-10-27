@@ -2,7 +2,24 @@ import 'package:flutter/material.dart';
 import '../models/approval.dart';
 import '../services/api_service.dart';
 
+/// 목록 하나의 쪽 넘김 상태
+class _PageCursor {
+  int page = 0;
+  int totalPages = 0;
+  bool hasMore = true;
+
+  void reset() {
+    page = 0;
+    totalPages = 0;
+    hasMore = true;
+  }
+}
+
 class ApprovalProvider with ChangeNotifier {
+  ApprovalProvider({ApiService? apiService}) : _api = apiService ?? ApiService();
+
+  final ApiService _api;
+
   // 결재 요청 목록
   List<ApprovalRequest> _approvalRequests = [];
   List<ApprovalRequest> _myApprovalRequests = [];
@@ -17,10 +34,11 @@ class ApprovalProvider with ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = '';
 
-  // Pagination
-  int _currentPage = 0;
-  int _totalPages = 0;
-  bool _hasMore = true;
+  // 쪽 넘김 — 결재함(기관)과 내 결재는 따로 센다.
+  // 예전엔 하나를 같이 써서, 관리자가 결재함(한 쪽)을 먼저 받으면 '더 없음'이 되어
+  // 결재 신청 탭의 내 결재 목록을 아예 부르지 않고 비어 보였다(2026-10-27).
+  final _PageCursor _inbox = _PageCursor();
+  final _PageCursor _mine = _PageCursor();
 
   // Filters
   String? _statusFilter;
@@ -34,9 +52,10 @@ class ApprovalProvider with ChangeNotifier {
   ApprovalTemplate? get selectedTemplate => _selectedTemplate;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
-  int get currentPage => _currentPage;
-  int get totalPages => _totalPages;
-  bool get hasMore => _hasMore;
+  int get currentPage => _inbox.page;
+  int get totalPages => _inbox.totalPages;
+  bool get hasMore => _inbox.hasMore;
+  bool get myHasMore => _mine.hasMore;
   String? get statusFilter => _statusFilter;
 
   // 대기중 결재 개수
@@ -138,20 +157,19 @@ class ApprovalProvider with ChangeNotifier {
 
     try {
       if (refresh) {
-        _currentPage = 0;
+        _inbox.reset();
         _approvalRequests.clear();
-        _hasMore = true;
       }
 
-      if (!_hasMore && !refresh) return;
+      if (!_inbox.hasMore && !refresh) return;
 
       setLoading(true);
       clearError();
 
-      final response = await ApiService().getApprovalRequests(
+      final response = await _api.getApprovalRequests(
         companyId: companyId,
         status: _statusFilter,
-        page: _currentPage,
+        page: _inbox.page,
       );
 
       print('[ApprovalProvider] 결재 요청 목록 응답: $response');
@@ -168,20 +186,20 @@ class ApprovalProvider with ChangeNotifier {
           _approvalRequests.addAll(newRequests);
         }
 
-        _totalPages = response['totalPages'] as int? ?? 1;
-        _hasMore = _currentPage < _totalPages - 1;
-        _currentPage++;
+        _inbox.totalPages = response['totalPages'] as int? ?? 1;
+        _inbox.hasMore = _inbox.page < _inbox.totalPages - 1;
+        _inbox.page++;
       } else if (response['approvals'] != null) {
         final List<dynamic> content = response['approvals'] as List<dynamic>;
         _approvalRequests = content
             .map((json) => ApprovalRequest.fromJson(json as Map<String, dynamic>))
             .toList();
-        _hasMore = false;
+        _inbox.hasMore = false;
       } else {
         if (refresh) {
           _approvalRequests = [];
         }
-        _hasMore = false;
+        _inbox.hasMore = false;
       }
 
       print('[ApprovalProvider] 로드된 결재 요청 수: ${_approvalRequests.length}');
@@ -201,20 +219,19 @@ class ApprovalProvider with ChangeNotifier {
   }) async {
     try {
       if (refresh) {
-        _currentPage = 0;
+        _mine.reset();
         _myApprovalRequests.clear();
-        _hasMore = true;
       }
 
-      if (!_hasMore && !refresh) return;
+      if (!_mine.hasMore && !refresh) return;
 
       setLoading(true);
       clearError();
 
-      final response = await ApiService().getMyApprovalRequests(
+      final response = await _api.getMyApprovalRequests(
         requesterId: requesterId,
         status: _statusFilter,
-        page: _currentPage,
+        page: _mine.page,
       );
 
       print('[ApprovalProvider] 내 결재 요청 목록 응답: $response');
@@ -231,20 +248,20 @@ class ApprovalProvider with ChangeNotifier {
           _myApprovalRequests.addAll(newRequests);
         }
 
-        _totalPages = response['totalPages'] as int? ?? 1;
-        _hasMore = _currentPage < _totalPages - 1;
-        _currentPage++;
+        _mine.totalPages = response['totalPages'] as int? ?? 1;
+        _mine.hasMore = _mine.page < _mine.totalPages - 1;
+        _mine.page++;
       } else if (response['approvals'] != null) {
         final List<dynamic> content = response['approvals'] as List<dynamic>;
         _myApprovalRequests = content
             .map((json) => ApprovalRequest.fromJson(json as Map<String, dynamic>))
             .toList();
-        _hasMore = false;
+        _mine.hasMore = false;
       } else {
         if (refresh) {
           _myApprovalRequests = [];
         }
-        _hasMore = false;
+        _mine.hasMore = false;
       }
 
       // 최신순 정렬
@@ -270,7 +287,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().getApprovalRequestDetail(approvalId: approvalId);
+      final response = await _api.getApprovalRequestDetail(approvalId: approvalId);
 
       print('[ApprovalProvider] 결재 요청 상세 응답: $response');
 
@@ -314,7 +331,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().createApprovalRequest(
+      final response = await _api.createApprovalRequest(
         companyId: companyId,
         requesterId: requesterId,
         requesterName: requesterName,
@@ -358,7 +375,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().approveApprovalRequest(
+      final response = await _api.approveApprovalRequest(
         approvalId: approvalId,
         processedBy: processedBy,
         processedByName: processedByName,
@@ -403,7 +420,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().rejectApprovalRequest(
+      final response = await _api.rejectApprovalRequest(
         approvalId: approvalId,
         processedBy: processedBy,
         processedByName: processedByName,
@@ -442,7 +459,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().bulkApproveApprovalRequests(
+      final response = await _api.bulkApproveApprovalRequests(
         approvalIds: approvalIds,
         processedBy: processedBy,
         processedByName: processedByName,
@@ -475,7 +492,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().bulkRejectApprovalRequests(
+      final response = await _api.bulkRejectApprovalRequests(
         approvalIds: approvalIds,
         processedBy: processedBy,
         processedByName: processedByName,
@@ -506,7 +523,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().deleteApprovalRequest(approvalId: approvalId);
+      final response = await _api.deleteApprovalRequest(approvalId: approvalId);
 
       print('[ApprovalProvider] 결재 요청 취소 응답: $response');
 
@@ -540,7 +557,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().getApprovalTemplates(companyId: companyId);
+      final response = await _api.getApprovalTemplates(companyId: companyId);
 
       print('[ApprovalProvider] 결재 양식 목록 응답: $response');
 
@@ -576,7 +593,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().getActiveApprovalTemplates(companyId: companyId);
+      final response = await _api.getActiveApprovalTemplates(companyId: companyId);
 
       print('[ApprovalProvider] 활성 결재 양식 목록 응답: $response');
 
@@ -610,7 +627,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().getApprovalTemplateDetail(templateId: templateId);
+      final response = await _api.getApprovalTemplateDetail(templateId: templateId);
 
       print('[ApprovalProvider] 결재 양식 상세 응답: $response');
 
@@ -639,7 +656,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().createApprovalTemplate(
+      final response = await _api.createApprovalTemplate(
         companyId: companyId,
         name: name,
         description: description,
@@ -677,7 +694,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().updateApprovalTemplate(
+      final response = await _api.updateApprovalTemplate(
         templateId: templateId,
         name: name,
         description: description,
@@ -710,7 +727,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().toggleApprovalTemplateActive(templateId: templateId);
+      final response = await _api.toggleApprovalTemplateActive(templateId: templateId);
 
       print('[ApprovalProvider] 결재 양식 활성화 토글 응답: $response');
 
@@ -736,7 +753,7 @@ class ApprovalProvider with ChangeNotifier {
       setLoading(true);
       clearError();
 
-      final response = await ApiService().deleteApprovalTemplate(templateId: templateId);
+      final response = await _api.deleteApprovalTemplate(templateId: templateId);
 
       print('[ApprovalProvider] 결재 양식 삭제 응답: $response');
 
@@ -777,9 +794,8 @@ class ApprovalProvider with ChangeNotifier {
     _selectedTemplate = null;
     _isLoading = false;
     _errorMessage = '';
-    _currentPage = 0;
-    _totalPages = 0;
-    _hasMore = true;
+    _inbox.reset();
+    _mine.reset();
     _statusFilter = null;
     notifyListeners();
   }
