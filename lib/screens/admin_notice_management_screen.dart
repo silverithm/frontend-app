@@ -164,6 +164,9 @@ class _AdminNoticeManagementScreenState
         heroTag: 'admin_notice_fab',
         onPressed: _navigateToCreateNotice,
         backgroundColor: AppSemanticColors.interactivePrimaryDefault,
+        // 글자색을 안 주면 테마 기본(어두운 청록)이 와서 + 가 바탕에 묻혔다 — 노선 추가 버튼과 같은 흰색
+        foregroundColor: AppSemanticColors.textInverse,
+        tooltip: '새 공지 작성',
         child: const Icon(Icons.add),
       ),
     );
