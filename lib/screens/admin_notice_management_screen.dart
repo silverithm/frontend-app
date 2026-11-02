@@ -134,8 +134,10 @@ class _AdminNoticeManagementScreenState
                   color: AppSemanticColors.interactivePrimaryDefault,
                   child: ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.space2,
+                    // 떠 있는 + 버튼이 마지막 카드의 더보기(⋮)를 가리지 않게 — 배차 설정·휴무 달력과 같은 96
+                    padding: const EdgeInsets.only(
+                      top: AppSpacing.space2,
+                      bottom: 96,
                     ),
                     itemCount:
                         noticeProvider.notices.length +
