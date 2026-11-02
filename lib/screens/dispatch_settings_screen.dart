@@ -207,11 +207,13 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                   ),
                 Expanded(
                   child: ListView.builder(
+                    // 떠 있는 '노선 추가' 버튼이 마지막 카드의 '어르신 추가'를 가리지 않게 —
+                    // 48로는 버튼 높이보다 작았다. 휴무 달력과 같은 96.
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.space4,
                       AppSpacing.space4,
                       AppSpacing.space4,
-                      AppSpacing.space12,
+                      96,
                     ),
                     itemCount: provider.routes.length,
                     itemBuilder: (context, index) =>
@@ -283,7 +285,8 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                   ),
                 ),
               ),
-              _typeChip(route.type),
+              // 이름에 이미 '(등원)'처럼 들어 있으면 같은 말을 꼬리표로 또 달지 않는다
+              if (!route.name.contains(route.type)) _typeChip(route.type),
               IconButton(
                 onPressed: () => _openRouteEditor(route: route),
                 icon: const Icon(Icons.edit_outlined, size: 20),
@@ -292,8 +295,9 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
               ),
               IconButton(
                 onPressed: () => _confirmDeleteRoute(provider, route),
+                // 카드마다 빨간 휴지통이 화면에서 가장 셌다 — 수정 연필과 같은 회색, 누르면 확인 창
                 icon: const Icon(Icons.delete_outline, size: 20),
-                color: AppSemanticColors.statusErrorIcon,
+                color: AppSemanticColors.textTertiary,
                 tooltip: '노선 삭제',
               ),
             ],

@@ -8,7 +8,7 @@ import '../models/notice.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../widgets/notice/notice_priority_badge.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -236,133 +236,120 @@ class _AdminNoticeManagementScreenState
       onDismissed: (direction) {
         _deleteNotice(notice);
       },
+      // 직원 공지 목록(NoticeCard)과 같은 흰 카드·같은 꼬리표 — 예전엔 이 화면만 테마 기본의
+      // 청록 회색 카드에, 모든 카드에 '게시됨'이 붙어 정작 다른 '임시저장'이 묻혔고 고정 핀만 갈색이었다.
+      // 꼬리표 줄·제목·날짜 세 줄이던 것을 제목 + 날짜 두 줄로 줄이고, 꼬리표는 있을 때만 날짜 줄에 붙인다.
       child: Card(
         margin: const EdgeInsets.symmetric(
           horizontal: AppSpacing.space4,
           vertical: AppSpacing.space2,
         ),
         elevation: 0,
+        color: AppSemanticColors.surfaceDefault,
+        surfaceTintColor: AppSemanticColors.surfaceDefault,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          side: BorderSide(color: AppSemanticColors.borderDefault),
+          side: const BorderSide(color: AppSemanticColors.borderDefault),
         ),
         child: InkWell(
           onTap: () => _navigateToDetail(notice),
           borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space4,
+              AppSpacing.space3,
+              AppSpacing.space1,
+              AppSpacing.space3,
+            ),
+            child: Row(
               children: [
-                // Header
-                Row(
-                  children: [
-                    if (notice.isPinned) ...[
-                      Icon(
-                        Icons.push_pin,
-                        size: 16,
-                        color: AppSemanticColors.statusWarningIcon,
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
-                    ],
-                    // D8: 상태 배지는 하나만 — 긴급은 배지 대신 제목 앞 점+라벨로 표시한다
-                    NoticeStatusBadge(status: notice.status, small: true),
-                    const Spacer(),
-                    IconButton(
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                      tooltip: '더보기',
-                      onPressed: () => showAppActionSheet(
-                        context,
-                        title: notice.title,
-                        actions: [
-                          AppSheetAction(
-                            icon: Icons.edit_outlined,
-                            label: '수정',
-                            onSelected: () => _navigateToEditNotice(notice),
-                          ),
-                          AppSheetAction(
-                            icon: Icons.delete_outline,
-                            label: '삭제',
-                            isDestructive: true,
-                            onSelected: () {
-                              _showDeleteConfirmDialog(notice).then((confirmed) {
-                                if (confirmed == true) {
-                                  _deleteNotice(notice);
-                                }
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.space2),
-
-                // Title — 긴급은 배지 대신 제목 앞 빨간 점+라벨로
-                Row(
-                  children: [
-                    if (notice.priority == NoticePriority.high) ...[
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.statusErrorIcon,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        '긴급',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppSemanticColors.statusErrorText,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space1_5),
-                    ],
-                    Expanded(
-                      child: Text(
                         notice.title,
-                        style: AppTypography.bodyLarge.copyWith(
+                        style: AppTypography.titleMedium.copyWith(
                           color: AppSemanticColors.textPrimary,
-                          fontWeight: FontWeight.w600,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: AppSpacing.space1_5),
+                      Wrap(
+                        spacing: AppSpacing.space2,
+                        runSpacing: AppSpacing.space1,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (notice.isPinned)
+                            const AppTag(label: '고정', icon: Icons.push_pin),
+                          if (notice.priority == NoticePriority.high)
+                            const AppTag(label: '긴급', tone: AppTagTone.error),
+                          // 게시됨은 기본이라 말하지 않는다 — 임시저장·보관됨일 때만
+                          if (notice.status != NoticeStatus.published)
+                            AppTag(
+                              label: _getStatusText(notice.status),
+                              tone: notice.status == NoticeStatus.draft
+                                  ? AppTagTone.warning
+                                  : AppTagTone.neutral,
+                            ),
+                          Text(
+                            DateFormat('yyyy.MM.dd HH:mm').format(notice.createdAt),
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textTertiary,
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.visibility_outlined,
+                                size: 14,
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                              const SizedBox(width: AppSpacing.space1),
+                              Text(
+                                '${notice.viewCount}',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: AppSpacing.space2),
-
-                // Footer
-                Row(
-                  children: [
-                    Text(
-                      DateFormat('yyyy.MM.dd HH:mm').format(notice.createdAt),
-                      style: AppTypography.caption.copyWith(
-                        color: AppSemanticColors.textTertiary,
+                IconButton(
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                  tooltip: '더보기',
+                  onPressed: () => showAppActionSheet(
+                    context,
+                    title: notice.title,
+                    actions: [
+                      AppSheetAction(
+                        icon: Icons.edit_outlined,
+                        label: '수정',
+                        onSelected: () => _navigateToEditNotice(notice),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.space4),
-                    Icon(
-                      Icons.visibility_outlined,
-                      size: 14,
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                    const SizedBox(width: AppSpacing.space1),
-                    Text(
-                      '${notice.viewCount}',
-                      style: AppTypography.caption.copyWith(
-                        color: AppSemanticColors.textTertiary,
+                      AppSheetAction(
+                        icon: Icons.delete_outline,
+                        label: '삭제',
+                        isDestructive: true,
+                        onSelected: () {
+                          _showDeleteConfirmDialog(notice).then((confirmed) {
+                            if (confirmed == true) {
+                              _deleteNotice(notice);
+                            }
+                          });
+                        },
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
