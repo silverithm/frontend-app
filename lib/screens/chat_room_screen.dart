@@ -4214,6 +4214,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     // 전송 중·실패처럼 지금 알려야 하는 상태만 모든 말풍선에 남긴다(R1-03·R1-22).
     final showFailed = isMyMessage && sendingStatus == MessageSendingStatus.failed;
     final showSending = isMyMessage && sendingStatus == MessageSendingStatus.sending;
+    // 진행률은 파일 한 개짜리 말풍선에만 — 사진 묶음은 장마다 짧게 끝나 숫자가 오히려 어지럽다
+    final double? uploadProgress =
+        showSending && photoGroup == null ? _chatProvider.uploadProgressOf(message.localId) : null;
     final showUnread = showMeta && unreadCount > 0 && sendingStatus != MessageSendingStatus.failed;
     final showTime = showMeta && !showFailed;
     final hasMeta = showFailed || showSending || showUnread || showTime;
@@ -4254,7 +4257,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (showSending) ...[
-                  _buildSendingStatusIcon(sendingStatus, isAdmin),
+                  _buildSendingStatusIcon(sendingStatus, isAdmin, progress: uploadProgress),
+                  // 큰 동영상은 몇 분이 걸린다 — 빙글이만 돌면 멈춘 줄 안다. 몇 %까지 갔는지 함께 보인다
+                  if (uploadProgress != null) ...[
+                    const SizedBox(width: AppSpacing.space1),
+                    Text(
+                      '${(uploadProgress * 100).floor()}%',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textTertiary,
+                        height: 1.2,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
                   if (showTime) const SizedBox(width: AppSpacing.space1),
                 ],
                 if (showTime)
@@ -4350,13 +4365,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     );
   }
 
-  Widget _buildSendingStatusIcon(MessageSendingStatus status, bool isAdmin) {
+  Widget _buildSendingStatusIcon(MessageSendingStatus status, bool isAdmin, {double? progress}) {
     switch (status) {
       case MessageSendingStatus.sending:
         return SizedBox(
           width: AppSpacing.space3,
           height: AppSpacing.space3,
           child: CircularProgressIndicator(
+            // 진행률을 알면 채워지는 원으로, 모르면 지금처럼 도는 원으로
+            value: progress,
             strokeWidth: 1.5,
             valueColor: AlwaysStoppedAnimation<Color>(
               AppSemanticColors.textTertiary,

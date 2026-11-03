@@ -1513,6 +1513,7 @@ class ChatProvider with ChangeNotifier {
           batchId: entry.batchId,
           batchSize: entry.batchSize,
           clientMessageId: entry.clientMessageId,
+          onProgress: (sent, total) => _setUploadProgress(entry.localId, sent, total),
         );
       } else {
         response = await ApiService().sendChatMessage(
@@ -1530,12 +1531,14 @@ class ChatProvider with ChangeNotifier {
       final newMessage = ChatMessage.fromJson(
         messageData as Map<String, dynamic>,
       );
+      _uploadProgress.remove(entry.localId);
       _cancelAckTimer(entry.localId);
       _outbox.acknowledge(entry.localId);
       _replacePendingMessage(entry.localId, newMessage);
       return true;
     } catch (e) {
       print('[ChatProvider] 전송 실패(REST): ${entry.clientMessageId} $e');
+      _uploadProgress.remove(entry.localId);
       _cancelAckTimer(entry.localId);
       _outbox.markFailed(entry.localId);
       _updatePendingMessageStatus(entry.localId, MessageSendingStatus.failed);
@@ -1646,6 +1649,27 @@ class ChatProvider with ChangeNotifier {
   // insertPendingFileMessage가 같은 밀리초 안에 여러 번 불려도(사진 여러 장을
   // 한 번에 고를 때) localId가 겹치지 않도록 붙이는 일련번호.
   int _pendingLocalIdSeq = 0;
+
+  /// 보내는 중인 파일 말풍선의 진행률(0~1). 큰 동영상은 모바일 데이터로 몇 분이 걸리는데,
+  /// 빙글이만 돌면 멈춘 줄 알았다(2026-11-03 "영상 업로드하다가 멈춘 것"). 끝나거나 실패하면 지운다.
+  final Map<String, double> _uploadProgress = {};
+
+  /// [localId] 말풍선의 업로드 진행률 — 아직 시작 전이거나 파일이 아니면 null
+  double? uploadProgressOf(String? localId) =>
+      localId == null ? null : _uploadProgress[localId];
+
+  void _setUploadProgress(String localId, int sent, int total) {
+    if (total <= 0) return;
+    final next = (sent / total).clamp(0.0, 1.0);
+    final prev = _uploadProgress[localId];
+    // 화면은 5% 단위로만 다시 그린다 — 조각마다 그리면 대화 목록 전체가 수백 번 다시 그려진다
+    if (prev != null && (next * 20).floor() == (prev * 20).floor() && next < 1.0) {
+      _uploadProgress[localId] = next;
+      return;
+    }
+    _uploadProgress[localId] = next;
+    notifyListeners();
+  }
 
   static const List<String> _imageExtensions = [
     'jpg',

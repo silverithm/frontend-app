@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart' as dio;
+import 'chat_upload_stall.dart';
 import 'package:flutter/material.dart';
 import '../models/elder_care_profile.dart';
 import '../utils/api_response_parser.dart';
@@ -3417,6 +3418,7 @@ class ApiService {
     String? batchId,
     int? batchSize,
     String? clientMessageId,
+    void Function(int sent, int total)? onProgress,
   }) async {
     try {
       final url = '$_baseUrl/v1/chat/rooms/$roomId/files';
@@ -3441,13 +3443,9 @@ class ApiService {
         '[API] 업로드 파일명: $fileName, 크기: $fileSize bytes (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB)',
       );
 
-      // dio 인스턴스 생성
-      final dioClient = dio.Dio();
-      dioClient.options.connectTimeout = const Duration(seconds: 30);
-      dioClient.options.receiveTimeout = const Duration(seconds: 60);
-      dioClient.options.sendTimeout = const Duration(seconds: 60);
-      // 401/403은 예외가 아니라 응답으로 받는다 — 토큰을 갱신하고 한 번 더 올리기 위해
-      dioClient.options.validateStatus = (status) => status != null && status < 500;
+      // 전체 업로드 시간에는 제한을 두지 않고 진행이 멈춘 시간만 잰다 — 큰 동영상이 60초에
+      // 끊기던 것(chat_upload_stall.dart). 401/403은 응답으로 받아 토큰을 갱신하고 한 번 더 올린다.
+      final dioClient = createChatUploadDio();
 
       Future<dio.Response> attempt() async {
         // FormData는 한 번 보내면 다시 못 쓴다 — 시도마다 새로 만든다
@@ -3461,19 +3459,15 @@ class ApiService {
           },
           if (clientMessageId != null) 'clientMessageId': clientMessageId,
         });
-        return dioClient.post(
+        return postWithStallGuard(
+          dioClient,
           url,
           data: formData,
-          options: dio.Options(
-            headers: {
-              'Authorization': 'Bearer ${StorageService().getToken()}',
-              'ngrok-skip-browser-warning': 'true',
-            },
-          ),
-          onSendProgress: (sent, total) {
-            final progress = (sent / total * 100).toStringAsFixed(1);
-            print('[API] 업로드 진행률: $progress% ($sent / $total)');
+          headers: {
+            'Authorization': 'Bearer ${StorageService().getToken()}',
+            'ngrok-skip-browser-warning': 'true',
           },
+          onProgress: onProgress,
         );
       }
 
