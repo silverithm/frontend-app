@@ -54,8 +54,15 @@ Future<bool?> showPlazaPostEditor(
   final isEdit = existingPost != null;
   final titleController =
       TextEditingController(text: existingPost?['title']?.toString() ?? '');
-  final contentController =
-      TextEditingController(text: existingPost?['content']?.toString() ?? '');
+  // 웹 서식 편집기로 쓴 글은 본문이 HTML이다. 평문 TextField에 원문을 그대로 넣으면
+  // <p>·<br>이 날것으로 보이고, 그 상태로 저장하면 본문이 망가진다. 그래서 읽을 수
+  // 있는 평문으로 풀어서 채우고, 저장할 때 들어온 모양(HTML)으로 다시 올린다.
+  // 주의: 굵게·색 같은 서식은 이 과정에서 사라진다. 앱에 서식 편집기가 없는 동안에는
+  // 태그가 날것으로 보이는 것보다 낫다는 판단이다 (서식을 지키려면 웹에서 수정할 것).
+  final rawContent = existingPost?['content']?.toString() ?? '';
+  final contentWasHtml = containsHtmlTags(rawContent);
+  final contentController = TextEditingController(
+      text: contentWasHtml ? htmlToEditableText(rawContent) : rawContent);
   final contactController = TextEditingController(
       text: existingPost?['contactInfo']?.toString() ?? '');
   String board = existingPost?['board']?.toString() ?? initialBoard;
@@ -160,13 +167,19 @@ Future<bool?> showPlazaPostEditor(
                           contentController.text.trim().isEmpty) {
                         return;
                       }
+                      // 들어온 모양대로 돌려놓는다 — HTML이던 글은 줄바꿈을 <br>로
+                      // 되살려 저장해야 웹에서 한 줄로 뭉치지 않는다.
+                      // 원래 평문이던 글은 평문 그대로 둔다.
+                      final content = contentWasHtml
+                          ? plainTextToHtml(contentController.text.trim())
+                          : contentController.text.trim();
                       try {
                         if (isEdit) {
                           await ApiService().updatePlazaPost(
                             postId: existingPost['id'] as int,
                             board: board,
                             title: titleController.text.trim(),
-                            content: contentController.text.trim(),
+                            content: content,
                             isAnonymous: isAnonymous,
                             authorName: user?.name,
                             companyName: user?.company?.name,
@@ -178,7 +191,7 @@ Future<bool?> showPlazaPostEditor(
                           await ApiService().createPlazaPost(
                             board: board,
                             title: titleController.text.trim(),
-                            content: contentController.text.trim(),
+                            content: content,
                             isAnonymous: isAnonymous,
                             authorName: user?.name,
                             companyName: user?.company?.name,

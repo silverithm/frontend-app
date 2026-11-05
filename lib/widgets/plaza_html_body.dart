@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../utils/html_utils.dart';
 
 /// 커뮤니티 게시글 본문(`content`)은 웹 리치텍스트 에디터가 저장한 HTML이다.
 /// 이 위젯이 태그를 실제로 렌더링해 `<p>`, `<strong>` 같은 태그가 그대로
@@ -24,7 +25,10 @@ class PlazaHtmlBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Html(
-      data: html,
+      // flutter_html에는 "블록 끝 <br>은 줄을 만들지 않는다"는 브라우저 규칙이 없다.
+      // 그대로 그리면 웹에서 두 줄인 글이 앱에서 네 줄이 되므로, 그리기 직전에
+      // 웹과 같은 규칙으로 군더더기를 덜어낸다 (이미 저장된 글까지 고쳐야 해서 표시 단계).
+      data: normalizeNoticeHtml(html),
       onLinkTap: (url, attributes, element) => _openLink(url),
       style: {
         'body': Style(
@@ -34,7 +38,9 @@ class PlazaHtmlBody extends StatelessWidget {
           color: AppSemanticColors.textPrimary,
           lineHeight: const LineHeight(1.6),
         ),
-        'p': Style(margin: Margins.only(bottom: 10)),
+        // top을 명시해 flutter_html의 p 기본 margin(상하 1em)을 확실히 지운다.
+        // Flutter에는 margin collapsing이 없어, 위아래가 그대로 더해져 문단 사이가 벌어진다.
+        'p': Style(margin: Margins.only(top: 0, bottom: 10)),
         'div': Style(margin: Margins.zero),
         'strong': Style(fontWeight: AppTypography.fontWeightBold),
         'b': Style(fontWeight: AppTypography.fontWeightBold),

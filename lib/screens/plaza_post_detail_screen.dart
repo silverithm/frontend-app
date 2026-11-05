@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../utils/html_utils.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/plaza_html_body.dart';
 import '../widgets/seed/seed_button.dart';
@@ -184,9 +185,21 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
                                   color: AppSemanticColors.textTertiary),
                             ),
                             const Divider(height: AppSpacing.space6),
-                            // 웹 리치텍스트 에디터가 저장한 HTML을 그대로 렌더링한다
-                            // (예전에는 태그가 그대로 노출되는 표시 버그가 있었다)
-                            PlazaHtmlBody(html: post['content']?.toString() ?? ''),
+                            // 웹 리치텍스트 에디터로 쓴 글만 HTML로 그린다
+                            // (예전에는 태그가 그대로 노출되는 표시 버그가 있었다).
+                            // 앱에서 쓴 평문 글까지 HTML로 넘기면 flutter_html이 `\n`을
+                            // 공백으로 바꿔 줄바꿈이 전멸한다 — 공지 상세와 같은 분기를 둔다.
+                            if (containsHtmlTags(post['content']?.toString() ?? ''))
+                              PlazaHtmlBody(
+                                  html: post['content']?.toString() ?? '')
+                            else
+                              Text(
+                                post['content']?.toString() ?? '',
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                  height: 1.6,
+                                ),
+                              ),
                             if (plazaIsJobBoard(post['board']?.toString())) ...[
                               const SizedBox(height: AppSpacing.space4),
                               _ContactInfoCard(post: post),

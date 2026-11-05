@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_choice_tile.dart';
+import '../utils/html_utils.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -33,6 +34,9 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
   bool _isPinned = false;
   bool _isSubmitting = false;
 
+  /// 열었을 때 본문이 HTML이었는가. 저장할 때 들어온 모양 그대로 돌려놓기 위해 기억한다.
+  bool _contentWasHtml = false;
+
   bool get isEditing => widget.notice != null;
 
   @override
@@ -40,7 +44,15 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
     super.initState();
     if (isEditing) {
       _titleController.text = widget.notice!.title;
-      _contentController.text = widget.notice!.content;
+      // 웹 서식 편집기로 쓴 공지는 본문이 HTML이다. 평문 TextField에 원문을 그대로
+      // 넣으면 <p>·<br>이 날것으로 보이고, 그 상태로 저장하면 본문이 망가진다.
+      // 그래서 읽을 수 있는 평문으로 풀어서 채우고, 저장할 때 다시 HTML로 올린다.
+      // 주의: 굵게·색 같은 서식은 이 과정에서 사라진다. 앱에 서식 편집기가 없는 동안에는
+      // 태그가 날것으로 보이는 것보다 낫다는 판단이다 (서식을 지키려면 웹에서 수정할 것).
+      _contentWasHtml = containsHtmlTags(widget.notice!.content);
+      _contentController.text = _contentWasHtml
+          ? htmlToEditableText(widget.notice!.content)
+          : widget.notice!.content;
       _selectedPriority = widget.notice!.priority;
       _selectedStatus = widget.notice!.status;
       _isPinned = widget.notice!.isPinned;
@@ -299,13 +311,19 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
       final noticeProvider = context.read<NoticeProvider>();
       final companyId = authProvider.currentUser?.company?.id ?? '1';
 
+      // 들어온 모양대로 돌려놓는다 — HTML이던 공지는 줄바꿈을 <br>로 되살려 저장해야
+      // 웹 목록·상세에서 한 줄로 뭉치지 않는다. 원래 평문이던 공지는 평문 그대로 둔다.
+      final content = _contentWasHtml
+          ? plainTextToHtml(_contentController.text.trim())
+          : _contentController.text.trim();
+
       bool success;
       if (isEditing) {
         success = await noticeProvider.updateNotice(
           noticeId: widget.notice!.id,
           companyId: companyId,
           title: _titleController.text.trim(),
-          content: _contentController.text.trim(),
+          content: content,
           priority: _selectedPriority.name.toUpperCase(),
           status: _selectedStatus.name.toUpperCase(),
           isPinned: _isPinned,
@@ -314,7 +332,7 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
         success = await noticeProvider.createNotice(
           companyId: companyId,
           title: _titleController.text.trim(),
-          content: _contentController.text.trim(),
+          content: content,
           priority: _selectedPriority.name.toUpperCase(),
           status: _selectedStatus.name.toUpperCase(),
           isPinned: _isPinned,
