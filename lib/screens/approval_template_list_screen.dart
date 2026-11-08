@@ -121,8 +121,10 @@ class _ApprovalTemplateListScreenState
   }
 
   Widget _buildCategoryFilterBar(List<String> categories) {
-    // 분류 필터 띠 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
+    // 분류 필터 띠 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선).
+    // 폭을 채운다 — 안 주면 Column 가운데 정렬에 끌려 칩 폭만큼만 칠해져 가운데 떠 보였다.
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.space4,
         vertical: AppSpacing.space3,

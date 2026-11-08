@@ -130,9 +130,12 @@ class _TabLabelWithBadge extends StatelessWidget {
         Text(label),
         if (count > 0) ...[
           const SizedBox(width: AppSpacing.space1),
+          // 높이를 16으로 못 박는다 — 아래 alignment는 주어진 세로 칸을 다 채우려 해서,
+          // 최소 높이만 주면 탭 높이(46)만큼 늘어나 빨간 막대가 탭 아래로 삐져나왔다(2026-11-08).
           Container(
+            height: 16,
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+            constraints: const BoxConstraints(minWidth: 16),
             decoration: BoxDecoration(
               // 앱 토큰 중 error 계열(red600) — 눈에 띄는 경고색으로 새로 만들지 않고 기존 토큰 사용
               color: AppSemanticColors.statusErrorIcon,

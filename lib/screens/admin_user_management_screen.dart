@@ -103,21 +103,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                       AppSemanticColors.headerForegroundMuted,
                   indicatorColor: AppSemanticColors.headerTabIndicator,
                   indicatorWeight: 2,
-                  labelStyle: AppTypography.labelMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  unselectedLabelStyle: AppTypography.labelMedium,
+                  // 전자결재·채팅 탭 머리와 같은 글자 크기·굵기
+                  labelStyle: AppTypography.titleSmall,
+                  unselectedLabelStyle: AppTypography.bodyMedium,
                   dividerColor: AppColors.transparent,
                   tabs: [
-                    if (canManageMembers)
-                      const Tab(
-                        icon: Icon(Icons.pending_actions, size: 20),
-                        text: '승인 대기',
-                      ),
-                    const Tab(
-                      icon: Icon(Icons.people, size: 20),
-                      text: '전체 종사자',
-                    ),
+                    // 글자 탭만 — 아이콘+글자 탭(높이 72)을 48 칸에 넣어 제목이 위로 밀려 있었다
+                    if (canManageMembers) const Tab(text: '승인 대기'),
+                    const Tab(text: '전체 종사자'),
                   ],
                 ),
               ),

@@ -1358,7 +1358,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                         ),
                                                       ),
                                                       Text(
-                                                        '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드 ${item['downloadCount'] ?? 0}',
+                                                        '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드\u00A0${item['downloadCount'] ?? 0}',
                                                         style: AppTypography
                                                             .bodySmall
                                                             .copyWith(

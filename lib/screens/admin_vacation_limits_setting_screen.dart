@@ -302,8 +302,9 @@ class _AdminVacationLimitsSettingScreenState
                   ),
                 ),
 
-                // 역할 필터 탭
+                // 역할 필터 탭 — 폭을 채운다(안 주면 칩 폭만큼만 칠해져 가운데 떠 보였다)
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.space4),
                   decoration: BoxDecoration(
                     color: AppSemanticColors.backgroundSecondary,
