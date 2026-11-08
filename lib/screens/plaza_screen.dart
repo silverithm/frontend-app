@@ -14,6 +14,7 @@ import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../utils/korean_keep_all.dart';
 import '../utils/html_utils.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
@@ -1358,7 +1359,10 @@ class _LibraryTabState extends State<_LibraryTab> {
                                                         ),
                                                       ),
                                                       Text(
-                                                        '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드\u00A0${item['downloadCount'] ?? 0}',
+                                                        // 낱말 단위로만 줄을 바꾸고 '다운로드 96'은 한 덩어리로 —
+                                                        // 수정 단추가 붙어 폭이 좁아지면 '다운로드 / 96', '다운로 / 드'로 갈렸다
+                                                        keepAll(
+                                                            '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드\u00A0${item['downloadCount'] ?? 0}'),
                                                         style: AppTypography
                                                             .bodySmall
                                                             .copyWith(
