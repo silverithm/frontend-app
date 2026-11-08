@@ -432,13 +432,10 @@ class _AdminVacationLimitsSettingScreenState
     final weekdayNames = ['', '월', '화', '수', '목', '금', '토', '일'];
     final weekdayName = weekdayNames[date.weekday];
 
-    // 평일은 중립, 주말(토·일)만 오류색 — 파랑은 앱 팔레트에 없어 토요일도 같은 주말색으로 묶는다
-    final Color borderColor = isWeekend
-        ? AppSemanticColors.statusErrorBorder
-        : AppSemanticColors.borderSubtle;
-    final Color headerColor = isWeekend
-        ? AppSemanticColors.statusErrorBackground
-        : AppSemanticColors.backgroundSecondary;
+    // 주말은 날짜 글자만 빨강(달력 관례). 테두리·바탕·꼬리표까지 빨갛게 하면
+    // 잘못 입력한 칸처럼 보여서(4차 점검 2026-11-08) 카드·꼬리표는 평일과 같게 둔다.
+    const Color borderColor = AppSemanticColors.borderSubtle;
+    const Color headerColor = AppSemanticColors.backgroundSecondary;
     final Color headerTextColor = isWeekend
         ? AppSemanticColors.statusErrorText
         : AppSemanticColors.textPrimary;
@@ -478,7 +475,7 @@ class _AdminVacationLimitsSettingScreenState
                 const SizedBox(width: AppSpacing.space2),
                 AppTag(
                   label: '$weekdayName요일',
-                  tone: isWeekend ? AppTagTone.error : AppTagTone.neutral,
+                  tone: AppTagTone.neutral,
                 ),
               ],
             ),
