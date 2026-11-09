@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/schedule_provider.dart';
 import '../providers/auth_provider.dart';
@@ -9,7 +10,9 @@ import '../models/schedule.dart';
 import '../models/schedule_colors.dart';
 import '../models/user.dart';
 import '../utils/permissions.dart';
+import '../utils/schedule_filter.dart';
 import '../utils/schedule_repeat.dart';
+import '../widgets/schedule/schedule_filter_sheet.dart';
 import '../widgets/schedule/schedule_repeat_fields.dart';
 import '../widgets/vacation_calendar_widget.dart';
 import '../widgets/vacation_planning_banner.dart';
@@ -29,6 +32,7 @@ import 'admin_vacation_limits_setting_screen.dart';
 import '../providers/notice_provider.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_tag.dart';
+import '../widgets/seed/seed_chip.dart';
 
 class CalendarScreen extends StatefulWidget {
   /// 일정 알림을 눌러 들어온 경우 그 일정이 있는 날로 바로 연다.
@@ -63,6 +67,12 @@ class _CalendarScreenState extends State<CalendarScreen>
   DateTime? _scheduleSelectedDate;
   // 할 일이 있는 일정 항목 중 체크리스트를 펼쳐 둔 것들 (별도 상세 화면이 없어 항목 확장으로 대신한다)
   final Set<int> _expandedTaskScheduleIds = {};
+
+  // 일정 필터 — 웹 월간일정과 같은 값·규칙(utils/schedule_filter.dart). 기관별로 기기에 남긴다.
+  // 원장이 담당자별로 월간 업무를 점검하려고 요청했다(2026-11-09).
+  List<String> _scheduleFilterValues = [];
+  // 기관이 만든 일정 구분 — 필터 시트의 '일정 구분' 묶음에 쓴다
+  List<ScheduleLabel> _scheduleLabels = [];
 
   // 테두리를 강조할 일정 — 알림으로 들어왔거나 홈 '오늘' 칸에서 눌러 넘어온 그 일정
   int? _highlightedScheduleId;
@@ -115,6 +125,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         _scheduleCurrentDate,
         companyId: companyId.toString(),
       );
+      _loadScheduleFilter(companyId.toString());
 
       _fabAnimationController.forward();
 
@@ -298,6 +309,159 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
+  /// 사람마다 따로 남긴다 — 기관 공용 태블릿에서 앞사람이 고른 담당자 필터가 이어지지 않게.
+  /// 사람·기관을 모르면 null(저장하지 않고 이번 화면에서만 쓴다).
+  String? _scheduleFilterKey() {
+    final me = context.read<AuthProvider>().currentUser;
+    final companyId = me?.company?.id.toString() ?? '';
+    if (me == null || companyId.isEmpty) return null;
+    return 'carev.scheduleFilter.$companyId.${me.chatUserId}';
+  }
+
+  /// 저장해 둔 일정 필터와 기관 일정 구분을 불러온다. 둘 다 실패해도 전체 보기로 동작한다.
+  Future<void> _loadScheduleFilter(String companyId) async {
+    final key = _scheduleFilterKey();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = key == null ? null : prefs.getStringList(key);
+      if (saved != null && mounted) {
+        setState(() => _scheduleFilterValues = saved);
+      }
+    } catch (_) {
+      // 저장값을 못 읽으면 전체 보기로 시작한다
+    }
+    try {
+      final data = await ApiService().getScheduleLabels(companyId: companyId);
+      final list = data['labels'];
+      if (list is List && mounted) {
+        setState(() {
+          _scheduleLabels = list
+              .whereType<Map<String, dynamic>>()
+              .map(ScheduleLabel.fromJson)
+              .where((l) => l.id != 0)
+              .toList();
+        });
+      }
+    } catch (_) {
+      // 구분 목록을 못 받으면 이번 달 일정에 나온 구분만 보여 준다
+    }
+  }
+
+  void _updateScheduleFilter(List<String> values) {
+    setState(() => _scheduleFilterValues = values);
+    final key = _scheduleFilterKey();
+    if (key == null) return;
+    SharedPreferences.getInstance()
+        .then((prefs) => prefs.setStringList(key, values))
+        .catchError((_) => false);
+  }
+
+  /// 필터의 '나' — 작성자·일정 담당자·할 일 담당자·참석자 (웹 월간일정과 같은 규칙)
+  bool _isMySchedule(Schedule schedule) {
+    final me = context.read<AuthProvider>().currentUser;
+    if (me == null) return false;
+    return isMySchedule(
+      schedule,
+      myId: me.id,
+      myEmail: me.email,
+      isAdminAccount: me.isAdminAccount,
+    );
+  }
+
+  bool _matchesScheduleFilter(Schedule schedule) =>
+      matchesScheduleFilter(schedule, _scheduleFilterValues, _isMySchedule);
+
+  /// 달력 점·날짜 목록이 쓰는 그날 일정 — 필터를 건 뒤의 것.
+  /// 알림·홈 '오늘' 칸에서 짚어 온 일정은 필터와 상관없이 남긴다 — 담당자 필터를 걸어 둔 채
+  /// 다른 사람 일정 알림을 누르면 그 날짜는 펴지는데 카드가 가려져 아무것도 안 보였다.
+  List<Schedule> _visibleSchedulesForDate(
+    ScheduleProvider provider,
+    DateTime date,
+  ) {
+    final all = provider.getSchedulesForDate(date);
+    if (_scheduleFilterValues.isEmpty) return all;
+    return all
+        .where((s) => s.id == _highlightedScheduleId || _matchesScheduleFilter(s))
+        .toList();
+  }
+
+  /// 필터 시트의 일정 구분 — 기관 구분 목록 + 이번 달 일정에만 보이는 구분(목록을 못 받았을 때)
+  List<ScheduleLabel> _filterLabels(List<Schedule> monthSchedules) {
+    final byId = <int, ScheduleLabel>{for (final l in _scheduleLabels) l.id: l};
+    for (final schedule in monthSchedules) {
+      if (hasNoLabel(schedule)) continue;
+      byId.putIfAbsent(schedule.label!.id, () => schedule.label!);
+    }
+    return byId.values.toList();
+  }
+
+  void _openScheduleFilter(ScheduleProvider provider) {
+    showScheduleFilterSheet(
+      context,
+      values: _scheduleFilterValues,
+      onChanged: _updateScheduleFilter,
+      monthSchedules: provider.schedules,
+      labels: _filterLabels(provider.schedules),
+      isMine: _isMySchedule,
+    );
+  }
+
+  /// 달 이동 줄 아래 한 줄 — 일정 필터 단추와 이번 달 수행완료 수.
+  /// 필터를 걸면 완료 수도 걸린 일정만 센다: 한 사람을 고르면 곧 그 사람의 이번 달 수행률이다.
+  Widget _buildScheduleFilterBar(ScheduleProvider provider) {
+    final month = provider.schedules;
+    final visible = _scheduleFilterValues.isEmpty
+        ? month
+        : month.where(_matchesScheduleFilter).toList();
+    final done = visible.where((s) => s.isCompleted).length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space4,
+        AppSpacing.space2,
+        AppSpacing.space4,
+        AppSpacing.space2,
+      ),
+      child: Row(
+        children: [
+          Flexible(
+            child: SeedChip(
+              label: scheduleFilterButtonLabel(_scheduleFilterValues, month),
+              selected: _scheduleFilterValues.isNotEmpty,
+              size: SeedChipSize.small,
+              prefixIcon: Icons.filter_list,
+              onTap: () => _openScheduleFilter(provider),
+            ),
+          ),
+          const Spacer(),
+          if (month.isNotEmpty)
+            Semantics(
+              label: '${_scheduleFilterValues.isEmpty ? '이번 달' : '필터한'} 일정 '
+                  '${visible.length}건 중 $done건 수행완료',
+              excludeSemantics: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    size: 14,
+                    color: AppSemanticColors.statusSuccessIcon,
+                  ),
+                  const SizedBox(width: AppSpacing.space1),
+                  Text(
+                    '완료 $done/${visible.length}',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   /// 일정 달력 탭 빌드
   Widget _buildScheduleCalendar() {
     return Consumer<ScheduleProvider>(
@@ -422,6 +586,8 @@ class _CalendarScreenState extends State<CalendarScreen>
           ),
         ),
 
+        _buildScheduleFilterBar(provider),
+
         // 요일 헤더 — 옅은 회색 면 + 하단 구분선. 틸을 쓰지 않는 건 오늘·선택
         // 표시가 틸 계열이라 겹치지 않게 하려는 것
         Container(
@@ -501,7 +667,8 @@ class _CalendarScreenState extends State<CalendarScreen>
           DateTime.now().year == date.year &&
           DateTime.now().month == date.month &&
           DateTime.now().day == date.day;
-      final hasSchedule = provider.hasSchedulesOnDate(date);
+      // 필터를 걸었으면 걸린 일정이 있는 날에만 점을 찍는다
+      final hasSchedule = _visibleSchedulesForDate(provider, date).isNotEmpty;
 
       // 디버깅 (일정이 있는 날짜 확인)
       if (day == 1 || hasSchedule) {
@@ -599,7 +766,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   /// 선택된 날짜의 일정 상세
   Widget _buildScheduleDateDetail(ScheduleProvider provider) {
-    final schedules = provider.getSchedulesForDate(_scheduleSelectedDate!);
+    final schedules = _visibleSchedulesForDate(provider, _scheduleSelectedDate!);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -690,7 +857,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                       ),
                       const SizedBox(width: AppSpacing.space3),
                       Text(
-                        '이 날짜에는 등록된 일정이 없습니다.',
+                        _scheduleFilterValues.isEmpty
+                            ? '이 날짜에는 등록된 일정이 없습니다.'
+                            : '이 날짜에는 필터에 맞는 일정이 없습니다.',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),

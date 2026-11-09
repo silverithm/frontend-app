@@ -355,6 +355,7 @@ class ScheduleProvider with ChangeNotifier {
             completedByName: schedule.completedByName,
             managerId: schedule.managerId,
             managerName: schedule.managerName,
+            managerType: schedule.managerType,
             tasks: tasks,
             taskTotal: tasks.length,
             taskCompleted: completedCount,

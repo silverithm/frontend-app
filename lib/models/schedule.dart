@@ -24,6 +24,9 @@ class Schedule {
   // 담당자 (참석자와 별개, V1.35)
   final int? managerId;
   final String? managerName;
+  // 담당자 종류 "MEMBER"(직원) | "ADMIN"(관리자). managerId의 id 공간이 이걸로 갈린다
+  // (members.id / app_user.id — 숫자가 겹칠 수 있다). 일정 필터의 사람 구분에 쓴다.
+  final String? managerType;
   // 할 일 (V1.32)
   final List<ScheduleTask> tasks;
   final int taskTotal;
@@ -55,6 +58,7 @@ class Schedule {
     this.completedByName,
     this.managerId,
     this.managerName,
+    this.managerType,
     this.tasks = const [],
     this.taskTotal = 0,
     this.taskCompleted = 0,
@@ -113,6 +117,7 @@ class Schedule {
           ? json['managerId']
           : int.tryParse(json['managerId']?.toString() ?? ''),
       managerName: json['managerName']?.toString(),
+      managerType: json['managerType']?.toString(),
       tasks: json['tasks'] != null
           ? (json['tasks'] as List)
               .map((t) => ScheduleTask.fromJson(t as Map<String, dynamic>))
