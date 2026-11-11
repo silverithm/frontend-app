@@ -33,6 +33,7 @@ class AppPressable extends StatefulWidget {
     this.autofocus = false,
     this.focusBorderRadius,
     this.behavior = HitTestBehavior.opaque,
+    this.onHighlightChanged,
   });
 
   final Widget child;
@@ -64,6 +65,10 @@ class AppPressable extends StatefulWidget {
   final BorderRadius? focusBorderRadius;
 
   final HitTestBehavior behavior;
+
+  /// 눌림이 시작·끝날 때(true/false). 눌린 동안 색을 짙게 하는 부품(단추·줄)이 쓴다.
+  /// '동작 줄이기'여도 불린다 — 색 바뀜은 움직임이 아니다.
+  final ValueChanged<bool>? onHighlightChanged;
 
   bool get enabled => onTap != null || onLongPress != null;
 
@@ -106,7 +111,16 @@ class _AppPressableState extends State<AppPressable>
     super.dispose();
   }
 
+  bool _highlighted = false;
+
+  void _setHighlight(bool value) {
+    if (_highlighted == value) return;
+    _highlighted = value;
+    widget.onHighlightChanged?.call(value);
+  }
+
   void _pressDown() {
+    _setHighlight(true);
     if (!_allowsScale) return;
     _press.animateTo(
       1,
@@ -116,6 +130,7 @@ class _AppPressableState extends State<AppPressable>
   }
 
   void _release() {
+    _setHighlight(false);
     if (!_allowsScale) {
       _press.value = 0;
       return;

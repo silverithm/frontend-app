@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
+import '../../utils/app_haptics.dart';
+import 'app_pressable.dart';
 
+/// 카드 — B안(2026-11-12): 회색 바탕 위 흰 상자, 테두리·그림자 없음, 모서리 20, 안쪽 여백 20.
+/// 카드끼리는 선 대신 간격(AppSpacing.cardGap 12)으로 나눈다.
+/// [onTap]이 있으면 눌렀을 때 살짝 줄었다가(0.98) 돌아오고 tap 햅틱이 울린다.
 class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
+
+  /// 바깥 여백. 없으면 0 — 목록에서는 감싸는 쪽이 간격을 정한다.
   final EdgeInsets? margin;
   final VoidCallback? onTap;
   final Color? backgroundColor;
   final Color? borderColor;
   final double? borderRadius;
   final double? elevation;
+
+  /// B안 기본은 테두리 없음. 흰 바탕 위에 카드를 겹쳐 놓는 드문 자리에서만 true.
   final bool hasBorder;
+
+  /// 화면 낭독기가 읽을 이름(누를 수 있는 카드일 때).
+  final String? semanticLabel;
 
   const AppCard({
     super.key,
@@ -24,78 +35,52 @@ class AppCard extends StatelessWidget {
     this.borderColor,
     this.borderRadius,
     this.elevation,
-    this.hasBorder = true,
+    this.hasBorder = false,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final effectivePadding =
-        padding ?? const EdgeInsets.all(AppSpacing.space4);
-    final effectiveRadius = borderRadius ?? AppBorderRadius.xl;
-
-    Widget card = shadcn.Card(
-      padding: effectivePadding,
-      filled: backgroundColor != null,
-      fillColor: backgroundColor,
-      borderRadius: BorderRadius.circular(effectiveRadius),
-      borderColor: hasBorder
-          ? (borderColor ?? AppSemanticColors.borderDefault)
-          : AppColors.transparent,
-      borderWidth: hasBorder ? 1 : 0,
-      boxShadow: elevation != null && elevation! > 0
-          ? [
-              BoxShadow(
-                color: AppColors.black.withValues(alpha: 0.1),
-                blurRadius: elevation!,
-                offset: Offset(0, elevation! / 2),
-              ),
-            ]
-          : null,
-      child: child,
+    final radius = BorderRadius.circular(borderRadius ?? AppBorderRadius.card);
+    final shadowElevation = elevation ?? 0;
+    Widget card = DecoratedBox(
+      decoration: BoxDecoration(
+        color: backgroundColor ?? AppSemanticColors.surfaceCard,
+        borderRadius: radius,
+        border: hasBorder
+            ? Border.all(color: borderColor ?? AppSemanticColors.borderHairline)
+            : null,
+        boxShadow: shadowElevation > 0
+            ? [
+                BoxShadow(
+                  color: AppColors.black.withValues(alpha: 0.08),
+                  blurRadius: shadowElevation,
+                  offset: Offset(0, shadowElevation / 2),
+                ),
+              ]
+            : null,
+      ),
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(AppSpacing.cardPadding),
+        child: child,
+      ),
     );
 
-    // Apply margin via Container wrapper
-    if (margin != null || onTap == null) {
-      card = Container(
-        margin: margin ?? const EdgeInsets.all(AppSpacing.space4),
+    if (onTap != null) {
+      card = AppPressable(
+        onTap: onTap,
+        haptic: AppHapticKind.tap,
+        pressedScale: 0.98,
+        isButton: true,
+        semanticLabel: semanticLabel,
+        focusBorderRadius: radius,
+        minTouchSize: Size.zero,
         child: card,
       );
     }
 
-    if (onTap != null) {
-      return Container(
-        margin: margin ?? const EdgeInsets.all(AppSpacing.space4),
-        child: Material(
-          color: AppColors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(effectiveRadius),
-            child: shadcn.Card(
-              padding: effectivePadding,
-              filled: backgroundColor != null,
-              fillColor: backgroundColor,
-              borderRadius: BorderRadius.circular(effectiveRadius),
-              borderColor: hasBorder
-                  ? (borderColor ?? AppSemanticColors.borderDefault)
-                  : AppColors.transparent,
-              borderWidth: hasBorder ? 1 : 0,
-              boxShadow: elevation != null && elevation! > 0
-                  ? [
-                      BoxShadow(
-                        color: AppColors.black.withValues(alpha: 0.1),
-                        blurRadius: elevation!,
-                        offset: Offset(0, elevation! / 2),
-                      ),
-                    ]
-                  : null,
-              child: child,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return card;
+    final m = margin;
+    return m == null ? card : Padding(padding: m, child: card);
   }
 }
 
@@ -119,11 +104,12 @@ class AppStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _getStatusColors();
 
+    // B안: 상태 카드도 테두리 없이 옅은 상태색 바탕만
     return AppCard(
       backgroundColor: colors.background,
-      borderColor: colors.border,
       padding: padding,
-      margin: margin,
+      // 예전 AppCard 기본 바깥 여백(16)을 그대로 둔다 — 쓰는 곳(프로필)의 배치가 바뀌지 않게.
+      margin: margin ?? const EdgeInsets.all(AppSpacing.space4),
       onTap: onTap,
       child: child,
     );
