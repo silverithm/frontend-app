@@ -28,6 +28,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/app_action_sheet.dart';
+import '../widgets/common/app_count_up.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_fab.dart';
 import '../widgets/common/app_segmented_tabs.dart';
@@ -1572,7 +1573,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         Expanded(
                           child: _buildStatItem(
                             '${_currentDate.month}월 총 휴무',
-                            _getMonthlyTotal(vacationProvider).toString(),
+                            _getMonthlyTotal(vacationProvider),
                             AppSemanticColors.interactivePrimaryDefault,
                           ),
                         ),
@@ -1580,7 +1581,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         Expanded(
                           child: _buildStatItem(
                             '승인 대기',
-                            _getMonthlyPending(vacationProvider).toString(),
+                            _getMonthlyPending(vacationProvider),
                             AppSemanticColors.statusWarningIcon,
                           ),
                         ),
@@ -1588,7 +1589,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         Expanded(
                           child: _buildStatItem(
                             '승인됨',
-                            _getMonthlyApproved(vacationProvider).toString(),
+                            _getMonthlyApproved(vacationProvider),
                             AppSemanticColors.statusSuccessIcon,
                           ),
                         ),
@@ -1596,7 +1597,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         Expanded(
                           child: _buildStatItem(
                             '거절됨',
-                            _getMonthlyRejected(vacationProvider).toString(),
+                            _getMonthlyRejected(vacationProvider),
                             AppSemanticColors.statusErrorIcon,
                           ),
                         ),
@@ -1649,13 +1650,17 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   /// 이번 달 휴무 수 한 칸 — B안 큰 숫자 요약(heading4, 고정폭 숫자) + 아래 이름.
   /// 예전엔 숫자를 32×32 칸에 넣어 글자를 키우거나 세 자리가 되면 넘쳤다 — 이제 칸 높이를 못 박지 않는다.
-  Widget _buildStatItem(String label, String value, Color color) {
+  /// 숫자는 세어 올라간다(처음엔 0부터, 달을 바꾸면 앞 값부터) — 글자는 그대로 숫자 하나.
+  Widget _buildStatItem(String label, int value, Color color) {
     return Column(
       children: [
-        Text(
-          value,
+        // AppCountUp의 Text는 maxLines를 DefaultTextStyle에서 받는다 — 예전 Text(maxLines: 1)와 같게
+        DefaultTextStyle.merge(
           maxLines: 1,
-          style: AppTypography.heading4.copyWith(color: color),
+          child: AppCountUp(
+            value: value,
+            style: AppTypography.heading4.copyWith(color: color),
+          ),
         ),
         const SizedBox(height: AppSpacing.space1),
         Text(
