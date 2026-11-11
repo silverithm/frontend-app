@@ -60,7 +60,6 @@ class VacationPlanningBanner extends StatelessWidget {
           _buildNotice(
             icon: Icons.event_available_rounded,
             background: AppSemanticColors.statusInfoBackground,
-            border: AppSemanticColors.statusInfoBorder,
             iconColor: AppSemanticColors.statusInfoIcon,
             title: '${_formatMonth(allowedMonth!)} 휴무만 신청할 수 있어요',
             description:
@@ -75,9 +74,6 @@ class VacationPlanningBanner extends StatelessWidget {
             background: deadlinePassed
                 ? AppSemanticColors.statusErrorBackground
                 : AppSemanticColors.statusWarningBackground,
-            border: deadlinePassed
-                ? AppSemanticColors.statusErrorBorder
-                : AppSemanticColors.statusWarningBorder,
             iconColor: deadlinePassed
                 ? AppSemanticColors.statusErrorIcon
                 : AppSemanticColors.statusWarningIcon,
@@ -95,7 +91,6 @@ class VacationPlanningBanner extends StatelessWidget {
           _buildNotice(
             icon: Icons.push_pin_rounded,
             background: AppColors.purple50,
-            border: AppColors.purple200,
             iconColor: AppColors.purple600,
             title: eventsHeading ?? '이 기간 중요 행사가 있어요',
             description: events
@@ -114,24 +109,26 @@ class VacationPlanningBanner extends StatelessWidget {
   Widget _buildNotice({
     required IconData icon,
     required Color background,
-    required Color border,
     required Color iconColor,
     required String title,
     required String description,
   }) {
+    // B안 안내 상자(SeedCallout과 같은 치수): 테두리 없이 옅은 상태색 바탕, 모서리 14, 아이콘 20
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: AppSpacing.space3_5,
+      ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(AppSpacing.space4),
-        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: iconColor),
-          const SizedBox(width: AppSpacing.space2),
+          Icon(icon, size: 20, color: iconColor),
+          const SizedBox(width: AppSpacing.space2_5),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
