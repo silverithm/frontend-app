@@ -197,27 +197,16 @@ class AppTheme {
   /// 입력칸 — 테마에서는 채우지 않는다(filled: false). 화면 곳곳의 맨 TextField가 저마다
   /// 테두리·바탕을 정해 두어, 여기서 채우면 그 안에 네모 회색이 겹쳐 보인다. B안의 '회색으로
   /// 채운 입력칸'은 SeedTextField·AppInput이 직접 그린다. 여기는 테두리를 정하지 않은 칸의 기본값.
+  ///
+  /// 상태별 테두리(enabled·focused·error)는 일부러 걸지 않는다.
+  /// 걸면 화면이 `border: InputBorder.none`으로 테두리를 뺀 칸(채팅 입력, SeedTextField 안쪽 칸)에도
+  /// 테마 테두리가 다시 그려져 칸 안에 칸이 생긴다. `border` 하나만 두면 Flutter가 상태 색을
+  /// colorScheme(outline·primary·error)에서 고르고, 화면이 준 `border`는 모든 상태에서 이긴다.
   static const InputDecorationTheme _inputDecorationTheme =
       InputDecorationTheme(
     border: OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
       borderSide: BorderSide(color: AppSemanticColors.borderDefault),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
-      borderSide: BorderSide(color: AppSemanticColors.borderDefault),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
-      borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
-      borderSide: BorderSide(color: AppSemanticColors.statusErrorText),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
-      borderSide: BorderSide(color: AppSemanticColors.statusErrorText, width: 2),
     ),
     contentPadding: EdgeInsets.symmetric(
       horizontal: AppSpacing.space4,

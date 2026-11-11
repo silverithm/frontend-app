@@ -238,7 +238,16 @@ class _SeedTextFieldState extends State<SeedTextField> {
                   cursorColor: AppSemanticColors.brandDefault,
                   decoration: InputDecoration(
                     isCollapsed: true,
+                    // 테마가 칸 테두리·바탕·안쪽 여백을 기본으로 주므로 전부 꺼 둔다 —
+                    // 안 끄면 회색 칸 안에 테두리 칸이 하나 더 그려진다
+                    filled: false,
+                    contentPadding: EdgeInsets.zero,
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
                     hintText: widget.placeholder,
                     hintStyle: _inputStyle.copyWith(
                       color: widget.isDisabled

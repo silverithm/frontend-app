@@ -68,6 +68,7 @@ class AppTypography {
   //   큰 숫자 요약                  heading4 24/w700 고정폭 숫자 (예전 20)
   //   단추                          buttonLarge 17 / buttonMedium 16 / buttonSmall 14 (w600)
   static const TextStyle heading1 = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize5xl,
     fontWeight: fontWeightBold,
     height: lineHeightTight,
@@ -75,6 +76,7 @@ class AppTypography {
   );
 
   static const TextStyle heading2 = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize4xl,
     fontWeight: fontWeightBold,
     height: lineHeightTight,
@@ -82,6 +84,7 @@ class AppTypography {
   );
 
   static const TextStyle heading3 = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize3xl,
     fontWeight: fontWeightSemibold,
     height: lineHeightTight,
@@ -90,6 +93,7 @@ class AppTypography {
 
   /// 큰 숫자 요약(건수·합계) — 숫자 폭이 같아 세어 올라가도 흔들리지 않는다.
   static const TextStyle heading4 = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize3xl,
     fontWeight: fontWeightBold,
     height: lineHeightTight,
@@ -99,6 +103,7 @@ class AppTypography {
 
   /// 시트·대화상자·상세 화면 제목
   static const TextStyle heading5 = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize21,
     fontWeight: fontWeightBold,
     height: lineHeightSnug,
@@ -107,6 +112,7 @@ class AppTypography {
 
   /// 카드·구역 제목("공지사항"·"전자결재")
   static const TextStyle heading6 = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize19,
     fontWeight: fontWeightBold,
     height: 1.35,
@@ -115,6 +121,7 @@ class AppTypography {
 
   /// 안쪽 화면 상단 바 제목(가운데)
   static const TextStyle appBarTitle = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize17,
     fontWeight: fontWeightSemibold,
     height: lineHeightTight,
@@ -123,6 +130,7 @@ class AppTypography {
 
   /// 탭 첫 화면 상단 바 제목(왼쪽) — 홈 인사말도 이 자리
   static const TextStyle appBarTitleLarge = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize2xl,
     fontWeight: fontWeightBold,
     height: lineHeightTight,
@@ -131,6 +139,7 @@ class AppTypography {
 
   /// 카드·목록 한 줄의 제목 — 공지·결재·알림·채팅방·게시글·어르신 카드 등
   static const TextStyle titleMedium = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeLg,
     fontWeight: fontWeightSemibold,
     height: 1.45,
@@ -139,6 +148,7 @@ class AppTypography {
 
   /// 작은 행 제목·폼 라벨·카드 안 소제목
   static const TextStyle titleSmall = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeMd,
     fontWeight: fontWeightSemibold,
     height: lineHeightSnug,
@@ -148,6 +158,7 @@ class AppTypography {
   /// 작은 강조 13/w600 — 상태 알약(꼬리표)·달력 날짜 숫자처럼 본문보다 작지만 눈에 띄어야 하는 자리.
   /// (단추 토큰 buttonSmall을 빌려 쓰지 않는다)
   static const TextStyle labelStrong = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize13,
     fontWeight: fontWeightSemibold,
     height: lineHeightSnug,
@@ -156,6 +167,7 @@ class AppTypography {
 
   /// 긴 글(공지 본문 등)
   static const TextStyle bodyLarge = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize17,
     fontWeight: fontWeightNormal,
     height: 1.6,
@@ -163,6 +175,7 @@ class AppTypography {
   );
 
   static const TextStyle bodyMedium = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeLg,
     fontWeight: fontWeightNormal,
     height: lineHeightNormal,
@@ -170,6 +183,7 @@ class AppTypography {
   );
 
   static const TextStyle bodySmall = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeBase,
     fontWeight: fontWeightNormal,
     height: lineHeightNormal,
@@ -177,6 +191,7 @@ class AppTypography {
   );
 
   static const TextStyle labelLarge = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeMd,
     fontWeight: fontWeightMedium,
     height: lineHeightSnug,
@@ -184,6 +199,7 @@ class AppTypography {
   );
 
   static const TextStyle labelMedium = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize13,
     fontWeight: fontWeightMedium,
     height: lineHeightSnug,
@@ -192,6 +208,7 @@ class AppTypography {
 
   /// 배지 숫자·하단 탭 글자 — 앱에서 가장 작은 글자(12)
   static const TextStyle labelSmall = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeSm,
     fontWeight: fontWeightMedium,
     height: 1.35,
@@ -199,6 +216,7 @@ class AppTypography {
   );
 
   static const TextStyle buttonLarge = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSize17,
     fontWeight: fontWeightSemibold,
     height: lineHeightTight,
@@ -206,6 +224,7 @@ class AppTypography {
   );
 
   static const TextStyle buttonMedium = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeLg,
     fontWeight: fontWeightSemibold,
     height: lineHeightTight,
@@ -213,6 +232,7 @@ class AppTypography {
   );
 
   static const TextStyle buttonSmall = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeBase,
     fontWeight: fontWeightSemibold,
     height: lineHeightTight,
@@ -220,6 +240,7 @@ class AppTypography {
   );
 
   static const TextStyle caption = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeSm,
     fontWeight: fontWeightNormal,
     height: lineHeightSnug,
@@ -227,6 +248,7 @@ class AppTypography {
   );
 
   static const TextStyle overline = TextStyle(
+    fontFamily: fontFamilySans,
     fontSize: fontSizeSm,
     fontWeight: fontWeightMedium,
     height: lineHeightSnug,
