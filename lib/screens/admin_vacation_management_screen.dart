@@ -11,6 +11,9 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_card.dart' show AppCard, AppStatusType;
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -151,9 +154,7 @@ class _AdminVacationManagementScreenState
   @override
   Widget build(BuildContext context) {
     if (!widget.showAppBar) {
-      return _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildVacationListWithFilters();
+      return _buildBody();
     }
 
     // 슬림 상단: 타이틀 1개만 (아이콘 배지·ADMIN 배지로 이중 강조하지 않는다).
@@ -164,7 +165,17 @@ class _AdminVacationManagementScreenState
         title: Text('휴무 관리', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
-      body: _isLoading
+      body: _buildBody(),
+    );
+  }
+
+  /// 처음 불러올 때(아직 보일 신청이 없을 때)만 뼈대 — 신청이 있는 채로 다시 불러올 때는 예전 스피너.
+  /// 카드 등장 연출은 처음 한 번만 — 다시 불러와도 다시 떠오르지 않게 바깥에 둔다.
+  Widget _buildBody() {
+    return AppListEntrance(
+      child: _isLoading && _vacationRequests.isEmpty
+          ? const _VacationManagementSkeleton()
+          : _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildVacationListWithFilters(),
     );
@@ -224,7 +235,7 @@ class _AdminVacationManagementScreenState
       '[AdminVacationManagement] filteredRequests.length: ${filteredRequests.length}',
     );
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: _loadData,
       child: CustomScrollView(
         slivers: [
@@ -433,7 +444,10 @@ class _AdminVacationManagementScreenState
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final request = filteredRequests[index];
-                  return _buildVacationCardWithCheckbox(request);
+                  return AppListEntranceItem(
+                    index: index,
+                    child: _buildVacationCardWithCheckbox(request),
+                  );
                 }, childCount: filteredRequests.length),
               ),
             ),
@@ -713,8 +727,12 @@ class _AdminVacationManagementScreenState
           }
           _showVacationDetail(request);
         },
+        // 길게 눌러 일괄 선택이 시작되는 순간 impact 진동 한 번 — InkWell 자체 길게 누르기 진동(Android)은
+        // 꺼서 두 번 울리지 않게 하고, '진동 반응' 스위치를 따르는 AppHaptics로만 울린다
+        enableFeedback: false,
         onLongPress: isPending
             ? () {
+                AppHaptics.impact();
                 setState(() {
                   _selectedRequests.add(requestId);
                   _isSelectMode = true;
@@ -1344,5 +1362,33 @@ class _AdminVacationManagementScreenState
         });
       }
     }
+  }
+}
+
+/// 휴무 관리 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드(거르기 카드 + 신청 카드, 같은 여백·간격)
+class _VacationManagementSkeleton extends StatelessWidget {
+  const _VacationManagementSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          AppSpacing.space6,
+        ),
+        children: List.generate(
+          4,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+          ),
+        ),
+      ),
+    );
   }
 }
