@@ -21,11 +21,11 @@ class SignatureConfirmResult {
   final String? comment;
 
   SignatureConfirmResult.registered({this.comment})
-      : useRegistered = true,
-        signatureBase64 = null;
+    : useRegistered = true,
+      signatureBase64 = null;
 
   SignatureConfirmResult.drawn(this.signatureBase64, {this.comment})
-      : useRegistered = false;
+    : useRegistered = false;
 }
 
 Future<SignatureConfirmResult?> showSignatureConfirmSheet(
@@ -46,7 +46,10 @@ class _SignatureConfirmSheet extends StatefulWidget {
   final String title;
   final bool showComment;
 
-  const _SignatureConfirmSheet({required this.title, required this.showComment});
+  const _SignatureConfirmSheet({
+    required this.title,
+    required this.showComment,
+  });
 
   @override
   State<_SignatureConfirmSheet> createState() => _SignatureConfirmSheetState();
@@ -72,8 +75,9 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
     super.dispose();
   }
 
-  String? get _comment =>
-      widget.showComment ? normalizeApprovalComment(_commentController.text) : null;
+  String? get _comment => widget.showComment
+      ? normalizeApprovalComment(_commentController.text)
+      : null;
 
   bool get _commentTooLong =>
       widget.showComment && isApprovalCommentTooLong(_commentController.text);
@@ -100,42 +104,65 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
     }
   }
 
-  bool get _hasRegistered => _registeredUrl != null && _registeredUrl!.isNotEmpty;
+  bool get _hasRegistered =>
+      _registeredUrl != null && _registeredUrl!.isNotEmpty;
 
   bool get _canConfirm =>
       ((_useRegistered && _hasRegistered) || !_padEmpty) && !_commentTooLong;
 
   Future<void> _confirm() async {
     if (_useRegistered && _hasRegistered) {
-      Navigator.pop(context, SignatureConfirmResult.registered(comment: _comment));
+      Navigator.pop(
+        context,
+        SignatureConfirmResult.registered(comment: _comment),
+      );
       return;
     }
     final dataUrl = await _padController.exportPngDataUrl();
     if (dataUrl == null) return;
     if (!mounted) return;
-    Navigator.pop(context, SignatureConfirmResult.drawn(dataUrl, comment: _comment));
+    Navigator.pop(
+      context,
+      SignatureConfirmResult.drawn(dataUrl, comment: _comment),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    // B안 시트 모양(AppSheetFrame과 같은 값): 좌우 20, 제목 21/w700, 설명 16 회색, 아래 20 + 안전 영역.
+    // 손잡이는 AppBottomSheet가 그린다.
+    final media = MediaQuery.of(context);
+    final bottomInset = media.viewInsets.bottom > media.padding.bottom
+        ? media.viewInsets.bottom
+        : media.padding.bottom;
+    // 키보드가 올라오거나 작은 폰에서 넘치지 않게 시트 안에서 스크롤한다.
+    // 서명 칸 위에서 시작한 손가락은 서명이 먼저 가져가므로(SignaturePad) 획이 스크롤에 뺏기지 않는다.
+    return SingleChildScrollView(
       padding: EdgeInsets.only(
-        left: AppSpacing.space4,
-        right: AppSpacing.space4,
-        top: AppSpacing.space4,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
+        left: AppSpacing.space5,
+        right: AppSpacing.space5,
+        top: AppSpacing.space1,
+        bottom: bottomInset + AppSpacing.space5,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.title,
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textPrimary,
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.space2),
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      widget.title,
+                      style: AppTypography.heading5.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               IconButton(
@@ -147,16 +174,18 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
           ),
           Text(
             '승인과 함께 결재란에 서명이 날인됩니다.',
-            style: AppTypography.bodySmall.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textSecondary,
             ),
           ),
-          const SizedBox(height: AppSpacing.space4),
+          const SizedBox(height: AppSpacing.space5),
           if (_isLoading)
-            const Center(child: Padding(
-              padding: EdgeInsets.all(AppSpacing.space6),
-              child: CircularProgressIndicator(),
-            ))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.space6),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else ...[
             if (_hasRegistered) ...[
               Row(
@@ -178,15 +207,15 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
             ] else ...[
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.space3),
+                padding: const EdgeInsets.all(AppSpacing.space3_5),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.statusInfoBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
                 ),
                 child: Text(
                   '등록된 서명이 없습니다. 이번에는 직접 그려 승인하세요.\n프로필 > 결재 서명 관리에서 등록하면 다음부터 바로 승인할 수 있습니다.',
                   style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.statusInfoIcon,
+                    color: AppSemanticColors.statusInfoText,
                   ),
                 ),
               ),
@@ -194,21 +223,27 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
             ],
             if (_useRegistered && _hasRegistered)
               Center(
+                // 등록 서명 미리보기 — 서명 칸과 같은 회색 채움 + 아주 옅은 테두리
                 child: Container(
                   height: 110,
                   width: 220,
                   decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    border: Border.all(color: AppSemanticColors.borderDefault),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                    color: AppSemanticColors.fillDefault,
+                    border: Border.all(color: AppSemanticColors.borderHairline),
+                    borderRadius: BorderRadius.circular(
+                      AppBorderRadius.control,
+                    ),
                   ),
                   child: Image.network(
                     _registeredUrl!,
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => Center(
-                      child: Text('서명 미리보기 실패',
-                          style: AppTypography.bodySmall
-                              .copyWith(color: AppSemanticColors.textTertiary)),
+                      child: Text(
+                        '서명 미리보기 실패',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -219,7 +254,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 onChanged: (isEmpty) => setState(() => _padEmpty = isEmpty),
               ),
             if (widget.showComment) ...[
-              const SizedBox(height: AppSpacing.space3),
+              const SizedBox(height: AppSpacing.space4),
               SeedTextField(
                 label: '의견 (선택)',
                 placeholder: '결재 기록에 남길 의견이 있으면 적어주세요',
@@ -233,7 +268,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
                 onChanged: (_) => setState(() {}),
               ),
             ],
-            const SizedBox(height: AppSpacing.space3),
+            const SizedBox(height: AppSpacing.space6),
             SizedBox(
               width: double.infinity,
               child: SeedButton(
@@ -251,30 +286,44 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
   }
 
   /// 서명 방식 세그먼트 토글 항목 — Material+InkWell로 눌림 피드백(잉크 스플래시)을 준다.
+  /// B안: 고른 쪽 틸·안 고른 쪽 회색 채움, 모서리 14, 높이 48 이상.
   Widget _buildModeButton(String text, bool selected, VoidCallback onTap) {
     return Material(
       color: selected
           ? AppSemanticColors.interactivePrimaryDefault
-          : AppSemanticColors.backgroundTertiary,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+          : AppSemanticColors.fillDefault,
+      borderRadius: BorderRadius.circular(AppBorderRadius.control),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
         splashColor: selected
             ? AppSemanticColors.textInverse.withValues(alpha: 0.15)
-            : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
+            : AppSemanticColors.interactivePrimaryDefault.withValues(
+                alpha: 0.1,
+              ),
         highlightColor: selected
             ? AppSemanticColors.textInverse.withValues(alpha: 0.08)
-            : AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.06),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-          child: Center(
-            child: Text(
-              text,
-              style: AppTypography.titleSmall.copyWith(
-                color: selected
-                    ? AppSemanticColors.textInverse
-                    : AppSemanticColors.textSecondary,
+            : AppSemanticColors.interactivePrimaryDefault.withValues(
+                alpha: 0.06,
+              ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.minTouchTarget,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space2,
+              vertical: AppSpacing.space2,
+            ),
+            child: Center(
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: AppTypography.titleSmall.copyWith(
+                  color: selected
+                      ? AppSemanticColors.textInverse
+                      : AppSemanticColors.textSecondary,
+                ),
               ),
             ),
           ),
