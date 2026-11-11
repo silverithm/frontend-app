@@ -3679,10 +3679,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 _roomName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                // 두 줄(제목+인원)이라 상단 바 기본(heading5 18) 대신 한 단계 작은 heading6 16.
-                // 줄간격 1.75짜리 bodyLarge는 아래 인원 줄과 간격이 벌어졌다.
-                style: AppTypography.heading6.copyWith(
+                // 안쪽 화면 상단 바 제목과 같은 appBarTitle(17/w600) — 채팅 목록 ↔ 방 ↔ 정보를 오갈 때
+                // 제목 글자가 변하지 않게. 아래 인원 줄과 붙도록 줄간격은 1.2.
+                style: AppTypography.appBarTitle.copyWith(
                   color: AppSemanticColors.headerForeground,
+                  height: 1.2,
                 ),
               ),
               Consumer<ChatProvider>(
@@ -4684,10 +4685,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         top: AppSpacing.space2,
         bottom: AppSpacing.space2 + MediaQuery.of(context).padding.bottom,
       ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
+      // B안: 흰 바 + 위 아주 옅은 선(대화 바탕과 입력 바를 가르는 꼭 필요한 선 하나)
+      decoration: const BoxDecoration(
+        color: AppSemanticColors.surfaceCard,
         border: Border(
-          top: BorderSide(color: AppSemanticColors.borderSubtle, width: 1),
+          top: BorderSide(color: AppSemanticColors.borderHairline, width: 1),
         ),
       ),
       child: Column(
@@ -4700,25 +4702,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         // 여러 줄로 늘어나도 첨부·전송 버튼은 입력 상자 **아래**에 붙어 있다(카톡·Slack과 같다)
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 첨부 버튼 (사진/파일) — 전송 버튼과 같은 40 지름
+          // 첨부 버튼 (사진/파일) — 전송 버튼·한 줄 입력칸과 같은 44 지름
           Tooltip(
             message: '파일 첨부',
             child: Semantics(
             button: true,
             label: '파일 첨부',
             child: Material(
-              color: AppSemanticColors.backgroundTertiary,
+              color: AppSemanticColors.fillDefault,
               shape: const CircleBorder(),
               child: InkWell(
                 onTap: _showAttachmentOptions,
                 customBorder: const CircleBorder(),
                 child: SizedBox(
-                  width: AppSpacing.space10,
-                  height: AppSpacing.space10,
+                  width: AppSpacing.iconCircle,
+                  height: AppSpacing.iconCircle,
                   child: Icon(
                     Icons.add_rounded,
                     size: AppSpacing.space6,
-                    color: AppSemanticColors.textSecondary,
+                    color: AppSemanticColors.textPrimary,
                   ),
                 ),
               ),
@@ -4727,15 +4729,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           ),
           const SizedBox(width: AppSpacing.space2),
 
-          // 메시지 입력 필드
+          // 메시지 입력 필드 — B안: 회색 채움 둥근 칸 하나(안쪽 TextField는 테두리·채움 없음 → 상자 안 상자 없음)
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space3,
+                horizontal: AppSpacing.space4,
               ),
               decoration: BoxDecoration(
-                color: AppSemanticColors.backgroundSecondary,
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                color: AppSemanticColors.fillDefault,
+                borderRadius: BorderRadius.circular(AppBorderRadius.xl3),
               ),
               child: TextField(
                 controller: _messageController,
@@ -4752,8 +4754,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   hintStyle: AppTypography.bodyMedium.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
+                  // 테마의 입력칸 테두리가 상태별로 되살아나지 않게 모두 끈다
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  filled: false,
                   isDense: true,
+                  // 한 줄일 때 높이 44 = 첨부·전송 단추 지름
                   contentPadding: const EdgeInsets.symmetric(
                     vertical: AppSpacing.space2_5,
                   ),
@@ -4777,10 +4785,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             builder: (context, value, _) {
               final canSend =
                   _editingMessage != null || value.text.trim().isNotEmpty;
+              // 못 보낼 때는 회색 칸 + 흐린 화살표(B안), 보낼 수 있으면 틸 + 흰 화살표
               return Material(
                 color: canSend
                     ? AppSemanticColors.interactivePrimaryDefault
-                    : AppSemanticColors.interactivePrimaryDisabled,
+                    : AppSemanticColors.fillStrong,
                 shape: const CircleBorder(),
                 child: Semantics(
                   button: true,
@@ -4790,14 +4799,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     onTap: canSend ? _sendMessage : null,
                     customBorder: const CircleBorder(),
                     child: SizedBox(
-                      width: AppSpacing.space10,
-                      height: AppSpacing.space10,
+                      width: AppSpacing.iconCircle,
+                      height: AppSpacing.iconCircle,
                       child: Center(
                         child: Icon(
                           _editingMessage != null
                               ? Icons.check_rounded
                               : Icons.send_rounded,
-                          color: AppSemanticColors.textInverse,
+                          color: canSend
+                              ? AppSemanticColors.textInverse
+                              : AppSemanticColors.iconSubtle,
                           size: AppSpacing.space5,
                         ),
                       ),
@@ -4826,8 +4837,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         vertical: AppSpacing.space2,
       ),
       decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        color: AppSemanticColors.fillDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Row(
         children: [
@@ -4882,8 +4893,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         vertical: AppSpacing.space2,
       ),
       decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+        color: AppSemanticColors.fillDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Row(
         children: [
