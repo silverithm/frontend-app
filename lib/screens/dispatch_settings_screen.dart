@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
 
 import '../models/dispatch.dart';
@@ -11,8 +12,14 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_fab.dart';
+import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_callout.dart';
+import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
 
@@ -33,6 +40,9 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
   /// 기관에 등록된 어르신 (배차에 태울 후보)
   List<_ElderOption> _elders = [];
   bool _loadingElders = false;
+
+  /// 목록을 아래로 밀면 '노선 추가' 단추의 글자를 접는다(B안 FAB)
+  bool _fabCollapsed = false;
 
   /// dispose에서는 context로 provider를 찾을 수 없다(위젯이 이미 트리에서 빠진 뒤다).
   /// 화면을 떠날 때 남은 변경분을 저장해야 하므로 미리 붙잡아 둔다.
@@ -122,7 +132,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     final provider = context.watch<DispatchProvider>();
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text(
           '배차 설정',
@@ -160,64 +170,60 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      // B안 알약 FAB
+      floatingActionButton: AppFab(
+        icon: Icons.add,
+        label: '노선 추가',
+        collapsed: _fabCollapsed,
         onPressed: _openRouteEditor,
-        backgroundColor: AppSemanticColors.brandDefault,
-        foregroundColor: AppSemanticColors.textInverse,
-        icon: const Icon(Icons.add),
-        label: const Text('노선 추가'),
       ),
       body: provider.routes.isEmpty
           ? _buildEmpty()
           : Column(
               children: [
                 if (_unassignedElders(provider).isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.fromLTRB(
+                  // B안 안내 상자(옅은 노랑·모서리 14·테두리 없음)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.screenGutter,
                       AppSpacing.space4,
-                      AppSpacing.space4,
-                      AppSpacing.space4,
+                      AppSpacing.screenGutter,
                       0,
                     ),
-                    padding: const EdgeInsets.all(AppSpacing.space3),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusWarningBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 16,
-                          color: AppSemanticColors.statusWarningText,
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Expanded(
-                          child: Text(
-                            '미배정 어르신 ${_unassignedElders(provider).length}명 · ${_unassignedElders(provider).map((e) => e.name).join(', ')}',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.statusWarningText,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: SeedCallout(
+                      variant: SeedCalloutVariant.warning,
+                      icon: Icons.info_outline,
+                      title:
+                          '미배정 어르신 ${_unassignedElders(provider).length}명 · ${_unassignedElders(provider).map((e) => e.name).join(', ')}',
                     ),
                   ),
                 Expanded(
-                  child: ListView.builder(
-                    // 떠 있는 '노선 추가' 버튼이 마지막 카드의 '어르신 추가'를 가리지 않게 —
-                    // 48로는 버튼 높이보다 작았다. 휴무 달력과 같은 96.
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.space4,
-                      AppSpacing.space4,
-                      AppSpacing.space4,
-                      96,
+                  // 아래로 밀면 FAB 글자를 접고, 위로 올리면 다시 편다
+                  child: NotificationListener<UserScrollNotification>(
+                    onNotification: (notification) {
+                      final collapse = switch (notification.direction) {
+                        ScrollDirection.reverse => true,
+                        ScrollDirection.forward => false,
+                        ScrollDirection.idle => _fabCollapsed,
+                      };
+                      if (collapse != _fabCollapsed) {
+                        setState(() => _fabCollapsed = collapse);
+                      }
+                      return false;
+                    },
+                    child: ListView.builder(
+                      // 떠 있는 '노선 추가' 버튼이 마지막 카드의 '어르신 추가'를 가리지 않게 —
+                      // 48로는 버튼 높이보다 작았다. 휴무 달력과 같은 96.
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.screenGutter,
+                        AppSpacing.space4,
+                        AppSpacing.screenGutter,
+                        96,
+                      ),
+                      itemCount: provider.routes.length,
+                      itemBuilder: (context, index) =>
+                          _buildRouteCard(provider, provider.routes[index]),
                     ),
-                    itemCount: provider.routes.length,
-                    itemBuilder: (context, index) =>
-                        _buildRouteCard(provider, provider.routes[index]),
                   ),
                 ),
               ],
@@ -226,48 +232,29 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
   }
 
   Widget _buildEmpty() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.directions_bus_outlined,
-              size: 44,
-              color: AppSemanticColors.textDisabled,
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            Text(
-              '등록된 노선이 없습니다',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space1),
-            Text(
-              '아래 버튼으로 첫 노선을 추가해주세요',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      ),
+    // B안 빈 화면 — 옅은 틸 원 아이콘 + 19 제목 + 14 설명
+    return const AppEmptyState(
+      icon: Icons.directions_bus_outlined,
+      title: '등록된 노선이 없습니다',
+      description: '아래 버튼으로 첫 노선을 추가해주세요',
     );
   }
 
   Widget _buildRouteCard(DispatchProvider provider, DispatchRoute route) {
     final seniors = provider.seniorsOfRoute(route.id);
 
+    // B안 카드 — 테두리 없는 흰 상자, 모서리 20, 안쪽 20, 카드끼리 간격 12
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
-      padding: const EdgeInsets.all(AppSpacing.space4),
+      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.cardPadding,
+        AppSpacing.space3,
+        AppSpacing.space2,
+        AppSpacing.cardPadding,
+      ),
       decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderSubtle),
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,9 +266,9 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                   route.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.bodyMedium.copyWith(
+                  // 카드 제목 줄(B안 16/w600)
+                  style: AppTypography.titleMedium.copyWith(
                     color: AppSemanticColors.textPrimary,
-                    fontWeight: AppTypography.fontWeightSemibold,
                   ),
                 ),
               ),
@@ -311,18 +298,24 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
             ...route.routeDrivers.asMap().entries.map(
               (entry) => _driverRow(provider, route, entry.key, entry.value),
             ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: SeedButton(
-              label: '부운전자 추가',
-              onPressed: () => _addDriver(provider, route),
-              variant: SeedButtonVariant.brandWeak,
-              size: SeedButtonSize.xsmall,
-              prefixIcon: Icons.person_add_alt_1_outlined,
+          Padding(
+            padding: const EdgeInsets.only(
+              top: AppSpacing.space1,
+              right: AppSpacing.space3,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SeedButton(
+                label: '부운전자 추가',
+                onPressed: () => _addDriver(provider, route),
+                variant: SeedButtonVariant.brandWeak,
+                size: SeedButtonSize.small,
+                prefixIcon: Icons.person_add_alt_1_outlined,
+              ),
             ),
           ),
 
-          const SizedBox(height: AppSpacing.space2),
+          const SizedBox(height: AppSpacing.space3),
           _sectionLabel('탑승 어르신 ${seniors.length}명'),
           if (seniors.isEmpty)
             _hint('아직 배정된 어르신이 없습니다')
@@ -330,14 +323,20 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
             ...seniors.asMap().entries.map(
               (entry) => _seniorRow(provider, route, entry.key, entry.value, seniors.length),
             ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: SeedButton(
-              label: '어르신 추가',
-              onPressed: () => _addSenior(provider, route),
-              variant: SeedButtonVariant.brandWeak,
-              size: SeedButtonSize.xsmall,
-              prefixIcon: Icons.group_add_outlined,
+          Padding(
+            padding: const EdgeInsets.only(
+              top: AppSpacing.space1,
+              right: AppSpacing.space3,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SeedButton(
+                label: '어르신 추가',
+                onPressed: () => _addSenior(provider, route),
+                variant: SeedButtonVariant.brandWeak,
+                size: SeedButtonSize.small,
+                prefixIcon: Icons.group_add_outlined,
+              ),
             ),
           ),
         ],
@@ -345,25 +344,10 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     );
   }
 
-  Widget _typeChip(String type) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2,
-        vertical: AppSpacing.space1,
-      ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundTertiary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-      ),
-      child: Text(
-        type,
-        style: AppTypography.labelSmall.copyWith(
-          color: AppSemanticColors.textSecondary,
-        ),
-      ),
-    );
-  }
+  // B안 꼬리표 — 테두리 없는 옅은 알약(13/w600)
+  Widget _typeChip(String type) => AppTag(label: type);
 
+  // 카드 안 소제목(B안 15/w600)
   Widget _sectionLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(
@@ -372,9 +356,8 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       ),
       child: Text(
         text,
-        style: AppTypography.bodySmall.copyWith(
-          color: AppSemanticColors.textTertiary,
-          fontWeight: AppTypography.fontWeightMedium,
+        style: AppTypography.titleSmall.copyWith(
+          color: AppSemanticColors.textSecondary,
         ),
       ),
     );
@@ -382,11 +365,11 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
 
   Widget _hint(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
       child: Text(
         text,
         style: AppTypography.bodySmall.copyWith(
-          color: AppSemanticColors.textDisabled,
+          color: AppSemanticColors.textTertiary,
         ),
       ),
     );
@@ -401,26 +384,18 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     final roleLabel = index == 0 ? '주' : '부$index';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space0_5),
       child: Row(
         children: [
-          Container(
-            width: 28,
-            height: 24,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: index == 0
-                  ? AppSemanticColors.brandWeak
-                  : AppSemanticColors.backgroundTertiary,
-              borderRadius: BorderRadius.circular(AppBorderRadius.base),
-            ),
-            child: Text(
-              roleLabel,
-              style: AppTypography.labelSmall.copyWith(
-                color: index == 0
-                    ? AppSemanticColors.brandDefault
-                    : AppSemanticColors.textSecondary,
-                fontWeight: AppTypography.fontWeightSemibold,
+          // 역할 꼬리표 — 예전엔 28×24로 높이를 못 박아 글자를 키우면 잘렸다.
+          // 높이는 꼬리표가 정하고(최소 26), 칸 폭만 글자 배율을 따라 맞춰 이름 시작점을 줄마다 같게 둔다.
+          SizedBox(
+            width: MediaQuery.textScalerOf(context).scale(36),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: AppTag(
+                label: roleLabel,
+                tone: index == 0 ? AppTagTone.accent : AppTagTone.neutral,
               ),
             ),
           ),
@@ -428,15 +403,22 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
           Expanded(
             child: InkWell(
               onTap: () => _pickDriver(provider, route, index),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-                child: Text(
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              child: ConstrainedBox(
+                // 이름을 눌러 운전자를 고른다 — 누를 자리 48
+                constraints: const BoxConstraints(
+                  minHeight: AppSpacing.minTouchTarget,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
                   driver.driverName.isEmpty ? '직원 선택' : driver.driverName,
                   style: AppTypography.bodyMedium.copyWith(
                     color: driver.driverName.isEmpty
-                        ? AppSemanticColors.textDisabled
+                        ? AppSemanticColors.textTertiary
                         : AppSemanticColors.textPrimary,
                   ),
+                ),
                 ),
               ),
             ),
@@ -481,14 +463,16 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     int total,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space0_5),
       child: Row(
         children: [
           SizedBox(
-            width: 28,
+            // 탑승 순서 칸도 글자 배율을 따라 넓힌다(두 자리 순서가 접히지 않게)
+            width: MediaQuery.textScalerOf(context).scale(28),
             child: Text(
               '${senior.boardingOrder}',
-              style: AppTypography.bodySmall.copyWith(
+              maxLines: 1,
+              style: AppTypography.bodyMedium.copyWith(
                 color: AppSemanticColors.textTertiary,
               ),
             ),
@@ -540,58 +524,46 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     final nameController = TextEditingController(text: route?.name ?? '');
     var type = route?.type ?? RouteType.toWork;
 
-    final saved = await AppDialog.showCustom<bool>(
+    // B안: 가운데 창 대신 아래에서 올라오는 시트(손잡이·제목 21·큰 단추 취소 1 : 저장 1.7)
+    final saved = await showAppSheet<bool>(
       context,
-      child: StatefulBuilder(
-        builder: (dialogContext, setLocalState) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                route == null ? '노선 추가' : '노선 수정',
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              SeedTextField(
-                label: '노선 이름',
-                placeholder: '예: A코스, 스타리아',
-                controller: nameController,
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: RouteType.toWork, label: Text('등원')),
-                  ButtonSegment(value: RouteType.toHome, label: Text('하원')),
-                ],
-                selected: {type},
-                onSelectionChanged: (selected) =>
-                    setLocalState(() => type = selected.first),
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: '취소',
-                      variant: SeedButtonVariant.neutralOutline,
-                      onPressed: () => Navigator.of(dialogContext).pop(false),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: SeedButton(
-                      label: '저장',
-                      onPressed: () => Navigator.of(dialogContext).pop(true),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setLocalState) => AppSheetFrame(
+          title: route == null ? '노선 추가' : '노선 수정',
+          actions: AppSheetActions(
+            cancel: SeedButton(
+              label: '취소',
+              variant: SeedButtonVariant.neutralWeak,
+              size: SeedButtonSize.large,
+              onPressed: () => Navigator.of(sheetContext).pop(false),
+            ),
+            confirm: SeedButton(
+              label: '저장',
+              size: SeedButtonSize.large,
+              onPressed: () => Navigator.of(sheetContext).pop(true),
+            ),
           ),
+          children: [
+            const SizedBox(height: AppSpacing.space5),
+            SeedTextField(
+              label: '노선 이름',
+              placeholder: '예: A코스, 스타리아',
+              controller: nameController,
+            ),
+            const SizedBox(height: AppSpacing.space4),
+            // 등원/하원 하나만 고른다 — B안 칩(고르면 틸 + 흰 글자, selection 햅틱)
+            Wrap(
+              spacing: AppSpacing.space2,
+              children: [
+                for (final option in const [RouteType.toWork, RouteType.toHome])
+                  SeedChip(
+                    label: option == RouteType.toWork ? '등원' : '하원',
+                    selected: type == option,
+                    onTap: () => setLocalState(() => type = option),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -649,6 +621,13 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
         builder: (sheetContext) => SafeArea(
           child: ListView(
             shrinkWrap: true,
+            // 시트 여백 8 + 줄 안쪽 12 = 제목과 같은 20에서 이름이 시작한다(B안 목록 줄)
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space2,
+              0,
+              AppSpacing.space2,
+              AppSpacing.space4,
+            ),
             children: [
               ...members.map(
                 (member) => SeedListCell(
@@ -741,6 +720,13 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
         builder: (sheetContext) => SafeArea(
           child: ListView(
             shrinkWrap: true,
+            // 시트 여백 8 + 줄 안쪽 12 = 제목과 같은 20에서 이름이 시작한다(B안 목록 줄)
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space2,
+              0,
+              AppSpacing.space2,
+              AppSpacing.space4,
+            ),
             children: [
               ...members.map(
                 (member) => SeedListCell(
@@ -808,50 +794,33 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       text: route.routeDrivers[index].vehicleName,
     );
 
-    final saved = await AppDialog.showCustom<bool>(
+    // B안: 가운데 창 대신 아래에서 올라오는 시트
+    final saved = await showAppSheet<bool>(
       context,
-      child: Builder(
-        builder: (dialogContext) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                '차량명',
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              SeedTextField(
-                label: '차량명',
-                showLabel: false,
-                placeholder: '예: 스타리아, 카니발',
-                controller: controller,
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: '취소',
-                      variant: SeedButtonVariant.neutralOutline,
-                      onPressed: () => Navigator.of(dialogContext).pop(false),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: SeedButton(
-                      label: '저장',
-                      onPressed: () => Navigator.of(dialogContext).pop(true),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      builder: (sheetContext) => AppSheetFrame(
+        title: '차량명',
+        actions: AppSheetActions(
+          cancel: SeedButton(
+            label: '취소',
+            variant: SeedButtonVariant.neutralWeak,
+            size: SeedButtonSize.large,
+            onPressed: () => Navigator.of(sheetContext).pop(false),
+          ),
+          confirm: SeedButton(
+            label: '저장',
+            size: SeedButtonSize.large,
+            onPressed: () => Navigator.of(sheetContext).pop(true),
           ),
         ),
+        children: [
+          const SizedBox(height: AppSpacing.space4),
+          SeedTextField(
+            label: '차량명',
+            showLabel: false,
+            placeholder: '예: 스타리아, 카니발',
+            controller: controller,
+          ),
+        ],
       ),
     );
 
@@ -905,6 +874,12 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                 )
               : ListView(
                   shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space2,
+                    0,
+                    AppSpacing.space2,
+                    AppSpacing.space4,
+                  ),
                   children: [
                     ...candidates.map(
                       (elder) => SeedListCell(
