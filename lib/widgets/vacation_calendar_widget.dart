@@ -227,7 +227,9 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
 
               // 직종 거르기 칩 — B안 SeedChip(44), 옆으로 밀어 본다
               if (widget.onRoleFiltersChanged != null)
-                Padding(
+                Container(
+                  // 칩이 적어도 가운데로 몰리지 않고 왼쪽부터 놓인다
+                  alignment: Alignment.centerLeft,
                   padding: const EdgeInsets.symmetric(
                     vertical: AppSpacing.space2,
                   ),
@@ -528,7 +530,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                 child: Wrap(
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: AppSpacing.space3,
+                  spacing: AppSpacing.space2_5,
                   runSpacing: AppSpacing.space1_5,
                   children: [
                     // 신청 상태
@@ -552,8 +554,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       Icons.cancel,
                     ),
 
-                    // 묶음 사이 — 선 대신 조금 더 넓은 간격
-                    const SizedBox(width: AppSpacing.space1),
 
                     // 연차/반차 구분
                     _buildDurationLegendItem(
@@ -571,8 +571,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       '반',
                     ),
 
-                    // 묶음 사이 — 선 대신 조금 더 넓은 간격
-                    const SizedBox(width: AppSpacing.space1),
 
                     // 필수 휴무만 표시
                     _buildTypeLegendItem(
