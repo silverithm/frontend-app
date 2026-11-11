@@ -8,6 +8,8 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
@@ -317,7 +319,7 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: RefreshIndicator(
+        child: AppRefreshIndicator(
           onRefresh: _load,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -355,7 +357,10 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
               ),
               const SizedBox(height: AppSpacing.space4),
 
-              if (_isLoading)
+              // 처음 불러올 때(아직 보일 내역이 없을 때)만 뼈대 — 내역이 있는 채로 다시 불러올 때는 예전 스피너
+              if (_isLoading && _messages.isEmpty)
+                const _AdminVoiceBoxListSkeleton()
+              else if (_isLoading)
                 const Padding(
                   padding: EdgeInsets.only(top: AppSpacing.space8),
                   child: AppLoading(),
@@ -450,5 +455,40 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppTag(label: _statusLabelFor(status, type), tone: _tone);
+  }
+}
+
+/// 접수 목록 첫 불러오기 뼈대 — 흰 목록 카드(SeedListSection) 모양
+class _AdminVoiceBoxListSkeleton extends StatelessWidget {
+  const _AdminVoiceBoxListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.space2),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        ),
+        child: const Column(
+          children: [
+            AppSkeletonListTile(
+              titleWidthFactor: 0.62,
+              subtitleWidthFactor: 0.38,
+            ),
+            AppSkeletonListTile(
+              titleWidthFactor: 0.48,
+              subtitleWidthFactor: 0.3,
+            ),
+            AppSkeletonListTile(
+              titleWidthFactor: 0.7,
+              subtitleWidthFactor: 0.42,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

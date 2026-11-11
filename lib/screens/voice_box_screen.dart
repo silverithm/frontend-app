@@ -8,6 +8,8 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
@@ -172,9 +174,8 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '고충·신고 · 건의함'),
       body: SafeArea(
-        child: RefreshIndicator(
+        child: AppRefreshIndicator(
           onRefresh: _load,
-          color: AppSemanticColors.interactivePrimaryDefault,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.space4),
             children: [
@@ -213,7 +214,10 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
               ),
               const SizedBox(height: AppSpacing.space2),
 
-              if (_isLoading)
+              // 처음 불러올 때(아직 보일 내역이 없을 때)만 뼈대 — 내역이 있는 채로 다시 불러올 때는 예전 스피너
+              if (_isLoading && _messages.isEmpty)
+                const _VoiceBoxListSkeleton()
+              else if (_isLoading)
                 const Padding(
                   padding: EdgeInsets.only(top: AppSpacing.space8),
                   child: AppLoading(),
@@ -301,5 +305,40 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppTag(label: status.label, tone: _tone);
+  }
+}
+
+/// 내 제출 내역 첫 불러오기 뼈대 — 흰 목록 카드(SeedListSection) 모양
+class _VoiceBoxListSkeleton extends StatelessWidget {
+  const _VoiceBoxListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.space2),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        ),
+        child: const Column(
+          children: [
+            AppSkeletonListTile(
+              titleWidthFactor: 0.62,
+              subtitleWidthFactor: 0.38,
+            ),
+            AppSkeletonListTile(
+              titleWidthFactor: 0.48,
+              subtitleWidthFactor: 0.3,
+            ),
+            AppSkeletonListTile(
+              titleWidthFactor: 0.7,
+              subtitleWidthFactor: 0.42,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
