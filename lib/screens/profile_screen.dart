@@ -282,32 +282,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       builder: (_) => StatefulBuilder(
         builder: (context, setState) => AppSheetFrame(
           title: '비밀번호 변경',
-          children: [
-            const SizedBox(height: AppSpacing.space4),
-            AppPasswordInput(
-              label: '현재 비밀번호',
-              controller: currentPasswordController,
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            AppPasswordInput(
-              label: '새 비밀번호',
-              controller: newPasswordController,
-              helperText: '8자 이상 입력하세요',
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            AppPasswordInput(
-              label: '새 비밀번호 확인',
-              controller: confirmPasswordController,
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            const _SheetNote(
-              background: AppSemanticColors.statusInfoBackground,
-              icon: Icons.info_outline,
-              iconColor: AppSemanticColors.statusInfoIcon,
-              textColor: AppSemanticColors.textSecondary,
-              text: '비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상으로 설정하는 것을 권장합니다.',
-            ),
-          ],
           actions: AppSheetActions(
             cancel: SeedButton(
               label: '취소',
@@ -371,6 +345,32 @@ class _ProfileScreenState extends State<ProfileScreen>
               },
             ),
           ),
+          children: [
+            const SizedBox(height: AppSpacing.space4),
+            AppPasswordInput(
+              label: '현재 비밀번호',
+              controller: currentPasswordController,
+            ),
+            const SizedBox(height: AppSpacing.space4),
+            AppPasswordInput(
+              label: '새 비밀번호',
+              controller: newPasswordController,
+              helperText: '8자 이상 입력하세요',
+            ),
+            const SizedBox(height: AppSpacing.space4),
+            AppPasswordInput(
+              label: '새 비밀번호 확인',
+              controller: confirmPasswordController,
+            ),
+            const SizedBox(height: AppSpacing.space4),
+            const _SheetNote(
+              background: AppSemanticColors.statusInfoBackground,
+              icon: Icons.info_outline,
+              iconColor: AppSemanticColors.statusInfoIcon,
+              textColor: AppSemanticColors.textSecondary,
+              text: '비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상으로 설정하는 것을 권장합니다.',
+            ),
+          ],
         ),
       ),
     ).then((_) {
@@ -382,200 +382,158 @@ class _ProfileScreenState extends State<ProfileScreen>
     String selectedRole = user.role;
     bool isChanging = false;
 
-    AppDialog.showCustom<void>(
+    // B안: 가운데 창 대신 아래 시트(엄지 닿는 곳) + 큰 단추
+    showAppSheet<void>(
       context,
-      barrierColor: AppColors.black.withValues(alpha: 0.5),
-      child: StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      builder: (_) => StatefulBuilder(
+        builder: (context, setState) => AppSheetFrame(
+          title: '역할 변경',
+          actions: AppSheetActions(
+            cancel: SeedButton(
+              label: '취소',
+              variant: SeedButtonVariant.neutralWeak,
+              size: SeedButtonSize.large,
+              isDisabled: isChanging,
+              onPressed: () => Navigator.pop(context),
+            ),
+            confirm: SeedButton(
+              label: '변경',
+              variant: SeedButtonVariant.brandSolid,
+              size: SeedButtonSize.large,
+              isLoading: isChanging,
+              isDisabled: isChanging || selectedRole == user.role,
+              onPressed: () async {
+                setState(() {
+                  isChanging = true;
+                });
+
+                final authProvider = context.read<AuthProvider>();
+                final success = await authProvider.updateMemberRole(
+                  selectedRole,
+                );
+
+                if (success && context.mounted) {
+                  Navigator.pop(context);
+                  AppSnackBar.showSuccess(
+                    context,
+                    message: '역할이 성공적으로 변경되었습니다.',
+                  );
+                } else if (context.mounted) {
+                  setState(() {
+                    isChanging = false;
+                  });
+                  AppSnackBar.showError(
+                    context,
+                    message: authProvider.errorMessage.isNotEmpty
+                        ? authProvider.errorMessage
+                        : '역할 변경에 실패했습니다',
+                  );
+                }
+              },
+            ),
+          ),
+          children: [
+            const SizedBox(height: AppSpacing.space4),
+            // 두 줄을 한 회색 채움 묶음에 — 줄 사이 선 없이 간격으로
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.space2),
+              decoration: BoxDecoration(
+                color: AppSemanticColors.fillDefault,
+                borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              ),
+              child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.backgroundTertiary,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  RadioListTile<String>(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.swap_horiz,
-                      color: AppSemanticColors.textSecondary,
-                      size: 24,
+                    title: Row(
+                      children: [
+                        const Icon(
+                          Icons.favorite,
+                          color: AppSemanticColors.statusErrorIcon,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Text(
+                          '요양보호사',
+                          style: AppTypography.titleMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
+                    subtitle: Text(
+                      '요양 서비스 제공 직원',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                    ),
+                    value: 'CAREGIVER',
+                    groupValue: selectedRole,
+                    onChanged: isChanging
+                        ? null
+                        : (value) {
+                            setState(() {
+                              selectedRole = value!;
+                            });
+                          },
                   ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Text(
-                    '역할 변경',
-                    style: AppTypography.heading5.copyWith(
-                      color: AppSemanticColors.textPrimary,
+                  const SizedBox(height: AppSpacing.space1),
+                  RadioListTile<String>(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
                     ),
+                    title: Row(
+                      children: [
+                        const Icon(
+                          Icons.business,
+                          color: AppSemanticColors.textSecondary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Text(
+                          '사무직',
+                          style: AppTypography.titleMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Text(
+                      '사무실 근무 직원',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                    ),
+                    value: 'OFFICE',
+                    groupValue: selectedRole,
+                    onChanged: isChanging
+                        ? null
+                        : (value) {
+                            setState(() {
+                              selectedRole = value!;
+                            });
+                          },
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.space4),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                ),
-                child: Column(
-                  children: [
-                    RadioListTile<String>(
-                      title: Row(
-                        children: [
-                          const Icon(
-                            Icons.favorite,
-                            color: AppSemanticColors.statusErrorIcon,
-                            size: 20,
-                          ),
-                          const SizedBox(width: AppSpacing.space2),
-                          Text(
-                            '요양보호사',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      subtitle: Text(
-                        '요양 서비스 제공 직원',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                      ),
-                      value: 'CAREGIVER',
-                      groupValue: selectedRole,
-                      onChanged: isChanging
-                          ? null
-                          : (value) {
-                              setState(() {
-                                selectedRole = value!;
-                              });
-                            },
-                    ),
-                    const Divider(),
-                    RadioListTile<String>(
-                      title: Row(
-                        children: [
-                          const Icon(
-                            Icons.business,
-                            color: AppSemanticColors.textSecondary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: AppSpacing.space2),
-                          Text(
-                            '사무직',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      subtitle: Text(
-                        '사무실 근무 직원',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                      ),
-                      value: 'OFFICE',
-                      groupValue: selectedRole,
-                      onChanged: isChanging
-                          ? null
-                          : (value) {
-                              setState(() {
-                                selectedRole = value!;
-                              });
-                            },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              if (selectedRole != user.role)
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space3),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.statusWarningBackground,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    border: Border.all(
-                      color: AppSemanticColors.statusWarningBorder,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: AppSemanticColors.statusWarningIcon,
-                        size: 20,
-                      ),
-                      const SizedBox(width: AppSpacing.space2),
-                      Expanded(
-                        child: Text(
-                          '역할 변경 시 권한이 변경됩니다.',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.statusWarningText,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: '취소',
-                      variant: SeedButtonVariant.neutralOutline,
-                      isDisabled: isChanging,
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: SeedButton(
-                      label: '변경',
-                      variant: SeedButtonVariant.brandSolid,
-                      isLoading: isChanging,
-                      isDisabled: isChanging || selectedRole == user.role,
-                      onPressed: () async {
-                        setState(() {
-                          isChanging = true;
-                        });
-
-                        final authProvider = context.read<AuthProvider>();
-                        final success = await authProvider.updateMemberRole(
-                          selectedRole,
-                        );
-
-                        if (success && context.mounted) {
-                          Navigator.pop(context);
-                          AppSnackBar.showSuccess(
-                            context,
-                            message: '역할이 성공적으로 변경되었습니다.',
-                          );
-                        } else if (context.mounted) {
-                          setState(() {
-                            isChanging = false;
-                          });
-                          AppSnackBar.showError(
-                            context,
-                            message: authProvider.errorMessage.isNotEmpty
-                                ? authProvider.errorMessage
-                                : '역할 변경에 실패했습니다',
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
+            ),
+            if (selectedRole != user.role) ...[
+              const SizedBox(height: AppSpacing.space3),
+              const _SheetNote(
+                background: AppSemanticColors.statusWarningBackground,
+                icon: Icons.info_outline,
+                iconColor: AppSemanticColors.statusWarningIcon,
+                textColor: AppSemanticColors.statusWarningText,
+                text: '역할 변경 시 권한이 변경됩니다.',
               ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -584,187 +542,146 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _showWithdrawalDialog(BuildContext context) {
     bool isWithdrawing = false;
 
-    AppDialog.showCustom<void>(
+    // B안: 가운데 창 대신 경고 아이콘이 있는 아래 시트. 예전처럼 바깥을 눌러도 닫히지 않는다.
+    showAppSheet<void>(
       context,
-      barrierDismissible: false,
-      barrierColor: AppColors.black.withValues(alpha: 0.5),
-      child: StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusErrorBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    ),
-                    child: Icon(
-                      Icons.person_remove,
-                      color: AppSemanticColors.statusErrorIcon,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Text(
-                    '회원탈퇴',
-                    style: AppTypography.heading5.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.statusErrorBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.statusErrorBorder,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '⚠️ 주의사항',
-                      style: AppTypography.labelLarge.copyWith(
-                        color: AppSemanticColors.statusErrorText,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.space2),
-                    Text(
-                      '• 계정이 영구적으로 삭제됩니다\n• 모든 휴무 신청 내역이 삭제됩니다\n• 삭제된 데이터는 복구할 수 없습니다\n• 재가입을 원하시면 새로 신청해야 합니다',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.statusErrorText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              Text(
-                '정말로 회원탈퇴를 진행하시겠습니까?',
-                style: AppTypography.bodyLarge.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: '취소',
-                      variant: SeedButtonVariant.neutralOutline,
-                      isDisabled: isWithdrawing,
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: SeedButton(
-                      label: '탈퇴하기',
-                      variant: SeedButtonVariant.critical,
-                      isLoading: isWithdrawing,
-                      isDisabled: isWithdrawing,
-                      onPressed: () async {
-                        setState(() {
-                          isWithdrawing = true;
-                        });
+      isDismissible: false,
+      enableDrag: false,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setState) => AppSheetFrame(
+          title: '회원탈퇴',
+          warning: true,
+          actions: AppSheetActions(
+            cancel: SeedButton(
+              label: '취소',
+              variant: SeedButtonVariant.neutralWeak,
+              size: SeedButtonSize.large,
+              isDisabled: isWithdrawing,
+              onPressed: () => Navigator.pop(context),
+            ),
+            confirm: SeedButton(
+              label: '탈퇴하기',
+              variant: SeedButtonVariant.critical,
+              size: SeedButtonSize.large,
+              isLoading: isWithdrawing,
+              isDisabled: isWithdrawing,
+              onPressed: () async {
+                setState(() {
+                  isWithdrawing = true;
+                });
 
-                        final authProvider = context.read<AuthProvider>();
-                        final success = await authProvider.withdrawMember();
+                final authProvider = context.read<AuthProvider>();
+                final success = await authProvider.withdrawMember();
 
-                        if (success && context.mounted) {
-                          Navigator.pop(context);
+                if (success && context.mounted) {
+                  Navigator.pop(context);
 
-                          // 성공 메시지 표시
-                          AppDialog.showCustom<void>(
-                            context,
-                            barrierDismissible: false,
-                            child: Container(
-                              padding: const EdgeInsets.all(AppSpacing.space6),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: AppSpacing.space14,
-                                    height: AppSpacing.space14,
-                                    decoration: BoxDecoration(
-                                      color: AppSemanticColors
-                                          .statusSuccessBackground,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.check,
-                                      color:
-                                          AppSemanticColors.statusSuccessIcon,
-                                      size: 40,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.space5),
-                                  Text(
-                                    '회원탈퇴 완료',
-                                    style: AppTypography.heading5.copyWith(
-                                      color:
-                                          AppSemanticColors.statusSuccessIcon,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.space3),
-                                  Text(
-                                    '그동안 이용해주셔서 감사했습니다.',
-                                    textAlign: TextAlign.center,
-                                    style: AppTypography.bodyMedium.copyWith(
-                                      color: AppSemanticColors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.space5),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: SeedButton(
-                                      label: '확인',
-                                      variant: SeedButtonVariant.brandSolid,
-                                      onPressed: () {
-                                        Navigator.of(
-                                          context,
-                                        ).pushAndRemoveUntil(
-                                          MaterialPageRoute(
-                                            builder: (_) => const LoginScreen(),
-                                          ),
-                                          (route) => false,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
+                  // 성공 메시지 표시 — 같은 아래 시트(바깥을 눌러도 닫히지 않는다)
+                  showAppSheet<void>(
+                    context,
+                    isDismissible: false,
+                    enableDrag: false,
+                    builder: (sheetContext) => AppSheetFrame(
+                      actions: SeedButton(
+                        label: '확인',
+                        variant: SeedButtonVariant.brandSolid,
+                        size: SeedButtonSize.large,
+                        onPressed: () {
+                          Navigator.of(sheetContext).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
                             ),
+                            (route) => false,
                           );
-                        } else if (context.mounted) {
-                          setState(() {
-                            isWithdrawing = false;
-                          });
+                        },
+                      ),
+                      children: [
+                        Center(
+                          child: Container(
+                            width: AppSpacing.space14,
+                            height: AppSpacing.space14,
+                            decoration: const BoxDecoration(
+                              color: AppSemanticColors.statusSuccessBackground,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: AppSemanticColors.statusSuccessIcon,
+                              size: 40,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.space5),
+                        Text(
+                          '회원탈퇴 완료',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.heading5.copyWith(
+                            color: AppSemanticColors.statusSuccessIcon,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.space3),
+                        Text(
+                          '그동안 이용해주셔서 감사했습니다.',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                } else if (context.mounted) {
+                  setState(() {
+                    isWithdrawing = false;
+                  });
 
-                          // 에러 메시지 표시
-                          AppSnackBar.showError(
-                            context,
-                            message: authProvider.errorMessage.isNotEmpty
-                                ? authProvider.errorMessage
-                                : '회원탈퇴에 실패했습니다',
-                          );
-                        }
-                      },
+                  // 에러 메시지 표시
+                  AppSnackBar.showError(
+                    context,
+                    message: authProvider.errorMessage.isNotEmpty
+                        ? authProvider.errorMessage
+                        : '회원탈퇴에 실패했습니다',
+                  );
+                }
+              },
+            ),
+          ),
+          children: [
+            const SizedBox(height: AppSpacing.space4),
+            // 주의사항 — 테두리 없이 옅은 빨강 바탕, 모서리 14
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              decoration: BoxDecoration(
+                color: AppSemanticColors.statusErrorBackground,
+                borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '⚠️ 주의사항',
+                    style: AppTypography.labelLarge.copyWith(
+                      color: AppSemanticColors.statusErrorText,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space2),
+                  Text(
+                    '• 계정이 영구적으로 삭제됩니다\n• 모든 휴무 신청 내역이 삭제됩니다\n• 삭제된 데이터는 복구할 수 없습니다\n• 재가입을 원하시면 새로 신청해야 합니다',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.statusErrorText,
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: AppSpacing.space4),
+            Text(
+              '정말로 회원탈퇴를 진행하시겠습니까?',
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );
