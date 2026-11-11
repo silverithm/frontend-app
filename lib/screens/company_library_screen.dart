@@ -21,6 +21,9 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_fab.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -382,17 +385,23 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
               onPressed: _showUploadSheet,
             )
           : null,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _hasError
-          ? _buildErrorState()
-          : NotificationListener<UserScrollNotification>(
-              onNotification: _onUserScroll,
-              child: RefreshIndicator(
-                onRefresh: _load,
-                child: _buildList(isAdmin),
+      // 목록 등장 연출은 처음 한 번만 — 새로고침으로 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
+      body: AppListEntrance(
+        // 처음 불러올 때(아직 보일 자료가 없을 때)만 뼈대 — 자료가 있는 채로 다시 불러올 때는 예전 스피너
+        child: _isLoading && _items.isEmpty
+            ? const _LibrarySkeleton()
+            : _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _hasError
+            ? _buildErrorState()
+            : NotificationListener<UserScrollNotification>(
+                onNotification: _onUserScroll,
+                child: AppRefreshIndicator(
+                  onRefresh: _load,
+                  child: _buildList(isAdmin),
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -442,7 +451,11 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
             topSpacing: AppSpacing.space10,
           )
         else
-          ...items.map((item) => _buildItemCard(item, isAdmin)),
+          for (final (index, item) in items.indexed)
+            AppListEntranceItem(
+              index: index,
+              child: _buildItemCard(item, isAdmin),
+            ),
       ],
     );
   }
@@ -598,6 +611,34 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
           else
             const SizedBox(width: AppSpacing.space3),
         ],
+      ),
+    );
+  }
+}
+
+/// 자료실 첫 불러오기 뼈대 — 회색 바탕 위 흰 자료 카드(목록과 같은 여백·간격)
+class _LibrarySkeleton extends StatelessWidget {
+  const _LibrarySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: AppSpacing.space3),
+        children: List.generate(
+          5,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              0,
+              AppSpacing.screenGutter,
+              AppSpacing.cardGap,
+            ),
+          ),
+        ),
       ),
     );
   }
