@@ -7,9 +7,10 @@ import '../providers/dispatch_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/dispatch/dispatch_board_view.dart';
 import '../widgets/dispatch/dispatch_calendar_view.dart';
-import '../widgets/seed/seed_button.dart';
 import 'dispatch_settings_screen.dart';
 
 /// 배차관리 — 배차표 / 달력 두 화면과 설정 진입.
@@ -28,8 +29,15 @@ class DispatchScreen extends StatefulWidget {
   State<DispatchScreen> createState() => _DispatchScreenState();
 }
 
-class _DispatchScreenState extends State<DispatchScreen> {
+class _DispatchScreenState extends State<DispatchScreen>
+    with SingleTickerProviderStateMixin {
   int _tabIndex = 0;
+
+  /// 배차표/달력 나눔 조절(B안 AppSegmentedTabs)이 쓰는 컨트롤러. 본문은 [_tabIndex]로 고른다.
+  late final TabController _tabController = TabController(
+    length: 2,
+    vsync: this,
+  );
   late DateTime _month;
 
   /// 달력에서 날짜를 골라 배차표로 넘어온 경우의 날짜. ValueKey로 배차표를
@@ -44,8 +52,19 @@ class _DispatchScreenState extends State<DispatchScreen> {
     super.initState();
     final now = DateTime.now();
     _month = DateTime(now.year, now.month);
+    _tabController.addListener(() {
+      if (_tabController.index != _tabIndex) {
+        setState(() => _tabIndex = _tabController.index);
+      }
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -65,7 +84,7 @@ class _DispatchScreenState extends State<DispatchScreen> {
     final provider = context.watch<DispatchProvider>();
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text(
           '배차관리',
@@ -101,54 +120,11 @@ class _DispatchScreenState extends State<DispatchScreen> {
     );
   }
 
+  // B안 나눔 조절 — 회색 띠 위에서 흰 칸이 미끄러진다(다른 칸을 누르면 selection 햅틱)
   Widget _buildTabs() {
-    const labels = ['배차표', '달력'];
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
-        AppSpacing.space3,
-        AppSpacing.space4,
-        AppSpacing.space2,
-      ),
-      padding: const EdgeInsets.all(AppSpacing.space1),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundTertiary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-      ),
-      child: Row(
-        children: List.generate(labels.length, (index) {
-          final selected = _tabIndex == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _tabIndex = index),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space2,
-                ),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AppSemanticColors.surfaceDefault
-                      : AppColors.transparent,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                ),
-                child: Text(
-                  labels[index],
-                  style: AppTypography.bodySmall.copyWith(
-                    color: selected
-                        ? AppSemanticColors.textPrimary
-                        : AppSemanticColors.textTertiary,
-                    fontWeight: selected
-                        ? AppTypography.fontWeightSemibold
-                        : AppTypography.fontWeightMedium,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
+    return AppSegmentedTabs(
+      controller: _tabController,
+      tabs: const [AppSegmentedTab('배차표'), AppSegmentedTab('달력')],
     );
   }
 
@@ -166,9 +142,9 @@ class _DispatchScreenState extends State<DispatchScreen> {
           onRefresh: _load,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.space4,
+              AppSpacing.screenGutter,
               AppSpacing.space2,
-              AppSpacing.space4,
+              AppSpacing.screenGutter,
               AppSpacing.space6,
             ),
             children: [
@@ -181,10 +157,13 @@ class _DispatchScreenState extends State<DispatchScreen> {
                 // 날짜를 고르면 배차표 탭으로 넘어가 그 날짜를 바로 보여준다.
                 // 예전엔 여기서 DispatchDaySheet(요약 바텀시트)를 띄웠지만,
                 // 배차표가 같은 정보를 더 자세히 보여주므로 없앴다.
-                onDateSelected: (date) => setState(() {
-                  _boardJumpDate = date;
-                  _tabIndex = 0;
-                }),
+                onDateSelected: (date) {
+                  setState(() {
+                    _boardJumpDate = date;
+                    _tabIndex = 0;
+                  });
+                  _tabController.index = 0;
+                },
                 onPreviousMonth: () => setState(
                   () => _month = DateTime(_month.year, _month.month - 1),
                 ),
@@ -214,42 +193,13 @@ class _DispatchScreenState extends State<DispatchScreen> {
   }
 
   Widget _buildSetupGuide() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.directions_bus_outlined,
-              size: 44,
-              color: AppSemanticColors.textDisabled,
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            Text(
-              '배차 설정이 필요합니다',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.textPrimary,
-                fontWeight: AppTypography.fontWeightSemibold,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space1),
-            Text(
-              '노선과 운전자를 먼저 등록해주세요',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            SeedButton(
-              label: '설정하러 가기',
-              onPressed: _openSettings,
-            ),
-          ],
-        ),
-      ),
+    // B안 빈 화면 — 옅은 틸 원 아이콘 + 19 제목 + 14 설명 + 단추
+    return AppEmptyState(
+      icon: Icons.directions_bus_outlined,
+      title: '배차 설정이 필요합니다',
+      description: '노선과 운전자를 먼저 등록해주세요',
+      actionLabel: '설정하러 가기',
+      onAction: _openSettings,
     );
   }
 }
-
