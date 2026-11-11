@@ -9,7 +9,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/document_form_fields.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
 import 'hwp_editor_screen.dart';
@@ -84,8 +86,11 @@ class _ApprovalTemplatePreviewScreenState
         queryParams['fileName'] = t.fileName!;
       }
 
-      final downloadUri =
-          Uri.https('silverithm.site', '/api/v1/files/download', queryParams);
+      final downloadUri = Uri.https(
+        'silverithm.site',
+        '/api/v1/files/download',
+        queryParams,
+      );
 
       final dir = await getTemporaryDirectory();
       final fileName = t.fileName ?? '${t.name}.dat';
@@ -108,7 +113,10 @@ class _ApprovalTemplatePreviewScreenState
 
       final result = await OpenFilex.open(filePath);
       if (result.type != ResultType.done && mounted) {
-        AppSnackBar.showError(context, message: '파일을 열 수 없습니다: ${result.message}');
+        AppSnackBar.showError(
+          context,
+          message: '파일을 열 수 없습니다: ${result.message}',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -159,43 +167,47 @@ class _ApprovalTemplatePreviewScreenState
     final hasFile = t.fileUrl != null;
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text(
-          t.name,
-          style: AppTypography.appBarTitle,
-          overflow: TextOverflow.ellipsis,
-        ),
-        elevation: 0,
-        centerTitle: true,
-      ),
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: CareVAppBar(title: t.name),
+      // 아래 단추 띠가 홈 표시줄 아래까지 흰색으로 이어지게 — 단추가 있으면 아래 안전 영역은 띠가 맡는다
       body: SafeArea(
+        bottom: !widget.showUseButton,
         child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.space4),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenGutter,
+                  AppSpacing.space4,
+                  AppSpacing.screenGutter,
+                  AppSpacing.space6,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (t.description != null && t.description!.isNotEmpty) ...[
                       Text(
                         t.description!,
-                        style: AppTypography.bodyMedium
-                            .copyWith(color: AppSemanticColors.textSecondary),
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppSemanticColors.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.space4),
                     ],
 
                     if (approvalLine.isNotEmpty) ...[
+                      // 회색 바탕 위라 옅은 틸 안내 칸으로(회색 칸은 바탕에 묻힌다)
                       SeedCallout(
+                        variant: SeedCalloutVariant.brand,
                         icon: Icons.route_outlined,
                         title: '결재선',
                         description: approvalLine
                             .asMap()
                             .entries
-                            .map((e) =>
-                                '${e.key + 1}. ${e.value.name}${e.value.position != null ? ' (${e.value.position})' : ''}')
+                            .map(
+                              (e) =>
+                                  '${e.key + 1}. ${e.value.name}${e.value.position != null ? ' (${e.value.position})' : ''}',
+                            )
                             .join(' → '),
                       ),
                       const SizedBox(height: AppSpacing.space4),
@@ -204,14 +216,16 @@ class _ApprovalTemplatePreviewScreenState
                     if (hasFields) ...[
                       Text(
                         '양식 미리보기',
-                        style: AppTypography.heading6
-                            .copyWith(color: AppSemanticColors.textPrimary),
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.space1),
                       Text(
                         '실제 문서의 항목 구성입니다. 값은 다음 화면에서 입력합니다.',
-                        style: AppTypography.bodySmall
-                            .copyWith(color: AppSemanticColors.textTertiary),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.space3),
                       DocumentFormFields(
@@ -225,53 +239,56 @@ class _ApprovalTemplatePreviewScreenState
                     if (hasFile) ...[
                       Text(
                         '첨부 원본',
-                        style: AppTypography.heading6
-                            .copyWith(color: AppSemanticColors.textPrimary),
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.space3),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.space4),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.surfaceDefault,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                          border: Border.all(color: AppSemanticColors.borderDefault),
-                        ),
+                      AppCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
+                                // B안 목록 줄 아이콘 — 옅은 틸 둥근 바탕 44
                                 Container(
-                                  padding: const EdgeInsets.all(AppSpacing.space2),
-                                  decoration: BoxDecoration(
-                                    color: AppSemanticColors.statusInfoBackground,
-                                    borderRadius:
-                                        BorderRadius.circular(AppBorderRadius.lg),
+                                  width: AppSpacing.iconCircle,
+                                  height: AppSpacing.iconCircle,
+                                  decoration: const BoxDecoration(
+                                    color: AppSemanticColors.brandWeak,
+                                    shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     _fileIcon(t.fileName ?? t.fileUrl!),
-                                    size: 24,
-                                    color: AppSemanticColors.statusInfoIcon,
+                                    size: 22,
+                                    color:
+                                        AppSemanticColors.brandWeakForeground,
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.space3),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         t.fileName ?? '첨부 파일',
                                         style: AppTypography.bodyMedium
-                                            .copyWith(color: AppSemanticColors.textPrimary),
+                                            .copyWith(
+                                              color:
+                                                  AppSemanticColors.textPrimary,
+                                            ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       if (t.fileSize != null)
                                         Text(
                                           _formatFileSize(t.fileSize!),
-                                          style: AppTypography.bodySmall.copyWith(
-                                              color: AppSemanticColors.textTertiary),
+                                          style: AppTypography.bodySmall
+                                              .copyWith(
+                                                color: AppSemanticColors
+                                                    .textTertiary,
+                                              ),
                                         ),
                                     ],
                                   ),
@@ -281,30 +298,36 @@ class _ApprovalTemplatePreviewScreenState
                             const SizedBox(height: AppSpacing.space3),
                             if (_isDownloading)
                               LinearProgressIndicator(
-                                value: _downloadProgress == 0 ? null : _downloadProgress,
-                                backgroundColor: AppSemanticColors.borderDefault,
+                                value: _downloadProgress == 0
+                                    ? null
+                                    : _downloadProgress,
+                                backgroundColor:
+                                    AppSemanticColors.borderDefault,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppSemanticColors.interactivePrimaryDefault),
+                                  AppSemanticColors.interactivePrimaryDefault,
+                                ),
                               )
                             else
                               SizedBox(
                                 width: double.infinity,
                                 child: SeedButton(
                                   label: _isHwpFile ? '문서 미리보기' : '다운로드하여 열기',
-                                  variant: SeedButtonVariant.neutralOutline,
+                                  variant: SeedButtonVariant.neutralWeak,
                                   prefixIcon: _isHwpFile
                                       ? Icons.visibility_outlined
                                       : Icons.download_outlined,
-                                  onPressed:
-                                      _isHwpFile ? _openHwpPreview : _downloadAndOpen,
+                                  onPressed: _isHwpFile
+                                      ? _openHwpPreview
+                                      : _downloadAndOpen,
                                 ),
                               ),
                             if (!_isHwpFile) ...[
                               const SizedBox(height: AppSpacing.space2),
                               Text(
                                 '이 형식은 앱에서 바로 미리보기를 지원하지 않아 다운로드 후 기기의 다른 앱으로 엽니다.',
-                                style: AppTypography.bodySmall
-                                    .copyWith(color: AppSemanticColors.textTertiary),
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
                               ),
                             ],
                           ],
@@ -314,19 +337,14 @@ class _ApprovalTemplatePreviewScreenState
                     ],
 
                     if (!hasFields && !hasFile)
-                      Container(
-                        width: double.infinity,
+                      AppCard(
                         padding: const EdgeInsets.all(AppSpacing.space6),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.surfaceDefault,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                          border: Border.all(color: AppSemanticColors.borderDefault),
-                        ),
                         child: Center(
                           child: Text(
                             '이 양식은 미리 볼 항목이 없습니다',
-                            style: AppTypography.bodyMedium
-                                .copyWith(color: AppSemanticColors.textTertiary),
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textTertiary,
+                            ),
                           ),
                         ),
                       ),
@@ -335,13 +353,16 @@ class _ApprovalTemplatePreviewScreenState
               ),
             ),
             if (widget.showUseButton)
+              // 아래 주 단추 줄 — B안: 위 선 없이 흰 띠 + 큰 단추(54) 꽉 채움
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  border: Border(top: BorderSide(color: AppSemanticColors.borderDefault)),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.screenGutter,
+                  AppSpacing.space3,
+                  AppSpacing.screenGutter,
+                  AppSpacing.space3 + MediaQuery.paddingOf(context).bottom,
                 ),
+                color: AppSemanticColors.surfaceCard,
                 child: SizedBox(
                   width: double.infinity,
                   child: SeedButton(
