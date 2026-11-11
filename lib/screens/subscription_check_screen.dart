@@ -6,8 +6,10 @@ import '../models/subscription.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import 'payment_screen.dart';
@@ -67,8 +69,9 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
 
   @override
   Widget build(BuildContext context) {
+    // B안: 옅은 회색 바탕 위 흰 카드(테두리 없음). 글자·순서·금액·결제 흐름은 그대로(토스 심사).
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '요금제 선택'),
       body: Consumer2<SubscriptionProvider, AuthProvider>(
         builder: (context, subscriptionProvider, authProvider, child) {
@@ -84,7 +87,10 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.space6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.screenGutter,
+                        vertical: AppSpacing.space6,
+                      ),
                       child: Column(
                         children: [
                           _buildWelcomeSection(authProvider),
@@ -92,7 +98,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                           _buildSubscriptionPlans(subscriptionProvider),
                           const SizedBox(height: AppSpacing.space6),
                           _buildFeatureComparison(),
-                          const SizedBox(height: AppSpacing.space8),
+                          const SizedBox(height: AppSpacing.cardGap),
                           _buildFooter(),
                         ],
                       ),
@@ -116,11 +122,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             padding: const EdgeInsets.all(AppSpacing.space6),
             decoration: BoxDecoration(
               color: AppSemanticColors.brandWeak,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-              border: Border.all(
-                color: AppSemanticColors.borderDefault,
-                width: 1,
-              ),
+              borderRadius: BorderRadius.circular(AppBorderRadius.card),
             ),
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(
@@ -141,24 +143,17 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
   }
 
   Widget _buildWelcomeSection(AuthProvider authProvider) {
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(AppSpacing.space6),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(
-          color: AppSemanticColors.borderDefault,
-          width: 1,
-        ),
-      ),
       child: Column(
         children: [
+          // 아이콘만 든 칸(글자 없음) — 옅은 틸 둥근 바탕
           Container(
             width: AppSpacing.space12,
             height: AppSpacing.space12,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppSemanticColors.brandWeak,
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+              shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.business_center,
@@ -210,28 +205,23 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
         ? subscriptionProvider.canUseFreeSubscription
         : true;
 
+    // B안: 테두리 없는 흰 카드. 추천 요금제만 옅은 틸 바탕 + 틸 2px 둘레로 강조(예전과 같은 뜻).
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space4),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-          side: plan.isPopular
-              ? BorderSide(
+      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: plan.isPopular
+              ? AppSemanticColors.brandWeak
+              : AppSemanticColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          border: plan.isPopular
+              ? Border.all(
                   color: AppSemanticColors.interactivePrimaryDefault,
                   width: 2,
                 )
-              : BorderSide(
-                  color: AppSemanticColors.borderDefault,
-                  width: 1,
-                ),
+              : null,
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-            color: plan.isPopular ? AppSemanticColors.brandWeak : null,
-          ),
-          child: Padding(
+        child: Padding(
             padding: const EdgeInsets.all(AppSpacing.space6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +250,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppSemanticColors.interactivePrimaryDefault,
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.full),
                                   ),
                                   child: Text(
                                     '추천',
@@ -357,22 +347,13 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               ],
             ),
           ),
-        ),
       ),
     );
   }
 
   Widget _buildFeatureComparison() {
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(AppSpacing.space6),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(
-          color: AppSemanticColors.borderDefault,
-          width: 1,
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -415,13 +396,10 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
   }
 
   Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space5),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-      ),
-      child: Column(
+    return AppCard(
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
         children: [
           Icon(
             Icons.security,
@@ -445,6 +423,7 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -500,16 +479,23 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
   }
 
   void _showSuccessDialog(String message, VoidCallback onConfirm) {
-    AppDialog.showCustom<void>(
+    // B안: 가운데 대화상자 대신 아래 시트(바깥을 눌러도 닫히지 않는다). 글자·순서·흐름은 그대로.
+    showAppSheet<void>(
       context,
-      barrierDismissible: false,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
+      isDismissible: false,
+      enableDrag: false,
+      builder: (sheetContext) => AppSheetFrame(
+        actions: SizedBox(
+          width: double.infinity,
+          child: SeedButton(
+            label: '확인',
+            size: SeedButtonSize.large,
+            onPressed: onConfirm,
+          ),
+        ),
+        children: [
+          Center(
+            child: Container(
               width: 60,
               height: 60,
               decoration: const BoxDecoration(
@@ -518,30 +504,23 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               ),
               child: const Icon(Icons.check, color: AppSemanticColors.textInverse, size: 30),
             ),
-            const SizedBox(height: AppSpacing.space4),
-            Text(
-              '성공!',
-              style: AppTypography.heading6.copyWith(
-                color: AppSemanticColors.statusSuccessIcon,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const SizedBox(height: AppSpacing.space4),
+          Text(
+            '성공!',
+            textAlign: TextAlign.center,
+            style: AppTypography.heading6.copyWith(
+              color: AppSemanticColors.statusSuccessIcon,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: AppSpacing.space2),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium,
-            ),
-            const SizedBox(height: AppSpacing.space6),
-            SizedBox(
-              width: double.infinity,
-              child: SeedButton(
-                label: '확인',
-                onPressed: onConfirm,
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.space2),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium,
+          ),
+        ],
       ),
     );
   }
