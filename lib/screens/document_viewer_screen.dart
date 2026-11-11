@@ -5,6 +5,7 @@ import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/carev_app_bar.dart';
 
 /// 워드·엑셀·슬라이드·텍스트 문서를 앱 안에서 바로 보는 화면.
 ///
@@ -109,14 +110,9 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundTertiary,
-      appBar: AppBar(
-        title: Text(
-          widget.fileName,
-          style: AppTypography.appBarTitle.copyWith(
-            fontWeight: AppTypography.fontWeightSemibold,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
+      // 공통 상단 바(가운데 17/w600·뒤로 꺾쇠) — 긴 파일 이름은 한 줄로 줄인다
+      appBar: CareVAppBar(
+        title: widget.fileName,
         actions: [
           if (widget.onDownload != null)
             IconButton(

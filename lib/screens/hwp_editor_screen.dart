@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/hwp_editor_view.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 
@@ -174,14 +175,9 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundTertiary,
-      appBar: AppBar(
-        title: Text(
-          widget.fileName,
-          style: AppTypography.appBarTitle.copyWith(
-            fontWeight: AppTypography.fontWeightSemibold,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
+      // 공통 상단 바(가운데 17/w600·뒤로 꺾쇠) — 긴 파일 이름은 한 줄로 줄인다
+      appBar: CareVAppBar(
+        title: widget.fileName,
         actions: [
           if (widget.allowSave && _documentLoaded)
             Padding(
@@ -211,7 +207,7 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
               child: Text(
                 '문서를 작성한 뒤 우측 상단 ${widget.saveLabel} 버튼을 누르면 자동으로 첨부됩니다.',
                 style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.brandPressed,
+                  color: AppSemanticColors.brandWeakForeground,
                 ),
               ),
             ),
