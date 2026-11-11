@@ -83,15 +83,18 @@ class _SignaturePadState extends State<SignaturePad> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        // B안: 쓸 자리를 알리는 회색 채움 칸 + 아주 옅은 테두리(모서리 14).
+        // 바탕은 RepaintBoundary 밖에서 칠하므로 내보내는 서명 그림은 그대로 투명 배경이다.
         Container(
           height: widget.height,
           width: double.infinity,
           decoration: BoxDecoration(
-            border: Border.all(color: AppSemanticColors.borderDefault),
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            color: AppSemanticColors.fillDefault,
+            border: Border.all(color: AppSemanticColors.borderHairline),
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
             child: RepaintBoundary(
               key: _boundaryKey,
               child: RawGestureDetector(
@@ -119,7 +122,7 @@ class _SignaturePadState extends State<SignaturePad> {
                       ? Center(
                           child: Text(
                             '여기에 서명을 그려주세요',
-                            style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textTertiary),
+                            style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textTertiary),
                           ),
                         )
                       : const SizedBox.expand(),
@@ -128,10 +131,13 @@ class _SignaturePadState extends State<SignaturePad> {
             ),
           ),
         ),
+        const SizedBox(height: AppSpacing.space1),
+        // 칸이 회색이라 지우기는 글자 단추(작은 40)로 — 터치 영역은 48
         SeedButton(
           label: '지우기',
-          variant: SeedButtonVariant.neutralWeak,
-          size: SeedButtonSize.xsmall,
+          variant: SeedButtonVariant.brandGhost,
+          size: SeedButtonSize.small,
+          prefixIcon: Icons.refresh_rounded,
           onPressed: _clear,
         ),
       ],
