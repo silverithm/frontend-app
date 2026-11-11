@@ -292,7 +292,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             child: Center(
               child: AnimatedOpacity(
                 opacity: _scrollDateLabel == null ? 0.0 : 1.0,
-                duration: const Duration(milliseconds: 150),
+                duration: AppTransitions.fast,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.space3,
@@ -305,7 +305,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   ),
                   child: Text(
                     _scrollDateLabel ?? '',
-                    style: AppTypography.labelMedium.copyWith(
+                    style: AppTypography.labelStrong.copyWith(
                       color: AppSemanticColors.textSecondary,
                     ),
                   ),
@@ -1972,11 +1972,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.arrow_downward, size: 16, color: Colors.white),
+                      const Icon(Icons.arrow_downward, size: 16, color: AppSemanticColors.textInverse),
                       const SizedBox(width: AppSpacing.space1),
                       Text(
                         '새 메시지 보기',
-                        style: AppTypography.labelMedium.copyWith(color: Colors.white),
+                        style: AppTypography.labelStrong.copyWith(color: AppSemanticColors.textInverse),
                       ),
                     ],
                   ),
@@ -3942,9 +3942,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 ),
                 const SizedBox(width: AppSpacing.space2),
               ],
-              Text(
-                isLoadingOlder ? '이전 대화를 불러오는 중...' : '대화의 시작입니다',
-                style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textTertiary),
+              // 글자를 키워도 좁은 폰에서 옆으로 넘치지 않게 — 줄이 모자라면 줄바꿈
+              Flexible(
+                child: Text(
+                  isLoadingOlder ? '이전 대화를 불러오는 중...' : '대화의 시작입니다',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textTertiary),
+                ),
               ),
             ],
           ),
@@ -4005,12 +4009,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         children: [
           if (showDateSeparator) _buildDateSeparator(message.createdAt),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: AppTransitions.slow,
             decoration: BoxDecoration(
               color: isHighlighted
                   ? AppSemanticColors.brandDefault.withValues(alpha: 0.12)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                  : AppColors.transparent,
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
             ),
             child: _buildMessageBubble(
               // 시각·읽음 표시는 묶음의 **가장 최신** 사진 기준으로 보여준다.
@@ -4069,7 +4073,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   Widget _buildDateSeparator(DateTime date) {
     return _buildCenterPill(
       formatDateSeparatorLabel(date),
-      style: AppTypography.labelMedium.copyWith(color: AppSemanticColors.textSecondary),
+      style: AppTypography.labelStrong.copyWith(color: AppSemanticColors.textSecondary),
       margin: const EdgeInsets.only(top: AppSpacing.space6, bottom: AppSpacing.space3),
     );
   }
@@ -4173,10 +4177,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     // 꼬리 모서리(작은 모서리)는 같은 사람 묶음의 첫 말풍선에만 둔다. 모든 말풍선에
     // 같은 꼬리를 달면 도장 찍은 듯 반복돼 거칠어 보인다.
-    const big = Radius.circular(AppBorderRadius.xl);
+    // B안: 큰 모서리 20(한 줄 말풍선은 거의 알약), 꼬리만 작게.
+    const big = Radius.circular(AppBorderRadius.card);
     const small = Radius.circular(AppBorderRadius.base);
     final BorderRadius bubbleRadius = isMediaBubble
-        ? BorderRadius.circular(AppBorderRadius.xl2)
+        ? BorderRadius.circular(AppBorderRadius.card)
         : BorderRadius.only(
             topLeft: (!isMyMessage && isRunStart) ? small : big,
             topRight: (isMyMessage && isRunStart) ? small : big,
@@ -4188,7 +4193,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     final bubbleBox = Container(
       padding: isMediaBubble
           ? EdgeInsets.zero
-          : const EdgeInsets.symmetric(horizontal: AppSpacing.space3, vertical: AppSpacing.space2),
+          : const EdgeInsets.symmetric(horizontal: AppSpacing.space3_5, vertical: AppSpacing.space2_5),
       clipBehavior: isMediaBubble ? Clip.antiAlias : Clip.none,
       decoration: BoxDecoration(
         color: isMediaBubble
@@ -4445,11 +4450,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             : () => _jumpToRepliedMessage(message.replyToId!),
         behavior: HitTestBehavior.opaque,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          borderRadius: BorderRadius.circular(AppBorderRadius.inner),
           child: Container(
             color: isOnBrand
                 ? AppSemanticColors.textInverse.withValues(alpha: 0.16)
-                : AppSemanticColors.backgroundSecondary,
+                : AppSemanticColors.fillDefault,
             child: IntrinsicHeight(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
