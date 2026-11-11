@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend_app/models/user.dart';
 import 'package:frontend_app/providers/auth_provider.dart';
 import 'package:frontend_app/screens/notification_settings_screen.dart';
 import 'package:frontend_app/theme/app_colors.dart';
