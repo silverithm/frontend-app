@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../providers/work_task_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
-import '../../theme/app_typography.dart';
 import '../common/app_dialog.dart';
+import '../common/app_empty_state.dart';
 import '../common/app_loading.dart';
 import '../seed/seed_avatar.dart';
 import '../seed/seed_button.dart';
@@ -110,29 +110,18 @@ class _AssigneeListState extends State<_AssigneeList> {
         Expanded(
           child: people == null
               ? (_failed
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '명단을 불러오지 못했습니다',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppSemanticColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.space3),
-                            SeedButton(
-                              label: '다시 시도',
-                              variant: SeedButtonVariant.neutralOutline,
-                              size: SeedButtonSize.small,
-                              onPressed: _load,
-                            ),
-                          ],
-                        ),
+                    ? AppEmptyState(
+                        icon: Icons.cloud_off_outlined,
+                        title: '명단을 불러오지 못했습니다',
+                        topSpacing: AppSpacing.space8,
+                        actionLabel: '다시 시도',
+                        onAction: _load,
                       )
                     : const Center(child: AppLoading()))
               : ListView(
+                  // 시트 여백 8 + 줄 안쪽 12 = 제목과 같은 20에서 이름이 시작한다
                   padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space2,
                     vertical: AppSpacing.space2,
                   ),
                   children: [
@@ -162,14 +151,16 @@ class _AssigneeListState extends State<_AssigneeList> {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.space4,
+              AppSpacing.space5,
               AppSpacing.space2,
-              AppSpacing.space4,
-              AppSpacing.space3,
+              AppSpacing.space5,
+              AppSpacing.space5,
             ),
+            // 시트 맨 아래 주 단추 — 큰 것(54), 가로 꽉 채움
             child: SizedBox(
               width: double.infinity,
               child: SeedButton(
+                size: SeedButtonSize.large,
                 label: _selected.isEmpty
                     ? '담당자를 골라 주세요'
                     : '${_selected.length}명 고르기',
