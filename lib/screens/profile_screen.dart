@@ -19,12 +19,12 @@ import 'admin_company_settings_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../theme/app_theme.dart';
 import '../widgets/common/index.dart';
 import '../widgets/common/app_action_sheet.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
+import '../widgets/seed/seed_section_header.dart';
 import 'login_screen.dart';
 import 'subscription_check_screen.dart';
 import 'signature_manage_screen.dart';
@@ -838,7 +838,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
+      // B안: 옅은 회색 바탕 위 테두리 없는 흰 카드
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       body: CustomScrollView(
         slivers: [
           // 슬림 상단 — 타이틀 1개만 (다른 화면과 동일한 흰 배경 AppBar)
@@ -860,12 +861,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     child: Container(
                       padding: const EdgeInsets.all(AppSpacing.space5),
                       decoration: BoxDecoration(
-                        color: AppSemanticColors.surfaceDefault,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                        border: Border.all(
-                          color: AppSemanticColors.borderDefault,
-                          width: 1,
-                        ),
+                        color: AppSemanticColors.surfaceCard,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.card),
                       ),
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
@@ -885,17 +882,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                     child: SlideTransition(
                       position: _slideAnimation,
                       child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.space4),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.surfaceDefault,
-                            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                            border: Border.all(
-                              color: AppSemanticColors.borderDefault,
-                              width: 1,
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(AppSpacing.space6),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screenGutter,
+                          AppSpacing.space4,
+                          AppSpacing.screenGutter,
+                          0,
+                        ),
+                        // B안: 테두리 없는 흰 카드(모서리 20·여백 20)
+                        child: AppCard(
                           child: Column(
                             children: [
                               // 프로필 이미지 — 우측 하단 카메라 버튼으로 업로드/삭제
@@ -908,13 +902,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     child: Container(
                                       width: 120,
                                       height: 120,
-                                      decoration: BoxDecoration(
+                                      decoration: const BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: AppSemanticColors.backgroundTertiary,
-                                        border: Border.all(
-                                          color: AppSemanticColors.borderDefault,
-                                          width: 2,
-                                        ),
+                                        color: AppSemanticColors.fillDefault,
                                       ),
                                       child: (user.profileImageUrl ?? '').isNotEmpty
                                           ? ClipOval(
@@ -954,17 +944,23 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       ),
                                     ),
                                   // 사진은 직원도 관리자도 바꿀 수 있다 (보내는 곳만 다르다)
+                                  // 보이는 원은 36, 누르는 자리는 48(원 둘레까지)
                                   Positioned(
-                                      right: 0,
-                                      bottom: 0,
+                                      right: -AppSpacing.space1_5,
+                                      bottom: -AppSpacing.space1_5,
                                       child: Semantics(
                                         button: true,
                                         label: '프로필 사진 변경',
                                         child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
                                         onTap: _isUploadingPhoto
                                             ? null
                                             : () =>
                                                 _showProfileImageOptions(context, user),
+                                        child: SizedBox(
+                                          width: AppSpacing.minTouchTarget,
+                                          height: AppSpacing.minTouchTarget,
+                                          child: Center(
                                         child: Container(
                                           width: 36,
                                           height: 36,
@@ -982,20 +978,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                                             color: AppSemanticColors.textInverse,
                                           ),
                                         ),
+                                          ),
+                                        ),
                                         ),
                                       ),
                                     ),
                                 ],
                               ),
 
-                              const SizedBox(height: AppSpacing.space6),
-                              Divider(
-                                height: 1,
-                                color: AppSemanticColors.borderSubtle,
-                              ),
+                              // B안: 구분선 없이 간격으로 사진과 기본 정보를 나눈다
                               const SizedBox(height: AppSpacing.space6),
 
-                              // 사용자 정보 섹션 — 카드 안에 또 카드를 두지 않는다 (구분선만)
+                              // 사용자 정보 섹션 — 카드 안에 또 카드를 두지 않는다
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -1039,11 +1033,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     else
                                     InkWell(
                                       onTap: () => _showRoleChangeDialog(context, user),
-                                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.control),
                                       child: Container(
+                                        // 누르는 줄 — 높이 48 이상
+                                        constraints: const BoxConstraints(
+                                          minHeight: AppSpacing.minTouchTarget,
+                                        ),
                                         padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
                                         child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Expanded(
                                               child: _buildInfoRow(
@@ -1059,18 +1056,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                                 ),
                                               ),
                                             ),
-                                            Container(
-                                              padding: const EdgeInsets.all(AppSpacing.space1),
-                                              decoration: BoxDecoration(
-                                                color: AppSemanticColors.backgroundTertiary,
-                                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                                              ),
-                                              child: Icon(
-                                                Icons.edit,
-                                                size: 16,
-                                                color: AppSemanticColors.textSecondary,
-                                              ),
-                                            ),
+                                            const _EditBadge(),
                                           ],
                                         ),
                                       ),
@@ -1103,9 +1089,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                                                 ? null
                                                 : () => _showPositionPicker(user),
                                             borderRadius: BorderRadius.circular(
-                                              AppBorderRadius.lg,
+                                              AppBorderRadius.control,
                                             ),
-                                            child: Row(
+                                            child: ConstrainedBox(
+                                              // 누르는 줄 — 높이 48 이상
+                                              constraints: const BoxConstraints(
+                                                minHeight:
+                                                    AppSpacing.minTouchTarget,
+                                              ),
+                                              child: Row(
                                               children: [
                                                 Expanded(
                                                   child: _buildInfoRow(
@@ -1130,32 +1122,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                                                     ),
                                                   )
                                                 else
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            AppSpacing.space1),
-                                                    decoration: BoxDecoration(
-                                                      color: AppSemanticColors
-                                                          .backgroundTertiary,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              AppBorderRadius
-                                                                  .lg),
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.edit,
-                                                      size: 16,
-                                                      color: AppSemanticColors
-                                                          .textSecondary,
-                                                    ),
-                                                  ),
+                                                  const _EditBadge(),
                                               ],
+                                            ),
                                             ),
                                           ),
                                           const SizedBox(height: AppSpacing.space1),
                                           Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: AppSpacing.space7,
+                                            // 값 글자 시작(라벨 칸 + 8)에 맞춘다
+                                            padding: EdgeInsets.only(
+                                              left: _infoLabelWidth(context) +
+                                                  AppSpacing.space2,
                                             ),
                                             child: Text(
                                               '결재선과 채팅에 이 직책으로 표시됩니다',
@@ -1216,39 +1193,34 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
 
-                  const SizedBox(height: AppSpacing.space2),
+                  // B안: 카드끼리는 선 대신 간격 12
+                  const SizedBox(height: AppSpacing.cardGap),
 
                   if (AdminUtils.canAccessAdminPages(user) &&
                       (user.company?.companyCode?.isNotEmpty ?? false))
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.surfaceDefault,
-                            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                            border: Border.all(
-                              color: AppSemanticColors.borderDefault,
-                              width: 1,
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(AppSpacing.space5),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenGutter),
+                        // B안: 테두리 없는 흰 카드
+                        child: AppCard(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
+                                  // 목록 줄 아이콘과 같은 둥근 44
                                   Container(
-                                    padding: const EdgeInsets.all(AppSpacing.space3),
-                                    decoration: BoxDecoration(
+                                    width: AppSpacing.iconCircle,
+                                    height: AppSpacing.iconCircle,
+                                    decoration: const BoxDecoration(
                                       color: AppSemanticColors.statusWarningBackground,
-                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                      shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
                                       Icons.key,
                                       color: AppSemanticColors.statusWarningIcon,
-                                      size: 24,
+                                      size: 22,
                                     ),
                                   ),
                                   const SizedBox(width: AppSpacing.space3),
@@ -1274,11 +1246,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ],
                               ),
                               const SizedBox(height: AppSpacing.space4),
+                              // 코드 칸 — 테두리 없는 회색 채움(입력칸과 같은 바탕·모서리 14)
                               Container(
-                                padding: const EdgeInsets.all(AppSpacing.space4),
+                                padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.space4,
+                                  AppSpacing.space2,
+                                  AppSpacing.space2,
+                                  AppSpacing.space2,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minHeight: AppSpacing.buttonHeightLarge + AppSpacing.space4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppSemanticColors.backgroundSecondary,
-                                  borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+                                  color: AppSemanticColors.fillDefault,
+                                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
                                 ),
                                 child: Row(
                                   children: [
@@ -1291,12 +1272,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                                         ),
                                       ),
                                     ),
-                                    TextButton.icon(
+                                    // 글자만 있는 틸 단추(B안 SeedButton) — 같은 '복사'
+                                    SeedButton(
+                                      label: '복사',
+                                      variant: SeedButtonVariant.brandGhost,
+                                      size: SeedButtonSize.small,
+                                      prefixIcon: Icons.copy,
                                       onPressed: () => _copyCompanyCode(
                                         user.company!.companyCode!,
                                       ),
-                                      icon: const Icon(Icons.copy, size: 18),
-                                      label: const Text('복사'),
                                     ),
                                   ],
                                 ),
@@ -1316,24 +1300,15 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                   if (AdminUtils.canAccessAdminPages(user) &&
                       (user.company?.companyCode?.isNotEmpty ?? false))
-                    const SizedBox(height: AppSpacing.space2),
+                    const SizedBox(height: AppSpacing.cardGap),
 
                   // 설정 섹션
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.surfaceDefault,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                          border: Border.all(
-                            color: AppSemanticColors.borderDefault,
-                            width: 1,
-                          ),
-                        ),
-                        padding: EdgeInsets.zero,
-                        child: Column(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenGutter),
+                      // B안: 흰 카드 하나에 줄 여러 개(SeedListSection), 줄 사이 선 없음
+                      child: SeedListSection(
                         children: [
                           // 관리자 회사 정보 메뉴
                           if (AdminUtils.canAccessAdminPages(user))
@@ -1341,18 +1316,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                               icon: Icons.business,
                               title: '회사 정보',
                               subtitle: '회사 정보 및 구독 관리',
-                              trailing: Container(
-                                padding: const EdgeInsets.all(AppSpacing.space2),
-                                decoration: BoxDecoration(
-                                  color: AppSemanticColors.backgroundSecondary,
-                                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                                ),
-                                child: Icon(
-                                  Icons.chevron_right,
-                                  color: AppSemanticColors.textTertiary,
-                                  size: 20,
-                                ),
-                              ),
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
@@ -1362,25 +1325,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                               },
                             ),
 
-                          if (AdminUtils.canAccessAdminPages(user))
-                            const Divider(height: 1, color: AppColors.transparent),
-
                           _buildSettingTile(
                             icon: Icons.draw,
                             title: '결재 서명 관리',
                             subtitle: '서명을 등록하면 결재 승인 시 자동으로 날인됩니다',
-                            trailing: Container(
-                              padding: const EdgeInsets.all(AppSpacing.space2),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                              ),
-                              child: Icon(
-                                Icons.chevron_right,
-                                color: AppSemanticColors.textSecondary,
-                                size: 20,
-                              ),
-                            ),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -1391,47 +1339,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                             },
                           ),
 
-                          const Divider(height: 1, color: AppColors.transparent),
-
                           _buildSettingTile(
                             icon: Icons.lock,
                             title: '비밀번호 변경',
                             subtitle: '계정 보안을 위해 주기적으로 변경하세요',
-                            trailing: Container(
-                              padding: const EdgeInsets.all(AppSpacing.space2),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                              ),
-                              child: Icon(
-                                Icons.chevron_right,
-                                color: AppSemanticColors.textSecondary,
-                                size: 20,
-                              ),
-                            ),
                             onTap: () => _showPasswordChangeDialog(context),
                           ),
 
-                          
-
-                          const Divider(height: 1, color: AppColors.transparent),
-                          
                           _buildSettingTile(
                             icon: Icons.star_rate,
                             title: '앱 평가하기',
                             subtitle: '평점과 리뷰를 남겨주세요',
-                            trailing: Container(
-                              padding: const EdgeInsets.all(AppSpacing.space2),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                              ),
-                              child: Icon(
-                                Icons.chevron_right,
-                                color: AppSemanticColors.textSecondary,
-                                size: 20,
-                              ),
-                            ),
                             onTap: () async {
                               // Analytics 이벤트 로깅
                               AnalyticsService().logCustomEvent(
@@ -1453,38 +1371,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                             },
                           ),
 
-                          
-
-                          
-
-                          const Divider(height: 1, color: AppColors.transparent),
-
                           _buildSettingTile(
                             icon: Icons.person_remove,
                             title: '회원탈퇴',
                             subtitle: '계정을 영구적으로 삭제합니다',
-                            trailing: Container(
-                              padding: const EdgeInsets.all(AppSpacing.space2),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundTertiary,
-                                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                              ),
-                              child: Icon(
-                                Icons.chevron_right,
-                                color: AppSemanticColors.textSecondary,
-                                size: 20,
-                              ),
-                            ),
                             onTap: () => _showWithdrawalDialog(context),
-                            isLast: true,
                           ),
                         ],
-                        ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: AppSpacing.space6),
+                  const SizedBox(height: AppSpacing.cardGap),
 
                   // 약관 및 정책 섹션
                   FadeTransition(
@@ -1492,45 +1390,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                     child: SlideTransition(
                       position: _slideAnimation,
                       child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.space4),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.surfaceDefault,
-                            borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                            border: Border.all(
-                              color: AppSemanticColors.borderDefault,
-                              width: 1,
-                            ),
-                          ),
-                          padding: EdgeInsets.zero,
-                          child: Column(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenGutter),
+                        // B안: 흰 카드 하나 — 맨 위 제목 글자(머리 아이콘 상자 없음) + 줄 두 개
+                        child: SeedListSection(
                           children: [
-                            // 섹션 헤더
-                            Container(
-                              padding: const EdgeInsets.all(AppSpacing.space5),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(AppSpacing.space3),
-                                    decoration: BoxDecoration(
-                                      color: AppSemanticColors.backgroundTertiary,
-                                      borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                                    ),
-                                    child: Icon(
-                                      Icons.gavel,
-                                      color: AppSemanticColors.textSecondary,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.space3),
-                                  Text(
-                                    '약관 및 정책',
-                                    style: AppTypography.heading6.copyWith(
-                                      color: AppSemanticColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
+                            // 섹션 헤더 — 카드 여백 8 + 12 = 줄 글자 시작 20에 맞춘다
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                AppSpacing.space3,
+                                AppSpacing.space3,
+                                AppSpacing.space3,
+                                AppSpacing.space1,
                               ),
+                              child: SeedSectionHeader(title: '약관 및 정책'),
                             ),
 
                             // 약관 링크들
@@ -1542,15 +1414,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                               onTap: () => _launchURL(
                                 'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
                               ),
-                              isFirst: true,
-                            ),
-
-                            Container(
-                              height: 1,
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.space5,
-                              ),
-                              color: AppSemanticColors.borderSubtle,
                             ),
 
                             _buildPolicyTile(
@@ -1561,10 +1424,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                               onTap: () => _launchURL(
                                 'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
                               ),
-                              isLast: true,
                             ),
                           ],
-                          ),
                         ),
                       ),
                     ),
@@ -1579,9 +1440,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
                       child: SizedBox(
                         width: double.infinity,
+                        // B안: 테두리 단추 대신 회색 채움 큰 단추
                         child: SeedButton(
                           label: '로그아웃',
-                          variant: SeedButtonVariant.neutralOutline,
+                          variant: SeedButtonVariant.neutralWeak,
                           size: SeedButtonSize.large,
                           prefixIcon: Icons.logout,
                           onPressed: () => _showLogoutDialog(context),
@@ -1626,27 +1488,18 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  /// 설정 한 줄 — B안 목록 줄: 옅은 틸 둥근 아이콘 44 + 제목 16/w600·설명 14 + 꺾쇠.
+  /// (예전의 회색 네모 아이콘·회색 네모 꺾쇠 상자는 없앴다)
   Widget _buildSettingTile({
     required IconData icon,
     required String title,
     required String subtitle,
-    required Widget trailing,
     VoidCallback? onTap,
-    bool isFirst = false,
-    bool isLast = false,
   }) {
     return SeedListCell(
-      leading: Container(
-        padding: const EdgeInsets.all(AppSpacing.space3),
-        decoration: BoxDecoration(
-          color: AppSemanticColors.backgroundTertiary,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
-      ),
+      leadingIcon: icon,
       title: title,
       description: subtitle,
-      trailing: trailing,
       onTap: onTap,
     );
   }
@@ -1752,15 +1605,16 @@ class _ProfileScreenState extends State<ProfileScreen>
   }) {
     // 줄마다 아이콘을 붙이면 위계가 없어 보였다(D10) — 라벨/값 표로만 보여준다.
     // 이메일처럼 긴 값은 두 줄로 꺾지 않고 한 줄에 줄임표.
+    // 라벨 칸은 글자 배율만큼 넓힌다 — 글자를 키워도 '마지막 로그인'이 두 줄로 꺾이지 않게.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
-          width: 72,
+          width: _infoLabelWidth(context),
           child: Text(
             title,
             style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textTertiary,
+              color: AppSemanticColors.textSecondary,
             ),
           ),
         ),
@@ -1778,6 +1632,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       ],
     );
   }
+
+  /// 기본 정보 표의 라벨 칸 폭 — 14px 글자 여섯 자(마지막 로그인)가 한 줄에 드는 폭을
+  /// 글자 배율만큼 키운다.
+  double _infoLabelWidth(BuildContext context) =>
+      MediaQuery.textScalerOf(context).scale(AppSpacing.space20 + AppSpacing.space2);
 
   /// 배정된 역할이 있으면 그것을, 없으면 기존 분류를 쓴다
   String _effectiveRole(User user) {
@@ -1821,24 +1680,16 @@ class _ProfileScreenState extends State<ProfileScreen>
     return RoleUtils.displayName(role);
   }
 
+  /// 약관 한 줄 — 설정 줄과 같은 B안 목록 줄.
   Widget _buildPolicyTile({
     required IconData icon,
     required String title,
     required String subtitle,
     required Color iconColor,
     required VoidCallback onTap,
-    bool isFirst = false,
-    bool isLast = false,
   }) {
     return SeedListCell(
-      leading: Container(
-        padding: const EdgeInsets.all(AppSpacing.space3),
-        decoration: BoxDecoration(
-          color: AppSemanticColors.backgroundTertiary,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        child: Icon(icon, color: AppSemanticColors.textSecondary, size: 24),
-      ),
+      leadingIcon: icon,
       title: title,
       description: subtitle,
       onTap: onTap,
@@ -2105,6 +1956,29 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 바꿀 수 있는 줄 끝의 연필 — 옅은 회색 둥근 바탕 32 + 연필 18(B안, 테두리 없음).
+/// 줄 전체가 눌리는 자리라 이 동그라미는 표시만 한다.
+class _EditBadge extends StatelessWidget {
+  const _EditBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: AppSpacing.space8,
+      height: AppSpacing.space8,
+      decoration: const BoxDecoration(
+        color: AppSemanticColors.fillDefault,
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.edit,
+        size: 18,
+        color: AppSemanticColors.textSecondary,
+      ),
     );
   }
 }
