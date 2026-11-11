@@ -4,8 +4,14 @@ import 'dart:io' show Platform;
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import 'common/app_sheet_frame.dart';
 import 'seed/seed_button.dart';
 
+/// 업데이트 알림 창.
+///
+/// main.dart가 `showDialog`로 직접 띄우므로(이 파일 밖) 가운데 창으로 남긴다.
+/// B안(2026-11-12) 겉모습만 맞췄다 — 모서리 24, 흰 바탕, 테두리 없는 단추,
+/// 단추 줄은 시트와 같은 나중에 1 : 업데이트 1.7(AppSheetActions).
 class UpdateDialog extends StatelessWidget {
   final String currentVersion;
   final String latestVersion;
@@ -13,31 +19,30 @@ class UpdateDialog extends StatelessWidget {
   final bool forceUpdate;
 
   const UpdateDialog({
-    Key? key,
+    super.key,
     required this.currentVersion,
     required this.latestVersion,
     required this.updateMessage,
     required this.forceUpdate,
-  }) : super(key: key);
+  });
 
   Future<void> _launchStore() async {
     final String url;
-    
+
     if (Platform.isIOS) {
       // iOS App Store URL
-      url = 'https://apps.apple.com/kr/app/%EC%BC%80%EC%96%B4%EB%B8%8C%EC%9D%B4/id6747028185';
+      url =
+          'https://apps.apple.com/kr/app/%EC%BC%80%EC%96%B4%EB%B8%8C%EC%9D%B4/id6747028185';
     } else if (Platform.isAndroid) {
       // Android Play Store URL
-      url = 'https://play.google.com/store/apps/details?id=com.silverithm.carev.app&hl=ko';
+      url =
+          'https://play.google.com/store/apps/details?id=com.silverithm.carev.app&hl=ko';
     } else {
       return;
     }
 
     if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     }
   }
 
@@ -47,9 +52,10 @@ class UpdateDialog extends StatelessWidget {
       canPop: !forceUpdate,
       child: Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+          borderRadius: BorderRadius.circular(AppBorderRadius.sheet),
         ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
+        backgroundColor: AppSemanticColors.surfaceCard,
+        surfaceTintColor: AppColors.transparent,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.space6),
           child: Column(
@@ -79,26 +85,26 @@ class UpdateDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  if (!forceUpdate) ...[
-                    Expanded(
-                      child: SeedButton(
-                        label: '나중에',
-                        variant: SeedButtonVariant.neutralOutline,
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.space3),
-                  ],
-                  Expanded(
-                    child: SeedButton(
-                      label: '업데이트',
-                      variant: SeedButtonVariant.brandSolid,
-                      onPressed: _launchStore,
-                    ),
+              // B안: 테두리 단추 대신 회색 채움 단추, 큰 단추 54.
+              // 강제 업데이트면 '업데이트' 하나가 가로를 꽉 채운다.
+              SizedBox(
+                width: double.infinity,
+                child: AppSheetActions(
+                  cancel: forceUpdate
+                      ? null
+                      : SeedButton(
+                          label: '나중에',
+                          variant: SeedButtonVariant.neutralWeak,
+                          size: SeedButtonSize.large,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                  confirm: SeedButton(
+                    label: '업데이트',
+                    variant: SeedButtonVariant.brandSolid,
+                    size: SeedButtonSize.large,
+                    onPressed: _launchStore,
                   ),
-                ],
+                ),
               ),
             ],
           ),
