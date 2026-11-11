@@ -21,7 +21,7 @@ import '../utils/admin_utils.dart';
 import '../utils/permissions.dart';
 import '../utils/daily_greeting.dart';
 import '../widgets/common/app_card.dart';
-import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/notification_bell.dart';
 import '../widgets/seed/seed_section_header.dart';
@@ -162,9 +162,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await prefs.setString('last_today_schedule_popup_date', todayKey);
     if (!mounted) return;
 
-    AppDialog.showCustom(
+    // B안: 가운데 창 대신 아래에서 올라오는 시트(엄지 닿는 곳)
+    showAppSheet<void>(
       context,
-      child: TodayScheduleDialog(
+      builder: (_) => TodayScheduleDialog(
         schedules: todaySchedules,
         onViewSchedule: () => widget.onNavigateToTab?.call(MainTabs.calendar),
       ),
