@@ -13,7 +13,7 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_dialog.dart';
-import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -131,7 +131,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         builder: (context, noticeProvider, child) {
           if (noticeProvider.isLoading &&
               noticeProvider.selectedNotice == null) {
-            return const Center(child: AppLoading());
+            return const _NoticeDetailSkeleton();
           }
 
           final notice = noticeProvider.selectedNotice;
@@ -681,6 +681,32 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 공지 상세 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드(제목·본문 카드와 같은 바깥 여백)
+class _NoticeDetailSkeleton extends StatelessWidget {
+  const _NoticeDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: SingleChildScrollView(
+        physics: NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.all(AppSpacing.screenGutter),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppSkeletonCard(
+              standalone: false,
+              margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+            ),
+            AppSkeletonCard(standalone: false, margin: EdgeInsets.zero),
+          ],
+        ),
       ),
     );
   }
