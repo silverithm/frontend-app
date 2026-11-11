@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/notice/notice_card.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/seed/seed_button.dart';
 import 'notice_detail_screen.dart';
@@ -61,13 +62,9 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: widget.showAppBar
-          ? AppBar(
-              title: Text('공지사항', style: AppTypography.appBarTitle),
-              elevation: 0,
-            )
-          : null,
+      // B안: 옅은 회색 바탕 위 흰 공지 카드
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: widget.showAppBar ? const CareVAppBar(title: '공지사항') : null,
       body: Consumer<NoticeProvider>(
         builder: (context, noticeProvider, child) {
           if (noticeProvider.isLoading && noticeProvider.publishedNotices.isEmpty) {

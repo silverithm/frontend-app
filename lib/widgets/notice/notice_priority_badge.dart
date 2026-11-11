@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../models/notice.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_spacing.dart';
-import '../../theme/app_typography.dart';
+import '../common/app_tag.dart';
 
+/// 공지 게시 상태 꼬리표 — B안: 테두리 없는 옅은 알약([AppTag]).
+/// 색의 뜻은 그대로다: 임시저장=회색, 게시됨=초록, 보관됨=노랑.
 class NoticeStatusBadge extends StatelessWidget {
   final NoticeStatus status;
+
+  /// 예전 작은 배지 자리 표시. B안 꼬리표는 크기가 하나라 모습은 같다(글자는 13 아래로 줄이지 않는다).
   final bool small;
 
   const NoticeStatusBadge({
@@ -16,70 +18,17 @@ class NoticeStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: small ? AppSpacing.space2 : AppSpacing.space3,
-        vertical: small ? AppSpacing.space0_5 : AppSpacing.space1,
-      ),
-      decoration: BoxDecoration(
-        color: _backgroundColor,
-        borderRadius: BorderRadius.circular(AppBorderRadius.base),
-        border: Border.all(
-          color: _borderColor,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            _icon,
-            size: small ? 12 : 14,
-            color: _textColor,
-          ),
-          SizedBox(width: small ? AppSpacing.space0_5 : AppSpacing.space1),
-          Text(
-            _text,
-            style: (small ? AppTypography.overline : AppTypography.labelSmall).copyWith(
-              color: _textColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
+    return AppTag(label: _text, tone: _tone, icon: _icon);
   }
 
-  Color get _backgroundColor {
+  AppTagTone get _tone {
     switch (status) {
       case NoticeStatus.draft:
-        return AppSemanticColors.backgroundTertiary;
+        return AppTagTone.neutral;
       case NoticeStatus.published:
-        return AppSemanticColors.statusSuccessBackground;
+        return AppTagTone.success;
       case NoticeStatus.archived:
-        return AppSemanticColors.statusWarningBackground;
-    }
-  }
-
-  Color get _borderColor {
-    switch (status) {
-      case NoticeStatus.draft:
-        return AppSemanticColors.borderDefault;
-      case NoticeStatus.published:
-        return AppSemanticColors.statusSuccessIcon.withValues(alpha: 0.3);
-      case NoticeStatus.archived:
-        return AppSemanticColors.statusWarningIcon.withValues(alpha: 0.3);
-    }
-  }
-
-  Color get _textColor {
-    switch (status) {
-      case NoticeStatus.draft:
-        return AppSemanticColors.textSecondary;
-      case NoticeStatus.published:
-        return AppSemanticColors.statusSuccessText;
-      case NoticeStatus.archived:
-        return AppSemanticColors.statusWarningText;
+        return AppTagTone.warning;
     }
   }
 
