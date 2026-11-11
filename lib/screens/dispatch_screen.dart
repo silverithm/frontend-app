@@ -8,6 +8,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/dispatch/dispatch_board_view.dart';
 import '../widgets/dispatch/dispatch_calendar_view.dart';
@@ -105,7 +107,10 @@ class _DispatchScreenState extends State<DispatchScreen>
         ],
       ),
       body: SafeArea(
-        child: provider.isLoading
+        // 처음 불러올 때(아직 배차 설정이 없을 때)만 뼈대 — 배차표가 있는 채로 새로고침하면 예전 스피너
+        child: provider.isLoading && provider.isEmpty
+            ? const _DispatchSkeleton()
+            : provider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
@@ -138,7 +143,7 @@ class _DispatchScreenState extends State<DispatchScreen>
           initialDate: _boardJumpDate,
         );
       default:
-        return RefreshIndicator(
+        return AppRefreshIndicator(
           onRefresh: _load,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -200,6 +205,34 @@ class _DispatchScreenState extends State<DispatchScreen>
       description: '노선과 운전자를 먼저 등록해주세요',
       actionLabel: '설정하러 가기',
       onAction: _openSettings,
+    );
+  }
+}
+
+/// 배차관리 첫 불러오기 뼈대 — 회색 바탕 위 노선 카드 몇 장(배차표와 같은 좌우 여백)
+class _DispatchSkeleton extends StatelessWidget {
+  const _DispatchSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          AppSpacing.space6,
+        ),
+        children: List.generate(
+          3,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+          ),
+        ),
+      ),
     );
   }
 }
