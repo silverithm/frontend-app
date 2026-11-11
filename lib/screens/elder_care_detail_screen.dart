@@ -4,6 +4,7 @@ import '../models/elder_care_profile.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
 import 'elder_care_edit_screen.dart';
 
 /// 어르신 케어 정보 상세 — 기본·건강·식사·목욕·투약·차량·자리·메모를 섹션으로 읽는다.
@@ -61,7 +62,7 @@ class _ElderCareDetailScreenState extends State<ElderCareDetailScreen> {
         Navigator.of(context).pop(_changed ? _profile : null);
       },
       child: Scaffold(
-        backgroundColor: AppSemanticColors.backgroundSecondary,
+        backgroundColor: AppSemanticColors.backgroundCanvas,
         appBar: AppBar(
           title: Text(
             widget.elder.name,
@@ -149,20 +150,24 @@ class _ElderCareDetailScreenState extends State<ElderCareDetailScreen> {
           final allRows = sections.expand((sec) => sec.rows).toList();
           return ListView(
             padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
               AppSpacing.space4,
-              AppSpacing.space4,
-              AppSpacing.space4,
+              AppSpacing.screenGutter,
               AppSpacing.space10,
             ),
             children: [
               _CompletenessLine(rows: allRows),
               ...sections,
               if (p.updatedAt != null) ...[
-                const SizedBox(height: AppSpacing.space3),
-                Text(
-                  '최종 수정 ${_formatDateTime(p.updatedAt!)}',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppSemanticColors.textTertiary,
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space1,
+                  ),
+                  child: Text(
+                    '최종 수정 ${_formatDateTime(p.updatedAt!)}',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
+                    ),
                   ),
                 ),
               ],
@@ -208,23 +213,29 @@ class _CompletenessLine extends StatelessWidget {
     if (total == 0) return const SizedBox.shrink();
     final ratio = filled / total;
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.space4),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space1,
+        0,
+        AppSpacing.space1,
+        AppSpacing.space4,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '케어 정보 $total항목 중 $filled 입력',
-            style: AppTypography.labelMedium.copyWith(
+            style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textSecondary,
             ),
           ),
-          const SizedBox(height: AppSpacing.space1),
+          const SizedBox(height: AppSpacing.space1_5),
           ClipRRect(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppBorderRadius.full),
             child: LinearProgressIndicator(
               value: ratio,
               minHeight: 6,
-              backgroundColor: AppSemanticColors.backgroundTertiary,
+              // 회색 화면 바탕 위라 바탕보다 한 단계 짙은 회색 길
+              backgroundColor: AppSemanticColors.fillStrong,
               color: AppSemanticColors.interactivePrimaryDefault,
             ),
           ),
@@ -244,98 +255,81 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     if (rows.isEmpty) return const SizedBox.shrink();
 
+    // B안: 머리 없이 흰 카드 안 맨 위에 구역 제목(19/w700), 테두리 없음, 카드끼리는 간격 12
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.space4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(
-              left: AppSpacing.space1,
-              bottom: AppSpacing.space2,
-            ),
-            child: Text(
-              title,
-              style: AppTypography.titleSmall.copyWith(
-                color: AppSemanticColors.textPrimary,
+      padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: AppTypography.heading6.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
               ),
             ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              border: Border.all(color: AppSemanticColors.borderSubtle),
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space4,
-              vertical: AppSpacing.space2,
-            ),
-            child: Column(
-              children: [
-                for (final row in rows)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.space2,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          // 라벨 열 폭도 글자 배율을 따라간다 — '아주 크게'에서 고정 폭이면
-                          // '장기요양등급' 같은 라벨이 두 줄로 접힌다.
-                          width: MediaQuery.textScalerOf(
-                            context,
-                          ).scale(AppSpacing.space20 + AppSpacing.space3),
-                          child: Text(
-                            row.label,
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
+            const SizedBox(height: AppSpacing.space2),
+            for (final row in rows)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      // 라벨 열 폭도 글자 배율을 따라간다 — '아주 크게'에서 고정 폭이면
+                      // '장기요양등급' 같은 라벨이 두 줄로 접힌다.
+                      width: MediaQuery.textScalerOf(
+                        context,
+                      ).scale(AppSpacing.space20 + AppSpacing.space3),
+                      child: Text(
+                        row.label,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textSecondary,
                         ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Expanded(
-                          // 주의 항목(낙상 위험 있음 등)은 글자는 다른 값과 같게 두고 앞에 작은 상태 점만 둔다
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (row.alert)
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: AppSpacing.space2,
-                                    right: AppSpacing.space2,
-                                  ),
-                                  child: Container(
-                                    width: AppSpacing.space2,
-                                    height: AppSpacing.space2,
-                                    decoration: BoxDecoration(
-                                      color:
-                                          AppSemanticColors.statusWarningIcon,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              Expanded(
-                                child: Text(
-                                  row.displayValue,
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: row.isEmpty
-                                        ? AppSemanticColors.textTertiary
-                                        : AppSemanticColors.textPrimary,
-                                  ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.space2),
+                    Expanded(
+                      // 주의 항목(낙상 위험 있음 등)은 글자는 다른 값과 같게 두고 앞에 작은 상태 점만 둔다
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (row.alert)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.space2,
+                                right: AppSpacing.space2,
+                              ),
+                              child: Container(
+                                width: AppSpacing.space2,
+                                height: AppSpacing.space2,
+                                decoration: BoxDecoration(
+                                  color: AppSemanticColors.statusWarningIcon,
+                                  shape: BoxShape.circle,
                                 ),
                               ),
-                            ],
+                            ),
+                          Expanded(
+                            child: Text(
+                              row.displayValue,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: row.isEmpty
+                                    ? AppSemanticColors.textTertiary
+                                    : AppSemanticColors.textPrimary,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
