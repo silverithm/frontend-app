@@ -425,9 +425,18 @@ class _CalendarScreenState extends State<CalendarScreen>
         AppSpacing.space4,
         AppSpacing.space2,
       ),
-      child: Row(
+      // 담당자를 고르면 칩이 '일정 필터 · 김민지'로 길어진다. 예전엔 Row에 Spacer와 나란히 둬서
+      // 칩이 남은 폭의 절반만 받고 칩 안 글자가 넘쳤다(2단계 뒤 21px). 이제 한 줄에 둘이
+      // 안 들어가면 완료 수가 다음 줄로 내려가고, 칩 하나가 줄보다 넓을 때(글자를 아주 크게
+      // 했을 때)만 칩을 줄 폭에 맞춰 줄인다 — 평소 크기에서는 그대로다.
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: AppSpacing.space2,
+        runSpacing: AppSpacing.space1,
         children: [
-          Flexible(
+          FittedBox(
+            fit: BoxFit.scaleDown,
             child: SeedChip(
               label: scheduleFilterButtonLabel(_scheduleFilterValues, month),
               selected: _scheduleFilterValues.isNotEmpty,
@@ -436,7 +445,6 @@ class _CalendarScreenState extends State<CalendarScreen>
               onTap: () => _openScheduleFilter(provider),
             ),
           ),
-          const Spacer(),
           if (month.isNotEmpty)
             Semantics(
               label: '${_scheduleFilterValues.isEmpty ? '이번 달' : '필터한'} 일정 '
