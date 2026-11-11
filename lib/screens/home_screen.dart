@@ -21,6 +21,9 @@ import '../utils/admin_utils.dart';
 import '../utils/permissions.dart';
 import '../utils/daily_greeting.dart';
 import '../widgets/common/app_card.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/notification_bell.dart';
@@ -46,6 +49,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
+
+  /// 한 번이라도 다 받았는지 — 첫 불러오기만 카드 뼈대를 보이고,
+  /// 당겨서 새로고침 때는 예전처럼 가운데 동그라미를 둔다.
+  bool _hasLoadedOnce = false;
 
   @override
   void initState() {
@@ -138,7 +145,10 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('[HomeScreen] 대시보드 데이터 로드 에러: $e');
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _hasLoadedOnce = true;
+        });
         _maybeShowTodaySchedulePopup();
       }
     }
@@ -372,9 +382,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundCanvas,
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: _loadDashboardData,
-        color: AppSemanticColors.interactivePrimaryDefault,
+        // 카드 네 장이 처음 한 번만 차례로 떠오른다 — 이 감싸개가 불러오기 분기 바깥에 있어
+        // 당겨서 새로고침 뒤 카드가 다시 그려져도 또 떠오르지 않는다.
+        child: AppListEntrance(
         // D1: 카드는 내용 크기만큼만 차지한다 — 내용이 비어 있다고
         // 빈 화면을 억지로 나눠 갖지 않는다. 넘칠 때만 스크롤된다.
         child: SingleChildScrollView(
@@ -439,7 +451,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              if (_isLoading)
+              if (_isLoading && !_hasLoadedOnce)
+                // 첫 불러오기 — 아래 카드 네 칸과 같은 자리·여백의 뼈대
+                const _HomeCardsSkeleton()
+              else if (_isLoading)
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     vertical: AppSpacing.space16,
@@ -464,7 +479,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       // 홈은 네 칸 — 공지사항(2건) · 전자결재(2건) · 업무진행도(3건) · 오늘(일정+휴무자).
                       // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
                       // 업무진행도는 원장 요청(2026-10-22)으로 웹 대시보드 오른쪽 패널과 같이 늘 보이게 했다.
-                      _SectionCard(
+                      AppListEntranceItem(
+                        index: 0,
+                        child: _SectionCard(
                         header: SeedSectionHeader(
                           title: '공지사항',
                           subtitle: '최근 공지',
@@ -508,9 +525,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
+                      ),
                       const SizedBox(height: AppSpacing.space3),
 
-                      _SectionCard(
+                      AppListEntranceItem(
+                        index: 1,
+                        child: _SectionCard(
                         header: SeedSectionHeader(
                           // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
                           // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
@@ -559,18 +579,32 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
+                      ),
                       const SizedBox(height: AppSpacing.space3),
 
-                      _buildWorkTaskSection(workTaskProvider, user.chatUserId),
+                      AppListEntranceItem(
+                        index: 2,
+                        child: _buildWorkTaskSection(
+                          workTaskProvider,
+                          user.chatUserId,
+                        ),
+                      ),
                       const SizedBox(height: AppSpacing.space3),
 
                       // 오늘 — 오늘의 일정과 휴무자 요약
-                      _buildTodayBriefing(scheduleProvider, vacationProvider),
+                      AppListEntranceItem(
+                        index: 3,
+                        child: _buildTodayBriefing(
+                          scheduleProvider,
+                          vacationProvider,
+                        ),
+                      ),
                     ],
                   ),
                 ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -684,6 +718,76 @@ class _HomeScreenState extends State<HomeScreen> {
       return b.createdAt.compareTo(a.createdAt);
     });
     return source.take(2).toList();
+  }
+}
+
+/// 홈 첫 불러오기 뼈대 — 아래 네 칸(공지사항·전자결재·업무진행도·오늘)과 같은 자리·여백의
+/// 흰 카드 안에 제목·부제·줄 모양. 카드 사이 간격도 실제와 같아 내용이 뜰 때 덜 튄다.
+class _HomeCardsSkeleton extends StatelessWidget {
+  const _HomeCardsSkeleton();
+
+  /// 칸마다 줄 수 — 공지 2건 · 결재 2건 · 업무 3건 · 오늘 2줄
+  static const List<int> _rows = [2, 2, 3, 2];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space4,
+        AppSpacing.space2,
+        AppSpacing.space4,
+        AppSpacing.space4,
+      ),
+      child: AppSkeleton(
+        // 흰 카드 안의 뼈는 한 단계 옅은 색
+        baseColor: AppSemanticColors.skeletonBaseOnCard,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < _rows.length; i++) ...[
+              if (i > 0) const SizedBox(height: AppSpacing.space3),
+              Container(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.cardPadding,
+                  AppSpacing.cardPadding,
+                  AppSpacing.cardPadding,
+                  AppSpacing.space4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.surfaceCard,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.card),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const AppSkeletonLine(
+                      widthFactor: 0.34,
+                      height: AppSpacing.space5,
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                    const AppSkeletonLine(
+                      widthFactor: 0.52,
+                      height: AppSpacing.space3_5,
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+                    for (var r = 0; r < _rows[i]; r++)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSpacing.space4,
+                        ),
+                        child: AppSkeletonLine(
+                          widthFactor: 0.92,
+                          height: AppSpacing.space4,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
