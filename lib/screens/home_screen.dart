@@ -20,9 +20,11 @@ import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/permissions.dart';
 import '../utils/daily_greeting.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/notification_bell.dart';
+import '../widgets/seed/seed_section_header.dart';
 import '../widgets/today_schedule_dialog.dart';
 import 'admin_notice_management_screen.dart';
 import 'approval_hub_screen.dart';
@@ -186,13 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
         '${now.month}월 ${now.day}일 (${weekdays[now.weekday - 1]})';
 
     return _SectionCard(
-      header: _SectionHeader(title: '오늘', subtitle: dateLabel),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space5,
-        AppSpacing.space3,
-        AppSpacing.space5,
-        AppSpacing.space3,
-      ),
+      header: SeedSectionHeader(title: '오늘', subtitle: dateLabel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -207,67 +203,76 @@ class _HomeScreenState extends State<HomeScreen> {
             ...todaySchedules
                 .take(2)
                 .map(
-                  (schedule) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.space1),
-                    // 누르면 일정 탭으로 넘어가 월간일정의 오늘을 펴고 이 일정을 강조한다
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                      onTap: () {
-                        context.read<ScheduleProvider>().requestFocus(
-                          scheduleId: schedule.id,
-                          date: now,
-                        );
-                        widget.onNavigateToTab?.call(MainTabs.calendar);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.space1,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: AppSpacing.space1_5,
-                              height: AppSpacing.space1_5,
-                              decoration: BoxDecoration(
-                                color: scheduleDisplayColor(schedule),
-                                shape: BoxShape.circle,
+                  // 누르면 일정 탭으로 넘어가 월간일정의 오늘을 펴고 이 일정을 강조한다
+                  (schedule) => InkWell(
+                    borderRadius: BorderRadius.circular(AppBorderRadius.control),
+                    onTap: () {
+                      context.read<ScheduleProvider>().requestFocus(
+                        scheduleId: schedule.id,
+                        date: now,
+                      );
+                      widget.onNavigateToTab?.call(MainTabs.calendar);
+                    },
+                    // B안: 줄 사이는 선 없이 줄 높이(48 이상)로 나눈다
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minHeight: AppSpacing.minTouchTarget,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: AppSpacing.space2,
+                            height: AppSpacing.space2,
+                            decoration: BoxDecoration(
+                              color: scheduleDisplayColor(schedule),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.space2_5),
+                          // 시각 칸은 최소 폭만 잡는다 — 글자가 커져도 숫자가 둘로 갈라지지 않게
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minWidth: AppSpacing.space12,
+                            ),
+                            child: Text(
+                              schedule.timeText,
+                              maxLines: 1,
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textSecondary,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: AppSpacing.space2),
-                            SizedBox(
-                              width: AppSpacing.space10,
-                              child: Text(
-                                schedule.timeText,
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppSemanticColors.textSecondary,
-                                ),
+                          ),
+                          const SizedBox(width: AppSpacing.space2),
+                          Expanded(
+                            child: Text(
+                              schedule.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textPrimary,
                               ),
                             ),
-                            const SizedBox(width: AppSpacing.space2),
-                            Expanded(
-                              child: Text(
-                                schedule.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
           if (todaySchedules.length > 2)
-            Text(
-              '외 ${todaySchedules.length - 2}건',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.space1),
+              child: Text(
+                '외 ${todaySchedules.length - 2}건',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppSemanticColors.textTertiary,
+                ),
               ),
             ),
-          const SizedBox(height: AppSpacing.space3),
-          Divider(height: 1, color: AppSemanticColors.borderSubtle),
-          const SizedBox(height: AppSpacing.space3),
+          // B안: 구분선 대신 간격으로 일정과 휴무자를 나눈다
+          const SizedBox(height: AppSpacing.space4),
           Row(
             children: [
               Icon(
@@ -322,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (user == null) {
       return Scaffold(
-        backgroundColor: AppSemanticColors.backgroundPrimary,
+        backgroundColor: AppSemanticColors.backgroundCanvas,
         body: Center(
           child: CircularProgressIndicator(
             color: AppSemanticColors.interactivePrimaryDefault,
@@ -365,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       body: RefreshIndicator(
         onRefresh: _loadDashboardData,
         color: AppSemanticColors.interactivePrimaryDefault,
@@ -459,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
                       // 업무진행도는 원장 요청(2026-10-22)으로 웹 대시보드 오른쪽 패널과 같이 늘 보이게 했다.
                       _SectionCard(
-                        header: _SectionHeader(
+                        header: SeedSectionHeader(
                           title: '공지사항',
                           subtitle: '최근 공지',
                           actionLabel: '전체보기',
@@ -483,13 +488,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             else
                               Column(
                                 children: [
+                                  // B안: 줄 사이 선 없이 줄 높이로만 나눈다
                                   for (final entry
                                       in recentNotices.asMap().entries) ...[
-                                    if (entry.key > 0)
-                                      Divider(
-                                        height: 1,
-                                        color: AppSemanticColors.borderSubtle,
-                                      ),
                                     _NoticePreviewTile(
                                       notice: entry.value,
                                       onTap: () => Navigator.of(context).push(
@@ -509,12 +510,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: AppSpacing.space3),
 
                       _SectionCard(
-                        header: _SectionHeader(
+                        header: SeedSectionHeader(
                           // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
                           // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
-                          title: myTurnApprovals > 0
-                              ? '전자결재 ($myTurnApprovals)'
-                              : '전자결재',
+                          // B안: 예전 '전자결재 (n)'의 숫자를 제목 옆 옅은 틸 알약으로.
+                          title: '전자결재',
+                          count: myTurnApprovals > 0 ? myTurnApprovals : null,
                           subtitle: myTurnApprovals > 0
                               ? '지금 내가 처리할 결재 $myTurnApprovals건'
                               : (canManageApprovals
@@ -540,11 +541,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   for (final entry
                                       in recentApprovals.asMap().entries) ...[
-                                    if (entry.key > 0)
-                                      Divider(
-                                        height: 1,
-                                        color: AppSemanticColors.borderSubtle,
-                                      ),
                                     _ApprovalPreviewTile(
                                       approval: entry.value,
                                       // 미리보기에서 바로 그 문서의 공문 상세로
@@ -592,8 +588,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     return _SectionCard(
-      header: _SectionHeader(
-        title: mine > 0 ? '업무진행도 ($mine)' : '업무진행도',
+      header: SeedSectionHeader(
+        // B안: 예전 '업무진행도 (n)'의 숫자를 제목 옆 옅은 틸 알약으로.
+        title: '업무진행도',
+        count: mine > 0 ? mine : null,
         subtitle: mine > 0
             ? '내가 맡은 업무 $mine건'
             : '진행 중인 업무 ${inProgress.length}건',
@@ -614,9 +612,8 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           : Column(
               children: [
+                // B안: 줄 사이 선 없이 줄 여백으로만 나눈다
                 for (final entry in inProgress.take(3).toList().asMap().entries) ...[
-                  if (entry.key > 0)
-                    Divider(height: 1, color: AppSemanticColors.borderSubtle),
                   WorkTaskRow(
                     task: entry.value,
                     today: today,
@@ -689,127 +686,34 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// 평평한 흰 표면 — Seed 레이아웃 원칙(카드 중첩 금지)에 따라 자체 보더 1px +
-/// xl2(16) 라운드만 사용하고, 내부에는 또 다른 보더/그림자 카드를 두지 않는다.
+/// 홈 칸 하나 — B안(2026-11-12): 회색 바탕 위 테두리 없는 흰 카드(모서리 20, 안쪽 여백 20).
+/// 예전의 연한 틸 머리띠·아래 선을 없애고 카드 안 맨 위에 제목 글자만 둔다.
+/// 카드 안에는 또 다른 테두리 상자를 두지 않는다(카드 중첩 금지).
 class _SectionCard extends StatelessWidget {
-  /// 카드 제목줄 — 카드 가장자리까지 꽉 찬 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
+  /// 카드 안 맨 위 제목줄 — [SeedSectionHeader]
   final Widget header;
   final Widget child;
-  final EdgeInsetsGeometry padding;
 
-  const _SectionCard({
-    required this.header,
-    required this.child,
-    this.padding = const EdgeInsets.symmetric(
-      horizontal: AppSpacing.space5,
-      vertical: AppSpacing.space3,
-    ),
-  });
+  const _SectionCard({required this.header, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundPrimary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.cardPadding,
+        AppSpacing.cardPadding,
+        AppSpacing.cardPadding,
+        AppSpacing.space4,
       ),
-      // 제목줄 면이 둥근 모서리 밖으로 삐져나오지 않게
-      clipBehavior: Clip.antiAlias,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: AppSemanticColors.subheaderBackground,
-              border: Border(
-                bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space5,
-              vertical: AppSpacing.space3,
-            ),
-            child: header,
-          ),
-          Padding(padding: padding, child: child),
+          header,
+          const SizedBox(height: AppSpacing.space3),
+          child,
         ],
       ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  const _SectionHeader({
-    required this.title,
-    required this.subtitle,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: AppTypography.heading6.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space1),
-              Text(
-                subtitle,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (actionLabel != null && onAction != null)
-          Material(
-            color: AppColors.transparent,
-            child: InkWell(
-              onTap: onAction,
-              borderRadius: BorderRadius.circular(AppBorderRadius.md),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space1,
-                  vertical: AppSpacing.space1,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      actionLabel!,
-                      style: AppTypography.labelStrong.copyWith(
-                        color: AppSemanticColors.subheaderLink,
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 16,
-                      color: AppSemanticColors.subheaderLink,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }
@@ -826,48 +730,49 @@ class _NoticePreviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 구분선 리스트 아이템 — 개별 보더 카드 대신 패딩만으로 아이템을 구분한다.
+    // 선 없는 목록 줄 — 테두리·구분선 대신 줄 높이(60 이상)로 줄을 나눈다.
     return Material(
       color: AppColors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (notice.isPinned) ...[
-                    const AppTag(label: '고정', icon: Icons.push_pin),
-                    const SizedBox(width: AppSpacing.space2),
-                  ],
-                  Expanded(
-                    child: Text(
-                      notice.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.titleSmall.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                      ),
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.listRowMinHeight,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+            child: Row(
+              children: [
+                if (notice.isPinned) ...[
+                  const AppTag(label: '고정', icon: Icons.push_pin),
+                  const SizedBox(width: AppSpacing.space2_5),
+                ],
+                Expanded(
+                  child: Text(
+                    notice.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.titleMedium.copyWith(
+                      color: AppSemanticColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.space2),
-                  Text(
-                    _formatDate(notice.createdAt),
-                    style: AppTypography.labelSmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                  // 탭 가능함을 알리는 chevron — ripple만으로는 눈에 잘 안 띈다.
-                  Icon(
-                    Icons.chevron_right,
-                    size: AppSpacing.space4,
+                ),
+                const SizedBox(width: AppSpacing.space2),
+                Text(
+                  _formatDate(notice.createdAt),
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
-                ],
-              ),
-            ],
+                ),
+                // 탭 가능함을 알리는 chevron — ripple만으로는 눈에 잘 안 띈다.
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: AppSemanticColors.iconSubtle,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -875,8 +780,8 @@ class _NoticePreviewTile extends StatelessWidget {
   }
 }
 
-/// 홈 전자결재 칸의 한 줄 — 상태 점 + 제목 + 기안자·날짜.
-/// _NoticePreviewTile과 같은 구분선 리스트 문법을 쓴다.
+/// 홈 전자결재 칸의 한 줄 — 상태 꼬리표 + 제목 + 기안자·날짜.
+/// _NoticePreviewTile과 같은 선 없는 목록 줄 문법을 쓴다.
 class _ApprovalPreviewTile extends StatelessWidget {
   final ApprovalRequest approval;
   final VoidCallback onTap;
@@ -907,40 +812,50 @@ class _ApprovalPreviewTile extends StatelessWidget {
       color: AppColors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-          child: Row(
-            children: [
-              AppTag(label: statusLabel, tone: statusTone),
-              const SizedBox(width: AppSpacing.space3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      approval.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.titleSmall.copyWith(
-                        color: AppSemanticColors.textPrimary,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.listRowMinHeight,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2_5),
+            child: Row(
+              children: [
+                AppTag(label: statusLabel, tone: statusTone),
+                const SizedBox(width: AppSpacing.space3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        approval.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.titleMedium.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.space1),
-                    Text(
-                      '${approval.requesterName} · ${_formatDate(approval.createdAt)}',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppSemanticColors.textTertiary,
+                      const SizedBox(height: AppSpacing.space0_5),
+                      Text(
+                        '${approval.requesterName} · ${_formatDate(approval.createdAt)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: AppSpacing.space4,
-                color: AppSemanticColors.textTertiary,
-              ),
-            ],
+                const SizedBox(width: AppSpacing.space2),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: AppSemanticColors.iconSubtle,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -961,22 +876,31 @@ class _EmptySectionState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 카드 중첩 금지 — 별도 보더/배경 없이 여백만으로 구분되는 콘텐츠 블록.
+    // 카드 안의 작은 빈 상태 — AppEmptyState와 같은 문법(옅은 틸 원 + 틸 아이콘)을
+    // 카드 크기에 맞게 줄였다. AppEmptyState는 자체 스크롤이 있어 홈 스크롤 안에 넣지 않는다.
     return SizedBox(
       width: double.infinity,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space4,
-          vertical: AppSpacing.space6,
+          horizontal: AppSpacing.space2,
+          vertical: AppSpacing.space4,
         ),
         child: Column(
           children: [
-            Icon(icon, size: 28, color: AppSemanticColors.textTertiary),
+            Container(
+              width: AppSpacing.iconCircle,
+              height: AppSpacing.iconCircle,
+              decoration: const BoxDecoration(
+                color: AppSemanticColors.brandWeak,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 22, color: AppSemanticColors.brandDefault),
+            ),
             const SizedBox(height: AppSpacing.space3),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: AppTypography.titleSmall.copyWith(
+              style: AppTypography.titleMedium.copyWith(
                 color: AppSemanticColors.textPrimary,
               ),
             ),
@@ -985,7 +909,7 @@ class _EmptySectionState extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
+                color: AppSemanticColors.textSecondary,
               ),
             ),
           ],
@@ -994,6 +918,3 @@ class _EmptySectionState extends StatelessWidget {
     );
   }
 }
-
-/// 빠른 작업 버튼 — _SectionCard 안에 놓이므로 라운드를 카드와 동일한
-/// xl2(16)로 맞춘다(§1 기본 r2 대신). pressed 시 배경 전환 + scale 0.97.
