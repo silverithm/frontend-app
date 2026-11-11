@@ -14,10 +14,9 @@ import '../services/permission_sync_service.dart';
 import '../services/subscription_guard.dart';
 import '../utils/admin_utils.dart';
 import '../utils/app_haptics.dart';
+import '../widgets/common/app_bottom_tab_bar.dart';
 import '../utils/permissions.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
 import 'approval_hub_screen.dart';
 import 'calendar_screen.dart';
 import 'chat_room_list_screen.dart';
@@ -46,12 +45,6 @@ class _MainScreenState extends State<MainScreen>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   int _currentIndex = 0;
   late AnimationController _animationController;
-
-  // 하단 탭 아이콘/뱃지 전용 명명 상수 — AppSpacing/AppTypography 스케일에
-  // 정확히 대응하는 값이 없어 이 화면 안에서만 쓰는 고정 수치로 관리한다.
-  static const double _navIconSizeSelected = 24;
-  static const double _navIconSizeUnselected = 22;
-  static const double _navBadgeFontSize = 10;
 
   @override
   void initState() {
@@ -287,102 +280,28 @@ class _MainScreenState extends State<MainScreen>
 
         return Scaffold(
           body: IndexedStack(index: safeIndex, children: screens),
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
-              // 상단 바 아래 선과 짝을 맞춘 틸 선으로 화면 아래 끝을 닫는다
-              border: Border(
-                top: BorderSide(
-                  color: AppSemanticColors.headerBorder,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: BottomNavigationBar(
-              currentIndex: safeIndex,
-              onTap: _onNavBarTapped,
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: AppColors.transparent,
-              elevation: 0,
-              selectedItemColor: AppSemanticColors.interactivePrimaryDefault,
-              unselectedItemColor: AppSemanticColors.textTertiary,
-              // 선택·비선택 같은 크기(11) — 크기가 바뀌면 탭을 옮길 때마다 아이콘·글자가 흔들린다
-              selectedLabelStyle: AppTypography.labelSmall.copyWith(
-                fontWeight: AppTypography.fontWeightBold,
-              ),
-              unselectedLabelStyle: AppTypography.labelSmall,
-              items: navItems,
-            ),
+          // B안(2026-11-12): 흰 바탕 + 위 옅은 선, 고르면 채운 아이콘 + 틸(선택 알약 바탕 없음)
+          bottomNavigationBar: AppBottomTabBar(
+            items: navItems,
+            currentIndex: safeIndex,
+            onTap: _onNavBarTapped,
           ),
         );
       },
     );
   }
 
-  BottomNavigationBarItem _buildNavItem(
-    int index,
+  AppBottomTabItem _buildNavItem(
     IconData selectedIcon,
     IconData unselectedIcon,
     String label, {
     int badgeCount = 0,
   }) {
-    final isSelected = _currentIndex == index;
-
-    Color iconColor = AppSemanticColors.textTertiary;
-
-    if (isSelected) {
-      iconColor = AppSemanticColors.interactivePrimaryDefault;
-    }
-
-    return BottomNavigationBarItem(
-      icon: AnimatedContainer(
-        duration: AppTransitions.normal,
-        padding: EdgeInsets.all(
-          isSelected ? AppSpacing.space2 : AppSpacing.space1,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? iconColor.withValues(alpha: 0.1)
-              : AppColors.transparent,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Icon(
-              isSelected ? selectedIcon : unselectedIcon,
-              color: iconColor,
-              size: isSelected ? _navIconSizeSelected : _navIconSizeUnselected,
-            ),
-            if (badgeCount > 0)
-              Positioned(
-                top: -4,
-                right: -8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space1,
-                    vertical: AppSpacing.px,
-                  ),
-                  constraints: const BoxConstraints(minWidth: AppSpacing.space4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.statusErrorIcon,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                  ),
-                  child: Text(
-                    badgeCount > 99 ? '99+' : '$badgeCount',
-                    textAlign: TextAlign.center,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: AppSemanticColors.textInverse,
-                      fontSize: _navBadgeFontSize,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+    return AppBottomTabItem(
+      icon: unselectedIcon,
+      selectedIcon: selectedIcon,
       label: label,
+      badgeCount: badgeCount,
     );
   }
 
@@ -400,7 +319,7 @@ class _MainScreenState extends State<MainScreen>
     ];
   }
 
-  List<BottomNavigationBarItem> _buildNavItems(bool canManageApprovals) {
+  List<AppBottomTabItem> _buildNavItems(bool canManageApprovals) {
     // 미확인 건수 뱃지 — 전자결재는 결재+휴무+가입 대기 합산, 채팅은 미읽음
     final authProvider = context.watch<AuthProvider>();
     final approvalProvider = context.watch<ApprovalProvider>();
@@ -426,35 +345,31 @@ class _MainScreenState extends State<MainScreen>
 
     return [
       _buildNavItem(
-        MainTabs.home,
         Icons.home_rounded,
         Icons.home_outlined,
         '홈',
       ),
       _buildNavItem(
-        MainTabs.chat,
         Icons.chat_rounded,
         Icons.chat_bubble_outline_rounded,
         '채팅',
         badgeCount: chatBadge,
       ),
       _buildNavItem(
-        MainTabs.calendar,
         Icons.calendar_month_rounded,
         Icons.calendar_month_outlined,
         '일정',
       ),
       _buildNavItem(
-        MainTabs.approval,
         Icons.fact_check_rounded,
         Icons.fact_check_outlined,
         '전자결재',
         badgeCount: approvalBadge,
       ),
+      // 시안: '전체'는 네 칸 격자 아이콘(고르면 채움)
       _buildNavItem(
-        MainTabs.menu,
-        Icons.menu_rounded,
-        Icons.menu_rounded,
+        Icons.grid_view_rounded,
+        Icons.grid_view_outlined,
         '전체',
       ),
     ];
