@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
-
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/html_utils.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/plaza_html_body.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
-import 'plaza_screen.dart' show plazaBoardLabel, plazaIsJobBoard, showPlazaPostEditor;
+import 'plaza_screen.dart'
+    show plazaBoardLabel, plazaIsJobBoard, showPlazaPostEditor;
 import '../widgets/common/app_tag.dart';
 
 /// 광장 게시글 상세 + 댓글
@@ -46,8 +48,9 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
 
   Future<void> _load() async {
     try {
-      final response =
-          await ApiService().getPlazaPostDetail(postId: widget.postId);
+      final response = await ApiService().getPlazaPostDetail(
+        postId: widget.postId,
+      );
       final raw = response['post'] ?? response;
       if (mounted && raw is Map) {
         setState(() {
@@ -125,19 +128,19 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final post = _post;
-    final comments = (post?['comments'] as List?)
+    final comments =
+        (post?['comments'] as List?)
             ?.whereType<Map>()
             .map((c) => Map<String, dynamic>.from(c))
             .toList() ??
         [];
-    final createdAt =
-        DateTime.tryParse(post?['createdAt']?.toString() ?? '');
+    final createdAt = DateTime.tryParse(post?['createdAt']?.toString() ?? '');
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text('게시글',
-            style: AppTypography.appBarTitle),
+      // B안: 옅은 회색 바탕 위 흰 카드 — 글 카드 / 댓글 카드(구분선·테두리 상자 없음)
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: CareVAppBar(
+        title: '게시글',
         actions: [
           if (post?['isMine'] == true) ...[
             IconButton(
@@ -156,242 +159,307 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : post == null
-              ? const Center(child: Text('게시글을 불러올 수 없습니다'))
-              : Column(
-                  children: [
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: _load,
-                        child: ListView(
-                          padding: const EdgeInsets.all(AppSpacing.space4),
-                          children: [
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: AppTag(
-                                label: plazaBoardLabel(post['board']?.toString()),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.space2),
-                            Text(
-                              post['title']?.toString() ?? '',
-                              style: AppTypography.heading5.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.space2),
-                            Text(
-                              '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('yyyy.MM.dd HH:mm').format(createdAt)}' : ''} · 조회 ${post['viewCount'] ?? 0}',
-                              style: AppTypography.bodySmall.copyWith(
-                                  color: AppSemanticColors.textTertiary),
-                            ),
-                            const Divider(height: AppSpacing.space6),
-                            // 웹 리치텍스트 에디터로 쓴 글만 HTML로 그린다
-                            // (예전에는 태그가 그대로 노출되는 표시 버그가 있었다).
-                            // 앱에서 쓴 평문 글까지 HTML로 넘기면 flutter_html이 `\n`을
-                            // 공백으로 바꿔 줄바꿈이 전멸한다 — 공지 상세와 같은 분기를 둔다.
-                            if (containsHtmlTags(post['content']?.toString() ?? ''))
-                              PlazaHtmlBody(
-                                  html: post['content']?.toString() ?? '')
-                            else
-                              Text(
-                                post['content']?.toString() ?? '',
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textPrimary,
-                                  height: 1.6,
+          ? const Center(child: Text('게시글을 불러올 수 없습니다'))
+          : Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(
+                      padding: const EdgeInsets.all(AppSpacing.screenGutter),
+                      children: [
+                        AppCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppTag(
+                                label: plazaBoardLabel(
+                                  post['board']?.toString(),
                                 ),
                               ),
-                            if (plazaIsJobBoard(post['board']?.toString())) ...[
-                              const SizedBox(height: AppSpacing.space4),
-                              _ContactInfoCard(post: post),
+                              const SizedBox(height: AppSpacing.space2),
+                              Text(
+                                post['title']?.toString() ?? '',
+                                style: AppTypography.heading5.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.space2),
+                              Text(
+                                '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('yyyy.MM.dd HH:mm').format(createdAt)}' : ''} · 조회 ${post['viewCount'] ?? 0}',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                              ),
+                              // 구분선 대신 간격
+                              const SizedBox(height: AppSpacing.space6),
+                              // 웹 리치텍스트 에디터로 쓴 글만 HTML로 그린다
+                              // (예전에는 태그가 그대로 노출되는 표시 버그가 있었다).
+                              // 앱에서 쓴 평문 글까지 HTML로 넘기면 flutter_html이 `\n`을
+                              // 공백으로 바꿔 줄바꿈이 전멸한다 — 공지 상세와 같은 분기를 둔다.
+                              if (containsHtmlTags(
+                                post['content']?.toString() ?? '',
+                              ))
+                                PlazaHtmlBody(
+                                  html: post['content']?.toString() ?? '',
+                                )
+                              else
+                                Text(
+                                  post['content']?.toString() ?? '',
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textPrimary,
+                                    height: 1.6,
+                                  ),
+                                ),
+                              if (plazaIsJobBoard(
+                                post['board']?.toString(),
+                              )) ...[
+                                const SizedBox(height: AppSpacing.space4),
+                                _ContactInfoCard(post: post),
+                              ],
+                              const SizedBox(height: AppSpacing.space5),
+                              _LikeChip(
+                                liked: post['likedByMe'] == true,
+                                count: post['likeCount'] ?? 0,
+                                onTap: _toggleLike,
+                              ),
                             ],
-                            const SizedBox(height: AppSpacing.space4),
-                            Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: _toggleLike,
-                                  child: Container(
-                                    height: AppSpacing.space9,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.space3_5,
-                                      vertical: AppSpacing.space2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.transparent,
-                                      borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.lg,
-                                      ),
-                                      border: Border.all(
-                                        color: AppSemanticColors.borderDefault,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          post['likedByMe'] == true
-                                              ? Icons.favorite
-                                              : Icons.favorite_border,
-                                          size: 16,
-                                          color: post['likedByMe'] == true
-                                              ? AppSemanticColors
-                                                  .statusErrorIcon
-                                              : AppSemanticColors
-                                                  .textSecondary,
-                                        ),
-                                        const SizedBox(
-                                          width: AppSpacing.space1,
-                                        ),
-                                        Text(
-                                          '좋아요 ${post['likeCount'] ?? 0}',
-                                          style: AppTypography.bodySmall
-                                              .copyWith(
-                                            color:
-                                                AppSemanticColors.textSecondary,
-                                          ),
-                                        ),
-                                      ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.cardGap),
+                        AppCard(
+                          padding: const EdgeInsets.all(AppSpacing.space2),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.space3,
+                                  AppSpacing.space3,
+                                  AppSpacing.space3,
+                                  AppSpacing.space2,
+                                ),
+                                child: Semantics(
+                                  header: true,
+                                  child: Text(
+                                    '댓글 ${comments.length}',
+                                    style: AppTypography.heading6.copyWith(
+                                      color: AppSemanticColors.textPrimary,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            const Divider(height: AppSpacing.space6),
-                            Text(
-                              '댓글 ${comments.length}',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                                fontWeight: FontWeight.w700,
                               ),
-                            ),
-                            const SizedBox(height: AppSpacing.space2),
-                            ...comments.map((comment) {
-                              final commentCreatedAt = DateTime.tryParse(
-                                  comment['createdAt']?.toString() ?? '');
-                              return Container(
-                                margin: const EdgeInsets.only(
-                                    bottom: AppSpacing.space2),
-                                padding:
-                                    const EdgeInsets.all(AppSpacing.space3),
-                                decoration: BoxDecoration(
-                                  color: AppSemanticColors.surfaceDefault,
-                                  borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.xl),
-                                  border: Border.all(
-                                      color: comment['isAccepted'] == true
-                                          ? AppSemanticColors.statusSuccessIcon
-                                          : AppSemanticColors.borderDefault),
+                              ...comments.map(
+                                (comment) => _PlazaCommentItem(
+                                  comment: comment,
+                                  onDelete: () {
+                                    final commentId = comment['id'];
+                                    if (commentId is int) {
+                                      _deleteComment(commentId);
+                                    }
+                                  },
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        if (comment['isAccepted'] == true) ...[
-                                          Icon(Icons.check_circle,
-                                              size: 14,
-                                              color: AppSemanticColors
-                                                  .statusSuccessIcon),
-                                          const SizedBox(
-                                              width: AppSpacing.space1),
-                                        ],
-                                        Expanded(
-                                          child: Text(
-                                            '${comment['displayAuthor'] ?? ''}${commentCreatedAt != null ? ' · ${DateFormat('MM.dd HH:mm').format(commentCreatedAt)}' : ''}',
-                                            style: AppTypography.caption
-                                                .copyWith(
-                                                    color: AppSemanticColors
-                                                        .textTertiary),
-                                          ),
-                                        ),
-                                        if (comment['isMine'] == true)
-                                          Semantics(
-                                            button: true,
-                                            label: '댓글 삭제',
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                final commentId = comment['id'];
-                                                if (commentId is int) {
-                                                  _deleteComment(commentId);
-                                                }
-                                              },
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(12),
-                                                child: Icon(Icons.close,
-                                                    size: 14,
-                                                    color: AppSemanticColors
-                                                        .textTertiary),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: AppSpacing.space1),
-                                    Text(
-                                      comment['content']?.toString() ?? '',
-                                      style: AppTypography.bodySmall.copyWith(
-                                        color: AppSemanticColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                            const SizedBox(height: AppSpacing.space10),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // 댓글 입력
-                    SafeArea(
-                      child: Container(
-                        padding: const EdgeInsets.all(AppSpacing.space3),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.surfaceDefault,
-                          border: Border(
-                            top: BorderSide(
-                                color: AppSemanticColors.borderDefault),
+                              ),
+                              const SizedBox(height: AppSpacing.space2),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Checkbox(
-                              value: _commentAnonymous,
-                              visualDensity: VisualDensity.compact,
-                              activeColor: AppSemanticColors.brandDefault,
-                              onChanged: (value) => setState(
-                                  () => _commentAnonymous = value ?? false),
+                        const SizedBox(height: AppSpacing.space10),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 댓글 입력 — 회색 바탕 위 흰 띠라 위 선 없이도 나뉜다.
+                // 흰 띠가 홈 표시줄 자리까지 이어지게 SafeArea를 안쪽에 둔다.
+                ColoredBox(
+                  color: AppSemanticColors.surfaceCard,
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.space3),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: _commentAnonymous,
+                            visualDensity: VisualDensity.compact,
+                            activeColor: AppSemanticColors.brandDefault,
+                            onChanged: (value) => setState(
+                              () => _commentAnonymous = value ?? false,
                             ),
-                            Text(
-                              '익명',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppSemanticColors.textSecondary,
-                              ),
+                          ),
+                          Text(
+                            '익명',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
                             ),
-                            const SizedBox(width: AppSpacing.space2),
-                            Expanded(
-                              child: SeedTextField(
-                                label: '댓글',
-                                showLabel: false,
-                                placeholder: '댓글을 입력하세요',
-                                controller: _commentController,
-                              ),
+                          ),
+                          const SizedBox(width: AppSpacing.space2),
+                          Expanded(
+                            child: SeedTextField(
+                              label: '댓글',
+                              showLabel: false,
+                              placeholder: '댓글을 입력하세요',
+                              controller: _commentController,
                             ),
-                            IconButton(
-                              tooltip: '댓글 등록',
-                              constraints: const BoxConstraints(
-                                  minWidth: 48, minHeight: 48),
-                              icon: Icon(Icons.send,
-                                  color: AppSemanticColors
-                                      .interactivePrimaryDefault),
-                              onPressed: _addComment,
+                          ),
+                          IconButton(
+                            tooltip: '댓글 등록',
+                            constraints: const BoxConstraints(
+                              minWidth: 48,
+                              minHeight: 48,
                             ),
-                          ],
+                            icon: Icon(
+                              Icons.send,
+                              color:
+                                  AppSemanticColors.interactivePrimaryDefault,
+                            ),
+                            onPressed: _addComment,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+/// 좋아요 단추 — B안: 테두리 없는 옅은 회색 알약(높이 44 이상). 누른 상태의 빨간 하트는 그대로.
+class _LikeChip extends StatelessWidget {
+  final bool liked;
+  final Object count;
+  final VoidCallback onTap;
+
+  const _LikeChip({
+    required this.liked,
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space4,
+          vertical: AppSpacing.space2,
+        ),
+        decoration: BoxDecoration(
+          color: AppSemanticColors.fillDefault,
+          borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              liked ? Icons.favorite : Icons.favorite_border,
+              size: 18,
+              color: liked
+                  ? AppSemanticColors.statusErrorIcon
+                  : AppSemanticColors.textSecondary,
+            ),
+            const SizedBox(width: AppSpacing.space1_5),
+            Text(
+              '좋아요 $count',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 댓글 한 개 — B안: 테두리 상자 없이 간격으로 나눈다.
+/// Q&A 채택 댓글은 초록 테두리 대신 옅은 초록 바탕 + 초록 체크로 알린다(뜻은 그대로).
+class _PlazaCommentItem extends StatelessWidget {
+  final Map<String, dynamic> comment;
+  final VoidCallback onDelete;
+
+  const _PlazaCommentItem({required this.comment, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    final isAccepted = comment['isAccepted'] == true;
+    final commentCreatedAt = DateTime.tryParse(
+      comment['createdAt']?.toString() ?? '',
+    );
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space1),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space3,
+        AppSpacing.space2,
+        AppSpacing.space1,
+        AppSpacing.space3,
+      ),
+      decoration: isAccepted
+          ? BoxDecoration(
+              color: AppSemanticColors.statusSuccessBackground,
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
+            )
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 삭제 단추(48) 자리가 없어도 머리줄 높이가 같게 최소 높이를 둔다
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 40),
+            child: Row(
+              children: [
+                if (isAccepted) ...[
+                  const Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: AppSemanticColors.statusSuccessIcon,
+                  ),
+                  const SizedBox(width: AppSpacing.space1),
+                ],
+                Expanded(
+                  child: Text(
+                    '${comment['displayAuthor'] ?? ''}${commentCreatedAt != null ? ' · ${DateFormat('MM.dd HH:mm').format(commentCreatedAt)}' : ''}',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
+                    ),
+                  ),
+                ),
+                if (comment['isMine'] == true)
+                  Semantics(
+                    button: true,
+                    label: '댓글 삭제',
+                    child: GestureDetector(
+                      onTap: onDelete,
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: AppSemanticColors.textTertiary,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.space2),
+            child: Text(
+              comment['content']?.toString() ?? '',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -413,12 +481,16 @@ class _ContactInfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.space3_5),
       decoration: BoxDecoration(
         color: AppSemanticColors.brandWeak,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.call_outlined, size: 18, color: AppSemanticColors.brandPressed),
+          Icon(
+            Icons.call_outlined,
+            size: 18,
+            color: AppSemanticColors.brandPressed,
+          ),
           const SizedBox(width: AppSpacing.space2),
           Expanded(
             child: Column(
@@ -428,14 +500,16 @@ class _ContactInfoCard extends StatelessWidget {
                   children: [
                     Text(
                       '연락처',
-                      style: AppTypography.labelMedium
-                          .copyWith(color: AppSemanticColors.brandPressed),
+                      style: AppTypography.labelStrong.copyWith(
+                        color: AppSemanticColors.brandPressed,
+                      ),
                     ),
                     const SizedBox(width: AppSpacing.space1_5),
                     Text(
                       isPublic ? '전체공개' : '회원공개',
-                      style: AppTypography.bodySmall
-                          .copyWith(color: AppSemanticColors.textTertiary),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textTertiary,
+                      ),
                     ),
                   ],
                 ),
