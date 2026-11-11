@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
 
 import '../models/work_task.dart';
@@ -8,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_fab.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/work_task/work_task_edit_sheet.dart';
@@ -28,6 +30,9 @@ class WorkTaskListScreen extends StatefulWidget {
 class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
   bool _showDone = false;
   int? _highlightedId;
+
+  /// 목록을 아래로 밀면 등록 단추의 글자를 접는다(B안 FAB)
+  bool _fabCollapsed = false;
 
   @override
   void initState() {
@@ -74,21 +79,14 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
     final today = DateTime.now();
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '업무진행도'),
-      // 다른 목록 화면(공지 관리 등)과 같이 등록은 오른쪽 아래 단추로
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'work_task_fab',
+      // 다른 목록 화면(공지 관리 등)과 같이 등록은 오른쪽 아래 단추로 — B안 알약 FAB
+      floatingActionButton: AppFab(
+        icon: Icons.add,
+        label: '업무 등록',
+        collapsed: _fabCollapsed,
         onPressed: () => _open(null),
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        foregroundColor: AppSemanticColors.textInverse,
-        icon: const Icon(Icons.add),
-        label: Text(
-          '업무 등록',
-          style: AppTypography.titleSmall.copyWith(
-            color: AppSemanticColors.textInverse,
-          ),
-        ),
       ),
       body: switch (provider.status) {
         WorkTaskLoadStatus.idle ||
@@ -122,28 +120,34 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
     final done = provider.done;
     final mine = provider.myInProgressCount(meId);
 
-    return ListView(
+    final list = ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       // 아래 여백 — 마지막 줄이 등록 단추에 가리지 않게
       padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
         AppSpacing.space4,
-        AppSpacing.space3,
-        AppSpacing.space4,
+        AppSpacing.screenGutter,
         AppSpacing.space16 + AppSpacing.space8,
       ),
       children: [
-        Text(
-          mine > 0
-              ? '진행 중 ${inProgress.length}건 · 내가 맡은 업무 $mine건'
-              : '진행 중 ${inProgress.length}건',
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppSemanticColors.textSecondary,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space1),
+          child: Text(
+            mine > 0
+                ? '진행 중 ${inProgress.length}건 · 내가 맡은 업무 $mine건'
+                : '진행 중 ${inProgress.length}건',
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textSecondary,
+            ),
           ),
         ),
-        const SizedBox(height: AppSpacing.space2),
+        const SizedBox(height: AppSpacing.space2_5),
         if (inProgress.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space1,
+              vertical: AppSpacing.space4,
+            ),
             child: Text(
               '진행 중인 업무를 모두 끝냈습니다',
               style: AppTypography.bodyMedium.copyWith(
@@ -153,12 +157,14 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
           ),
         ..._rows(inProgress, today),
         if (done.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.space2),
+          const SizedBox(height: AppSpacing.space3),
           InkWell(
             onTap: () => setState(() => _showDone = !_showDone),
-            borderRadius: BorderRadius.circular(AppBorderRadius.md),
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
+              constraints: const BoxConstraints(
+                minHeight: AppSpacing.minTouchTarget,
+              ),
               child: Row(
                 children: [
                   Icon(
@@ -177,42 +183,55 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
               ),
             ),
           ),
-          if (_showDone) ..._rows(done, today),
+          if (_showDone) ...[
+            const SizedBox(height: AppSpacing.space1),
+            ..._rows(done, today),
+          ],
         ],
       ],
     );
+
+    // 아래로 밀면 FAB 글자를 접고, 위로 올리면 다시 편다
+    return NotificationListener<UserScrollNotification>(
+      onNotification: (notification) {
+        final collapse = switch (notification.direction) {
+          ScrollDirection.reverse => true,
+          ScrollDirection.forward => false,
+          ScrollDirection.idle => _fabCollapsed,
+        };
+        if (collapse != _fabCollapsed) {
+          setState(() => _fabCollapsed = collapse);
+        }
+        return false;
+      },
+      child: list,
+    );
   }
 
-  // 다른 목록(홈·공지·결재)처럼 흰 카드 안에 행을 모은다
+  // 다른 목록(홈·공지·결재)처럼 흰 카드 안에 행을 모은다 — B안: 테두리·구분선 없이 줄 여백으로 나눈다.
+  // 카드 여백 8 + 줄 안쪽 12 = 글자는 카드 끝에서 20(SeedListSection 문법), 눌림 바탕은 둥글게 뜬다.
   List<Widget> _rows(List<WorkTask> tasks, DateTime today) => tasks.isEmpty
       ? const []
       : [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+            padding: const EdgeInsets.all(AppSpacing.space2),
             decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              border: Border.all(color: AppSemanticColors.borderSubtle),
+              color: AppSemanticColors.surfaceCard,
+              borderRadius: BorderRadius.circular(AppBorderRadius.card),
             ),
-            clipBehavior: Clip.antiAlias,
             child: Column(
               children: [
-                for (final entry in tasks.asMap().entries) ...[
-                  if (entry.key > 0)
-                    const Divider(
-                      height: 1,
-                      color: AppSemanticColors.borderSubtle,
-                    ),
+                for (final task in tasks)
                   WorkTaskRow(
-                    task: entry.value,
+                    task: task,
                     today: today,
-                    isHighlighted: entry.value.id == _highlightedId,
+                    horizontalPadding: AppSpacing.space3,
+                    isHighlighted: task.id == _highlightedId,
                     onTap: () {
                       setState(() => _highlightedId = null);
-                      _open(entry.value);
+                      _open(task);
                     },
                   ),
-                ],
               ],
             ),
           ),
