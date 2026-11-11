@@ -21,3 +21,4 @@ export 'app_badge_pop.dart';
 export 'app_list_entrance.dart';
 export 'app_success_check.dart';
 export 'app_bottom_tab_bar.dart';
+export 'app_fab.dart';
