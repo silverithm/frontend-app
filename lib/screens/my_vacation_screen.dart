@@ -6,7 +6,9 @@ import '../models/vacation_request.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_count_up.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_refresh.dart';
 import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -242,7 +244,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: widget.showAppBar ? const CareVAppBar(title: '내 휴무') : null,
-      body: RefreshIndicator(
+      body: AppRefreshIndicator(
         onRefresh: _refreshData,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -512,8 +514,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       children: [
         Icon(icon, color: color, size: 22),
         const SizedBox(height: AppSpacing.space1),
-        Text(
-          count.toString(),
+        // 큰 숫자는 0에서 세어 올라간다(글자는 그대로 count)
+        AppCountUp(
+          value: count,
           style: AppTypography.heading4.copyWith(
             color: color,
           ),
