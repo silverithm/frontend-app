@@ -6,8 +6,9 @@ import '../models/vacation_request.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_sheet_frame.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/seed/seed_button.dart';
@@ -115,154 +116,111 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     }
   }
 
+  /// 삭제 확인 — B안: 가운데 창 대신 아래 시트(경고 아이콘 + 제목 21 + 큰 단추 취소 1 : 삭제 1.7)
   void _showDeleteDialog(VacationRequest request) {
     bool isDeleting = false;
 
-    AppDialog.showCustom<void>(
+    showAppSheet<void>(
       context,
-      barrierColor: AppColors.black.withValues(alpha: 0.5),
-      child: StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusErrorBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    ),
-                    child: Icon(
-                      Icons.delete_outline,
-                      color: AppSemanticColors.statusErrorIcon,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: Text(
-                      '휴무 신청 삭제',
-                      style: AppTypography.heading6,
-                    ),
-                  ),
-                ],
-              ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setState) => AppSheetFrame(
+          warning: true,
+          title: '휴무 신청 삭제',
+          message:
+              '${request.date.month}월 ${request.date.day}일 휴무 신청을 삭제하시겠습니까?',
+          actions: AppSheetActions(
+            cancel: SeedButton(
+              label: '취소',
+              variant: SeedButtonVariant.neutralWeak,
+              size: SeedButtonSize.large,
+              onPressed: isDeleting ? null : () => Navigator.pop(context),
+              isDisabled: isDeleting,
+            ),
+            confirm: SeedButton(
+              label: '삭제',
+              variant: SeedButtonVariant.critical,
+              size: SeedButtonSize.large,
+              isLoading: isDeleting,
+              isDisabled: isDeleting,
+              onPressed: () async {
+                setState(() {
+                  isDeleting = true;
+                });
+
+                final authProvider = context.read<AuthProvider>();
+                final vacationProvider = context.read<VacationProvider>();
+                final user = authProvider.currentUser;
+
+                bool success = false;
+
+                // 관리자인 경우 관리자용 API 사용
+                if (user?.role == 'ADMIN') {
+                  success = await vacationProvider.deleteVacationByAdmin(
+                    vacationId: request.id,
+                  );
+                } else {
+                  // 직원인 경우 기존 API 사용
+                  success = await vacationProvider.deleteMyVacationRequest(
+                    vacationId: request.id,
+                    userName: user?.name ?? '',
+                    userId: user?.id ?? '',
+                    password: '', // 빈 비밀번호로 전송
+                  );
+                }
+
+                setState(() {
+                  isDeleting = false;
+                });
+
+                if (success && mounted) {
+                  Navigator.pop(context);
+                  // 삭제 성공 후 데이터 새로고침
+                  await _refreshData();
+                  if (mounted) {
+                    AppSnackBar.showSuccess(context,
+                        message: '휴무 신청이 삭제되었습니다');
+                  }
+                } else if (mounted) {
+                  Navigator.pop(context);
+                  // 에러 메시지는 VacationProvider에서 처리됨
+                }
+              },
+            ),
+          ),
+          children: [
+            if (request.status == VacationStatus.approved) ...[
               const SizedBox(height: AppSpacing.space4),
+              // B안 안내 상자: 테두리 없이 옅은 노랑, 모서리 14
               Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space4,
+                  vertical: AppSpacing.space3,
+                ),
                 decoration: BoxDecoration(
-                  color: AppSemanticColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  color: AppSemanticColors.statusWarningBackground,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
                 ),
-                child: Text(
-                  '${request.date.month}월 ${request.date.day}일 휴무 신청을 삭제하시겠습니까?',
-                  style: AppTypography.bodyLarge,
-                ),
-              ),
-              if (request.status == VacationStatus.approved) ...[
-                const SizedBox(height: AppSpacing.space3),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space3),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.statusWarningBackground,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    border: Border.all(
-                      color: AppSemanticColors.statusWarningBorder,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.warning_amber,
+                      color: AppSemanticColors.statusWarningIcon,
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber,
-                        color: AppSemanticColors.statusWarningIcon,
-                      ),
-                      const SizedBox(width: AppSpacing.space2),
-                      Expanded(
-                        child: Text(
-                          '승인된 휴무는 삭제 시 관리자에게 문의가 필요할 수 있습니다.',
-                          style: AppTypography.labelSmall.copyWith(
-                            color: AppSemanticColors.statusWarningText,
-                          ),
+                    const SizedBox(width: AppSpacing.space2),
+                    Expanded(
+                      child: Text(
+                        '승인된 휴무는 삭제 시 관리자에게 문의가 필요할 수 있습니다.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.statusWarningText,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: '취소',
-                      variant: SeedButtonVariant.neutralOutline,
-                      onPressed: isDeleting
-                          ? null
-                          : () => Navigator.pop(context),
-                      isDisabled: isDeleting,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: SeedButton(
-                      label: '삭제',
-                      variant: SeedButtonVariant.critical,
-                      isLoading: isDeleting,
-                      isDisabled: isDeleting,
-                      onPressed: () async {
-                        setState(() {
-                          isDeleting = true;
-                        });
-
-                        final authProvider = context.read<AuthProvider>();
-                        final vacationProvider = context
-                            .read<VacationProvider>();
-                        final user = authProvider.currentUser;
-
-                        bool success = false;
-
-                        // 관리자인 경우 관리자용 API 사용
-                        if (user?.role == 'ADMIN') {
-                          success = await vacationProvider
-                              .deleteVacationByAdmin(vacationId: request.id);
-                        } else {
-                          // 직원인 경우 기존 API 사용
-                          success = await vacationProvider
-                              .deleteMyVacationRequest(
-                                vacationId: request.id,
-                                userName: user?.name ?? '',
-                                userId: user?.id ?? '',
-                                password: '', // 빈 비밀번호로 전송
-                              );
-                        }
-
-                        setState(() {
-                          isDeleting = false;
-                        });
-
-                        if (success && mounted) {
-                          Navigator.pop(context);
-                          // 삭제 성공 후 데이터 새로고침
-                          await _refreshData();
-                          if (mounted) {
-                            AppSnackBar.showSuccess(context,
-                                message: '휴무 신청이 삭제되었습니다');
-                          }
-                        } else if (mounted) {
-                          Navigator.pop(context);
-                          // 에러 메시지는 VacationProvider에서 처리됨
-                        }
-                      },
-                    ),
-                  ),
-                ],
               ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -280,14 +238,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
   @override
   Widget build(BuildContext context) {
+    // B안: 회색 바탕 위 흰 카드, 안쪽 화면 공통 상단 바(가운데 17, 꺾쇠 뒤로)
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: widget.showAppBar
-          ? AppBar(
-              title: Text('내 휴무', style: AppTypography.appBarTitle),
-              elevation: 0,
-            )
-          : null,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: widget.showAppBar ? const CareVAppBar(title: '내 휴무') : null,
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: CustomScrollView(
@@ -333,13 +287,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                           Container(
                             padding: const EdgeInsets.all(AppSpacing.space5),
                             decoration: BoxDecoration(
-                              color: AppSemanticColors.surfaceDefault,
+                              color: AppSemanticColors.surfaceCard,
                               borderRadius: BorderRadius.circular(
-                                AppBorderRadius.xl2,
-                              ),
-                              border: Border.all(
-                                color: AppSemanticColors.borderDefault,
-                                width: 1,
+                                AppBorderRadius.card,
                               ),
                             ),
                             child: CircularProgressIndicator(
@@ -366,17 +316,14 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     child: Center(
                       child: FadeTransition(
                         opacity: _fadeAnimation,
+                        // B안: 테두리 없는 흰 카드, 경고 아이콘은 옅은 빨강 동그라미
                         child: Container(
                           margin: const EdgeInsets.all(AppSpacing.space8),
                           padding: const EdgeInsets.all(AppSpacing.space6),
                           decoration: BoxDecoration(
-                            color: AppSemanticColors.surfaceDefault,
+                            color: AppSemanticColors.surfaceCard,
                             borderRadius: BorderRadius.circular(
-                              AppBorderRadius.xl2,
-                            ),
-                            border: Border.all(
-                              color: AppSemanticColors.statusErrorBorder,
-                              width: 1,
+                              AppBorderRadius.card,
                             ),
                           ),
                           child: Column(
@@ -386,12 +333,10 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                                 padding: const EdgeInsets.all(
                                   AppSpacing.space4,
                                 ),
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                   color:
                                       AppSemanticColors.statusErrorBackground,
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.xl2,
-                                  ),
+                                  shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.error_outline,
@@ -453,160 +398,111 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     .where((r) => r.status == VacationStatus.rejected)
                     .toList();
 
-                return SliverList(
-                  delegate: SliverChildListDelegate([
-                    // one-surface 원칙: 신청현황 요약 + 상태별 섹션 + 신청 카드들을
-                    // 흰 카드 여러 개로 쪼개지 않고 하나의 표면 위에서 Divider로만 구분한다.
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Container(
-                        margin: const EdgeInsets.all(AppSpacing.space4),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.surfaceDefault,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.xl2,
-                          ),
-                          border: Border.all(
-                            color: AppSemanticColors.borderDefault,
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                // B안: 한 표면을 구분선으로 나누던 것을 회색 바탕 위 흰 카드 여러 장으로 —
+                // 신청 현황 카드 하나 + 상태(대기·승인·거절)마다 카드 하나, 카드 사이는 간격 12.
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space4,
+                    AppSpacing.cardGap,
+                    AppSpacing.space4,
+                    AppSpacing.space20, // 바텀 패딩
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: _buildCard(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.all(AppSpacing.space5),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(
-                                          AppSpacing.space3,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppSemanticColors
-                                              .backgroundTertiary,
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.xl2,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.analytics,
-                                          color:
-                                              AppSemanticColors.textSecondary,
-                                          size: 24,
-                                        ),
-                                      ),
-                                      const SizedBox(width: AppSpacing.space3),
-                                      Text(
-                                        '신청 현황',
-                                        style: AppTypography.heading6
-                                            .copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: AppSemanticColors
-                                                  .textPrimary,
-                                            ),
-                                      ),
-                                    ],
+                            const SeedSectionHeader(title: '신청 현황'),
+                            const SizedBox(height: AppSpacing.space4),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildStatusCard(
+                                    '대기',
+                                    pendingRequests.length,
+                                    AppSemanticColors.statusWarningText,
+                                    Icons.schedule,
                                   ),
-                                  const SizedBox(height: AppSpacing.space4),
-                                  // 내부는 구분선으로만 나눈다 (카드 중첩 금지)
-                                  IntrinsicHeight(
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: _buildStatusCard(
-                                            '대기',
-                                            pendingRequests.length,
-                                            AppSemanticColors
-                                                .statusWarningText,
-                                            Icons.schedule,
-                                          ),
-                                        ),
-                                        VerticalDivider(
-                                          width: AppSpacing.space4,
-                                          thickness: 1,
-                                          color:
-                                              AppSemanticColors.borderSubtle,
-                                        ),
-                                        Expanded(
-                                          child: _buildStatusCard(
-                                            '승인',
-                                            approvedRequests.length,
-                                            AppSemanticColors
-                                                .statusSuccessText,
-                                            Icons.check_circle,
-                                          ),
-                                        ),
-                                        VerticalDivider(
-                                          width: AppSpacing.space4,
-                                          thickness: 1,
-                                          color:
-                                              AppSemanticColors.borderSubtle,
-                                        ),
-                                        Expanded(
-                                          child: _buildStatusCard(
-                                            '거절',
-                                            rejectedRequests.length,
-                                            AppSemanticColors.statusErrorText,
-                                            Icons.cancel,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // 신청 목록 — 상태 그룹마다 Divider로만 구분(각 그룹의 헤더/카드는
-                            // 개별 흰 카드로 다시 감싸지 않고 같은 표면 위에 이어 붙인다)
-                            if (pendingRequests.isNotEmpty)
-                              ..._buildRequestGroup(
-                                title: '대기 중',
-                                requests: pendingRequests,
-                                headerColor:
-                                    AppSemanticColors.statusWarningIcon,
-                                headerIcon: Icons.schedule,
-                                baseDelayIndex: 0,
-                              ),
-
-                            if (approvedRequests.isNotEmpty)
-                              ..._buildRequestGroup(
-                                title: '승인됨',
-                                requests: approvedRequests,
-                                headerColor:
-                                    AppSemanticColors.statusSuccessIcon,
-                                headerIcon: Icons.check_circle,
-                                baseDelayIndex: pendingRequests.length,
-                              ),
-
-                            if (rejectedRequests.isNotEmpty)
-                              ..._buildRequestGroup(
-                                title: '거절됨',
-                                requests: rejectedRequests,
-                                headerColor: AppSemanticColors.statusErrorIcon,
-                                headerIcon: Icons.cancel,
-                                baseDelayIndex:
-                                    pendingRequests.length +
+                                ),
+                                const SizedBox(width: AppSpacing.space3),
+                                Expanded(
+                                  child: _buildStatusCard(
+                                    '승인',
                                     approvedRequests.length,
-                              ),
-
-                            const SizedBox(height: AppSpacing.space2),
+                                    AppSemanticColors.statusSuccessText,
+                                    Icons.check_circle,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.space3),
+                                Expanded(
+                                  child: _buildStatusCard(
+                                    '거절',
+                                    rejectedRequests.length,
+                                    AppSemanticColors.statusErrorText,
+                                    Icons.cancel,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: AppSpacing.space20), // 바텀 패딩
-                  ]),
+                      if (pendingRequests.isNotEmpty)
+                        _buildRequestGroup(
+                          title: '대기 중',
+                          requests: pendingRequests,
+                          headerColor: AppSemanticColors.statusWarningIcon,
+                          headerIcon: Icons.schedule,
+                          baseDelayIndex: 0,
+                        ),
+
+                      if (approvedRequests.isNotEmpty)
+                        _buildRequestGroup(
+                          title: '승인됨',
+                          requests: approvedRequests,
+                          headerColor: AppSemanticColors.statusSuccessIcon,
+                          headerIcon: Icons.check_circle,
+                          baseDelayIndex: pendingRequests.length,
+                        ),
+
+                      if (rejectedRequests.isNotEmpty)
+                        _buildRequestGroup(
+                          title: '거절됨',
+                          requests: rejectedRequests,
+                          headerColor: AppSemanticColors.statusErrorIcon,
+                          headerIcon: Icons.cancel,
+                          baseDelayIndex:
+                              pendingRequests.length + approvedRequests.length,
+                        ),
+                    ]),
+                  ),
                 );
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 안쪽 20
+  Widget _buildCard({
+    required List<Widget> children,
+    EdgeInsetsGeometry margin = EdgeInsets.zero,
+  }) {
+    return Container(
+      margin: margin,
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
       ),
     );
   }
@@ -624,7 +520,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         ),
         Text(
           label,
-          style: AppTypography.labelSmall.copyWith(
+          style: AppTypography.bodySmall.copyWith(
             color: color,
           ),
         ),
@@ -632,9 +528,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     );
   }
 
-  // one-surface 원칙: 섹션헤더는 독립된 흰 카드가 아니라 목록 안의 플랫한 라벨이어야 한다
-  // (신청현황 요약 카드·신청 카드들과 나란히 흰 박스가 반복되던 것을 정리).
-  // 텍스트 부분은 공용 SeedSectionHeader로 통일하고, 상태별 색상 아이콘만 앞에 붙인다
+  // 카드 맨 위 제목 — 공용 SeedSectionHeader(19/w700) 앞에 상태 색 아이콘만 붙인다
   // (SeedSectionHeader는 아이콘/컬러 파라미터를 지원하지 않으므로).
   Widget _buildSectionHeader(
     String title,
@@ -642,26 +536,17 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     Color color,
     IconData icon,
   ) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
-        AppSpacing.space2,
-        AppSpacing.space4,
-        AppSpacing.space2,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: AppSpacing.space5),
-          const SizedBox(width: AppSpacing.space2),
-          Expanded(child: SeedSectionHeader(title: '$title ($count)')),
-        ],
-      ),
+    return Row(
+      children: [
+        Icon(icon, color: color, size: AppSpacing.space6),
+        const SizedBox(width: AppSpacing.space2),
+        Expanded(child: SeedSectionHeader(title: '$title ($count)')),
+      ],
     );
   }
 
-  // 상태 그룹(대기/승인/거절) 하나를 [Divider, 섹션헤더, 카드…]로 구성해
-  // 신청현황 요약과 같은 표면 위에 이어붙일 수 있게 한다 (카드 중첩 금지).
-  List<Widget> _buildRequestGroup({
+  // 상태 그룹(대기/승인/거절) 하나 — B안: 흰 카드 하나에 [제목, 신청…]. 신청 사이는 구분선 대신 간격.
+  Widget _buildRequestGroup({
     required String title,
     required List<VacationRequest> requests,
     required Color headerColor,
@@ -669,7 +554,6 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     required int baseDelayIndex,
   }) {
     final children = <Widget>[
-      Divider(height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
       SlideTransition(
         position: _slideAnimation,
         child: _buildSectionHeader(
@@ -683,8 +567,12 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
     for (var i = 0; i < requests.length; i++) {
       final request = requests[i];
-      final delay = (baseDelayIndex + i) * 0.1;
+      // 등장 시차 — 끝(delay + 0.3)이 1을 넘지 않게 묶는다(신청이 8건을 넘으면 Interval이 깨졌다)
+      final delay = ((baseDelayIndex + i) * 0.1).clamp(0.0, 0.7).toDouble();
 
+      children.add(
+        SizedBox(height: i == 0 ? AppSpacing.space4 : AppSpacing.space6),
+      );
       children.add(
         AnimatedBuilder(
           animation: _animationController,
@@ -709,31 +597,21 @@ class _MyVacationScreenState extends State<MyVacationScreen>
           },
         ),
       );
-
-      if (i != requests.length - 1) {
-        children.add(
-          Divider(
-            height: 1,
-            thickness: 1,
-            indent: AppSpacing.space5,
-            endIndent: AppSpacing.space5,
-            color: AppSemanticColors.borderSubtle,
-          ),
-        );
-      }
     }
 
-    return children;
+    return _buildCard(
+      margin: const EdgeInsets.only(top: AppSpacing.cardGap),
+      children: children,
+    );
   }
 
-  // one-surface 원칙: 바깥의 흰 카드 wrapper(Container 배경/보더/margin)는 제거하고
-  // 내용(Padding 이하)만 유지 — 상위 표면 위에 이어 붙는 한 섹션으로 렌더링된다.
+  // 신청 한 건 — 상태 그룹 카드 안에 이어 붙는다(여백은 카드가 준다)
   Widget _buildRequestCard(VacationRequest request) {
     final canDelete =
         request.status == VacationStatus.pending; // 대기 중인 상태에서만 삭제 가능
 
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.space5),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -746,28 +624,28 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     children: [
                       Row(
                         children: [
+                          // B안 둥근 아이콘 — 바탕은 상태 색(옅게) 그대로
                           Container(
-                            padding: const EdgeInsets.all(AppSpacing.space2),
+                            width: AppSpacing.iconCircle,
+                            height: AppSpacing.iconCircle,
                             decoration: BoxDecoration(
                               color: _getStatusColor(request.status),
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.lg,
-                              ),
+                              shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.calendar_today,
-                              size: 16,
+                              size: 20,
                               color: _getStatusTextColor(request.status),
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.space2),
+                          const SizedBox(width: AppSpacing.space3),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   _formatDate(request.date),
-                                  style: AppTypography.titleSmall.copyWith(
+                                  style: AppTypography.titleMedium.copyWith(
                                     color: AppSemanticColors.textPrimary,
                                   ),
                                 ),
@@ -798,9 +676,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                 ),
                 if (canDelete)
                   Container(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppSemanticColors.statusErrorBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                      shape: BoxShape.circle,
                     ),
                     child: IconButton(
                       onPressed: () => _showDeleteDialog(request),
@@ -819,10 +697,11 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             if (request.reason != null && request.reason!.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.space4),
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.space3),
                 decoration: BoxDecoration(
-                  color: AppSemanticColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                  color: AppSemanticColors.fillDefault,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -849,15 +728,13 @@ class _MyVacationScreenState extends State<MyVacationScreen>
             if (request.rejectionReason != null &&
                 request.rejectionReason!.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.space4),
+              // B안: 테두리 없이 옅은 빨강 칸
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.space3),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.statusErrorBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.statusErrorBorder,
-                    width: 1,
-                  ),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -872,7 +749,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           '거절 사유',
-                          style: AppTag.labelStyle.copyWith(
+                          style: AppTypography.titleSmall.copyWith(
                             color: AppSemanticColors.statusErrorText,
                           ),
                         ),
