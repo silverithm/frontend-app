@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../widgets/common/app_action_sheet.dart';
@@ -10,6 +11,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_fab.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
@@ -35,6 +37,9 @@ class _AdminNoticeManagementScreenState
   String? _selectedStatus;
   String? _selectedPriority;
 
+  /// 목록을 아래로 내리면 FAB 글자를 접는다(B안 알약 FAB).
+  bool _fabCollapsed = false;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +57,11 @@ class _AdminNoticeManagementScreenState
   }
 
   void _onScroll() {
+    final direction = _scrollController.position.userScrollDirection;
+    if (direction != ScrollDirection.idle) {
+      final collapse = direction == ScrollDirection.reverse;
+      if (collapse != _fabCollapsed) setState(() => _fabCollapsed = collapse);
+    }
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       _loadNotices();
@@ -76,8 +86,9 @@ class _AdminNoticeManagementScreenState
 
   @override
   Widget build(BuildContext context) {
+    // B안: 옅은 회색 바탕 위 흰 카드. 검색칸은 틸 상단 바 아래 띠 대신 본문 맨 위 흰 칸으로.
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: widget.showAppBar
           ? CareVAppBar(
               title: '공지사항 관리',
@@ -88,16 +99,12 @@ class _AdminNoticeManagementScreenState
                   onPressed: _showFilterBottomSheet,
                 ),
               ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(70),
-                child: _buildSearchBar(),
-              ),
             )
           : null,
       body: Column(
         children: [
+          _buildSearchBar(),
           if (!widget.showAppBar) ...[
-            _buildSearchBar(),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -136,7 +143,7 @@ class _AdminNoticeManagementScreenState
                     controller: _scrollController,
                     // 떠 있는 + 버튼이 마지막 카드의 더보기(⋮)를 가리지 않게 — 배차 설정·휴무 달력과 같은 96
                     padding: const EdgeInsets.only(
-                      top: AppSpacing.space2,
+                      top: AppSpacing.space1,
                       bottom: 96,
                     ),
                     itemCount:
@@ -160,31 +167,32 @@ class _AdminNoticeManagementScreenState
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'admin_notice_fab',
-        onPressed: _navigateToCreateNotice,
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        // 글자색을 안 주면 테마 기본(어두운 청록)이 와서 + 가 바탕에 묻혔다 — 노선 추가 버튼과 같은 흰색
-        foregroundColor: AppSemanticColors.textInverse,
-        tooltip: '새 공지 작성',
-        child: const Icon(Icons.add),
+      // B안 알약 FAB — 글자는 예전 툴팁 그대로. 툴팁도 남겨 둔다(찾기용, 낭독은 AppFab이 한 번만)
+      floatingActionButton: Tooltip(
+        message: '새 공지 작성',
+        excludeFromSemantics: true,
+        child: AppFab(
+          icon: Icons.add,
+          label: '새 공지 작성',
+          collapsed: _fabCollapsed,
+          onPressed: _navigateToCreateNotice,
+        ),
       ),
     );
   }
 
   Widget _buildSearchBar() {
-    // 글자는 어디서든 짙은 색. 입력칸은 상단 바(틸) 안에서는 흰색으로 띄우고,
-    // 화면 안에 들어갈 땐 기존 회색 입력칸
+    // 회색 바탕 위 흰 입력칸(모서리 14, 테두리 없음) — 상단 바 안이든 화면 안이든 같은 모습
     final textColor = AppSemanticColors.textPrimary;
     final hintColor = AppSemanticColors.textTertiary;
-    final fillColor = widget.showAppBar
-        ? AppSemanticColors.surfaceDefault
-        : AppSemanticColors.backgroundTertiary;
+    const fillColor = AppSemanticColors.surfaceCard;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space2,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        AppSpacing.space3,
+        AppSpacing.screenGutter,
+        AppSpacing.space2,
       ),
       child: TextField(
         controller: _searchController,
@@ -206,8 +214,19 @@ class _AdminNoticeManagementScreenState
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
             borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
+            borderSide: const BorderSide(
+              color: AppSemanticColors.borderFocus,
+              width: 2,
+            ),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.space4,
@@ -244,27 +263,27 @@ class _AdminNoticeManagementScreenState
       // 직원 공지 목록(NoticeCard)과 같은 흰 카드·같은 꼬리표 — 예전엔 이 화면만 테마 기본의
       // 청록 회색 카드에, 모든 카드에 '게시됨'이 붙어 정작 다른 '임시저장'이 묻혔고 고정 핀만 갈색이었다.
       // 꼬리표 줄·제목·날짜 세 줄이던 것을 제목 + 날짜 두 줄로 줄이고, 꼬리표는 있을 때만 날짜 줄에 붙인다.
+      // B안: 테두리 없는 흰 카드(모서리 20), 카드 사이 간격 12
       child: Card(
         margin: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space4,
-          vertical: AppSpacing.space2,
+          horizontal: AppSpacing.screenGutter,
+          vertical: AppSpacing.cardGap / 2,
         ),
         elevation: 0,
-        color: AppSemanticColors.surfaceDefault,
-        surfaceTintColor: AppSemanticColors.surfaceDefault,
+        color: AppSemanticColors.surfaceCard,
+        surfaceTintColor: AppSemanticColors.surfaceCard,
+        clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          side: const BorderSide(color: AppSemanticColors.borderDefault),
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
         ),
         child: InkWell(
           onTap: () => _navigateToDetail(notice),
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
+              AppSpacing.cardPadding,
               AppSpacing.space4,
-              AppSpacing.space3,
               AppSpacing.space1,
-              AppSpacing.space3,
+              AppSpacing.space4,
             ),
             child: Row(
               children: [
@@ -309,7 +328,7 @@ class _AdminNoticeManagementScreenState
                             children: [
                               Icon(
                                 Icons.visibility_outlined,
-                                size: 14,
+                                size: 16,
                                 color: AppSemanticColors.textTertiary,
                               ),
                               const SizedBox(width: AppSpacing.space1),
@@ -365,30 +384,42 @@ class _AdminNoticeManagementScreenState
   }
 
   Widget _buildEmptyState() {
+    // AppEmptyState와 같은 모습(옅은 틸 원 56 + 19 제목 + 14 설명). 작성 단추는 틸 채움으로 남긴다 —
+    // AppEmptyState의 단추는 회색이라 회색 바탕 위에서 묻힌다.
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.campaign_outlined,
-            size: 64,
-            color: AppSemanticColors.textTertiary,
+          Container(
+            width: AppSpacing.space14,
+            height: AppSpacing.space14,
+            decoration: const BoxDecoration(
+              color: AppSemanticColors.brandWeak,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.campaign_outlined,
+              size: 26,
+              color: AppSemanticColors.brandDefault,
+            ),
           ),
-          const SizedBox(height: AppSpacing.space4),
+          const SizedBox(height: AppSpacing.space3_5),
           Text(
             '공지사항이 없습니다',
-            style: AppTypography.bodyLarge.copyWith(
+            textAlign: TextAlign.center,
+            style: AppTypography.heading6.copyWith(
+              color: AppSemanticColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space1_5),
+          Text(
+            '새로운 공지사항을 작성해보세요',
+            textAlign: TextAlign.center,
+            style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textSecondary,
             ),
           ),
-          const SizedBox(height: AppSpacing.space2),
-          Text(
-            '새로운 공지사항을 작성해보세요',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textTertiary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space4),
+          const SizedBox(height: AppSpacing.space5),
           SeedButton(
             label: '공지사항 작성',
             variant: SeedButtonVariant.brandSolid,
@@ -477,8 +508,8 @@ class _AdminNoticeManagementScreenState
                   // Status filter
                   Text(
                     '게시 상태',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: AppSemanticColors.textSecondary,
+                    style: AppTypography.titleSmall.copyWith(
+                      color: AppSemanticColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space2),
@@ -511,8 +542,8 @@ class _AdminNoticeManagementScreenState
                   // Priority filter
                   Text(
                     '우선순위',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: AppSemanticColors.textSecondary,
+                    style: AppTypography.titleSmall.copyWith(
+                      color: AppSemanticColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space2),
@@ -547,6 +578,7 @@ class _AdminNoticeManagementScreenState
                     width: double.infinity,
                     child: SeedButton(
                       label: '적용',
+                      size: SeedButtonSize.large,
                       variant: SeedButtonVariant.brandSolid,
                       onPressed: () {
                         setState(() {});
