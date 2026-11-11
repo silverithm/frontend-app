@@ -11,6 +11,9 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/seed/seed_button.dart';
@@ -184,81 +187,91 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   }
 
   Widget _buildAllMembersTab() {
-    return Consumer<AdminProvider>(
-      builder: (context, adminProvider, child) {
-        if (adminProvider.isLoading) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: AppSemanticColors.interactivePrimaryDefault,
-            ),
-          );
-        }
+    // 카드 등장 연출은 처음 한 번만 — 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
+    return AppListEntrance(
+      child: Consumer<AdminProvider>(
+        builder: (context, adminProvider, child) {
+          // 처음 불러올 때(아직 보일 종사자가 없을 때)만 뼈대 — 목록이 있는 채로 다시 불러올 때는 예전 스피너
+          if (adminProvider.isLoading && adminProvider.companyMembers.isEmpty) {
+            return const _MemberListSkeleton();
+          }
+          if (adminProvider.isLoading) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: AppSemanticColors.interactivePrimaryDefault,
+              ),
+            );
+          }
 
-        if (adminProvider.errorMessage.isNotEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppSemanticColors.statusErrorIcon,
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                Text(
-                  '오류 발생',
-                  style: AppTypography.heading6.copyWith(
+          if (adminProvider.errorMessage.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
                     color: AppSemanticColors.statusErrorIcon,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.space2),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space8,
-                  ),
-                  child: Text(
-                    adminProvider.errorMessage,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
+                  const SizedBox(height: AppSpacing.space4),
+                  Text(
+                    '오류 발생',
+                    style: AppTypography.heading6.copyWith(
+                      color: AppSemanticColors.statusErrorIcon,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                SeedButton(
-                  label: '다시 시도',
-                  onPressed: _loadData,
-                  variant: SeedButtonVariant.neutralWeak,
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.space2),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space8,
+                    ),
+                    child: Text(
+                      adminProvider.errorMessage,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                  SeedButton(
+                    label: '다시 시도',
+                    onPressed: _loadData,
+                    variant: SeedButtonVariant.neutralWeak,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (adminProvider.companyMembers.isEmpty) {
+            return const AppEmptyState(
+              icon: Icons.people_outline,
+              title: '등록된 종사자가 없습니다',
+            );
+          }
+
+          return AppRefreshIndicator(
+            onRefresh: () async => _loadData(),
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                AppSpacing.space1,
+                AppSpacing.screenGutter,
+                AppSpacing.space6,
+              ),
+              itemCount: adminProvider.companyMembers.length,
+              itemBuilder: (context, index) {
+                final user = adminProvider.companyMembers[index];
+                return AppListEntranceItem(
+                  index: index,
+                  child: _buildMemberCard(user),
+                );
+              },
             ),
           );
-        }
-
-        if (adminProvider.companyMembers.isEmpty) {
-          return const AppEmptyState(
-            icon: Icons.people_outline,
-            title: '등록된 종사자가 없습니다',
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async => _loadData(),
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenGutter,
-              AppSpacing.space1,
-              AppSpacing.screenGutter,
-              AppSpacing.space6,
-            ),
-            itemCount: adminProvider.companyMembers.length,
-            itemBuilder: (context, index) {
-              final user = adminProvider.companyMembers[index];
-              return _buildMemberCard(user);
-            },
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 
@@ -580,81 +593,91 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Consumer<AdminProvider>(
-      builder: (context, adminProvider, child) {
-        if (adminProvider.isLoading) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: AppSemanticColors.interactivePrimaryDefault,
-            ),
-          );
-        }
+    // 카드 등장 연출은 처음 한 번만 — 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
+    return AppListEntrance(
+      child: Consumer<AdminProvider>(
+        builder: (context, adminProvider, child) {
+          // 처음 불러올 때(아직 보일 신청이 없을 때)만 뼈대 — 목록이 있는 채로 다시 불러오거나 승인·거절 처리 중일 때는 예전 스피너
+          if (adminProvider.isLoading && adminProvider.pendingUsers.isEmpty) {
+            return const _MemberListSkeleton();
+          }
+          if (adminProvider.isLoading) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: AppSemanticColors.interactivePrimaryDefault,
+              ),
+            );
+          }
 
-        if (adminProvider.errorMessage.isNotEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppSemanticColors.statusErrorIcon,
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                Text(
-                  '오류 발생',
-                  style: AppTypography.heading6.copyWith(
+          if (adminProvider.errorMessage.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
                     color: AppSemanticColors.statusErrorIcon,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.space2),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space8,
-                  ),
-                  child: Text(
-                    adminProvider.errorMessage,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
+                  const SizedBox(height: AppSpacing.space4),
+                  Text(
+                    '오류 발생',
+                    style: AppTypography.heading6.copyWith(
+                      color: AppSemanticColors.statusErrorIcon,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                SeedButton(
-                  label: '다시 시도',
-                  onPressed: _loadData,
-                  variant: SeedButtonVariant.neutralWeak,
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.space2),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space8,
+                    ),
+                    child: Text(
+                      adminProvider.errorMessage,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                  SeedButton(
+                    label: '다시 시도',
+                    onPressed: _loadData,
+                    variant: SeedButtonVariant.neutralWeak,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (adminProvider.pendingUsers.isEmpty) {
+            return const AppEmptyState(
+              icon: Icons.check_circle_outline,
+              title: '승인 대기 중인 사용자가 없습니다',
+            );
+          }
+
+          return AppRefreshIndicator(
+            onRefresh: () async => _loadData(),
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                AppSpacing.space1,
+                AppSpacing.screenGutter,
+                AppSpacing.space6,
+              ),
+              itemCount: adminProvider.pendingUsers.length,
+              itemBuilder: (context, index) {
+                final user = adminProvider.pendingUsers[index];
+                return AppListEntranceItem(
+                  index: index,
+                  child: _buildPendingUserCard(user),
+                );
+              },
             ),
           );
-        }
-
-        if (adminProvider.pendingUsers.isEmpty) {
-          return const AppEmptyState(
-            icon: Icons.check_circle_outline,
-            title: '승인 대기 중인 사용자가 없습니다',
-          );
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async => _loadData(),
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenGutter,
-              AppSpacing.space1,
-              AppSpacing.screenGutter,
-              AppSpacing.space6,
-            ),
-            itemCount: adminProvider.pendingUsers.length,
-            itemBuilder: (context, index) {
-              final user = adminProvider.pendingUsers[index];
-              return _buildPendingUserCard(user);
-            },
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 
@@ -895,5 +918,33 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
       // 거부는 실패가 아니라 정상 처리 결과다 — 비활성화 완료와 같은 톤(warning)으로 통일
       AppSnackBar.showWarning(context, message: '${user.name}님의 가입을 거부했습니다.');
     }
+  }
+}
+
+/// 종사자·승인 대기 목록 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드(목록과 같은 여백·간격)
+class _MemberListSkeleton extends StatelessWidget {
+  const _MemberListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space1,
+          AppSpacing.screenGutter,
+          AppSpacing.space6,
+        ),
+        children: List.generate(
+          4,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+          ),
+        ),
+      ),
+    );
   }
 }
