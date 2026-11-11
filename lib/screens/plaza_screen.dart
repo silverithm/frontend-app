@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_selector/file_selector.dart';
@@ -21,7 +22,11 @@ import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'plaza_post_detail_screen.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_fab.dart';
+import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/carev_app_bar.dart';
@@ -246,31 +251,96 @@ class _PlazaScreenState extends State<PlazaScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: CareVAppBar(
-        title: '케어브이 커뮤니티',
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppSemanticColors.headerForeground,
-          unselectedLabelColor: AppSemanticColors.headerForegroundMuted,
-          indicatorColor: AppSemanticColors.headerTabIndicator,
-          dividerColor: AppColors.transparent,
-          tabs: const [
-            Tab(text: '요양 소식'),
-            Tab(text: '게시판'),
-            Tab(text: '자료실'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      // B안: 옅은 회색 바탕, 상단 바 안 TabBar 대신 본문 맨 위 나눔 조절(같은 TabController)
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: const CareVAppBar(title: '케어브이 커뮤니티'),
+      body: Column(
         children: [
-          const _NewsTab(),
-          const _BoardTab(),
-          _LibraryTab(onGoToFreeBoard: () => _tabController.animateTo(1)),
+          AppSegmentedTabs(
+            controller: _tabController,
+            tabs: const [
+              AppSegmentedTab('요양 소식'),
+              AppSegmentedTab('게시판'),
+              AppSegmentedTab('자료실'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                const _NewsTab(),
+                const _BoardTab(),
+                _LibraryTab(onGoToFreeBoard: () => _tabController.animateTo(1)),
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+}
+
+// ─── 공통: 거르기 칩 줄 · 목록 여백 · FAB 접힘 ───
+
+/// 탭마다 맨 위에 놓이는 거르기 칩 줄 — B안: 회색 바탕 위 흰 칩(44), 높이를 못 박지 않아
+/// 글자를 키워도 칩이 잘리지 않는다.
+class _PlazaFilterChips extends StatelessWidget {
+  final List<Map<String, String>> options;
+  final String selectedKey;
+  final ValueChanged<String> onSelected;
+
+  const _PlazaFilterChips({
+    required this.options,
+    required this.selectedKey,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        AppSpacing.space1,
+        AppSpacing.screenGutter,
+        AppSpacing.space1,
+      ),
+      child: Row(
+        children: [
+          for (final option in options)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.space2),
+              child: SeedChip(
+                label: option['label']!,
+                selected: selectedKey == option['key'],
+                onCanvas: true,
+                onTap: () => onSelected(option['key']!),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 카드 목록 여백 — 좌우 16, 카드 사이 12. FAB가 있는 탭은 마지막 카드가 가려지지 않게 아래를 더 띄운다.
+EdgeInsets _plazaListPadding({bool hasFab = false}) => EdgeInsets.fromLTRB(
+      AppSpacing.screenGutter,
+      AppSpacing.space2,
+      AppSpacing.screenGutter,
+      hasFab ? AppSpacing.space20 + AppSpacing.space4 : AppSpacing.space4,
+    );
+
+/// 목록을 아래로 내리면 FAB 글자를 접고, 위로 올리면 편다(PLAN: 스크롤하면 글자 접힘).
+bool? _fabCollapsedFor(UserScrollNotification notification) {
+  if (notification.metrics.axis != Axis.vertical) return null;
+  switch (notification.direction) {
+    case ScrollDirection.reverse:
+      return true;
+    case ScrollDirection.forward:
+      return false;
+    case ScrollDirection.idle:
+      return null;
   }
 }
 
@@ -532,8 +602,8 @@ class _NewsTabState extends State<_NewsTab> {
       children: [
         if (onlyOneFailed)
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-                AppSpacing.space3, AppSpacing.space3, AppSpacing.space3, 0),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.screenGutter,
+                AppSpacing.space1, AppSpacing.screenGutter, AppSpacing.space1),
             child: SeedCallout(
               variant: SeedCalloutVariant.warning,
               icon: Icons.warning_amber_outlined,
@@ -543,25 +613,10 @@ class _NewsTabState extends State<_NewsTab> {
               description: '나머지 소식은 정상적으로 표시하고 있어요.',
             ),
           ),
-        SizedBox(
-          height: 48,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space3, vertical: AppSpacing.space2),
-            children: _filters.map((f) {
-              final selected = _filter == f['key'];
-              return Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.space2),
-                child: SeedChip(
-                  label: f['label']!,
-                  selected: selected,
-                  size: SeedChipSize.small,
-                  onTap: () => setState(() => _filter = f['key']!),
-                ),
-              );
-            }).toList(),
-          ),
+        _PlazaFilterChips(
+          options: _filters,
+          selectedKey: _filter,
+          onSelected: (key) => setState(() => _filter = key),
         ),
         Expanded(
           child: isInitialLoading
@@ -571,20 +626,20 @@ class _NewsTabState extends State<_NewsTab> {
                   : Builder(builder: (context) {
                       final items = _mergedItems;
                       if (items.isEmpty) {
-                        return Center(
-                          child: Text('아직 소식이 없어요',
-                              style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.textTertiary)),
+                        return const AppEmptyState(
+                          icon: Icons.newspaper_outlined,
+                          title: '아직 소식이 없어요',
+                          topSpacing: AppSpacing.space10,
                         );
                       }
                       return RefreshIndicator(
                         onRefresh: _refreshAll,
                         child: ListView.separated(
                           controller: _scrollController,
-                          padding: const EdgeInsets.all(AppSpacing.space3),
+                          padding: _plazaListPadding(),
                           itemCount: items.length + (_noticeHasMore ? 1 : 0),
                           separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppSpacing.space2),
+                              const SizedBox(height: AppSpacing.cardGap),
                           itemBuilder: (context, index) {
                             if (index == items.length) {
                               return const Padding(
@@ -599,46 +654,37 @@ class _NewsTabState extends State<_NewsTab> {
                               );
                             }
                             final item = items[index];
-                            return GestureDetector(
+                            // B안: 테두리 없는 흰 카드(모서리 20·여백 20)
+                            return AppCard(
                               onTap: () => _openUrl(item.url),
-                              child: Container(
-                                padding:
-                                    const EdgeInsets.all(AppSpacing.space3),
-                                decoration: BoxDecoration(
-                                  color: AppSemanticColors.surfaceDefault,
-                                  borderRadius:
-                                      BorderRadius.circular(AppSpacing.space3),
-                                  border: Border.all(
-                                      color: AppSemanticColors.borderDefault),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        AppTag(label: item.badgeLabel),
-                                        if (item.date != null) ...[
-                                          const SizedBox(
-                                              width: AppSpacing.space2),
-                                          Text(
-                                            _formatDate(item.date),
-                                            style: AppTypography.bodySmall
-                                                .copyWith(
-                                                    color: AppSemanticColors
-                                                        .textTertiary),
-                                          ),
-                                        ],
-                                      ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    spacing: AppSpacing.space2,
+                                    runSpacing: AppSpacing.space1,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    children: [
+                                      AppTag(label: item.badgeLabel),
+                                      if (item.date != null)
+                                        Text(
+                                          _formatDate(item.date),
+                                          style: AppTypography.bodySmall
+                                              .copyWith(
+                                                  color: AppSemanticColors
+                                                      .textTertiary),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: AppSpacing.space2),
+                                  Text(
+                                    item.title,
+                                    style: AppTypography.titleMedium.copyWith(
+                                      color: AppSemanticColors.textPrimary,
                                     ),
-                                    const SizedBox(height: AppSpacing.space1),
-                                    Text(
-                                      item.title,
-                                      style: AppTypography.titleMedium.copyWith(
-                                        color: AppSemanticColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             );
                           },
@@ -671,6 +717,7 @@ class _BoardTabState extends State<_BoardTab> {
   ];
 
   String _board = '';
+  bool _fabCollapsed = false;
 
   /// 조회·좋아요·댓글 수 — 아이콘 + 숫자로 오른쪽 끝에 모은다
   Widget _countStat(IconData icon, Object? count, String semanticLabel) {
@@ -682,7 +729,7 @@ class _BoardTabState extends State<_BoardTab> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: AppSemanticColors.textTertiary),
+            Icon(icon, size: 16, color: AppSemanticColors.textTertiary),
             const SizedBox(width: AppSpacing.space0_5),
             Text(
               '${count ?? 0}',
@@ -746,36 +793,23 @@ class _BoardTabState extends State<_BoardTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      floatingActionButton: FloatingActionButton(
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      // B안 알약 FAB — 글자는 이 버튼이 여는 시트 제목 그대로
+      floatingActionButton: AppFab(
+        icon: Icons.edit,
+        label: '글 쓰기',
+        collapsed: _fabCollapsed,
         onPressed: _showWriteSheet,
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        child: Icon(Icons.edit, color: AppSemanticColors.textInverse),
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space3, vertical: AppSpacing.space2),
-              children: _boards.map((b) {
-                final selected = _board == b['key'];
-                return Padding(
-                  padding: const EdgeInsets.only(right: AppSpacing.space2),
-                  child: SeedChip(
-                    label: b['label']!,
-                    selected: selected,
-                    size: SeedChipSize.small,
-                    onTap: () {
-                      setState(() => _board = b['key']!);
-                      _load();
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
+          _PlazaFilterChips(
+            options: _boards,
+            selectedKey: _board,
+            onSelected: (key) {
+              setState(() => _board = key);
+              _load();
+            },
           ),
           Expanded(
             child: _isLoading
@@ -783,31 +817,34 @@ class _BoardTabState extends State<_BoardTab> {
                 : (_hasError && _posts.isEmpty)
                     ? _PlazaErrorState(onRetry: _load)
                     : _posts.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('아직 게시글이 없어요',
-                                style: AppTypography.titleSmall.copyWith(
-                                    color: AppSemanticColors.textSecondary)),
-                            const SizedBox(height: AppSpacing.space1_5),
-                            Text('+ 버튼으로 첫 글을 남겨보세요',
-                                style: AppTypography.bodySmall.copyWith(
-                                    color: AppSemanticColors.textTertiary)),
-                          ],
-                        ))
-                    : RefreshIndicator(
+                    ? const AppEmptyState(
+                        icon: Icons.forum_outlined,
+                        title: '아직 게시글이 없어요',
+                        description: '+ 버튼으로 첫 글을 남겨보세요',
+                        topSpacing: AppSpacing.space10,
+                      )
+                    : NotificationListener<UserScrollNotification>(
+                        onNotification: (notification) {
+                          final collapsed = _fabCollapsedFor(notification);
+                          if (collapsed != null &&
+                              collapsed != _fabCollapsed) {
+                            setState(() => _fabCollapsed = collapsed);
+                          }
+                          return false;
+                        },
+                        child: RefreshIndicator(
                         onRefresh: _load,
                         child: ListView.separated(
-                          padding: const EdgeInsets.all(AppSpacing.space3),
+                          padding: _plazaListPadding(hasFab: true),
                           itemCount: _posts.length,
                           separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppSpacing.space2),
+                              const SizedBox(height: AppSpacing.cardGap),
                           itemBuilder: (context, index) {
                             final post = _posts[index];
                             final createdAt = DateTime.tryParse(
                                 post['createdAt']?.toString() ?? '');
-                            return GestureDetector(
+                            // B안: 테두리 없는 흰 카드(모서리 20·여백 20)
+                            return AppCard(
                               onTap: () async {
                                 final postId = post['id'];
                                 if (postId is! int) return;
@@ -820,94 +857,85 @@ class _BoardTabState extends State<_BoardTab> {
                                 );
                                 _load();
                               },
-                              child: Container(
-                                padding: const EdgeInsets.all(AppSpacing.space3),
-                                decoration: BoxDecoration(
-                                  color: AppSemanticColors.surfaceDefault,
-                                  borderRadius:
-                                      BorderRadius.circular(AppSpacing.space3),
-                                  border: Border.all(
-                                      color: AppSemanticColors.borderDefault),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        AppTag(
-                                          label: plazaBoardLabel(
-                                              post['board']?.toString()),
-                                        ),
-                                        if (post['isPinned'] == true) ...[
-                                          const SizedBox(width: 4),
-                                          Icon(Icons.push_pin,
-                                              size: 12,
-                                              color: AppSemanticColors
-                                                  .statusWarningIcon),
-                                        ],
-                                        if (post['hasAccepted'] == true) ...[
-                                          const SizedBox(width: 4),
-                                          Icon(Icons.check_circle,
-                                              size: 12,
-                                              color: AppSemanticColors
-                                                  .statusSuccessIcon),
-                                        ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      AppTag(
+                                        label: plazaBoardLabel(
+                                            post['board']?.toString()),
+                                      ),
+                                      if (post['isPinned'] == true) ...[
+                                        const SizedBox(
+                                            width: AppSpacing.space1_5),
+                                        const Icon(Icons.push_pin,
+                                            size: 16,
+                                            color: AppSemanticColors
+                                                .statusWarningIcon),
                                       ],
+                                      if (post['hasAccepted'] == true) ...[
+                                        const SizedBox(
+                                            width: AppSpacing.space1_5),
+                                        const Icon(Icons.check_circle,
+                                            size: 16,
+                                            color: AppSemanticColors
+                                                .statusSuccessIcon),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: AppSpacing.space2),
+                                  Text(
+                                    post['title']?.toString() ?? '',
+                                    style: AppTypography.titleMedium.copyWith(
+                                      color: AppSemanticColors.textPrimary,
                                     ),
+                                  ),
+                                  if ((post['preview']?.toString() ?? '')
+                                      .trim()
+                                      .isNotEmpty) ...[
                                     const SizedBox(height: AppSpacing.space1),
                                     Text(
-                                      post['title']?.toString() ?? '',
-                                      style: AppTypography.titleMedium.copyWith(
-                                        color: AppSemanticColors.textPrimary,
-                                      ),
-                                    ),
-                                    if ((post['preview']?.toString() ?? '')
-                                        .trim()
-                                        .isNotEmpty) ...[
-                                      const SizedBox(height: AppSpacing.space1),
-                                      Text(
-                                        // 서버가 내려주는 preview는 HTML 원문 일부라 태그를 제거해 보여준다
-                                        htmlToPreviewText(
-                                            post['preview'].toString(),
-                                            maxLength: 60),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTypography.bodySmall.copyWith(
-                                            color:
-                                                AppSemanticColors.textSecondary),
-                                      ),
-                                    ],
-                                    const SizedBox(height: AppSpacing.space1),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('MM.dd').format(createdAt)}' : ''}',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style:
-                                                AppTypography.bodySmall.copyWith(
-                                              color: AppSemanticColors
-                                                  .textTertiary,
-                                            ),
-                                          ),
-                                        ),
-                                        _countStat(Icons.visibility_outlined,
-                                            post['viewCount'], '조회'),
-                                        _countStat(Icons.favorite_border,
-                                            post['likeCount'], '좋아요'),
-                                        _countStat(
-                                            Icons.chat_bubble_outline,
-                                            post['commentCount'],
-                                            '댓글'),
-                                      ],
+                                      // 서버가 내려주는 preview는 HTML 원문 일부라 태그를 제거해 보여준다
+                                      htmlToPreviewText(
+                                          post['preview'].toString(),
+                                          maxLength: 60),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTypography.bodySmall.copyWith(
+                                          color:
+                                              AppSemanticColors.textSecondary),
                                     ),
                                   ],
-                                ),
+                                  const SizedBox(height: AppSpacing.space2),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('MM.dd').format(createdAt)}' : ''}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style:
+                                              AppTypography.bodySmall.copyWith(
+                                            color:
+                                                AppSemanticColors.textTertiary,
+                                          ),
+                                        ),
+                                      ),
+                                      _countStat(Icons.visibility_outlined,
+                                          post['viewCount'], '조회'),
+                                      _countStat(Icons.favorite_border,
+                                          post['likeCount'], '좋아요'),
+                                      _countStat(Icons.chat_bubble_outline,
+                                          post['commentCount'], '댓글'),
+                                    ],
+                                  ),
+                                ],
                               ),
                             );
                           },
                         ),
+                      ),
                       ),
           ),
         ],
@@ -1069,6 +1097,7 @@ class _LibraryTabState extends State<_LibraryTab> {
   ];
 
   String _category = '';
+  bool _fabCollapsed = false;
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = true;
   bool _hasError = false;
@@ -1235,16 +1264,97 @@ class _LibraryTabState extends State<_LibraryTab> {
     );
   }
 
+  /// 자료 한 건 — B안: 테두리 없는 흰 카드, 옅은 틸 둥근 아이콘(44) + 글 + 단추.
+  /// 카드 본문을 눌러도 내려받게 — 오른쪽 아이콘만 살아 있으면 죽은 카드처럼 느껴진다
+  Widget _buildItemCard(Map<String, dynamic> item) {
+    final description = (item['description'] ?? '').toString().trim();
+    return AppCard(
+      onTap: () => _download(item),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.cardPadding,
+        AppSpacing.space4,
+        AppSpacing.space2,
+        AppSpacing.space4,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: AppSpacing.iconCircle,
+            height: AppSpacing.iconCircle,
+            decoration: const BoxDecoration(
+              color: AppSemanticColors.brandWeak,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.description_outlined,
+              size: 22,
+              color: AppSemanticColors.brandDefault,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space3_5),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['title']?.toString() ?? '',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space0_5),
+                Text(
+                  // 낱말 단위로만 줄을 바꾸고 '다운로드 96'은 한 덩어리로 —
+                  // 수정 단추가 붙어 폭이 좁아지면 '다운로드 / 96', '다운로 / 드'로 갈렸다
+                  keepAll(
+                      '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드\u00A0${item['downloadCount'] ?? 0}'),
+                  style: AppTypography.bodySmall
+                      .copyWith(color: AppSemanticColors.textTertiary),
+                ),
+                // 업로드할 때 적은 설명 — 안 보여주면 적을 이유가 없다 (회사 자료실과 동일)
+                if (description.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.space1),
+                    child: Text(
+                      item['description'].toString(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall
+                          .copyWith(color: AppSemanticColors.textSecondary),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (item['isMine'] == true)
+            IconButton(
+              tooltip: '수정',
+              icon: const Icon(Icons.edit_outlined,
+                  color: AppSemanticColors.textSecondary),
+              onPressed: () => _showEditSheet(item),
+            ),
+          IconButton(
+            tooltip: '다운로드',
+            icon: const Icon(Icons.download,
+                color: AppSemanticColors.interactivePrimaryDefault),
+            onPressed: () => _download(item),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      // B안 알약 FAB — 글자는 이 버튼이 여는 시트 제목 그대로
       floatingActionButton: _accessAllowed
-          ? FloatingActionButton(
+          ? AppFab(
+              icon: Icons.upload_file,
+              label: '자료 올리기',
+              collapsed: _fabCollapsed,
               onPressed: _showUploadSheet,
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-              child:
-                  Icon(Icons.upload_file, color: AppSemanticColors.textInverse),
             )
           : null,
       body: _isLoading
@@ -1255,175 +1365,52 @@ class _LibraryTabState extends State<_LibraryTab> {
                   : Center(child: SingleChildScrollView(child: _buildAccessGuard())))
               : Column(
                       children: [
-                        SizedBox(
-                          height: 48,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.space3,
-                                vertical: AppSpacing.space2),
-                            children: _categories.map((c) {
-                              final selected = _category == c['key'];
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                    right: AppSpacing.space2),
-                                child: SeedChip(
-                                  label: c['label']!,
-                                  selected: selected,
-                                  size: SeedChipSize.small,
-                                  onTap: () {
-                                    setState(() => _category = c['key']!);
-                                    _load();
-                                  },
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                        _PlazaFilterChips(
+                          options: _categories,
+                          selectedKey: _category,
+                          onSelected: (key) {
+                            setState(() => _category = key);
+                            _load();
+                          },
                         ),
                         Expanded(
                           child: (_hasError && _items.isEmpty)
                               ? _PlazaErrorState(onRetry: _load)
                               : _items.isEmpty
-                                  ? Center(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text('아직 등록된 자료가 없어요',
-                                              style: AppTypography.titleSmall
-                                                  .copyWith(
-                                                      color: AppSemanticColors
-                                                          .textSecondary)),
-                                          const SizedBox(
-                                              height: AppSpacing.space1_5),
-                                          Text('+ 버튼으로 첫 자료를 올려보세요',
-                                              style: AppTypography.bodySmall
-                                                  .copyWith(
-                                                      color: AppSemanticColors
-                                                          .textTertiary)),
-                                        ],
-                                      ))
-                                  : RefreshIndicator(
+                                  ? const AppEmptyState(
+                                      icon: Icons.folder_open_outlined,
+                                      title: '아직 등록된 자료가 없어요',
+                                      description: '+ 버튼으로 첫 자료를 올려보세요',
+                                      topSpacing: AppSpacing.space10,
+                                    )
+                                  : NotificationListener<
+                                      UserScrollNotification>(
+                                      onNotification: (notification) {
+                                        final collapsed =
+                                            _fabCollapsedFor(notification);
+                                        if (collapsed != null &&
+                                            collapsed != _fabCollapsed) {
+                                          setState(() =>
+                                              _fabCollapsed = collapsed);
+                                        }
+                                        return false;
+                                      },
+                                      child: RefreshIndicator(
                                       onRefresh: _load,
                                       child: ListView.separated(
-                                        padding: const EdgeInsets.all(
-                                            AppSpacing.space3),
+                                        padding:
+                                            _plazaListPadding(hasFab: true),
                                         itemCount: _items.length,
                                         separatorBuilder: (_, __) =>
                                             const SizedBox(
-                                                height: AppSpacing.space2),
-                                        itemBuilder: (context, index) {
-                                          final item = _items[index];
-                                          // 카드 본문을 눌러도 내려받게 — 오른쪽 아이콘만 살아 있으면 죽은 카드처럼 느껴진다
-                                          return InkWell(
-                                            onTap: () => _download(item),
-                                            borderRadius:
-                                                BorderRadius.circular(
-                                                    AppSpacing.space3),
-                                            child: Container(
-                                            padding: const EdgeInsets.all(
-                                                AppSpacing.space3),
-                                            decoration: BoxDecoration(
-                                              color: AppSemanticColors
-                                                  .surfaceDefault,
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      AppSpacing.space3),
-                                              border: Border.all(
-                                                  color: AppSemanticColors
-                                                      .borderDefault),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                    Icons.description_outlined,
-                                                    color: AppSemanticColors
-                                                        .textSecondary),
-                                                const SizedBox(
-                                                    width: AppSpacing.space3),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        item['title']
-                                                                ?.toString() ??
-                                                            '',
-                                                        style: AppTypography
-                                                            .titleMedium
-                                                            .copyWith(
-                                                          color:
-                                                              AppSemanticColors
-                                                                  .textPrimary,
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        // 낱말 단위로만 줄을 바꾸고 '다운로드 96'은 한 덩어리로 —
-                                                        // 수정 단추가 붙어 폭이 좁아지면 '다운로드 / 96', '다운로 / 드'로 갈렸다
-                                                        keepAll(
-                                                            '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드\u00A0${item['downloadCount'] ?? 0}'),
-                                                        style: AppTypography
-                                                            .bodySmall
-                                                            .copyWith(
-                                                                color: AppSemanticColors
-                                                                    .textTertiary),
-                                                      ),
-                                                      // 업로드할 때 적은 설명 — 안 보여주면 적을 이유가 없다 (회사 자료실과 동일)
-                                                      if ((item['description'] ?? '')
-                                                          .toString()
-                                                          .trim()
-                                                          .isNotEmpty)
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  top: AppSpacing
-                                                                      .space1),
-                                                          child: Text(
-                                                            item['description']
-                                                                .toString(),
-                                                            maxLines: 2,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            style: AppTypography
-                                                                .bodySmall
-                                                                .copyWith(
-                                                                    color: AppSemanticColors
-                                                                        .textSecondary),
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                if (item['isMine'] == true)
-                                                  IconButton(
-                                                    tooltip: '수정',
-                                                    icon: Icon(
-                                                        Icons.edit_outlined,
-                                                        color: AppSemanticColors
-                                                            .textSecondary),
-                                                    onPressed: () =>
-                                                        _showEditSheet(item),
-                                                  ),
-                                                IconButton(
-                                                  tooltip: '다운로드',
-                                                  icon: Icon(Icons.download,
-                                                      color: AppSemanticColors
-                                                          .interactivePrimaryDefault),
-                                                  onPressed: () =>
-                                                      _download(item),
-                                                ),
-                                              ],
-                                            ),
-                                            ),
-                                          );
-                                        },
+                                                height: AppSpacing.cardGap),
+                                        itemBuilder: (context, index) =>
+                                            _buildItemCard(_items[index]),
                                       ),
                                     ),
+                                    ),
                         ),
-                      ],
+      ],
                     ),
     );
   }
