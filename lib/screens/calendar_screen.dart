@@ -30,6 +30,7 @@ import '../widgets/common/app_action_sheet.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_fab.dart';
 import '../widgets/common/app_segmented_tabs.dart';
+import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'admin_vacation_limits_setting_screen.dart';
@@ -1822,6 +1823,90 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
+  /// 일정 등록·구분 관리 시트 본문 여백 — B안 시트(AppSheetFrame)와 같은 좌우 20
+  static const EdgeInsets _sheetBodyPadding = EdgeInsets.fromLTRB(
+    AppSpacing.space5,
+    AppSpacing.space3,
+    AppSpacing.space5,
+    AppSpacing.space4,
+  );
+
+  /// 일정 등록·구분 관리 시트의 머리 — B안: 연한 틸 머리띠·아래 선 없이 손잡이 + 제목 21 + 닫기
+  Widget _buildSheetHeader({
+    required String title,
+    required VoidCallback onClose,
+    String? message,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: AppSpacing.space2_5),
+        const Center(child: AppSheetHandle()),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space5,
+            AppSpacing.space2,
+            AppSpacing.space2,
+            0,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: '닫기',
+                onPressed: onClose,
+                icon: Icon(
+                  Icons.close,
+                  color: AppSemanticColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (message != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space5),
+            child: Text(
+              message,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// 시트 안 고르기 칸(일정 구분·날짜·시간) — 위 SeedTextField와 같은 B안 입력칸:
+  /// 회색으로 채우고 테두리 없음, 모서리 14, 누르고 있으면 틸 2px.
+  InputDecoration _sheetFieldDecoration(String label, {Widget? suffixIcon}) {
+    const none = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+      borderSide: BorderSide.none,
+    );
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: AppSemanticColors.fillDefault,
+      border: none,
+      enabledBorder: none,
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(AppBorderRadius.control),
+        ),
+        borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
+      ),
+      suffixIcon: suffixIcon,
+    );
+  }
+
   /// 반복이면 몇 건이 만들어지는지 단추에 적는다 — "일정 22건 등록"
   String _scheduleSubmitLabel(DateTime startDate, ScheduleRepeatRule repeat) {
     if (!repeat.isRepeating || repeat.until == null) return '등록';
@@ -1906,10 +1991,10 @@ class _CalendarScreenState extends State<CalendarScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
+      backgroundColor: AppSemanticColors.surfaceCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
+          top: Radius.circular(AppBorderRadius.sheet),
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -1925,66 +2010,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 시트 제목 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선).
-                  // 내용을 내려도 제목은 그 자리에 남는다
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: AppSemanticColors.subheaderBackground,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: AppSemanticColors.subheaderBorder,
-                        ),
-                      ),
-                    ),
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.space4,
-                      AppSpacing.space4,
-                      AppSpacing.space4,
-                      AppSpacing.space2,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 핸들
-                        Center(
-                          child: Container(
-                            width: AppSpacing.space10,
-                            height: AppSpacing.space1,
-                            decoration: BoxDecoration(
-                              color: AppSemanticColors.borderDefault,
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.sm,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                        // 헤더
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '일정 등록',
-                              style: AppTypography.heading5.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: '닫기',
-                              onPressed: () => Navigator.pop(context),
-                              icon: Icon(
-                                Icons.close,
-                                color: AppSemanticColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  // 시트 제목 — 내용을 내려도 제목은 그 자리에 남는다
+                  _buildSheetHeader(
+                    title: '일정 등록',
+                    onClose: () => Navigator.pop(context),
                   ),
                   Flexible(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(AppSpacing.space4),
+                      padding: _sheetBodyPadding,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2014,14 +2047,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                               Expanded(
                                 child: DropdownButtonFormField<String>(
                                   value: selectedCategory,
-                                  decoration: InputDecoration(
-                                    labelText: '일정 구분',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.lg,
-                                      ),
-                                    ),
-                                  ),
+                                  decoration: _sheetFieldDecoration('일정 구분'),
                                   items: [
                                     // 기관 설정이 로드되면 이름 변경·숨김을 반영하고,
                                     // 아니면 하드코딩 4종으로 동작한다
@@ -2263,13 +2289,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     }
                                   },
                                   child: InputDecorator(
-                                    decoration: InputDecoration(
-                                      labelText: '시작일',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.lg,
-                                        ),
-                                      ),
+                                    decoration: _sheetFieldDecoration(
+                                      '시작일',
                                       suffixIcon: const Icon(
                                         Icons.calendar_today,
                                         size: 18,
@@ -2299,13 +2320,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     }
                                   },
                                   child: InputDecorator(
-                                    decoration: InputDecoration(
-                                      labelText: '종료일',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBorderRadius.lg,
-                                        ),
-                                      ),
+                                    decoration: _sheetFieldDecoration(
+                                      '종료일',
                                       suffixIcon: const Icon(
                                         Icons.calendar_today,
                                         size: 18,
@@ -2340,13 +2356,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       }
                                     },
                                     child: InputDecorator(
-                                      decoration: InputDecoration(
-                                        labelText: '시작 시간',
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.lg,
-                                          ),
-                                        ),
+                                      decoration: _sheetFieldDecoration(
+                                        '시작 시간',
                                         suffixIcon: const Icon(
                                           Icons.access_time,
                                           size: 18,
@@ -2374,13 +2385,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       }
                                     },
                                     child: InputDecorator(
-                                      decoration: InputDecoration(
-                                        labelText: '종료 시간',
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.lg,
-                                          ),
-                                        ),
+                                      decoration: _sheetFieldDecoration(
+                                        '종료 시간',
                                         suffixIcon: const Icon(
                                           Icons.access_time,
                                           size: 18,
@@ -2426,16 +2432,16 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.space2),
+                                  // B안: 테두리 상자 대신 회색으로 채운 칸
                                   Container(
                                     constraints: const BoxConstraints(maxHeight: 150),
                                     decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: AppSemanticColors.borderDefault,
-                                      ),
+                                      color: AppSemanticColors.fillDefault,
                                       borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.lg,
+                                        AppBorderRadius.control,
                                       ),
                                     ),
+                                    clipBehavior: Clip.antiAlias,
                                     child: ListView.builder(
                                       shrinkWrap: true,
                                       itemCount: members.length,
@@ -2451,7 +2457,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                                           ),
                                           title: Text(
                                             member.name,
-                                            style: AppTypography.bodySmall,
+                                            style: AppTypography.bodyMedium,
                                           ),
                                           subtitle: Text(
                                             member.role == 'caregiver'
@@ -2679,10 +2685,10 @@ class _CalendarScreenState extends State<CalendarScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
+      backgroundColor: AppSemanticColors.surfaceCard,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
+          top: Radius.circular(AppBorderRadius.sheet),
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -2858,70 +2864,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 시트 제목 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선).
-                  // 내용을 내려도 제목은 그 자리에 남는다
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: AppSemanticColors.subheaderBackground,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: AppSemanticColors.subheaderBorder,
-                        ),
-                      ),
-                    ),
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.space4,
-                      AppSpacing.space4,
-                      AppSpacing.space4,
-                      AppSpacing.space2,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Container(
-                            width: AppSpacing.space10,
-                            height: AppSpacing.space1,
-                            decoration: BoxDecoration(
-                              color: AppSemanticColors.borderDefault,
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.sm,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '일정 구분 관리',
-                              style: AppTypography.heading5.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: '닫기',
-                              onPressed: () => Navigator.pop(sheetContext),
-                              icon: Icon(
-                                Icons.close,
-                                color: AppSemanticColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          '구분을 고르면 일정에 그 색이 자동으로 적용됩니다',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                  // 시트 제목 — 내용을 내려도 제목은 그 자리에 남는다
+                  _buildSheetHeader(
+                    title: '일정 구분 관리',
+                    message: '구분을 고르면 일정에 그 색이 자동으로 적용됩니다',
+                    onClose: () => Navigator.pop(sheetContext),
                   ),
                   Flexible(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(AppSpacing.space4),
+                      padding: _sheetBodyPadding,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3204,15 +3155,16 @@ class _CalendarScreenState extends State<CalendarScreen>
           width: 36,
           height: 36,
           alignment: Alignment.center,
+          // B안: 고른 것만 틸 고리. '색상 없음'은 흰 시트 위에서 보이게 회색으로 채운다
           decoration: BoxDecoration(
-            color: color ?? AppSemanticColors.surfaceDefault,
+            color: color ?? AppSemanticColors.fillDefault,
             shape: BoxShape.circle,
-            border: Border.all(
-              color: isSelected
-                  ? AppSemanticColors.interactivePrimaryDefault
-                  : AppSemanticColors.borderDefault,
-              width: isSelected ? 2 : 1,
-            ),
+            border: isSelected
+                ? Border.all(
+                    color: AppSemanticColors.interactivePrimaryDefault,
+                    width: 2,
+                  )
+                : null,
           ),
           child: color == null
               ? Icon(
