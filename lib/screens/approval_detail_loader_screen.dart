@@ -58,7 +58,7 @@ class _ApprovalDetailLoaderScreenState
     if (approval != null) return ApprovalDetailScreen(approval: approval);
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '결재 상세', centerTitle: true),
       body: _error == null
           ? const Center(child: AppLoading())

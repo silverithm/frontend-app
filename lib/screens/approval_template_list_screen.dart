@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/approval.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
 import '../widgets/approval/template_card.dart';
+import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_chip.dart';
 import 'approval_template_preview_screen.dart';
 
@@ -73,37 +74,29 @@ class _ApprovalTemplateListScreenState
         : widget.templates.where((t) => _categoryOf(t) == _categoryFilter).toList();
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text(
-          '결재 양식 선택',
-          style: AppTypography.appBarTitle,
-        ),
-        elevation: 0,
-        centerTitle: true,
-      ),
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: const CareVAppBar(title: '결재 양식 선택'),
       body: widget.templates.isEmpty
-          ? Center(
-              child: Text(
-                '사용 가능한 결재 양식이 없습니다',
-                style: AppTypography.bodyMedium
-                    .copyWith(color: AppSemanticColors.textTertiary),
-              ),
+          ? const AppEmptyState(
+              icon: Icons.description_outlined,
+              title: '사용 가능한 결재 양식이 없습니다',
             )
           : Column(
               children: [
                 if (showCategoryFilter) _buildCategoryFilterBar(categories),
                 Expanded(
                   child: filteredTemplates.isEmpty
-                      ? Center(
-                          child: Text(
-                            "'$_categoryFilter' 분류의 결재 양식이 없습니다",
-                            style: AppTypography.bodyMedium
-                                .copyWith(color: AppSemanticColors.textTertiary),
-                          ),
+                      ? AppEmptyState(
+                          icon: Icons.description_outlined,
+                          title: "'$_categoryFilter' 분류의 결재 양식이 없습니다",
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.all(AppSpacing.space4),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.screenGutter,
+                            AppSpacing.space2,
+                            AppSpacing.screenGutter,
+                            AppSpacing.space6,
+                          ),
                           itemCount: filteredTemplates.length,
                           itemBuilder: (context, index) {
                             final template = filteredTemplates[index];
@@ -121,19 +114,15 @@ class _ApprovalTemplateListScreenState
   }
 
   Widget _buildCategoryFilterBar(List<String> categories) {
-    // 분류 필터 띠 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선).
+    // 분류 필터 — B안: 머리띠·아래 선 없이 회색 바탕 위 흰 칩 줄(시안 결재 목록 칩).
     // 폭을 채운다 — 안 주면 Column 가운데 정렬에 끌려 칩 폭만큼만 칠해져 가운데 떠 보였다.
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space3,
-      ),
-      decoration: const BoxDecoration(
-        color: AppSemanticColors.subheaderBackground,
-        border: Border(
-          bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
-        ),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        AppSpacing.space3,
+        AppSpacing.screenGutter,
+        AppSpacing.space1,
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -142,7 +131,7 @@ class _ApprovalTemplateListScreenState
             SeedChip(
               label: '전체',
               selected: _categoryFilter == null,
-              size: SeedChipSize.small,
+              onCanvas: true,
               onTap: () => setState(() => _categoryFilter = null),
             ),
             for (final category in categories) ...[
@@ -150,7 +139,7 @@ class _ApprovalTemplateListScreenState
               SeedChip(
                 label: category,
                 selected: _categoryFilter == category,
-                size: SeedChipSize.small,
+                onCanvas: true,
                 onTap: () => setState(() => _categoryFilter = category),
               ),
             ],
