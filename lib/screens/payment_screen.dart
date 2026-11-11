@@ -170,8 +170,12 @@ class _PaymentScreenState extends State<PaymentScreen>
               color: AppSemanticColors.fillDefault,
               borderRadius: BorderRadius.circular(AppBorderRadius.control),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // 글자를 키워 한 줄에 안 들어가면 금액이 다음 줄로 내려간다(글자·크기는 그대로)
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: AppSpacing.space2,
+              runSpacing: AppSpacing.space1,
               children: [
                 Text(
                   '월 구독료',

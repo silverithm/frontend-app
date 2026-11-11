@@ -231,7 +231,11 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          // 요금제 이름 + 추천 — 좁으면 '추천'이 다음 줄로(글자·크기 그대로)
+                          Wrap(
+                            spacing: AppSpacing.space2,
+                            runSpacing: AppSpacing.space1,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text(
                                 plan.name,
@@ -241,7 +245,6 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                                 ),
                               ),
                               if (plan.isPopular) ...[
-                                const SizedBox(width: AppSpacing.space2),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: AppSpacing.space2,
@@ -317,10 +320,12 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                                     AppSemanticColors.interactivePrimaryDefault,
                               ),
                               const SizedBox(width: AppSpacing.space1),
-                              Text(
-                                feature,
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppSemanticColors.textSecondary,
+                              Flexible(
+                                child: Text(
+                                  feature,
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textSecondary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -380,10 +385,12 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
                   size: 20,
                 ),
                 const SizedBox(width: AppSpacing.space3),
-                Text(
-                  feature,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
+                Expanded(
+                  child: Text(
+                    feature,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
                   ),
                 ),
               ],
