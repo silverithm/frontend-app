@@ -12,7 +12,10 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_fab.dart';
+import '../widgets/common/app_list_entrance.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -120,49 +123,54 @@ class _AdminNoticeManagementScreenState
             ),
           ],
           Expanded(
-            child: Consumer<NoticeProvider>(
-              builder: (context, noticeProvider, child) {
-                if (noticeProvider.isLoading &&
-                    noticeProvider.notices.isEmpty) {
-                  return const Center(child: AppLoading());
-                }
+            // 카드 등장 연출은 처음 한 번만 — 새로고침·거르기로 목록이 비었다 다시 차도 다시 떠오르지 않게 바깥에 둔다
+            child: AppListEntrance(
+              child: Consumer<NoticeProvider>(
+                builder: (context, noticeProvider, child) {
+                  if (noticeProvider.isLoading &&
+                      noticeProvider.notices.isEmpty) {
+                    return const _NoticeManagementSkeleton();
+                  }
 
-                if (noticeProvider.errorMessage.isNotEmpty &&
-                    noticeProvider.notices.isEmpty) {
-                  return _buildErrorState(noticeProvider.errorMessage);
-                }
+                  if (noticeProvider.errorMessage.isNotEmpty &&
+                      noticeProvider.notices.isEmpty) {
+                    return _buildErrorState(noticeProvider.errorMessage);
+                  }
 
-                if (noticeProvider.notices.isEmpty) {
-                  return _buildEmptyState();
-                }
+                  if (noticeProvider.notices.isEmpty) {
+                    return _buildEmptyState();
+                  }
 
-                return RefreshIndicator(
-                  onRefresh: () => _loadNotices(refresh: true),
-                  color: AppSemanticColors.interactivePrimaryDefault,
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    // 떠 있는 + 버튼이 마지막 카드의 더보기(⋮)를 가리지 않게 — 배차 설정·휴무 달력과 같은 96
-                    padding: const EdgeInsets.only(
-                      top: AppSpacing.space1,
-                      bottom: 96,
-                    ),
-                    itemCount:
-                        noticeProvider.notices.length +
-                        (noticeProvider.hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == noticeProvider.notices.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(AppSpacing.space4),
-                          child: Center(child: AppLoading(size: 24)),
+                  return AppRefreshIndicator(
+                    onRefresh: () => _loadNotices(refresh: true),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      // 떠 있는 + 버튼이 마지막 카드의 더보기(⋮)를 가리지 않게 — 배차 설정·휴무 달력과 같은 96
+                      padding: const EdgeInsets.only(
+                        top: AppSpacing.space1,
+                        bottom: 96,
+                      ),
+                      itemCount:
+                          noticeProvider.notices.length +
+                          (noticeProvider.hasMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == noticeProvider.notices.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(AppSpacing.space4),
+                            child: Center(child: AppLoading(size: 24)),
+                          );
+                        }
+
+                        final notice = noticeProvider.notices[index];
+                        return AppListEntranceItem(
+                          index: index,
+                          child: _buildNoticeItem(notice),
                         );
-                      }
-
-                      final notice = noticeProvider.notices[index];
-                      return _buildNoticeItem(notice);
-                    },
-                  ),
-                );
-              },
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -687,6 +695,32 @@ class _AdminNoticeManagementScreenState
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => NoticeDetailScreen(noticeId: notice.id),
+      ),
+    );
+  }
+}
+
+/// 공지 관리 첫 불러오기 뼈대 — 회색 바탕 위 흰 공지 카드(목록과 같은 여백·간격)
+class _NoticeManagementSkeleton extends StatelessWidget {
+  const _NoticeManagementSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: AppSpacing.space1, bottom: 96),
+        children: List.generate(
+          5,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenGutter,
+              vertical: AppSpacing.cardGap / 2,
+            ),
+          ),
+        ),
       ),
     );
   }
