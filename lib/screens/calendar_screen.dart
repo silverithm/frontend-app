@@ -1307,7 +1307,7 @@ class _CalendarScreenState extends State<CalendarScreen>
               return Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.space4,
-                  AppSpacing.space3,
+                  AppSpacing.space2,
                   AppSpacing.space4,
                   0,
                 ),
@@ -1326,19 +1326,17 @@ class _CalendarScreenState extends State<CalendarScreen>
             },
           ),
 
-          // 달력 위젯 — 하나의 연속된 흰 표면 (그림자 없이 얇은 보더만)
+          // 달력 카드 — B안: 회색 바탕 위 흰 카드, 테두리 없음
           Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space4,
-              vertical: AppSpacing.space3,
+            margin: const EdgeInsets.fromLTRB(
+              AppSpacing.space4,
+              AppSpacing.space2,
+              AppSpacing.space4,
+              0,
             ),
             decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              border: Border.all(
-                color: AppSemanticColors.borderSubtle,
-                width: 1,
-              ),
+              color: AppSemanticColors.surfaceCard,
+              borderRadius: BorderRadius.circular(AppBorderRadius.card),
             ),
             clipBehavior: Clip.antiAlias,
             child: VacationCalendarWidget(
@@ -1380,62 +1378,40 @@ class _CalendarScreenState extends State<CalendarScreen>
             ),
           ),
 
-          // 선택된 날짜 정보
+          // 선택된 날짜 정보 — B안: 테두리 없는 흰 카드, 머리띠·아이콘 타일 없이 맨 위에 날짜 제목만
           if (_selectedDate != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.space4,
-                AppSpacing.space2,
+                AppSpacing.cardGap,
                 AppSpacing.space4,
-                AppSpacing.space4,
+                0,
               ),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                  border: Border.all(
-                    color: AppSemanticColors.borderDefault,
-                    width: 1,
-                  ),
+                  color: AppSemanticColors.surfaceCard,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.card),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.space5),
+                  // 닫기 단추가 카드 끝에 붙도록 오른쪽은 12 — 목록은 안쪽에서 8을 더해 20을 맞춘다
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.cardPadding,
+                    AppSpacing.space3,
+                    AppSpacing.space3,
+                    AppSpacing.cardPadding,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(
-                                    AppSpacing.space3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppSemanticColors.backgroundTertiary,
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.xl2,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.calendar_today,
-                                    color: AppSemanticColors.textSecondary,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.space3),
-                                Expanded(
-                                  child: Text(
-                                    _formatSelectedDate(_selectedDate!),
-                                    style: AppTypography.heading6.copyWith(
-                                      color: AppSemanticColors.textPrimary,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              _formatSelectedDate(_selectedDate!),
+                              style: AppTypography.heading6.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                              ),
                             ),
                           ),
                           IconButton(
@@ -1447,22 +1423,20 @@ class _CalendarScreenState extends State<CalendarScreen>
                             },
                             icon: Container(
                               padding: const EdgeInsets.all(AppSpacing.space2),
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.backgroundSecondary,
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
+                              decoration: const BoxDecoration(
+                                color: AppSemanticColors.fillDefault,
+                                shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.close,
-                                size: 16,
-                                color: AppSemanticColors.textTertiary,
+                                size: 18,
+                                color: AppSemanticColors.textSecondary,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.space4),
+                      const SizedBox(height: AppSpacing.space2),
 
                       Consumer<VacationProvider>(
                         builder: (context, vacationProvider, child) {
@@ -1471,8 +1445,11 @@ class _CalendarScreenState extends State<CalendarScreen>
 
                           if (vacations.isEmpty) {
                             return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.space2,
+                              padding: const EdgeInsets.fromLTRB(
+                                0,
+                                AppSpacing.space2,
+                                AppSpacing.space2,
+                                0,
                               ),
                               child: Row(
                                 children: [
@@ -1482,10 +1459,12 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     size: 24,
                                   ),
                                   const SizedBox(width: AppSpacing.space3),
-                                  Text(
-                                    '이 날짜에는 휴무 신청이 없습니다.',
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: AppSemanticColors.textTertiary,
+                                  Expanded(
+                                    child: Text(
+                                      '이 날짜에는 휴무 신청이 없습니다.',
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        color: AppSemanticColors.textTertiary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1493,108 +1472,108 @@ class _CalendarScreenState extends State<CalendarScreen>
                             );
                           }
 
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.space3,
-                                  vertical: AppSpacing.space1_5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppSemanticColors
-                                      .interactivePrimaryDefault
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.full,
-                                  ),
-                                ),
-                                child: Text(
-                                  '휴무자 ${vacations.length}명',
-                                  style: AppTypography.labelLarge.copyWith(
-                                    color: AppSemanticColors
-                                        .interactivePrimaryDefault,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.space3),
-                              ...vacations.map(
-                                (vacation) => Container(
-                                  margin: const EdgeInsets.only(
-                                    bottom: AppSpacing.space2,
-                                  ),
-                                  padding: const EdgeInsets.all(
-                                    AppSpacing.space4,
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              right: AppSpacing.space2,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.space3,
+                                    vertical: AppSpacing.space1,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppSemanticColors.surfaceDefault,
+                                    color: AppSemanticColors.brandWeak,
                                     borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.xl2,
-                                    ),
-                                    border: Border.all(
-                                      color: AppSemanticColors.borderDefault,
+                                      AppBorderRadius.full,
                                     ),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(
-                                          AppSpacing.space2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _getStatusTextColor(
-                                            vacation.status,
-                                          ).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.xl,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          _getStatusIcon(vacation.status),
-                                          size: 16,
-                                          color: _getStatusTextColor(
-                                            vacation.status,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: AppSpacing.space3),
-                                      Expanded(
-                                        child: Row(
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                vacation.displayName,
-                                                style: AppTypography.bodyLarge
-                                                    .copyWith(
-                                                      color: AppSemanticColors
-                                                          .textPrimary,
-                                                      fontWeight: AppTypography
-                                                          .fontWeightSemibold,
-                                                    ),
-                                              ),
-                                            ),
-                                            // 필수 휴무는 별 그림 대신 글자 꼬리표 — 분류라 회색
-                                            if (vacation.type ==
-                                                VacationType.mandatory) ...[
-                                              const SizedBox(
-                                                width: AppSpacing.space2,
-                                              ),
-                                              const AppTag(label: '필수'),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: AppSpacing.space2),
-                                      // 상태는 옅은 꼬리표 — 진한 바탕 알약은 웹·다른 화면과 달랐다
-                                      AppTag(
-                                        label: vacation.statusText,
-                                        tone: _statusTone(vacation.status),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    '휴무자 ${vacations.length}명',
+                                    style: AppTypography.titleSmall.copyWith(
+                                      color:
+                                          AppSemanticColors.brandWeakForeground,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: AppSpacing.space3),
+                                // 휴무자 한 사람 — 흰 카드 안이라 테두리 없는 회색 칸
+                                ...vacations.map(
+                                  (vacation) => Container(
+                                    margin: const EdgeInsets.only(
+                                      bottom: AppSpacing.space2,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.space3,
+                                      vertical: AppSpacing.space3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppSemanticColors.fillDefault,
+                                      borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.control,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(
+                                            AppSpacing.space2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _getStatusTextColor(
+                                              vacation.status,
+                                            ).withValues(alpha: 0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            _getStatusIcon(vacation.status),
+                                            size: 16,
+                                            color: _getStatusTextColor(
+                                              vacation.status,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: AppSpacing.space3),
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  vacation.displayName,
+                                                  style: AppTypography.bodyLarge
+                                                      .copyWith(
+                                                        color: AppSemanticColors
+                                                            .textPrimary,
+                                                        fontWeight: AppTypography
+                                                            .fontWeightSemibold,
+                                                      ),
+                                                ),
+                                              ),
+                                              // 필수 휴무는 별 그림 대신 글자 꼬리표 — 분류라 회색
+                                              if (vacation.type ==
+                                                  VacationType.mandatory) ...[
+                                                const SizedBox(
+                                                  width: AppSpacing.space2,
+                                                ),
+                                                const AppTag(label: '필수'),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: AppSpacing.space2),
+                                        // 상태는 옅은 꼬리표 — 진한 바탕 알약은 웹·다른 화면과 달랐다
+                                        AppTag(
+                                          label: vacation.statusText,
+                                          tone: _statusTone(vacation.status),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           );
                         },
                       ),
@@ -1611,24 +1590,25 @@ class _CalendarScreenState extends State<CalendarScreen>
           ))
             Consumer<VacationProvider>(
               builder: (context, vacationProvider, child) {
+                // B안: 다른 카드와 같은 폭·모서리의 흰 카드, 테두리 없음
                 return Container(
                   margin: const EdgeInsets.fromLTRB(
-                    AppSpacing.space6,
-                    AppSpacing.space2,
-                    AppSpacing.space6,
+                    AppSpacing.space4,
+                    AppSpacing.cardGap,
+                    AppSpacing.space4,
                     AppSpacing.space4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    border: Border.all(
-                      color: AppSemanticColors.borderDefault,
-                      width: 1,
-                    ),
+                    color: AppSemanticColors.surfaceCard,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.card),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.space4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space3,
+                      vertical: AppSpacing.space4,
+                    ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Expanded(
@@ -1709,30 +1689,21 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
+  /// 이번 달 휴무 수 한 칸 — B안 큰 숫자 요약(heading4, 고정폭 숫자) + 아래 이름.
+  /// 예전엔 숫자를 32×32 칸에 넣어 글자를 키우거나 세 자리가 되면 넘쳤다 — 이제 칸 높이를 못 박지 않는다.
   Widget _buildStatItem(String label, String value, Color color) {
     return Column(
       children: [
-        Container(
-          width: AppSpacing.space8,
-          height: AppSpacing.space8,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          ),
-          child: Center(
-            child: Text(
-              value,
-              style: AppTypography.titleSmall.copyWith(
-                color: color,
-              ),
-            ),
-          ),
+        Text(
+          value,
+          maxLines: 1,
+          style: AppTypography.heading4.copyWith(color: color),
         ),
-        const SizedBox(height: AppSpacing.space2),
+        const SizedBox(height: AppSpacing.space1),
         Text(
           label,
           style: AppTypography.bodySmall.copyWith(
-            color: AppSemanticColors.textTertiary,
+            color: AppSemanticColors.textSecondary,
           ),
           textAlign: TextAlign.center,
         ),
