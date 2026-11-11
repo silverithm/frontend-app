@@ -50,7 +50,7 @@ class ChatFileCard extends StatelessWidget {
         : AppSemanticColors.textTertiary;
     final tileColor = onBrand
         ? AppSemanticColors.textInverse.withValues(alpha: 0.16)
-        : AppSemanticColors.backgroundTertiary;
+        : AppSemanticColors.fillDefault;
     final iconColor =
         onBrand ? AppSemanticColors.textInverse : AppSemanticColors.textSecondary;
 
@@ -74,7 +74,7 @@ class ChatFileCard extends StatelessWidget {
               height: AppSpacing.space10,
               decoration: BoxDecoration(
                 color: tileColor,
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                borderRadius: BorderRadius.circular(AppBorderRadius.inner),
               ),
               child: Icon(
                 isVideo

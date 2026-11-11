@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'chat_photo.dart';
 
@@ -61,8 +60,9 @@ class ChatPhotoGroup extends StatelessWidget {
     final cell = (maxWidth - _gap * (columns - 1)) / columns;
     final rows = (count / columns).ceil();
 
+    // B안: 말풍선·사진 모서리 20
     return ClipRRect(
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+      borderRadius: BorderRadius.circular(AppBorderRadius.card),
       child: SizedBox(
         width: maxWidth,
         child: Column(
@@ -238,7 +238,7 @@ class _ChatVideoBubbleState extends State<ChatVideoBubble> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
           child: SizedBox(
             width: width,
             height: width * 9 / 16,
@@ -372,24 +372,33 @@ class ChatSendFailedOverlay extends StatelessWidget {
         child: Container(
           color: AppColors.black.withValues(alpha: 0.45),
           alignment: Alignment.center,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: compact ? 22 : 30,
-                color: AppSemanticColors.statusErrorBackground,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '전송 실패',
-                style: TextStyle(
-                  fontSize: compact ? 11 : 13,
-                  fontWeight: FontWeight.w700,
+          padding: const EdgeInsets.all(AppSpacing.space1),
+          // 작은 칸에서 글자를 키워도 넘치지 않게 — 모자라면 통째로 줄여 칸 안에 맞춘다
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: compact ? 22 : 30,
                   color: AppSemanticColors.statusErrorBackground,
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.space0_5),
+                // 앱에서 가장 작은 글자는 12 — 예전 작은 칸의 11을 없앴다
+                Text(
+                  '전송 실패',
+                  maxLines: 1,
+                  style: (compact
+                          ? AppTypography.labelSmall
+                          : AppTypography.labelStrong)
+                      .copyWith(
+                    fontWeight: AppTypography.fontWeightBold,
+                    color: AppSemanticColors.statusErrorBackground,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
