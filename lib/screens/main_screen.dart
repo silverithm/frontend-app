@@ -16,6 +16,7 @@ import '../utils/admin_utils.dart';
 import '../utils/app_haptics.dart';
 import '../widgets/common/app_bottom_tab_bar.dart';
 import '../utils/permissions.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'approval_hub_screen.dart';
 import 'calendar_screen.dart';
@@ -279,6 +280,8 @@ class _MainScreenState extends State<MainScreen>
         final safeIndex = _currentIndex.clamp(0, screens.length - 1);
 
         return Scaffold(
+          // B안: 탭 화면 사이·전환 중에 비치는 바탕도 옅은 회색(테마 값과 같지만 명시해 둔다)
+          backgroundColor: AppSemanticColors.backgroundCanvas,
           body: IndexedStack(index: safeIndex, children: screens),
           // B안(2026-11-12): 흰 바탕 + 위 옅은 선, 고르면 채운 아이콘 + 틸(선택 알약 바탕 없음)
           bottomNavigationBar: AppBottomTabBar(
