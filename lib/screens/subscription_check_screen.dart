@@ -9,7 +9,6 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
-import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import 'payment_screen.dart';
@@ -479,23 +478,16 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
   }
 
   void _showSuccessDialog(String message, VoidCallback onConfirm) {
-    // B안: 가운데 대화상자 대신 아래 시트(바깥을 눌러도 닫히지 않는다). 글자·순서·흐름은 그대로.
-    showAppSheet<void>(
+    AppDialog.showCustom<void>(
       context,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (sheetContext) => AppSheetFrame(
-        actions: SizedBox(
-          width: double.infinity,
-          child: SeedButton(
-            label: '확인',
-            size: SeedButtonSize.large,
-            onPressed: onConfirm,
-          ),
-        ),
-        children: [
-          Center(
-            child: Container(
+      barrierDismissible: false,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
               width: 60,
               height: 60,
               decoration: const BoxDecoration(
@@ -504,23 +496,30 @@ class _SubscriptionCheckScreenState extends State<SubscriptionCheckScreen>
               ),
               child: const Icon(Icons.check, color: AppSemanticColors.textInverse, size: 30),
             ),
-          ),
-          const SizedBox(height: AppSpacing.space4),
-          Text(
-            '성공!',
-            textAlign: TextAlign.center,
-            style: AppTypography.heading6.copyWith(
-              color: AppSemanticColors.statusSuccessIcon,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: AppSpacing.space4),
+            Text(
+              '성공!',
+              style: AppTypography.heading6.copyWith(
+                color: AppSemanticColors.statusSuccessIcon,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.space2),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyMedium,
-          ),
-        ],
+            const SizedBox(height: AppSpacing.space2),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.space6),
+            SizedBox(
+              width: double.infinity,
+              child: SeedButton(
+                label: '확인',
+                onPressed: onConfirm,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
