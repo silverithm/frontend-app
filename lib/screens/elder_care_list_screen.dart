@@ -9,7 +9,9 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/app_empty_state.dart';
-import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -125,33 +127,41 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
         children: [
           _buildSearchAndFilter(),
           Expanded(
-            child: RefreshIndicator(
+            child: AppRefreshIndicator(
               onRefresh: _load,
-              child: _isLoading
-                  ? const Center(child: AppLoading())
-                  : _error != null
-                  ? _message(_error!, retry: true)
-                  : items.isEmpty
-                  ? _message(
-                      _elders.isEmpty
-                          ? '등록된 어르신이 없습니다.\n기관 관리에서 어르신을 먼저 등록해 주세요.'
-                          : '조건에 맞는 어르신이 없습니다.',
-                    )
-                  : ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screenGutter,
-                        AppSpacing.space3,
-                        AppSpacing.screenGutter,
-                        AppSpacing.space8,
+              // 목록 등장 연출은 처음 한 번만 — 검색으로 목록이 비었다 다시 차도 다시 떠오르지 않게 바깥에 둔다
+              child: AppListEntrance(
+                child: _isLoading
+                    ? const _ElderListSkeleton()
+                    : _error != null
+                    ? _message(_error!, retry: true)
+                    : items.isEmpty
+                    ? _message(
+                        _elders.isEmpty
+                            ? '등록된 어르신이 없습니다.\n기관 관리에서 어르신을 먼저 등록해 주세요.'
+                            : '조건에 맞는 어르신이 없습니다.',
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screenGutter,
+                          AppSpacing.space3,
+                          AppSpacing.screenGutter,
+                          AppSpacing.space8,
+                        ),
+                        itemCount: items.length,
+                        // B안: 카드끼리는 선 대신 간격으로 나눈다
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: AppSpacing.cardGap),
+                        itemBuilder: (context, index) => AppListEntranceItem(
+                          index: index,
+                          child: _ElderRow(
+                            elder: items[index],
+                            onTap: _openDetail,
+                          ),
+                        ),
                       ),
-                      itemCount: items.length,
-                      // B안: 카드끼리는 선 대신 간격으로 나눈다
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppSpacing.cardGap),
-                      itemBuilder: (context, index) =>
-                          _ElderRow(elder: items[index], onTap: _openDetail),
-                    ),
+              ),
             ),
           ),
         ],
@@ -325,6 +335,34 @@ class _ElderRow extends StatelessWidget {
             color: AppSemanticColors.iconSubtle,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 어르신 목록 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드(목록과 같은 여백·간격)
+class _ElderListSkeleton extends StatelessWidget {
+  const _ElderListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          AppSpacing.space8,
+        ),
+        children: List.generate(
+          5,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+          ),
+        ),
       ),
     );
   }
