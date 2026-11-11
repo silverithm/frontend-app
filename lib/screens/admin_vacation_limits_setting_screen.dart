@@ -263,8 +263,9 @@ class _AdminVacationLimitsSettingScreenState
 
   @override
   Widget build(BuildContext context) {
+    // B안: 옅은 회색 바탕 위 흰 카드(날짜별), 머리 줄·역할 칩은 바탕 위에 선 없이
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       // 슬림 타이틀 — 형제 화면(admin_unified_approval/admin_user_management)과 동일하게
       // 아이콘뱃지+서브텍스트+"ADMIN"배지로 제목을 세 번 반복하지 않는다 (중복 강조 정리)
       appBar: const CareVAppBar(title: '휴무 제한 설정'),
@@ -272,14 +273,13 @@ class _AdminVacationLimitsSettingScreenState
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // 월 선택 헤더 — 정적 표면은 그림자 대신 보더만 (Seed 레이아웃 원칙)
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    border: Border(
-                      bottom: BorderSide(color: AppSemanticColors.borderSubtle),
-                    ),
+                // 월 선택 헤더 — 회색 바탕 위에 선 없이
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space2,
+                    AppSpacing.space2,
+                    AppSpacing.space2,
+                    0,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -289,9 +289,12 @@ class _AdminVacationLimitsSettingScreenState
                         onPressed: _previousMonth,
                         icon: const Icon(Icons.chevron_left),
                       ),
-                      Text(
-                        _formatYearMonth(_selectedDate),
-                        style: AppTypography.heading5,
+                      Flexible(
+                        child: Text(
+                          _formatYearMonth(_selectedDate),
+                          style: AppTypography.heading5,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                       IconButton(
                         tooltip: '다음 달',
@@ -302,17 +305,16 @@ class _AdminVacationLimitsSettingScreenState
                   ),
                 ),
 
-                // 역할 필터 탭 — 폭을 채운다(안 주면 칩 폭만큼만 칠해져 가운데 떠 보였다)
-                Container(
+                // 역할 필터 칩 — 회색 바탕 위 흰 칩(고르면 틸), 머리띠·선 없음
+                SizedBox(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.space4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.backgroundSecondary,
-                    border: Border(
-                      bottom: BorderSide(color: AppSemanticColors.borderSubtle),
-                    ),
-                  ),
                   child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.screenGutter,
+                      AppSpacing.space1,
+                      AppSpacing.screenGutter,
+                      AppSpacing.space1,
+                    ),
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
@@ -328,14 +330,11 @@ class _AdminVacationLimitsSettingScreenState
                 // 제한 설정 테이블
                 Expanded(child: _buildLimitsTable()),
 
-                // 저장 버튼을 아래로 이동 — 정적 표면은 그림자 대신 보더만 (Seed 레이아웃 원칙)
+                // 저장 버튼 — 아래 흰 띠(선 없이 바탕색 차이로 나눈다)
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.space4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    border: Border(
-                      top: BorderSide(color: AppSemanticColors.borderSubtle),
-                    ),
+                  decoration: const BoxDecoration(
+                    color: AppSemanticColors.surfaceCard,
                   ),
                   child: SafeArea(
                     child: SizedBox(
@@ -361,6 +360,7 @@ class _AdminVacationLimitsSettingScreenState
     return SeedChip(
       label: label,
       selected: isSelected,
+      onCanvas: true,
       onTap: () => setState(() => _selectedRole = role),
     );
   }
@@ -384,18 +384,22 @@ class _AdminVacationLimitsSettingScreenState
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.space4),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        AppSpacing.space2,
+        AppSpacing.screenGutter,
+        AppSpacing.space6,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 안내 텍스트
+          // 안내 텍스트 — 테두리 없는 옅은 파랑 칸
           Container(
             padding: const EdgeInsets.all(AppSpacing.space4),
-            margin: const EdgeInsets.only(bottom: AppSpacing.space4),
+            margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
             decoration: BoxDecoration(
               color: AppSemanticColors.statusInfoBackground,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              border: Border.all(color: AppSemanticColors.statusInfoBorder),
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
             ),
             child: Row(
               children: [
@@ -434,45 +438,34 @@ class _AdminVacationLimitsSettingScreenState
 
     // 주말은 날짜 글자만 빨강(달력 관례). 테두리·바탕·꼬리표까지 빨갛게 하면
     // 잘못 입력한 칸처럼 보여서(4차 점검 2026-11-08) 카드·꼬리표는 평일과 같게 둔다.
-    const Color borderColor = AppSemanticColors.borderSubtle;
-    const Color headerColor = AppSemanticColors.backgroundSecondary;
     final Color headerTextColor = isWeekend
         ? AppSemanticColors.statusErrorText
         : AppSemanticColors.textPrimary;
 
-    // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
+    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 카드 사이 간격 12
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
+      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: borderColor, width: 1),
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space4),
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 날짜 헤더
-            Row(
+            // 날짜 헤더 — 회색 알약 없이 카드 맨 위 제목 글자 + 요일 꼬리표
+            Wrap(
+              spacing: AppSpacing.space2,
+              runSpacing: AppSpacing.space1,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space3,
-                    vertical: AppSpacing.space1_5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: headerColor,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  ),
-                  child: Text(
-                    '${date.month}월 ${date.day}일',
-                    style: AppTypography.titleMedium.copyWith(
-                      color: headerTextColor,
-                    ),
+                Text(
+                  '${date.month}월 ${date.day}일',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: headerTextColor,
                   ),
                 ),
-                const SizedBox(width: AppSpacing.space2),
                 AppTag(
                   label: '$weekdayName요일',
                   tone: AppTagTone.neutral,
@@ -480,11 +473,10 @@ class _AdminVacationLimitsSettingScreenState
               ],
             ),
 
-            const SizedBox(height: AppSpacing.space3),
-            Divider(height: 1, color: AppSemanticColors.borderSubtle),
-            const SizedBox(height: AppSpacing.space3),
+            // 구분선 대신 간격
+            const SizedBox(height: AppSpacing.space4),
 
-            // 인원 수 설정 — 카드중첩 없이 구분선 아래 평면 레이아웃 (Seed 레이아웃 원칙)
+            // 인원 수 설정 — 카드중첩 없이 평면 레이아웃
             _buildLimitInputCard(
               RoleUtils.displayName(_selectedRole),
               dateKey,
@@ -538,14 +530,14 @@ class _AdminVacationLimitsSettingScreenState
           children: [
             Text(
               '최대',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
               ),
             ),
             const SizedBox(width: AppSpacing.space2),
+            // B안 입력칸 — 회색 채움, 테두리 없음(누르면 틸 2px). 높이를 못 박지 않아 글자가 커져도 안 잘린다
             SizedBox(
-              width: AppSpacing.space14,
-              height: AppSpacing.space9,
+              width: 72,
               child: TextFormField(
                 controller: controller,
                 keyboardType: TextInputType.number,
@@ -553,21 +545,26 @@ class _AdminVacationLimitsSettingScreenState
                 style: AppTypography.titleMedium,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    borderSide: BorderSide(
-                      color: AppSemanticColors.borderSubtle,
-                    ),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.control),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppBorderRadius.control),
+                    borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.control),
                     borderSide: BorderSide(
                       color: AppSemanticColors.borderFocus,
                       width: 2,
                     ),
                   ),
-                  contentPadding: EdgeInsets.zero,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space2,
+                    vertical: AppSpacing.space3,
+                  ),
                   filled: true,
-                  fillColor: AppSemanticColors.backgroundSecondary,
+                  fillColor: AppSemanticColors.fillDefault,
                 ),
                 onChanged: (value) {
                   // 빈 문자열이면 0으로 설정
@@ -595,8 +592,8 @@ class _AdminVacationLimitsSettingScreenState
             const SizedBox(width: AppSpacing.space2),
             Text(
               '명',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
               ),
             ),
           ],
