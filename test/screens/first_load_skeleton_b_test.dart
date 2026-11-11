@@ -109,11 +109,29 @@ class _FakeAdmin extends AdminProvider {
 }
 
 class _FakeWorkTasks extends WorkTaskProvider {
-  @override
-  WorkTaskLoadStatus get status => WorkTaskLoadStatus.loading;
+  _FakeWorkTasks({
+    this.fakeStatus = WorkTaskLoadStatus.loading,
+    this.fakeTasks = const [],
+  });
+  final WorkTaskLoadStatus fakeStatus;
+  final List<WorkTask> fakeTasks;
 
   @override
-  List<WorkTask> get tasks => const [];
+  WorkTaskLoadStatus get status => fakeStatus;
+
+  @override
+  List<WorkTask> get tasks => fakeTasks;
+
+  // 진행 중·끝낸 업무 나눔은 원래 필드(_tasks)를 보므로 같이 갈아 끼운다
+  @override
+  List<WorkTask> get inProgress => splitWorkTasks(fakeTasks).inProgress;
+
+  @override
+  List<WorkTask> get done => splitWorkTasks(fakeTasks).done;
+
+  @override
+  int myInProgressCount(String? meId) =>
+      myInProgressWorkTaskCount(fakeTasks, meId);
 
   @override
   Future<void> load() async {}
@@ -134,14 +152,30 @@ Notice _notice(int id, String title) => Notice(
   updatedAt: DateTime(2026, 11, 7, 9),
 );
 
+WorkTask _task(int id, String content, {int progress = 40, DateTime? done}) =>
+    WorkTask(
+      id: id,
+      content: content,
+      importance: WorkTaskImportance.high,
+      progress: progress,
+      dueDate: DateTime(2026, 11, 14),
+      assignees: const [
+        WorkTaskPerson(id: '12', name: '박소향'),
+        WorkTaskPerson(id: '7', name: '이순자'),
+      ],
+      createdBy: const WorkTaskPerson(id: 'admin_3', name: '김관리'),
+      completedAt: done,
+    );
+
 Future<void> _pump(
   WidgetTester tester, {
   required Widget home,
+  double width = 390,
   NoticeProvider? notice,
   AdminProvider? admin,
   WorkTaskProvider? workTasks,
 }) async {
-  tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+  tester.view.physicalSize = Size(width * 3, 844 * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
 
@@ -242,5 +276,30 @@ void main() {
     expect(find.byType(AppSkeleton), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('업무 등록'), findsOneWidget);
+  });
+
+  testWidgets('업무진행도 — 폭 320·글자 1.3배에서 넘치지 않고, 진행 중 줄만 첫 등장 연출', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      width: 320,
+      home: const WorkTaskListScreen(),
+      workTasks: _FakeWorkTasks(
+        fakeStatus: WorkTaskLoadStatus.loaded,
+        fakeTasks: [
+          _task(1, '11월 사업계획서 작성 — 프로그램 일정표까지 같이 정리'),
+          _task(2, '송영 차량 정기 점검 예약', progress: 60),
+          _task(3, '김장 나눔 행사 물품 확인', done: DateTime(2026, 11, 10)),
+        ],
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.byType(AppSkeleton), findsNothing);
+    expect(find.byType(AppRefreshIndicator), findsOneWidget);
+    // 끝낸 업무는 접혀 있고, 진행 중 두 줄만 연출을 탄다
+    expect(find.byType(AppListEntranceItem), findsNWidgets(2));
+    expect(find.textContaining('진행 중 2건'), findsOneWidget);
+    expect(find.text('끝낸 업무 1건'), findsOneWidget);
   });
 }
