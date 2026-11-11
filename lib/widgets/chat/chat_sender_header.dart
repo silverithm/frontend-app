@@ -73,10 +73,11 @@ class ChatSenderHeader extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           children: [
+            // B안: 이름은 작은 행 제목(15/w600 검정) — 말풍선 묶음의 머리가 한눈에 보이게
             TextSpan(
               text: senderName,
-              style: AppTypography.labelStrong.copyWith(
-                color: AppSemanticColors.textSecondary,
+              style: AppTypography.titleSmall.copyWith(
+                color: AppSemanticColors.textPrimary,
               ),
             ),
             // 직종은 괄호 없이 이름 뒤 한 칸 띄워 — 이름보다 가볍게(w400·textTertiary)
