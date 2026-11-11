@@ -72,8 +72,9 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   @override
   Widget build(BuildContext context) {
+    // B안: 옅은 회색 바탕 위 테두리 없는 흰 카드. 글자·순서·금액·약관 문구·결제 흐름은 그대로(토스 심사).
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text(
           '결제',
@@ -91,18 +92,21 @@ class _PaymentScreenState extends State<PaymentScreen>
             child: SlideTransition(
               position: _slideAnimation,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.space6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenGutter,
+                  vertical: AppSpacing.space6,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildPlanSummary(),
-                    const SizedBox(height: AppSpacing.space8),
+                    const SizedBox(height: AppSpacing.cardGap),
                     _buildPaymentInfo(),
-                    const SizedBox(height: AppSpacing.space8),
+                    const SizedBox(height: AppSpacing.cardGap),
                     _buildPaymentMethods(),
-                    const SizedBox(height: AppSpacing.space8),
+                    const SizedBox(height: AppSpacing.cardGap),
                     _buildSecurityInfo(),
-                    const SizedBox(height: AppSpacing.space10),
+                    const SizedBox(height: AppSpacing.space8),
                     _buildPaymentButton(subscriptionProvider),
                   ],
                 ),
@@ -116,15 +120,8 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPlanSummary() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space5),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: AppSemanticColors.borderDefault,
-          width: 1,
-        ),
-      ),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: _cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -133,9 +130,9 @@ class _PaymentScreenState extends State<PaymentScreen>
               Container(
                 width: AppSpacing.space12,
                 height: AppSpacing.space12,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppSemanticColors.brandWeak,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.workspace_premium,
@@ -170,8 +167,8 @@ class _PaymentScreenState extends State<PaymentScreen>
           Container(
             padding: const EdgeInsets.all(AppSpacing.space4),
             decoration: BoxDecoration(
-              color: AppSemanticColors.backgroundSecondary,
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+              color: AppSemanticColors.fillDefault,
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -198,15 +195,8 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPaymentInfo() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space5),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(
-          color: AppSemanticColors.borderDefault,
-          width: 1,
-        ),
-      ),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: _cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -222,7 +212,8 @@ class _PaymentScreenState extends State<PaymentScreen>
           _buildInfoRow('결제 주기', '매월'),
           _buildInfoRow('첫 결제일', _getFirstPaymentDate()),
           _buildInfoRow('다음 결제일', _getNextPaymentDate()),
-          const Divider(height: AppSpacing.space6),
+          // 구분선 대신 간격으로 합계 줄을 나눈다(B안)
+          const SizedBox(height: AppSpacing.space3),
           _buildInfoRow(
             '총 결제 금액',
             '₩${_formatPrice(widget.plan.price)}',
@@ -248,11 +239,16 @@ class _PaymentScreenState extends State<PaymentScreen>
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          Text(
-            value,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppSemanticColors.textPrimary,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+          const SizedBox(width: AppSpacing.space3),
+          // 글자를 키워도 한 줄에서 넘치지 않게 값 쪽이 남은 폭 안에서 줄을 넘긴다
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -262,15 +258,8 @@ class _PaymentScreenState extends State<PaymentScreen>
 
   Widget _buildPaymentMethods() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space5),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(
-          color: AppSemanticColors.borderDefault,
-          width: 1,
-        ),
-      ),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: _cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -284,9 +273,10 @@ class _PaymentScreenState extends State<PaymentScreen>
           const SizedBox(height: AppSpacing.space4),
           Container(
             padding: const EdgeInsets.all(AppSpacing.space4),
+            // 고른 결제 수단 — 옅은 틸 바탕 + 틸 2px 둘레(고름을 뜻하는 둘레라 남긴다)
             decoration: BoxDecoration(
-              color: AppSemanticColors.statusInfoBackground,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+              color: AppSemanticColors.brandWeak,
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
               border: Border.all(
                 color: AppSemanticColors.interactivePrimaryDefault,
                 width: 2,
@@ -297,9 +287,9 @@ class _PaymentScreenState extends State<PaymentScreen>
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppSemanticColors.interactivePrimaryDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.credit_card,
@@ -308,7 +298,9 @@ class _PaymentScreenState extends State<PaymentScreen>
                   ),
                 ),
                 const SizedBox(width: AppSpacing.space3),
-                Column(
+                // 글자를 키워도 오른쪽으로 넘치지 않게 남은 폭 안에서 줄을 넘긴다
+                Expanded(
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -325,6 +317,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                       ),
                     ),
                   ],
+                  ),
                 ),
               ],
             ),
@@ -339,10 +332,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       padding: const EdgeInsets.all(AppSpacing.space5),
       decoration: BoxDecoration(
         color: AppSemanticColors.statusSuccessBackground,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: AppSemanticColors.statusSuccessBorder,
-        ),
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
       ),
       child: Row(
         children: [
@@ -403,6 +393,12 @@ class _PaymentScreenState extends State<PaymentScreen>
       ],
     );
   }
+
+  /// B안 카드 — 흰 바탕, 테두리 없음, 모서리 20.
+  static final BoxDecoration _cardDecoration = BoxDecoration(
+    color: AppSemanticColors.surfaceCard,
+    borderRadius: BorderRadius.circular(AppBorderRadius.card),
+  );
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
