@@ -24,9 +24,6 @@ class ChatListSkeleton extends StatelessWidget {
   /// 카드 사이에 짧은 안내 줄 자리를 둘지(직원 목록의 "직원 n명 · 접속 중 n명").
   final bool groupLabel;
 
-  static const List<double> _titleWidths = [0.5, 0.38, 0.62, 0.44, 0.56, 0.34];
-  static const List<double> _subtitleWidths = [0.78, 0.6, 0.7, 0.52, 0.66, 0.74];
-
   @override
   Widget build(BuildContext context) {
     var row = 0;
@@ -58,9 +55,9 @@ class ChatListSkeleton extends StatelessWidget {
                 child: Column(
                   children: [
                     for (var i = 0; i < groups[g]; i++)
-                      _row(
-                        _titleWidths[row % _titleWidths.length],
-                        _subtitleWidths[row++ % _subtitleWidths.length],
+                      ChatSkeletonRow(
+                        avatarSize: avatarSize,
+                        index: row++,
                       ),
                   ],
                 ),
@@ -71,8 +68,21 @@ class ChatListSkeleton extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _row(double titleWidth, double subtitleWidth) {
+/// 채팅 목록 뼈대의 한 줄 — [ChatListRow]와 같은 줄 여백(좌우 12·위아래 10)에 동그라미 + 두 줄.
+/// 바깥에 [AppSkeleton]이 있어야 빛이 돈다. [index]마다 줄 길이를 조금씩 달리한다.
+class ChatSkeletonRow extends StatelessWidget {
+  const ChatSkeletonRow({super.key, this.avatarSize = 48, this.index = 0});
+
+  final double avatarSize;
+  final int index;
+
+  static const List<double> _titleWidths = [0.5, 0.38, 0.62, 0.44, 0.56, 0.34];
+  static const List<double> _subtitleWidths = [0.78, 0.6, 0.7, 0.52, 0.66, 0.74];
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.space3,
@@ -88,12 +98,12 @@ class ChatListSkeleton extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppSkeletonLine(
-                  widthFactor: titleWidth,
+                  widthFactor: _titleWidths[index % _titleWidths.length],
                   height: AppSpacing.space4,
                 ),
                 const SizedBox(height: AppSpacing.space2),
                 AppSkeletonLine(
-                  widthFactor: subtitleWidth,
+                  widthFactor: _subtitleWidths[index % _subtitleWidths.length],
                   height: AppSpacing.space3_5,
                 ),
               ],

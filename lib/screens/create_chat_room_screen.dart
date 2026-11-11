@@ -12,9 +12,11 @@ import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../widgets/common/app_card.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/chat/chat_list_row.dart';
+import '../widgets/chat/chat_list_skeleton.dart';
 
 class CreateChatRoomScreen extends StatefulWidget {
   const CreateChatRoomScreen({super.key});
@@ -172,7 +174,8 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
         ],
       ),
       body: _isLoading && _members.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          // 첫 불러오기 — 이름·설명 카드와 참가자 카드 모양 뼈대(같은 바깥 여백)
+          ? const _CreateRoomSkeleton()
           : SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
                 AppSpacing.screenGutter,
@@ -421,5 +424,103 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
       default:
         return role;
     }
+  }
+}
+
+/// 새 채팅방 첫 불러오기 뼈대 — 이름·설명 입력 카드 + 참가자 고르기 카드(제목·단추 둘·사람 줄).
+class _CreateRoomSkeleton extends StatelessWidget {
+  const _CreateRoomSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final cardDecoration = BoxDecoration(
+      color: AppSemanticColors.surfaceCard,
+      borderRadius: BorderRadius.circular(AppBorderRadius.card),
+    );
+    return AppSkeleton(
+      // 흰 카드 안의 뼈는 한 단계 옅은 색
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          AppSpacing.space6,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.cardPadding),
+              decoration: cardDecoration,
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppSkeletonLine(widthFactor: 0.3, height: AppSpacing.space3_5),
+                  SizedBox(height: AppSpacing.space2),
+                  AppSkeletonBox(
+                    height: AppSpacing.space12,
+                    radius: AppBorderRadius.control,
+                  ),
+                  SizedBox(height: AppSpacing.space4),
+                  AppSkeletonLine(widthFactor: 0.24, height: AppSpacing.space3_5),
+                  SizedBox(height: AppSpacing.space2),
+                  AppSkeletonBox(
+                    height: AppSpacing.space20,
+                    radius: AppBorderRadius.control,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.cardGap),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.space2),
+              decoration: cardDecoration,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.space3,
+                      AppSpacing.space3,
+                      AppSpacing.space3,
+                      AppSpacing.space1,
+                    ),
+                    child: AppSkeletonLine(
+                      widthFactor: 0.36,
+                      height: AppSpacing.space5,
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space3,
+                      vertical: AppSpacing.space2,
+                    ),
+                    child: Row(
+                      children: [
+                        AppSkeletonBox(
+                          width: AppSpacing.space20,
+                          height: AppSpacing.space10,
+                          radius: AppBorderRadius.control,
+                        ),
+                        SizedBox(width: AppSpacing.space2),
+                        AppSkeletonBox(
+                          width: AppSpacing.space20,
+                          height: AppSpacing.space10,
+                          radius: AppBorderRadius.control,
+                        ),
+                      ],
+                    ),
+                  ),
+                  for (var i = 0; i < 5; i++)
+                    ChatSkeletonRow(avatarSize: AppSpacing.space10, index: i),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
