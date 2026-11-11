@@ -92,13 +92,14 @@ class _AppInputState extends State<AppInput> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.label != null) ...[
+          // B안: 라벨 15/w600 검정, 칸과 8 띄움(시안 .sh-label)
           Text(
             widget.label!,
-            style: AppTypography.labelMedium.copyWith(
-              color: AppSemanticColors.textSecondary,
+            style: AppTypography.titleSmall.copyWith(
+              color: AppSemanticColors.textPrimary,
             ),
           ),
-          const SizedBox(height: AppSpacing.space1_5),
+          const SizedBox(height: AppSpacing.space2),
         ],
         TextFormField(
           controller: widget.controller,
@@ -131,11 +132,12 @@ class _AppInputState extends State<AppInput> {
             contentPadding: widget.contentPadding ??
                 const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space4,
-                  vertical: AppSpacing.space3,
+                  vertical: 13,
                 ),
+            // B안: 회색으로 채운 칸, 평소엔 테두리 없음(시안 .field)
             filled: true,
             fillColor: widget.enabled
-                ? AppSemanticColors.surfaceDefault
+                ? AppSemanticColors.fillDefault
                 : AppSemanticColors.surfaceDisabled,
             border: _getBorder(),
             enabledBorder: _getBorder(),
@@ -146,13 +148,13 @@ class _AppInputState extends State<AppInput> {
             hintStyle: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
-            helperStyle: AppTypography.labelSmall.copyWith(
+            helperStyle: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
-            errorStyle: AppTypography.labelSmall.copyWith(
+            errorStyle: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.statusErrorText,
             ),
-            counterStyle: AppTypography.labelSmall.copyWith(
+            counterStyle: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
           ),
@@ -161,55 +163,33 @@ class _AppInputState extends State<AppInput> {
     );
   }
 
+  static const BorderRadius _radius =
+      BorderRadius.all(Radius.circular(AppBorderRadius.control));
+
   OutlineInputBorder _getBorder() {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-      borderSide: const BorderSide(
-        color: AppSemanticColors.borderDefault,
-        width: 1,
-      ),
+    return const OutlineInputBorder(
+      borderRadius: _radius,
+      borderSide: BorderSide.none,
     );
   }
 
   OutlineInputBorder _getFocusedBorder() {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-      borderSide: const BorderSide(
-        color: AppSemanticColors.borderFocus,
-        width: 2,
-      ),
+    return const OutlineInputBorder(
+      borderRadius: _radius,
+      borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
     );
   }
 
   OutlineInputBorder _getErrorBorder() {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-      borderSide: const BorderSide(
-        color: AppSemanticColors.statusErrorIcon,
-        width: 1,
-      ),
+    return const OutlineInputBorder(
+      borderRadius: _radius,
+      borderSide: BorderSide(color: AppSemanticColors.statusErrorText, width: 2),
     );
   }
 
-  OutlineInputBorder _getFocusedErrorBorder() {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-      borderSide: const BorderSide(
-        color: AppSemanticColors.statusErrorIcon,
-        width: 2,
-      ),
-    );
-  }
+  OutlineInputBorder _getFocusedErrorBorder() => _getErrorBorder();
 
-  OutlineInputBorder _getDisabledBorder() {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-      borderSide: const BorderSide(
-        color: AppSemanticColors.borderDisabled,
-        width: 1,
-      ),
-    );
-  }
+  OutlineInputBorder _getDisabledBorder() => _getBorder();
 }
 
 class AppPasswordInput extends StatefulWidget {

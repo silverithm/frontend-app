@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_typography.dart';
 
-/// 당근 Seed 디자인 시스템 — Text Input (Outline variant).
-/// 스펙 참조: docs/seed-component-specs.md §2 Text Input
-/// (Outline Large/Medium minHeight·padding·radius·font, 상태별 stroke 색)
+/// 입력칸 — B안(2026-11-12, 시안 .field).
+/// 회색(#F2F4F6)으로 채운 칸, 테두리 없음, 모서리 14, 글자 16. 누르고 있으면(포커스) 틸 2px 테두리,
+/// 틀리면 빨강 2px + 아래 14 안내. 라벨은 15/w600 검정. 높이 보통 48·큰 54.
 enum SeedTextFieldSize { medium, large }
 
 class SeedTextField extends StatefulWidget {
@@ -116,31 +117,32 @@ class _SeedTextFieldState extends State<SeedTextField> {
     setState(() => _isFocused = _focusNode.hasFocus);
   }
 
-  // minHeight — spec §2: Outline Large x13 / Medium x10
-  double get _minHeight => widget.size == SeedTextFieldSize.large ? 52 : 40;
+  double get _minHeight => widget.size == SeedTextFieldSize.large
+      ? AppSpacing.buttonHeightLarge
+      : AppSpacing.buttonHeight;
 
-  // Padding X — spec §2: Large x4 / Medium x3.5
-  EdgeInsets get _padding => widget.size == SeedTextFieldSize.large
-      ? const EdgeInsets.symmetric(horizontal: AppSpacing.space4)
-      : const EdgeInsets.symmetric(horizontal: AppSpacing.space3_5);
+  bool get _isMultiline => (widget.maxLines ?? 1) > 1;
 
-  // Radius — spec §2: Large r3 / Medium r2
-  double get _radius =>
-      widget.size == SeedTextFieldSize.large ? AppBorderRadius.xl : AppBorderRadius.lg;
+  // 여러 줄이면 위아래 13(시안 .field), 한 줄이면 높이 48·54 안에서 가운데
+  EdgeInsets get _padding => EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: _isMultiline ? 13 : 0,
+      );
 
-  // Font-size — spec §2: Large t5 / Medium t4
-  // 입력값은 본문 14(w400) — 라벨 titleSmall과 값이 구분되도록 크게 키우지 않는다
+  double get _radius => AppBorderRadius.control;
+
+  // 입력값은 본문 16(w400) — 라벨 titleSmall 15/w600과 굵기로 구분된다
   TextStyle get _inputStyle => AppTypography.bodyMedium;
 
+  // 테두리는 늘 2px 자리를 차지하고(평소엔 투명) 색만 바뀐다 — 포커스 때 글자가 밀리지 않게
   Color _strokeColor(bool hasError) {
-    if (widget.isDisabled) return AppSemanticColors.borderDisabled;
-    if (hasError) return AppSemanticColors.statusErrorIcon;
+    if (widget.isDisabled) return AppColors.transparent;
+    if (hasError) return AppSemanticColors.statusErrorText;
     if (_isFocused) return AppSemanticColors.borderFocus;
-    return AppSemanticColors.borderDefault;
+    return AppColors.transparent;
   }
 
-  // Enabled 1px / Focused·Error 2px — spec §2 상태별 색상 표
-  double _strokeWidth(bool hasError) => (_isFocused || hasError) ? 2 : 1;
+  double _strokeWidth(bool hasError) => 2;
 
   @override
   Widget build(BuildContext context) {
@@ -176,19 +178,26 @@ class _SeedTextFieldState extends State<SeedTextField> {
             style: AppTypography.titleSmall.copyWith(
               color: widget.isDisabled
                   ? AppSemanticColors.textDisabled
-                  : AppSemanticColors.textSecondary,
+                  : AppSemanticColors.textPrimary,
             ),
           ),
-          const SizedBox(height: AppSpacing.space1_5),
+          const SizedBox(height: AppSpacing.space2),
         ],
         AnimatedContainer(
-          duration: const Duration(milliseconds: 100), // stroke 전환 duration
+          duration: AppMotion.press, // 테두리 색 전환
           constraints: BoxConstraints(minHeight: _minHeight),
-          padding: _padding,
+          // 뒤 아이콘 단추가 있으면 오른쪽 여백을 줄여 48 터치 칸이 칸 끝에 붙게 한다
+          padding: (widget.enableObscureToggle || widget.suffixIcon != null)
+              ? _padding.copyWith(right: AppSpacing.space1)
+              : _padding,
           decoration: BoxDecoration(
-            color: (widget.isDisabled || widget.isReadOnly)
+            color: widget.isDisabled
                 ? AppSemanticColors.surfaceDisabled
-                : AppColors.transparent,
+                : AppSemanticColors.fillDefault,
+            borderRadius: BorderRadius.circular(_radius),
+          ),
+          // 테두리는 위에 겹쳐 그린다(자리를 차지하지 않아 높이 48 안에 48 아이콘 칸이 들어간다)
+          foregroundDecoration: BoxDecoration(
             borderRadius: BorderRadius.circular(_radius),
             border: Border.all(color: _strokeColor(hasError), width: _strokeWidth(hasError)),
           ),
@@ -201,7 +210,7 @@ class _SeedTextFieldState extends State<SeedTextField> {
               if (widget.prefixIcon != null) ...[
                 Padding(
                   padding: EdgeInsets.only(top: (widget.maxLines ?? 1) > 1 ? 2 : 0),
-                  child: Icon(widget.prefixIcon, size: 18, color: AppSemanticColors.textTertiary),
+                  child: Icon(widget.prefixIcon, size: 20, color: AppSemanticColors.textTertiary),
                 ),
                 const SizedBox(width: AppSpacing.space2),
               ],
@@ -245,12 +254,13 @@ class _SeedTextFieldState extends State<SeedTextField> {
                   button: true,
                   label: _obscure ? '비밀번호 표시' : '비밀번호 숨기기',
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => setState(() => _obscure = !_obscure),
-                    child: Padding(
-                      padding: const EdgeInsets.all(11),
+                    child: SizedBox.square(
+                      dimension: AppSpacing.minTouchTarget,
                       child: Icon(
                         _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        size: 18,
+                        size: 20,
                         color: AppSemanticColors.textTertiary,
                       ),
                     ),
@@ -259,10 +269,11 @@ class _SeedTextFieldState extends State<SeedTextField> {
               ] else if (widget.suffixIcon != null) ...[
                 const SizedBox(width: AppSpacing.space2),
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: widget.onSuffixIconTap,
-                  child: Padding(
-                    padding: const EdgeInsets.all(11),
-                    child: Icon(widget.suffixIcon, size: 18, color: AppSemanticColors.textTertiary),
+                  child: SizedBox.square(
+                    dimension: AppSpacing.minTouchTarget,
+                    child: Icon(widget.suffixIcon, size: 20, color: AppSemanticColors.textTertiary),
                   ),
                 ),
               ],
