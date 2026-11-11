@@ -13,9 +13,10 @@ import '../utils/admin_utils.dart';
 import '../utils/app_haptics.dart';
 import '../utils/permissions.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
-import '../widgets/approval/approval_card.dart';
 import '../widgets/approval/approval_status_badge.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../utils/document_open.dart';
@@ -130,7 +131,10 @@ class _AdminApprovalManagementScreenState
       final result = await OpenFilex.open(filePath);
 
       if (result.type != ResultType.done && mounted) {
-        AppSnackBar.showError(context, message: '파일을 열 수 없습니다: ${result.message}');
+        AppSnackBar.showError(
+          context,
+          message: '파일을 열 수 없습니다: ${result.message}',
+        );
       }
     } catch (e) {
       // 다이얼로그 닫기
@@ -268,9 +272,9 @@ class _AdminApprovalManagementScreenState
   /// 이 화면은 직원 문서함(결재선·열람 대상 문서)으로도 쓰이므로
   /// 관리자 전용 UI는 전부 이 값으로 가드한다.
   bool get _canManage => PermissionUtils.has(
-        context.read<AuthProvider>().currentUser,
-        AppPermission.approvalManage,
-      );
+    context.read<AuthProvider>().currentUser,
+    AppPermission.approvalManage,
+  );
 
   /// 결재선이 있으면 내 차례일 때만 처리 가능
   bool _isMyTurn(ApprovalRequest request) {
@@ -284,7 +288,10 @@ class _AdminApprovalManagementScreenState
     // 결재선의 approverId는 직원이면 memberId, 관리자면 'admin_<id>' 형식이다.
     // 원시 id로만 비교하면 관리자형 단계가 내 차례로 인식되지 못해
     // 정상 승인 대신 직권 승인(전결)으로 빠져 뒤 단계가 스킵된다.
-    final ids = <String>{myId, if (AdminUtils.hasAdminPermission(user)) 'admin_$myId'};  // 결재선 id 규약은 계정 종류(관리자 계정) 문제라 권한과 무관하다
+    final ids = <String>{
+      myId,
+      if (AdminUtils.hasAdminPermission(user)) 'admin_$myId',
+    }; // 결재선 id 규약은 계정 종류(관리자 계정) 문제라 권한과 무관하다
     return ids.contains(currentStep.approverId);
   }
 
@@ -298,7 +305,10 @@ class _AdminApprovalManagementScreenState
   }
 
   /// 직권 승인/반려 전 경고 — 건너뛰게 될 남은 결재 단계를 보여주고 확인받는다
-  Future<bool> _confirmForceAction(ApprovalRequest request, {required String actionLabel}) async {
+  Future<bool> _confirmForceAction(
+    ApprovalRequest request, {
+    required String actionLabel,
+  }) async {
     final remaining = _remainingStepsText(request);
     final message = remaining.isEmpty
         ? '아직 처리되지 않은 결재 단계가 있습니다.\n남은 단계를 건너뛰고 즉시 $actionLabel합니다. 계속하시겠습니까?'
@@ -467,7 +477,7 @@ class _AdminApprovalManagementScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildContent(),
@@ -477,8 +487,9 @@ class _AdminApprovalManagementScreenState
   Widget _buildContent() {
     return Consumer<ApprovalProvider>(
       builder: (context, approvalProvider, child) {
-        final filteredRequests =
-            _getFilteredRequests(approvalProvider.approvalRequests);
+        final filteredRequests = _getFilteredRequests(
+          approvalProvider.approvalRequests,
+        );
         final currentUser = context.watch<AuthProvider>().currentUser;
         final myTurnCount = approvalProvider.myTurnCount(
           myId: currentUser?.id,
@@ -491,14 +502,10 @@ class _AdminApprovalManagementScreenState
             slivers: [
               // "내 차례" 배너 — 지금 처리해야 할 문서가 있으면 눈에 띄게
               if (myTurnCount > 0 && _statusFilter != 'my_turn')
-                SliverToBoxAdapter(
-                  child: _buildMyTurnBanner(myTurnCount),
-                ),
+                SliverToBoxAdapter(child: _buildMyTurnBanner(myTurnCount)),
 
               // 필터 섹션
-              SliverToBoxAdapter(
-                child: _buildFilterSection(myTurnCount),
-              ),
+              SliverToBoxAdapter(child: _buildFilterSection(myTurnCount)),
 
               // 일괄 처리 버튼 — 기관 관리자 전용
               if (_canManage &&
@@ -516,12 +523,22 @@ class _AdminApprovalManagementScreenState
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.assignment_outlined,
-                          size: 64,
-                          color: AppSemanticColors.textDisabled,
+                        // B안 빈 화면(AppEmptyState와 같은 모양) — 이 칸은 스크롤이 없어야
+                        // 당겨서 새로고침이 걸리므로 위젯 대신 모양만 맞춘다.
+                        Container(
+                          width: AppSpacing.space14,
+                          height: AppSpacing.space14,
+                          decoration: const BoxDecoration(
+                            color: AppSemanticColors.brandWeak,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.assignment_outlined,
+                            size: 26,
+                            color: AppSemanticColors.brandDefault,
+                          ),
                         ),
-                        const SizedBox(height: AppSpacing.space4),
+                        const SizedBox(height: AppSpacing.space3_5),
                         Text(
                           _emptyStateMessage(approvalProvider.approvalRequests),
                           textAlign: TextAlign.center,
@@ -535,18 +552,17 @@ class _AdminApprovalManagementScreenState
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space4,
-                    vertical: AppSpacing.space2,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screenGutter,
+                    AppSpacing.space1,
+                    AppSpacing.screenGutter,
+                    AppSpacing.space6,
                   ),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final request = filteredRequests[index];
-                        return _buildRequestCard(request);
-                      },
-                      childCount: filteredRequests.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final request = filteredRequests[index];
+                      return _buildRequestCard(request);
+                    }, childCount: filteredRequests.length),
                   ),
                 ),
             ],
@@ -560,37 +576,50 @@ class _AdminApprovalManagementScreenState
   Widget _buildMyTurnBanner(int count) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
-        AppSpacing.space4,
-        AppSpacing.space4,
-        0,
+        AppSpacing.screenGutter,
+        AppSpacing.space1,
+        AppSpacing.screenGutter,
+        AppSpacing.space1,
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        onTap: () => setState(() => _statusFilter = 'my_turn'),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.space3),
-          decoration: BoxDecoration(
-            color: AppSemanticColors.statusInfoBackground,
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.notifications_active,
-                  size: 18, color: AppSemanticColors.statusInfoIcon),
-              const SizedBox(width: AppSpacing.space2),
-              Expanded(
-                child: Text(
-                  '지금 내가 처리할 결재 $count건이 있습니다',
-                  style: AppTypography.titleSmall.copyWith(
-                    color: AppSemanticColors.statusInfoText,
-                  ),
-                ),
+      // B안(시안): 옅은 틸 띠 — 테두리 없이 둥근 칸, 종 아이콘 + 틸 글자 + 꺾쇠
+      child: Material(
+        color: AppSemanticColors.brandWeak,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => setState(() => _statusFilter = 'my_turn'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space4,
+                vertical: AppSpacing.space3,
               ),
-              Icon(Icons.chevron_right,
-                  size: 18, color: AppSemanticColors.statusInfoIcon),
-            ],
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.notifications_active_outlined,
+                    size: 22,
+                    color: AppSemanticColors.brandWeakForeground,
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: Text(
+                      '지금 내가 처리할 결재 $count건이 있습니다',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.brandWeakForeground,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space2),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 22,
+                    color: AppSemanticColors.brandWeakForeground,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -598,14 +627,13 @@ class _AdminApprovalManagementScreenState
   }
 
   Widget _buildFilterSection(int myTurnCount) {
-    // 필터 띠 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: const BoxDecoration(
-        color: AppSemanticColors.subheaderBackground,
-        border: Border(
-          bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
-        ),
+    // 필터 — B안: 머리띠·아래 선 대신 흰 카드 하나(칩·검색칸은 카드 안 회색 채움)
+    return AppCard(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        AppSpacing.space3,
+        AppSpacing.screenGutter,
+        AppSpacing.space3,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,7 +641,7 @@ class _AdminApprovalManagementScreenState
           // 상태 필터
           Text(
             '상태',
-            style: AppTypography.labelMedium.copyWith(
+            style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textSecondary,
             ),
           ),
@@ -623,10 +651,7 @@ class _AdminApprovalManagementScreenState
             child: Row(
               children: [
                 if (myTurnCount > 0) ...[
-                  _buildStatusFilterChip(
-                    '내 차례 ($myTurnCount)',
-                    'my_turn',
-                  ),
+                  _buildStatusFilterChip('내 차례 ($myTurnCount)', 'my_turn'),
                   const SizedBox(width: AppSpacing.space2),
                 ],
                 _buildStatusFilterChip('전체', 'all'),
@@ -673,7 +698,6 @@ class _AdminApprovalManagementScreenState
     return SeedChip(
       label: label,
       selected: isSelected,
-      size: SeedChipSize.small,
       onTap: () {
         setState(() {
           _statusFilter = value;
@@ -683,13 +707,16 @@ class _AdminApprovalManagementScreenState
   }
 
   Widget _buildBulkActionSection(List<ApprovalRequest> filteredRequests) {
-    final pendingRequests =
-        filteredRequests.where((r) => r.status == ApprovalStatus.pending);
+    final pendingRequests = filteredRequests.where(
+      (r) => r.status == ApprovalStatus.pending,
+    );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space2,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        0,
+        AppSpacing.screenGutter,
+        AppSpacing.space3,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,13 +725,15 @@ class _AdminApprovalManagementScreenState
           Row(
             children: [
               Checkbox(
-                value: _selectedRequests.length == pendingRequests.length &&
+                value:
+                    _selectedRequests.length == pendingRequests.length &&
                     pendingRequests.isNotEmpty,
                 onChanged: (value) {
                   setState(() {
                     if (value == true) {
-                      _selectedRequests =
-                          pendingRequests.map((r) => r.id).toSet();
+                      _selectedRequests = pendingRequests
+                          .map((r) => r.id)
+                          .toSet();
                     } else {
                       _selectedRequests.clear();
                     }
@@ -713,31 +742,23 @@ class _AdminApprovalManagementScreenState
                 },
                 activeColor: AppSemanticColors.interactivePrimaryDefault,
               ),
-              Text(
-                '전체 선택',
-                style: AppTypography.titleSmall,
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space2,
-                  vertical: AppSpacing.space0_5,
-                ),
-                decoration: BoxDecoration(
-                  color: _selectedRequests.isNotEmpty
-                      ? AppSemanticColors.interactivePrimaryDefault
-                          .withValues(alpha: 0.1)
-                      : AppSemanticColors.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                ),
+              Flexible(
                 child: Text(
-                  '${_selectedRequests.length}/${pendingRequests.length}',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: _selectedRequests.isNotEmpty
-                        ? AppSemanticColors.interactivePrimaryDefault
-                        : AppSemanticColors.textSecondary,
+                  '전체 선택',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.titleSmall.copyWith(
+                    color: AppSemanticColors.textPrimary,
                   ),
                 ),
+              ),
+              const SizedBox(width: AppSpacing.space2),
+              // 고른 건수 — B안 옅은 알약(고르면 틸)
+              AppTag(
+                label: '${_selectedRequests.length}/${pendingRequests.length}',
+                tone: _selectedRequests.isNotEmpty
+                    ? AppTagTone.accent
+                    : AppTagTone.neutral,
               ),
             ],
           ),
@@ -750,7 +771,7 @@ class _AdminApprovalManagementScreenState
                   child: SeedButton(
                     label: _isBulkProcessing ? '처리중...' : '선택 항목 반려',
                     onPressed: _isBulkProcessing ? null : _bulkReject,
-                    variant: SeedButtonVariant.neutralOutline,
+                    variant: SeedButtonVariant.neutralWeak,
                     isLoading: _isBulkProcessing,
                     prefixIcon: Icons.close,
                   ),
@@ -768,8 +789,6 @@ class _AdminApprovalManagementScreenState
               ],
             ),
           ],
-          const SizedBox(height: AppSpacing.space2),
-          const Divider(),
         ],
       ),
     );
@@ -779,298 +798,323 @@ class _AdminApprovalManagementScreenState
     final isPending = request.status == ApprovalStatus.pending;
     final isSelected = _selectedRequests.contains(request.id);
 
-    // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      decoration: BoxDecoration(
-        color: isSelected ? AppSemanticColors.brandWeak : AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: isSelected
-              ? AppSemanticColors.brandDefault
-              : AppSemanticColors.borderSubtle,
-          width: isSelected ? 1.5 : 1,
+    // B안 카드 — 회색 바탕 위 테두리 없는 흰 카드(모서리 20·여백 20).
+    // 고른 카드만 옅은 틸 바탕 + 틸 테두리로 표시한다. 길게 누르기가 필요해 InkWell을 그대로 쓴다.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      child: Material(
+        color: isSelected
+            ? AppSemanticColors.brandWeak
+            : AppSemanticColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          side: isSelected
+              ? const BorderSide(
+                  color: AppSemanticColors.brandDefault,
+                  width: 1.5,
+                )
+              : BorderSide.none,
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        // 기본 탭은 문서 상세(공문 미리보기)로 간다. 일괄 선택은 길게 눌러 시작하고,
-        // 선택 모드에서는 탭이 선택 토글이 된다 (대기 문서만 선택 대상).
-        onTap: () {
-          if (_isSelectMode && isPending) {
-            setState(() {
-              if (isSelected) {
-                _selectedRequests.remove(request.id);
-              } else {
-                _selectedRequests.add(request.id);
-              }
-              _isSelectMode = _selectedRequests.isNotEmpty;
-            });
-            return;
-          }
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ApprovalDetailScreen(approval: request),
-            ),
-          );
-        },
-        onLongPress: isPending
-            ? () {
-                setState(() {
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          // 기본 탭은 문서 상세(공문 미리보기)로 간다. 일괄 선택은 길게 눌러 시작하고,
+          // 선택 모드에서는 탭이 선택 토글이 된다 (대기 문서만 선택 대상).
+          onTap: () {
+            if (_isSelectMode && isPending) {
+              setState(() {
+                if (isSelected) {
+                  _selectedRequests.remove(request.id);
+                } else {
                   _selectedRequests.add(request.id);
-                  _isSelectMode = true;
-                });
-              }
-            : null,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (_canManage && isPending)
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Checkbox(
-                        value: isSelected,
-                        onChanged: (value) {
-                          setState(() {
-                            if (value == true) {
-                              _selectedRequests.add(request.id);
-                            } else {
-                              _selectedRequests.remove(request.id);
-                            }
-                            _isSelectMode = _selectedRequests.isNotEmpty;
-                          });
-                        },
-                        activeColor:
-                            AppSemanticColors.interactivePrimaryDefault,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                }
+                _isSelectMode = _selectedRequests.isNotEmpty;
+              });
+              return;
+            }
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ApprovalDetailScreen(approval: request),
+              ),
+            );
+          },
+          onLongPress: isPending
+              ? () {
+                  setState(() {
+                    _selectedRequests.add(request.id);
+                    _isSelectMode = true;
+                  });
+                }
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    if (_canManage && isPending)
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: isSelected,
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedRequests.add(request.id);
+                              } else {
+                                _selectedRequests.remove(request.id);
+                              }
+                              _isSelectMode = _selectedRequests.isNotEmpty;
+                            });
+                          },
+                          activeColor:
+                              AppSemanticColors.interactivePrimaryDefault,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
                       ),
-                    ),
-                  if (_canManage && isPending)
-                    const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                request.title,
-                                style: AppTypography.titleMedium.copyWith(
-                                  color: AppSemanticColors.textPrimary,
+                    if (_canManage && isPending)
+                      const SizedBox(width: AppSpacing.space3),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  request.title,
+                                  style: AppTypography.titleMedium.copyWith(
+                                    color: AppSemanticColors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
+                              const SizedBox(width: AppSpacing.space2),
+                              // 카드를 누르면 공문 상세를 볼 수 있다는 신호
+                              Icon(
+                                Icons.visibility_outlined,
+                                size: 18,
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                              const SizedBox(width: AppSpacing.space2),
+                              ApprovalStatusBadge(
+                                status: request.status,
+                                compact: true,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.space1_5),
+                          Text(
+                            '요청자: ${request.requesterName}',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
                             ),
-                            const SizedBox(width: AppSpacing.space2),
-                            // 카드를 누르면 공문 상세를 볼 수 있다는 신호
-                            Icon(
-                              Icons.visibility_outlined,
-                              size: 18,
+                          ),
+                          const SizedBox(height: AppSpacing.space0_5),
+                          Text(
+                            '요청일: ${_formatDate(request.createdAt)}',
+                            style: AppTypography.bodySmall.copyWith(
                               color: AppSemanticColors.textTertiary,
                             ),
-                            const SizedBox(width: AppSpacing.space2),
-                            ApprovalStatusBadge(
-                              status: request.status,
-                              compact: true,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.space1),
-                        Text(
-                          '요청자: ${request.requesterName}',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
                           ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (request.attachmentFileName != null) ...[
+                  const SizedBox(height: AppSpacing.space2),
+                  GestureDetector(
+                    onTap: () => _openAttachment(
+                      request.attachmentUrl,
+                      request.attachmentFileName!,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.attach_file,
+                          size: 16,
+                          color: AppSemanticColors.textLink,
                         ),
-                        const SizedBox(height: AppSpacing.space0_5),
-                        Text(
-                          '요청일: ${_formatDate(request.createdAt)}',
-                          style: AppTypography.labelSmall.copyWith(
-                            color: AppSemanticColors.textTertiary,
+                        const SizedBox(width: AppSpacing.space1),
+                        Icon(
+                          Icons.download,
+                          size: 16,
+                          color: AppSemanticColors.textLink,
+                        ),
+                        const SizedBox(width: AppSpacing.space1),
+                        Expanded(
+                          child: Text(
+                            request.attachmentFileName!,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textLink,
+                              decoration: TextDecoration.underline,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-              ),
-              if (request.attachmentFileName != null) ...[
-                const SizedBox(height: AppSpacing.space2),
-                GestureDetector(
-                  onTap: () => _openAttachment(
-                    request.attachmentUrl,
-                    request.attachmentFileName!,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.attach_file,
-                        size: 14,
-                        color: AppSemanticColors.textLink,
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
-                      Icon(
-                        Icons.download,
-                        size: 14,
-                        color: AppSemanticColors.textLink,
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
-                      Expanded(
-                        child: Text(
-                          request.attachmentFileName!,
-                          style: AppTypography.caption.copyWith(
-                            color: AppSemanticColors.textLink,
-                            decoration: TextDecoration.underline,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              if (request.rejectReason != null &&
-                  request.status == ApprovalStatus.rejected) ...[
-                const SizedBox(height: AppSpacing.space2),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space2),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.statusErrorBackground,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 14,
-                        color: AppSemanticColors.statusErrorIcon,
-                      ),
-                      const SizedBox(width: AppSpacing.space1),
-                      Expanded(
-                        child: Text(
-                          request.rejectReason!,
-                          style: AppTypography.caption.copyWith(
-                            color: AppSemanticColors.statusErrorText,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              // 결재선 진행 상태
-              if (request.approvalLine.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.space2),
-                Row(
-                  children: [
-                    Icon(Icons.route,
-                        size: 14, color: AppSemanticColors.textTertiary),
-                    const SizedBox(width: AppSpacing.space1),
-                    Expanded(
-                      child: Text(
-                        '결재선 ${request.approvalLine.where((s) => s.isApproved).length}/${request.approvalLine.length}'
-                        '${request.status == ApprovalStatus.pending && request.currentStep != null ? ' · 현재 차례: ${request.currentStep!.approverName}' : ''}',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              if (isPending && !_isSelectMode) ...[
-                const SizedBox(height: AppSpacing.space3),
-                if (_isMyTurn(request))
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SeedButton(
-                          label: '반려',
-                          onPressed: () => _rejectRequest(request.id),
-                          variant: SeedButtonVariant.neutralOutline,
-                          prefixIcon: Icons.close,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space2),
-                      Expanded(
-                        child: SeedButton(
-                          label: '승인',
-                          onPressed: () => _approveRequest(
-                            request.id,
-                            hasApprovalLine: request.approvalLine.isNotEmpty,
-                          ),
-                          variant: SeedButtonVariant.brandSolid,
-                          prefixIcon: Icons.check,
-                        ),
-                      ),
-                    ],
-                  )
-                else if (PermissionUtils.has(
-                    context.read<AuthProvider>().currentUser,
-                    AppPermission.approvalManage))
-                  // 내 차례가 아니어도 기관 관리자는 직권 승인(전결)·직권 반려 가능
-                  // (실제 권한 재검증은 서버가 하므로 여기서는 노출 조건만 담당)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SeedButton(
-                          label: '직권 반려',
-                          onPressed: () async {
-                            if (await _confirmForceAction(request, actionLabel: '직권 반려')) {
-                              _rejectRequest(request.id, force: true);
-                            }
-                          },
-                          variant: SeedButtonVariant.neutralOutline,
-                          prefixIcon: Icons.close,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space2),
-                      Expanded(
-                        child: SeedButton(
-                          label: '직권 승인',
-                          onPressed: () async {
-                            if (await _confirmForceAction(request, actionLabel: '직권 승인')) {
-                              _approveRequest(
-                                request.id,
-                                force: true,
-                                hasApprovalLine: request.approvalLine.isNotEmpty,
-                              );
-                            }
-                          },
-                          variant: SeedButtonVariant.brandSolid,
-                          prefixIcon: Icons.check,
-                        ),
-                      ),
-                    ],
-                  )
-                else
+                if (request.rejectReason != null &&
+                    request.status == ApprovalStatus.rejected) ...[
+                  const SizedBox(height: AppSpacing.space2),
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+                    padding: const EdgeInsets.all(AppSpacing.space3),
                     decoration: BoxDecoration(
-                      color: AppSemanticColors.backgroundTertiary,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                      color: AppSemanticColors.statusErrorBackground,
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
                     ),
-                    child: Center(
-                      child: Text(
-                        '${request.currentStep?.approverName ?? '다른 결재자'}님의 차례입니다',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppSemanticColors.textSecondary,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: AppSemanticColors.statusErrorIcon,
+                        ),
+                        const SizedBox(width: AppSpacing.space1_5),
+                        Expanded(
+                          child: Text(
+                            request.rejectReason!,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.statusErrorText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                // 결재선 진행 상태
+                if (request.approvalLine.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.space2),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.route,
+                        size: 16,
+                        color: AppSemanticColors.textTertiary,
+                      ),
+                      const SizedBox(width: AppSpacing.space1),
+                      Expanded(
+                        child: Text(
+                          '결재선 ${request.approvalLine.where((s) => s.isApproved).length}/${request.approvalLine.length}'
+                          '${request.status == ApprovalStatus.pending && request.currentStep != null ? ' · 현재 차례: ${request.currentStep!.approverName}' : ''}',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (isPending && !_isSelectMode) ...[
+                  const SizedBox(height: AppSpacing.space3),
+                  if (_isMyTurn(request))
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SeedButton(
+                            label: '반려',
+                            onPressed: () => _rejectRequest(request.id),
+                            variant: SeedButtonVariant.neutralWeak,
+                            prefixIcon: Icons.close,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Expanded(
+                          child: SeedButton(
+                            label: '승인',
+                            onPressed: () => _approveRequest(
+                              request.id,
+                              hasApprovalLine: request.approvalLine.isNotEmpty,
+                            ),
+                            variant: SeedButtonVariant.brandSolid,
+                            prefixIcon: Icons.check,
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (PermissionUtils.has(
+                    context.read<AuthProvider>().currentUser,
+                    AppPermission.approvalManage,
+                  ))
+                    // 내 차례가 아니어도 기관 관리자는 직권 승인(전결)·직권 반려 가능
+                    // (실제 권한 재검증은 서버가 하므로 여기서는 노출 조건만 담당)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SeedButton(
+                            label: '직권 반려',
+                            onPressed: () async {
+                              if (await _confirmForceAction(
+                                request,
+                                actionLabel: '직권 반려',
+                              )) {
+                                _rejectRequest(request.id, force: true);
+                              }
+                            },
+                            variant: SeedButtonVariant.neutralWeak,
+                            prefixIcon: Icons.close,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Expanded(
+                          child: SeedButton(
+                            label: '직권 승인',
+                            onPressed: () async {
+                              if (await _confirmForceAction(
+                                request,
+                                actionLabel: '직권 승인',
+                              )) {
+                                _approveRequest(
+                                  request.id,
+                                  force: true,
+                                  hasApprovalLine:
+                                      request.approvalLine.isNotEmpty,
+                                );
+                              }
+                            },
+                            variant: SeedButtonVariant.brandSolid,
+                            prefixIcon: Icons.check,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space3,
+                        vertical: AppSpacing.space3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppSemanticColors.fillDefault,
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.control,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${request.currentStep?.approverName ?? '다른 결재자'}님의 차례입니다',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
