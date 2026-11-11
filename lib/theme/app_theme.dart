@@ -12,17 +12,46 @@ class AppTheme {
   ///
   /// 화면 넘김(pageTransitionsTheme)도 여기서 건다 — 앱의 MaterialPageRoute가 전부 이걸 쓴다
   /// (theme/app_page_transitions.dart).
+  ///
+  /// B안(2026-11-12): 회색 바탕·흰 카드·큰 단추·옅은 알약·아래 시트를 여기서 기본값으로 건다.
+  /// 화면이 색·모양을 따로 정한 곳은 그 값이 이긴다(3단계에서 화면별로 걷어낸다).
   static ThemeData withAppChrome(ThemeData base) {
     return base.copyWith(
+      scaffoldBackgroundColor: AppSemanticColors.backgroundCanvas,
+      colorScheme: _colorScheme(base.colorScheme),
       appBarTheme: headerTheme,
       pageTransitionsTheme: appPageTransitionsTheme,
+      actionIconTheme: _actionIconTheme,
       dividerTheme: base.dividerTheme.copyWith(
-        color: AppSemanticColors.borderSubtle,
+        color: AppSemanticColors.borderHairline,
       ),
+      cardTheme: _cardTheme,
+      filledButtonTheme: _filledButtonTheme,
+      elevatedButtonTheme: _elevatedButtonTheme,
+      outlinedButtonTheme: _outlinedButtonTheme,
+      textButtonTheme: _textButtonTheme,
+      iconButtonTheme: _iconButtonTheme,
+      inputDecorationTheme: _inputDecorationTheme,
+      chipTheme: _chipTheme,
+      floatingActionButtonTheme: _fabTheme,
+      bottomSheetTheme: _bottomSheetTheme,
+      dialogTheme: _dialogTheme,
+      snackBarTheme: _snackBarTheme,
+      switchTheme: _switchTheme,
+      checkboxTheme: _checkboxTheme,
+      radioTheme: _radioTheme,
+      progressIndicatorTheme: _progressTheme,
+      bottomNavigationBarTheme: _bottomNavTheme,
+      tabBarTheme: _tabBarTheme,
+      listTileTheme: _listTileTheme,
+      popupMenuTheme: _popupMenuTheme,
+      textSelectionTheme: _textSelectionTheme,
     );
   }
 
-  /// 상단 바 — 틸 바탕 + 아래 진한 틸 선. 스크롤해도 색·그림자가 바뀌지 않는다.
+  /// 상단 바 — B안(2026-11-12): 틸 바탕은 남기고 높이 56, 아래 선은 없앴다(회색 바탕과 맞닿아
+  /// 선이 없어도 구분된다). 안쪽 화면 제목은 가운데 17/w600, 탭 첫 화면은 CareVAppBar(isRoot)로
+  /// 왼쪽 20/w700. 스크롤해도 색·그림자가 바뀌지 않는다.
   static AppBarTheme get headerTheme {
     return AppBarTheme(
       backgroundColor: AppSemanticColors.headerBackground,
@@ -30,17 +59,18 @@ class AppTheme {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: true,
+      toolbarHeight: AppSpacing.toolbarHeight,
       surfaceTintColor: AppColors.transparent,
-      shape: const Border(
-        bottom: BorderSide(color: AppSemanticColors.headerBorder),
-      ),
+      actionsPadding: const EdgeInsets.only(right: AppSpacing.space1),
       iconTheme: const IconThemeData(
         color: AppSemanticColors.headerForeground,
+        size: 24,
       ),
       actionsIconTheme: const IconThemeData(
         color: AppSemanticColors.headerForeground,
+        size: 24,
       ),
-      titleTextStyle: AppTypography.heading5.copyWith(
+      titleTextStyle: AppTypography.appBarTitle.copyWith(
         fontFamily: AppTypography.fontFamilySans,
         color: AppSemanticColors.headerForeground,
       ),
@@ -48,6 +78,343 @@ class AppTheme {
       // 검은 사진 뷰어 상단 바에서도 아이콘이 보인다
     );
   }
+
+  // ── B안 부품 기본값 (withAppChrome에서 건다) ──────────────────────────
+
+  static ColorScheme _colorScheme(ColorScheme base) => base.copyWith(
+        primary: AppSemanticColors.brandDefault,
+        onPrimary: AppSemanticColors.textInverse,
+        surface: AppSemanticColors.surfaceCard,
+        onSurface: AppSemanticColors.textPrimary,
+        onSurfaceVariant: AppSemanticColors.textSecondary,
+        surfaceContainer: AppSemanticColors.surfaceCard,
+        surfaceContainerHigh: AppSemanticColors.surfaceCard,
+        surfaceTint: AppColors.transparent,
+        outline: AppSemanticColors.borderDefault,
+        outlineVariant: AppSemanticColors.borderHairline,
+        error: AppSemanticColors.dangerDefault,
+        scrim: AppSemanticColors.overlayScrim,
+      );
+
+  /// 뒤로 가기는 시안처럼 꺾쇠(‹) — AppBar가 저절로 넣는 뒤로 단추도 이 모양이 된다.
+  static final ActionIconThemeData _actionIconTheme = ActionIconThemeData(
+    backButtonIconBuilder: (context) =>
+        const Icon(Icons.chevron_left_rounded, size: 30),
+  );
+
+  /// 카드 — 흰 바탕, 테두리·그림자 없음, 모서리 20.
+  static const CardThemeData _cardTheme = CardThemeData(
+    color: AppSemanticColors.surfaceCard,
+    surfaceTintColor: AppColors.transparent,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.card)),
+    ),
+  );
+
+  static const RoundedRectangleBorder _controlShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+  );
+
+  /// 주 단추 — 틸, 높이 48 이상, 모서리 14, 16/w600.
+  static ButtonStyle get _primaryButtonStyle => ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith((s) {
+          if (s.contains(WidgetState.disabled)) {
+            return AppSemanticColors.surfaceDisabled;
+          }
+          if (s.contains(WidgetState.pressed)) {
+            return AppSemanticColors.brandPressed;
+          }
+          return AppSemanticColors.brandDefault;
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.disabled)
+                ? AppSemanticColors.textDisabled
+                : AppSemanticColors.textInverse),
+        overlayColor: const WidgetStatePropertyAll(AppColors.transparent),
+        elevation: const WidgetStatePropertyAll(0),
+        shape: const WidgetStatePropertyAll(_controlShape),
+        minimumSize: const WidgetStatePropertyAll(
+          Size(AppSpacing.minTouchTarget, AppSpacing.buttonHeight),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: AppSpacing.space5),
+        ),
+        textStyle: const WidgetStatePropertyAll(AppTypography.buttonMedium),
+      );
+
+  static FilledButtonThemeData get _filledButtonTheme =>
+      FilledButtonThemeData(style: _primaryButtonStyle);
+
+  static ElevatedButtonThemeData get _elevatedButtonTheme =>
+      ElevatedButtonThemeData(style: _primaryButtonStyle);
+
+  /// 테두리 단추 — 흰 바탕 위 보조 동작. 선은 기본 회색 한 줄만.
+  static OutlinedButtonThemeData get _outlinedButtonTheme =>
+      OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppSemanticColors.textPrimary,
+          disabledForegroundColor: AppSemanticColors.textDisabled,
+          side: const BorderSide(color: AppSemanticColors.borderDefault),
+          shape: _controlShape,
+          minimumSize: const Size(
+            AppSpacing.minTouchTarget,
+            AppSpacing.buttonHeight,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space5),
+          textStyle: AppTypography.buttonMedium,
+        ),
+      );
+
+  /// 글자 단추("전체보기"·"취소") — 틸 15/w600, 터치 48.
+  static TextButtonThemeData get _textButtonTheme => TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppSemanticColors.textLink,
+          disabledForegroundColor: AppSemanticColors.textDisabled,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.xl)),
+          ),
+          minimumSize: const Size(
+            AppSpacing.minTouchTarget,
+            AppSpacing.minTouchTarget,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3),
+          textStyle: AppTypography.titleSmall,
+        ),
+      );
+
+  /// 아이콘 단추 — 48 터치, 눌림 자국은 모서리 14 네모(시안 .ibtn).
+  static IconButtonThemeData get _iconButtonTheme => IconButtonThemeData(
+        style: IconButton.styleFrom(
+          shape: _controlShape,
+          minimumSize: const Size(
+            AppSpacing.minTouchTarget,
+            AppSpacing.minTouchTarget,
+          ),
+        ),
+      );
+
+  /// 입력칸 — 테마에서는 채우지 않는다(filled: false). 화면 곳곳의 맨 TextField가 저마다
+  /// 테두리·바탕을 정해 두어, 여기서 채우면 그 안에 네모 회색이 겹쳐 보인다. B안의 '회색으로
+  /// 채운 입력칸'은 SeedTextField·AppInput이 직접 그린다. 여기는 테두리를 정하지 않은 칸의 기본값.
+  static const InputDecorationTheme _inputDecorationTheme =
+      InputDecorationTheme(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+      borderSide: BorderSide(color: AppSemanticColors.borderDefault),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+      borderSide: BorderSide(color: AppSemanticColors.borderDefault),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+      borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+      borderSide: BorderSide(color: AppSemanticColors.statusErrorText),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+      borderSide: BorderSide(color: AppSemanticColors.statusErrorText, width: 2),
+    ),
+    contentPadding: EdgeInsets.symmetric(
+      horizontal: AppSpacing.space4,
+      vertical: 13,
+    ),
+    hintStyle: TextStyle(color: AppSemanticColors.textTertiary),
+    labelStyle: TextStyle(color: AppSemanticColors.textSecondary),
+    errorStyle: TextStyle(
+      fontSize: AppTypography.fontSizeBase,
+      color: AppSemanticColors.statusErrorText,
+    ),
+    helperStyle: TextStyle(
+      fontSize: AppTypography.fontSizeBase,
+      color: AppSemanticColors.textTertiary,
+    ),
+  );
+
+  /// 칩 — 테두리 없는 알약. 고르면 틸 바탕 + 흰 글자(체크 표시 없음).
+  static ChipThemeData get _chipTheme => ChipThemeData(
+        backgroundColor: AppSemanticColors.fillDefault,
+        selectedColor: AppSemanticColors.brandDefault,
+        disabledColor: AppSemanticColors.surfaceDisabled,
+        side: BorderSide.none,
+        shape: const StadiumBorder(),
+        showCheckmark: false,
+        checkmarkColor: AppSemanticColors.textInverse,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+        labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.space1),
+        labelStyle: AppTypography.titleSmall.copyWith(
+          color: WidgetStateColor.resolveWith((s) {
+            if (s.contains(WidgetState.disabled)) {
+              return AppSemanticColors.textDisabled;
+            }
+            return s.contains(WidgetState.selected)
+                ? AppSemanticColors.textInverse
+                : AppSemanticColors.textSecondary;
+          }),
+        ),
+      );
+
+  /// FAB — 알약 모양 틸, 글자 17/w600, 높이 56.
+  static const FloatingActionButtonThemeData _fabTheme =
+      FloatingActionButtonThemeData(
+    backgroundColor: AppSemanticColors.brandDefault,
+    foregroundColor: AppSemanticColors.textInverse,
+    splashColor: AppSemanticColors.brandPressed,
+    elevation: 4,
+    focusElevation: 4,
+    hoverElevation: 5,
+    highlightElevation: 6,
+    shape: StadiumBorder(),
+    extendedTextStyle: AppTypography.buttonLarge,
+    extendedPadding: EdgeInsetsDirectional.only(
+      start: AppSpacing.space4,
+      end: AppSpacing.space5,
+    ),
+    extendedIconLabelSpacing: AppSpacing.space1_5,
+    extendedSizeConstraints: BoxConstraints.tightFor(height: 56),
+  );
+
+  /// 아래에서 올라오는 시트 — 흰 바탕, 위 모서리 24, 뒤는 rgba(11,15,20,.45).
+  static const BottomSheetThemeData _bottomSheetTheme = BottomSheetThemeData(
+    backgroundColor: AppSemanticColors.surfaceCard,
+    surfaceTintColor: AppColors.transparent,
+    modalBackgroundColor: AppSemanticColors.surfaceCard,
+    modalBarrierColor: AppSemanticColors.overlayScrim,
+    elevation: 0,
+    modalElevation: 0,
+    clipBehavior: Clip.antiAlias,
+    dragHandleColor: AppSemanticColors.sheetHandle,
+    dragHandleSize: Size(40, 5),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppBorderRadius.sheet),
+      ),
+    ),
+  );
+
+  /// 가운데 대화상자(남아 있는 맞춤 창) — 흰 바탕, 모서리 24.
+  static final DialogThemeData _dialogTheme = DialogThemeData(
+    backgroundColor: AppSemanticColors.surfaceCard,
+    surfaceTintColor: AppColors.transparent,
+    barrierColor: AppSemanticColors.overlayScrim,
+    elevation: 0,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.sheet)),
+    ),
+    titleTextStyle:
+        AppTypography.heading5.copyWith(color: AppSemanticColors.textPrimary),
+    contentTextStyle:
+        AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
+  );
+
+  /// 알림 띠 — 짙은 회색 반투명, 흰 글자, 모서리 14(시안 .toast).
+  static final SnackBarThemeData _snackBarTheme = SnackBarThemeData(
+    backgroundColor: AppSemanticColors.toastBackground,
+    contentTextStyle:
+        AppTypography.labelLarge.copyWith(color: AppSemanticColors.textInverse),
+    actionTextColor: AppColors.teal300,
+    elevation: 0,
+    behavior: SnackBarBehavior.floating,
+    insetPadding: const EdgeInsets.all(AppSpacing.space4),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+    ),
+  );
+
+  /// 스위치 — 켜면 틸, 끄면 회색(#C5CAD1), 손잡이는 늘 흰색, 테두리 없음.
+  static final SwitchThemeData _switchTheme = SwitchThemeData(
+    thumbColor: const WidgetStatePropertyAll(AppSemanticColors.surfaceCard),
+    trackColor: WidgetStateProperty.resolveWith((s) {
+      if (s.contains(WidgetState.disabled)) {
+        return AppSemanticColors.surfaceDisabled;
+      }
+      return s.contains(WidgetState.selected)
+          ? AppSemanticColors.brandDefault
+          : AppSemanticColors.switchTrackOff;
+    }),
+    trackOutlineColor: const WidgetStatePropertyAll(AppColors.transparent),
+  );
+
+  /// 체크 — 고르면 틸. 빈 칸 테두리는 흰 바탕에서 보이는 iconSubtle(4.8:1).
+  static final CheckboxThemeData _checkboxTheme = CheckboxThemeData(
+    fillColor: WidgetStateProperty.resolveWith((s) =>
+        s.contains(WidgetState.selected)
+            ? AppSemanticColors.brandDefault
+            : AppColors.transparent),
+    checkColor: const WidgetStatePropertyAll(AppSemanticColors.textInverse),
+    side: const BorderSide(color: AppSemanticColors.iconSubtle, width: 1.5),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.md)),
+    ),
+  );
+
+  static final RadioThemeData _radioTheme = RadioThemeData(
+    fillColor: WidgetStateProperty.resolveWith((s) =>
+        s.contains(WidgetState.selected)
+            ? AppSemanticColors.brandDefault
+            : AppSemanticColors.iconSubtle),
+  );
+
+  static const ProgressIndicatorThemeData _progressTheme =
+      ProgressIndicatorThemeData(
+    color: AppSemanticColors.brandDefault,
+    linearTrackColor: AppSemanticColors.fillStrong,
+    circularTrackColor: AppColors.transparent,
+  );
+
+  /// 하단 탭 기본값 — 실제 앱은 AppBottomTabBar(widgets/common)를 쓴다.
+  static final BottomNavigationBarThemeData _bottomNavTheme =
+      BottomNavigationBarThemeData(
+    backgroundColor: AppSemanticColors.surfaceCard,
+    selectedItemColor: AppSemanticColors.brandDefault,
+    unselectedItemColor: AppSemanticColors.iconSubtle,
+    selectedLabelStyle:
+        AppTypography.labelSmall.copyWith(fontWeight: AppTypography.fontWeightBold),
+    unselectedLabelStyle: AppTypography.labelSmall,
+    elevation: 0,
+    type: BottomNavigationBarType.fixed,
+  );
+
+  /// 상단 바 밖의 탭바 — 틸 밑줄, 글자 15/w600. 상단 바 안 탭바는 화면이 흰 글자로 따로 정한다.
+  static const TabBarThemeData _tabBarTheme = TabBarThemeData(
+    labelColor: AppSemanticColors.textPrimary,
+    unselectedLabelColor: AppSemanticColors.textSecondary,
+    labelStyle: AppTypography.titleSmall,
+    unselectedLabelStyle: AppTypography.labelLarge,
+    indicatorColor: AppSemanticColors.brandDefault,
+    dividerColor: AppSemanticColors.borderHairline,
+  );
+
+  /// 목록 줄 — 제목 16/w600, 부제 14 ink2.
+  static final ListTileThemeData _listTileTheme = ListTileThemeData(
+    titleTextStyle:
+        AppTypography.titleMedium.copyWith(color: AppSemanticColors.textPrimary),
+    subtitleTextStyle:
+        AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
+    iconColor: AppSemanticColors.textSecondary,
+    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+  );
+
+  static final PopupMenuThemeData _popupMenuTheme = PopupMenuThemeData(
+    color: AppSemanticColors.surfaceCard,
+    surfaceTintColor: AppColors.transparent,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
+    ),
+    textStyle:
+        AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
+  );
+
+  static const TextSelectionThemeData _textSelectionTheme =
+      TextSelectionThemeData(
+    cursorColor: AppSemanticColors.brandDefault,
+    selectionColor: Color(0xFFBFE3DC), // 시안 ::selection
+    selectionHandleColor: AppSemanticColors.brandDefault,
+  );
 
   static ThemeData get lightTheme {
     return ThemeData(
