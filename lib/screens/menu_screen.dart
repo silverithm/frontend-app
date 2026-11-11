@@ -5,10 +5,11 @@ import '../providers/auth_provider.dart';
 import '../providers/work_task_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/permissions.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_tag.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import 'admin_company_settings_screen.dart';
@@ -147,15 +148,10 @@ class MenuScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
-      appBar: AppBar(
-        // 탭 첫 화면 — 왼쪽 큰 제목(B안)
-        title: Text('전체', style: AppTypography.appBarTitleLarge),
-        centerTitle: false,
-        titleSpacing: AppSpacing.space5,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-      ),
+      // B안: 옅은 회색 바탕 위 묶음별 흰 카드
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      // 탭 첫 화면 — 왼쪽 큰 제목(B안)
+      appBar: const CareVAppBar(title: '전체', isRoot: true),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.space4),
         children: [
@@ -325,7 +321,7 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // SeedListSection(단일 셀) — 흰 표면 + 얇은 구분선 컨테이너로 통일
+    // SeedListSection(단일 셀) — 회색 바탕 위 테두리 없는 흰 카드(모서리 20)
     return SeedListSection(
       children: [
         SeedListCell(
@@ -341,27 +337,14 @@ class _ProfileCard extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space2,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.brandWeak,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                ),
-                child: Text(
-                  roleLabel,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppSemanticColors.brandPressed,
-                  ),
-                ),
-              ),
+              // B안: 손으로 그린 알약 대신 공통 꼬리표(옅은 틸, 13/w600)
+              AppTag(label: roleLabel, tone: AppTagTone.accent),
               const SizedBox(width: AppSpacing.space2),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: AppSemanticColors.textTertiary,
+              // SeedListCell 기본 꺾쇠와 같은 모양
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: AppSemanticColors.iconSubtle,
               ),
             ],
           ),
@@ -380,7 +363,7 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // SeedListSection — 그룹 타이틀 + 흰 표면 카드(얇은 구분선)로 정돈
+    // SeedListSection — 묶음 제목(15/w600 회색) + 흰 카드 하나에 줄 여러 개, 선 없이 줄 여백으로 나눔
     return SeedListSection(title: title, children: items);
   }
 }
@@ -402,7 +385,7 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // SeedListCell — leading 아이콘 칩 + title/description + trailing chevron 구성으로 정돈
+    // SeedListCell — 옅은 틸 둥근 아이콘 44 + 제목 16/w600·설명 14 + 꺾쇠, 줄 높이 60 이상
     return SeedListCell(
       leadingIcon: icon,
       title: label,
