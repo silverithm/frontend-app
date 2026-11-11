@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -15,11 +16,15 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/app_fab.dart';
 import '../widgets/common/app_tag.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
 
 /// 우리 기관 사람만 보는 자료실. 케어브이 커뮤니티 자료실과 달리
@@ -45,6 +50,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
   bool _isLoading = true;
   bool _hasError = false;
   String _selectedCategory = '';
+  bool _fabCollapsed = false;
 
   @override
   void initState() {
@@ -275,33 +281,32 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                   const SizedBox(height: AppSpacing.space1_5),
                   DropdownButtonFormField<String>(
                     initialValue: category,
+                    // B안 입력칸: 회색 채움·테두리 없음·모서리 14, 누르고 있으면 틸 2px(SeedTextField와 같다)
                     decoration: InputDecoration(
                       isCollapsed: true,
+                      filled: true,
+                      fillColor: AppSemanticColors.fillDefault,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space3_5,
-                        vertical: AppSpacing.space2_5,
+                        horizontal: AppSpacing.space4,
+                        vertical: AppSpacing.space3_5,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(
-                          AppBorderRadius.lg,
+                          AppBorderRadius.control,
                         ),
-                        borderSide: BorderSide(
-                          color: AppSemanticColors.borderDefault,
-                        ),
+                        borderSide: BorderSide.none,
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(
-                          AppBorderRadius.lg,
+                          AppBorderRadius.control,
                         ),
-                        borderSide: BorderSide(
-                          color: AppSemanticColors.borderDefault,
-                        ),
+                        borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(
-                          AppBorderRadius.lg,
+                          AppBorderRadius.control,
                         ),
-                        borderSide: BorderSide(
+                        borderSide: const BorderSide(
                           color: AppSemanticColors.borderFocus,
                           width: 2,
                         ),
@@ -344,6 +349,20 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
 
   // ===================== 화면 =====================
 
+  /// 목록을 아래로 내리면 FAB 글자를 접고, 위로 올리면 편다.
+  bool _onUserScroll(UserScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final bool? collapsed = switch (notification.direction) {
+      ScrollDirection.reverse => true,
+      ScrollDirection.forward => false,
+      ScrollDirection.idle => null,
+    };
+    if (collapsed != null && collapsed != _fabCollapsed) {
+      setState(() => _fabCollapsed = collapsed);
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAdmin = AdminUtils.canAccessAdminPages(
@@ -351,23 +370,29 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
-      appBar: AppBar(
-        title: Text('기관 자료실', style: AppTypography.appBarTitle),
-        elevation: 0,
-      ),
+      // B안: 옅은 회색 바탕 위 흰 자료 카드
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: const CareVAppBar(title: '기관 자료실'),
+      // B안 알약 FAB — 글자는 이 버튼이 여는 시트 제목 그대로, 목록을 내리면 접힌다
       floatingActionButton: isAdmin
-          ? FloatingActionButton(
+          ? AppFab(
+              icon: Icons.add,
+              label: '자료 올리기',
+              collapsed: _fabCollapsed,
               onPressed: _showUploadSheet,
-              backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-              child: Icon(Icons.add, color: AppSemanticColors.textInverse),
             )
           : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _hasError
           ? _buildErrorState()
-          : RefreshIndicator(onRefresh: _load, child: _buildList(isAdmin)),
+          : NotificationListener<UserScrollNotification>(
+              onNotification: _onUserScroll,
+              child: RefreshIndicator(
+                onRefresh: _load,
+                child: _buildList(isAdmin),
+              ),
+            ),
     );
   }
 
@@ -404,7 +429,10 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
     final items = _visibleItems;
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: AppSpacing.space16),
+      // 마지막 카드가 FAB(56)에 가려지지 않게
+      padding: const EdgeInsets.only(
+        bottom: AppSpacing.space20 + AppSpacing.space4,
+      ),
       children: [
         if (_categories.isNotEmpty) _buildCategoryChips(),
         if (items.isEmpty)
@@ -420,11 +448,14 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
   }
 
   Widget _buildCategoryChips() {
+    // B안: 회색 바탕 위 흰 칩(SeedChip 44, 테두리 없음)
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space3,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
+        AppSpacing.space3,
+        AppSpacing.screenGutter,
+        AppSpacing.space2,
       ),
       child: Row(
         children: [
@@ -448,33 +479,11 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
   }
 
   Widget _buildChip(String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
+    return SeedChip(
+      label: label,
+      selected: isSelected,
+      onCanvas: true,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space3,
-          vertical: AppSpacing.space2,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppSemanticColors.interactivePrimaryDefault
-              : AppSemanticColors.surfaceDefault,
-          borderRadius: BorderRadius.circular(AppBorderRadius.full),
-          border: Border.all(
-            color: isSelected
-                ? AppSemanticColors.interactivePrimaryDefault
-                : AppSemanticColors.borderSubtle,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTypography.bodySmall.copyWith(
-            color: isSelected
-                ? AppSemanticColors.textInverse
-                : AppSemanticColors.textSecondary,
-          ),
-        ),
-      ),
     );
   }
 
@@ -482,115 +491,113 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
     final fileSize = (item['fileSize'] as num?)?.toInt() ?? 0;
     final description = item['description']?.toString() ?? '';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
+    // B안: 테두리 없는 흰 카드, 옅은 틸 둥근 아이콘(44). 카드 사이는 간격 12.
+    // 카드 전체가 '열기' — 열기·삭제 단추 줄을 없애 카드 높이를 줄였다(삭제는 ⋮ 메뉴)
+    return AppCard(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.screenGutter,
         0,
-        AppSpacing.space4,
-        AppSpacing.space3,
+        AppSpacing.screenGutter,
+        AppSpacing.cardGap,
       ),
-      child: Material(
-        color: AppSemanticColors.surfaceDefault,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          side: BorderSide(color: AppSemanticColors.borderSubtle),
-        ),
-        // 카드 전체가 '열기' — 열기·삭제 단추 줄을 없애 카드 높이를 줄였다(삭제는 ⋮ 메뉴)
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          onTap: () => _openItem(item),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.space4,
-              AppSpacing.space4,
-              AppSpacing.space2,
-              AppSpacing.space4,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.cardPadding,
+        AppSpacing.cardPadding,
+        AppSpacing.space2,
+        AppSpacing.cardPadding,
+      ),
+      onTap: () => _openItem(item),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: AppSpacing.iconCircle,
+            height: AppSpacing.iconCircle,
+            decoration: const BoxDecoration(
+              color: AppSemanticColors.brandWeak,
+              shape: BoxShape.circle,
             ),
-            child: Row(
+            child: const Icon(
+              Icons.description_outlined,
+              size: 22,
+              color: AppSemanticColors.brandDefault,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space3_5),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.description_outlined,
-                  color: AppSemanticColors.textSecondary,
+                Text(
+                  item['title']?.toString() ?? '',
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
                 ),
-                const SizedBox(width: AppSpacing.space3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item['title']?.toString() ?? '',
-                        style: AppTypography.titleMedium.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                        ),
-                      ),
-                      if (description.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.space0_5),
-                        Text(
-                          description,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: AppSpacing.space2),
-                      Text(
-                        '${item['fileName'] ?? ''}',
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.space0_5),
+                  Text(
+                    description,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.space2),
+                Text(
+                  '${item['fileName'] ?? ''}',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.space1_5),
+                Row(
+                  children: [
+                    AppTag(label: _categoryOf(item)),
+                    const SizedBox(width: AppSpacing.space2),
+                    Expanded(
+                      child: Text(
+                        '${_formatSize(fileSize)} · ${item['uploaderName'] ?? ''}',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: AppSpacing.space1),
-                      Row(
-                        children: [
-                          AppTag(label: _categoryOf(item)),
-                          const SizedBox(width: AppSpacing.space2),
-                          Expanded(
-                            child: Text(
-                              '${_formatSize(fileSize)} · ${item['uploaderName'] ?? ''}',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppSemanticColors.textTertiary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (isAdmin)
-                  PopupMenuButton<String>(
-                    tooltip: '자료 메뉴',
-                    icon: Icon(
-                      Icons.more_vert,
-                      size: 20,
-                      color: AppSemanticColors.textTertiary,
                     ),
-                    onSelected: (value) {
-                      if (value == 'delete') _deleteItem(item);
-                    },
-                    itemBuilder: (_) => [
-                      PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Text(
-                          '삭제',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.statusErrorText,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                else
-                  const SizedBox(width: AppSpacing.space2),
+                  ],
+                ),
               ],
             ),
           ),
-        ),
+          if (isAdmin)
+            PopupMenuButton<String>(
+              tooltip: '자료 메뉴',
+              icon: const Icon(
+                Icons.more_vert,
+                size: 22,
+                color: AppSemanticColors.textTertiary,
+              ),
+              onSelected: (value) {
+                if (value == 'delete') _deleteItem(item);
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text(
+                    '삭제',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.statusErrorText,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else
+            const SizedBox(width: AppSpacing.space3),
+        ],
       ),
     );
   }
