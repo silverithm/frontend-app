@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/company_provider.dart';
 import '../models/company.dart';
 import '../services/api_service.dart';
+import '../utils/app_haptics.dart';
 import '../utils/signup_validation.dart';
 import '../widgets/common/index.dart';
 import '../widgets/seed/seed_button.dart';
@@ -15,6 +16,7 @@ import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_section_header.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'login_screen.dart';
@@ -127,61 +129,107 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  // 관리자 회원가입 성공 다이얼로그
+  // 관리자 회원가입 성공 — B안: 가운데 대화상자 대신 아래 시트(바깥을 눌러도 닫히지 않는다)
   void _showAdminRegistrationSuccessDialog() {
-    AppDialog.showCustom<void>(
+    showAppSheet<void>(
       context,
-      barrierDismissible: false,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: AppSpacing.space12,
-              height: AppSpacing.space12,
-              decoration: BoxDecoration(
-                color: AppSemanticColors.statusSuccessBackground,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check,
-                color: AppSemanticColors.statusSuccessIcon,
-                size: 30,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            Text(
-              '회원가입 완료!',
-              style: AppTypography.heading5.copyWith(
-                color: AppSemanticColors.statusSuccessIcon,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space2),
-            Text(
-              '관리자 계정이 성공적으로 생성되었습니다.\n로그인 화면에서 로그인해주세요.',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space6),
-            SizedBox(
-              width: double.infinity,
-              child: SeedButton(
-                label: '로그인 하러 가기',
-                size: SeedButtonSize.large,
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
-              ),
-            ),
-          ],
+      isDismissible: false,
+      enableDrag: false,
+      builder: (sheetContext) => AppSheetFrame(
+        actions: SizedBox(
+          width: double.infinity,
+          child: SeedButton(
+            label: '로그인 하러 가기',
+            size: SeedButtonSize.large,
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+          ),
         ),
+        children: [
+          Center(child: _buildSuccessCircle(Icons.check, 30)),
+          const SizedBox(height: AppSpacing.space4),
+          Text(
+            '회원가입 완료!',
+            textAlign: TextAlign.center,
+            style: AppTypography.heading5.copyWith(
+              color: AppSemanticColors.statusSuccessText,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space2),
+          Text(
+            '관리자 계정이 성공적으로 생성되었습니다.\n로그인 화면에서 로그인해주세요.',
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 완료 시트 맨 위 옅은 초록 원 + 체크(시안의 빈 화면·완료 원과 같은 문법).
+  Widget _buildSuccessCircle(IconData icon, double iconSize) {
+    return Container(
+      width: AppSpacing.space16,
+      height: AppSpacing.space16,
+      decoration: const BoxDecoration(
+        color: AppSemanticColors.statusSuccessBackground,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        icon,
+        color: AppSemanticColors.statusSuccessIcon,
+        size: iconSize,
+      ),
+    );
+  }
+
+  /// 완료 시트 안 안내 한 칸 — 테두리 없는 옅은 상태색 바탕(B안).
+  Widget _buildNoticeBox({
+    required IconData icon,
+    required Color background,
+    required Color iconColor,
+    required Color titleColor,
+    required String title,
+    required String body,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.space4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: iconColor, size: AppSpacing.space5),
+          const SizedBox(width: AppSpacing.space2_5),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.titleSmall.copyWith(color: titleColor),
+                ),
+                const SizedBox(height: AppSpacing.space1),
+                Text(
+                  body,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -204,133 +252,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showEmployeeRegistrationPendingDialog() {
-    AppDialog.showCustom<void>(
+    showAppSheet<void>(
       context,
-      barrierDismissible: false,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: AppSpacing.space14,
-              height: AppSpacing.space14,
-              decoration: BoxDecoration(
-                color: AppSemanticColors.statusSuccessBackground,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle_outline,
-                color: AppSemanticColors.statusSuccessIcon,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            Text(
-              '회원가입 요청 완료!',
-              textAlign: TextAlign.center,
-              style: AppTypography.heading5.copyWith(
-                color: AppSemanticColors.statusSuccessIcon,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.statusInfoBackground,
-                border: Border.all(color: AppSemanticColors.statusInfoBorder),
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.admin_panel_settings,
-                    color: AppSemanticColors.statusInfoIcon,
-                    size: 20,
-                  ),
-                  const SizedBox(width: AppSpacing.space2),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '관리자 승인 대기 중',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: AppSemanticColors.statusInfoText,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space1),
-                        Text(
-                          '회원가입 요청이 관리자에게 전달되었습니다.\n승인 완료 후 로그인이 가능합니다.',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.statusWarningBackground,
-                border: Border.all(
-                  color: AppSemanticColors.statusWarningBorder,
-                ),
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.email_outlined,
-                    color: AppSemanticColors.statusWarningIcon,
-                    size: 20,
-                  ),
-                  const SizedBox(width: AppSpacing.space2),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '승인 결과 알림',
-                          style: AppTypography.labelLarge.copyWith(
-                            color: AppSemanticColors.statusWarningText,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space1),
-                        Text(
-                          '승인 결과는 등록하신 이메일로 안내해 드리겠습니다.',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space6),
-            SizedBox(
-              width: double.infinity,
-              child: SeedButton(
-                label: '로그인 화면으로 이동',
-                size: SeedButtonSize.large,
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-          ],
+      isDismissible: false,
+      enableDrag: false,
+      builder: (sheetContext) => AppSheetFrame(
+        actions: SizedBox(
+          width: double.infinity,
+          child: SeedButton(
+            label: '로그인 화면으로 이동',
+            size: SeedButtonSize.large,
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
+        children: [
+          Center(child: _buildSuccessCircle(Icons.check_circle_outline, 40)),
+          const SizedBox(height: AppSpacing.space4),
+          Text(
+            '회원가입 요청 완료!',
+            textAlign: TextAlign.center,
+            style: AppTypography.heading5.copyWith(
+              color: AppSemanticColors.statusSuccessText,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space4),
+          _buildNoticeBox(
+            icon: Icons.admin_panel_settings,
+            background: AppSemanticColors.statusInfoBackground,
+            iconColor: AppSemanticColors.statusInfoIcon,
+            titleColor: AppSemanticColors.statusInfoText,
+            title: '관리자 승인 대기 중',
+            body: '회원가입 요청이 관리자에게 전달되었습니다.\n승인 완료 후 로그인이 가능합니다.',
+          ),
+          const SizedBox(height: AppSpacing.space2),
+          _buildNoticeBox(
+            icon: Icons.email_outlined,
+            background: AppSemanticColors.statusWarningBackground,
+            iconColor: AppSemanticColors.statusWarningIcon,
+            titleColor: AppSemanticColors.statusWarningText,
+            title: '승인 결과 알림',
+            body: '승인 결과는 등록하신 이메일로 안내해 드리겠습니다.',
+          ),
+        ],
       ),
     );
   }
@@ -534,9 +500,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  /// 가입 유형·회사 연결 방식을 고르는 카드. 선택 모양은 한 가지다 —
-  /// brandWeak 바탕 + 틸 테두리 1.5px + 틸 아이콘(직원도 같은 틸, 예전엔 초록·노랑으로 갈렸다).
-  /// 고르지 않은 카드는 borderDefault 1px에 그림자 없이 둔다.
+  /// 가입 유형·회사 연결 방식을 고르는 칸 — B안(AppChoiceTile과 같은 문법): 테두리 없이
+  /// 고르면 틸 바탕 + 흰 아이콘·글자, 고르기 전엔 회색 바탕 + 회색 아이콘. 누르면 selection 햅틱.
   Widget _buildChoiceCard({
     required bool selected,
     required IconData icon,
@@ -545,51 +510,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required VoidCallback onTap,
     double iconSize = 28,
   }) {
+    final titleColor =
+        selected ? AppSemanticColors.textInverse : AppSemanticColors.textPrimary;
+    final subtitleColor = selected
+        ? AppSemanticColors.textInverse
+        : AppSemanticColors.textSecondary;
     return Semantics(
       button: true,
       selected: selected,
-      child: InkWell(
+      child: AppPressable(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+        haptic: AppHapticKind.selection,
+        isButton: false,
+        minTouchSize: Size.zero,
+        focusBorderRadius: BorderRadius.circular(AppBorderRadius.control),
+        child: AnimatedContainer(
+          duration: AppMotion.press,
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.minTouchTarget,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space3,
+            vertical: AppSpacing.space4,
+          ),
           decoration: BoxDecoration(
             color: selected
-                ? AppSemanticColors.brandWeak
-                : AppSemanticColors.surfaceDefault,
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            border: Border.all(
-              color: selected
-                  ? AppSemanticColors.interactivePrimaryDefault
-                  : AppSemanticColors.borderDefault,
-              width: selected ? 1.5 : 1,
-            ),
+                ? AppSemanticColors.brandDefault
+                : AppSemanticColors.fillDefault,
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
           ),
           child: Column(
             children: [
               Icon(
                 icon,
                 color: selected
-                    ? AppSemanticColors.interactivePrimaryDefault
-                    : AppSemanticColors.textSecondary,
+                    ? AppSemanticColors.textInverse
+                    : AppSemanticColors.iconSubtle,
                 size: iconSize,
               ),
               const SizedBox(height: AppSpacing.space2),
               Text(
                 title,
-                style: AppTypography.titleSmall.copyWith(
-                  color: selected
-                      ? AppSemanticColors.interactivePrimaryDefault
-                      : AppSemanticColors.textPrimary,
-                ),
+                textAlign: TextAlign.center,
+                style: AppTypography.titleMedium.copyWith(color: titleColor),
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: AppSpacing.space1),
                 Text(
                   subtitle,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodySmall.copyWith(color: subtitleColor),
                 ),
               ],
             ],
@@ -599,10 +569,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  /// 칸 위 이름표 — SeedTextField의 라벨(15/w600 검정)과 같은 모습.
+  Widget _buildFieldLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+      child: Text(
+        label,
+        style: AppTypography.titleSmall.copyWith(
+          color: AppSemanticColors.textPrimary,
+        ),
+      ),
+    );
+  }
+
+  /// 고르기 칸(드롭다운) 꾸밈 — B안 입력칸(SeedTextField)처럼 회색으로 채우고 테두리를 없앤다.
+  /// 누르고 있으면 틸 2px, 틀리면 빨강 2px.
+  InputDecoration _dropdownDecoration({
+    required IconData icon,
+    String? hintText,
+    String? helperText,
+    bool hasError = false,
+  }) {
+    OutlineInputBorder stroke(Color? color) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
+          borderSide: color == null
+              ? BorderSide.none
+              : BorderSide(color: color, width: 2),
+        );
+    return InputDecoration(
+      hintText: hintText,
+      helperText: helperText,
+      // 안내 글이 길어도 말줄임 없이 다 보이게
+      helperMaxLines: 4,
+      filled: true,
+      fillColor: AppSemanticColors.fillDefault,
+      prefixIcon: Icon(
+        icon,
+        size: AppSpacing.space5,
+        color: AppSemanticColors.textTertiary,
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: AppSpacing.space3_5,
+      ),
+      border: stroke(null),
+      enabledBorder:
+          stroke(hasError ? AppSemanticColors.statusErrorText : null),
+      disabledBorder: stroke(null),
+      focusedBorder: stroke(
+        hasError
+            ? AppSemanticColors.statusErrorText
+            : AppSemanticColors.borderFocus,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // B안: 옅은 회색 바탕 위에 흰 카드(절차 안내 · 가입 유형 · 입력 · 약관)를 간격으로 나눈다.
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
@@ -613,23 +639,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenGutter,
+            AppSpacing.space6,
+            AppSpacing.screenGutter,
+            AppSpacing.space8,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 제목
-              Icon(
-                Icons.person_add,
-                size: 60,
-                color: AppSemanticColors.interactivePrimaryDefault,
+              // 제목 — 옅은 틸 원 안 아이콘(빈 화면과 같은 문법)
+              Center(
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: AppSemanticColors.brandWeak,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person_add,
+                    size: 36,
+                    color: AppSemanticColors.brandDefault,
+                  ),
+                ),
               ),
               const SizedBox(height: AppSpacing.space4),
 
               Text(
                 '회원가입',
                 textAlign: TextAlign.center,
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.interactivePrimaryDefault,
+                style: AppTypography.heading4.copyWith(
+                  color: AppSemanticColors.textPrimary,
                 ),
               ),
               const SizedBox(height: AppSpacing.space2),
@@ -642,83 +683,62 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
 
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.space6),
 
-              // 승인 프로세스 안내
-              Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space4,
-                ),
+              // 승인 프로세스 안내 — 흰 카드 하나에 단계 4줄(예전 2×2 칸은 비율이 고정돼
+              // 글자를 키우면 칸 안에서 설명이 잘렸다). 사용방법 단추도 이 카드 안에.
+              AppCard(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 가입 프로세스 카드
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.space5),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(
-                          AppBorderRadius.xl2,
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        '회원가입 절차 안내',
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
-                        border: Border.all(
-                          color: AppSemanticColors.borderSubtle,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            '회원가입 절차 안내',
-                            style: AppTypography.heading5.copyWith(color: AppSemanticColors.textPrimary),
-                          ),
-                          const SizedBox(height: AppSpacing.space5),
-                          // 프로세스 그리드
-                          GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.66,
-                            crossAxisSpacing: AppSpacing.space4,
-                            mainAxisSpacing: AppSpacing.space4,
-                            children: [
-                              _buildProcessCard(
-                                '1',
-                                '관리자',
-                                '웹사이트 가입',
-                                '근무표 관리자가 먼저 앱 또는 carev.kr에서 가입을 완료하고 회사 코드를 확인합니다.',
-                                Icons.computer,
-                              ),
-                              _buildProcessCard(
-                                '2',
-                                '직원',
-                                '앱 가입 요청',
-                                '직원은 관리자에게 받은 회사 코드를 입력해 회원가입을 요청합니다.',
-                                Icons.phone_android,
-                              ),
-                              _buildProcessCard(
-                                '3',
-                                '관리자',
-                                '가입 승인',
-                                '관리자는 앱 또는 carev.kr에서 직원의 가입 요청을 확인하고 승인합니다.',
-                                Icons.check_circle,
-                              ),
-                              _buildProcessCard(
-                                '4',
-                                '직원',
-                                '앱 로그인',
-                                '관리자의 승인이 완료되면, 직원은 앱에 정상적으로 로그인할 수 있습니다.',
-                                Icons.login,
-                              ),
-                            ],
-                          ),
-                        ],
                       ),
                     ),
                     const SizedBox(height: AppSpacing.space4),
-                    // 사용방법 버튼
+                    _buildProcessCard(
+                      '1',
+                      '관리자',
+                      '웹사이트 가입',
+                      '근무표 관리자가 먼저 앱 또는 carev.kr에서 가입을 완료하고 회사 코드를 확인합니다.',
+                      Icons.computer,
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    _buildProcessCard(
+                      '2',
+                      '직원',
+                      '앱 가입 요청',
+                      '직원은 관리자에게 받은 회사 코드를 입력해 회원가입을 요청합니다.',
+                      Icons.phone_android,
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    _buildProcessCard(
+                      '3',
+                      '관리자',
+                      '가입 승인',
+                      '관리자는 앱 또는 carev.kr에서 직원의 가입 요청을 확인하고 승인합니다.',
+                      Icons.check_circle,
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    _buildProcessCard(
+                      '4',
+                      '직원',
+                      '앱 로그인',
+                      '관리자의 승인이 완료되면, 직원은 앱에 정상적으로 로그인할 수 있습니다.',
+                      Icons.login,
+                    ),
+                    const SizedBox(height: AppSpacing.space5),
+                    // 사용방법 버튼 — 맨 아래 '회원가입'이 주 단추라 옅은 틸로 한 단계 낮춘다
                     SizedBox(
                       width: double.infinity,
                       child: SeedButton(
                         label: '사용방법 보러가기',
-                        variant: SeedButtonVariant.brandSolid,
+                        variant: SeedButtonVariant.brandWeak,
                         size: SeedButtonSize.large,
                         prefixIcon: Icons.play_circle_filled,
                         onPressed: () =>
@@ -729,31 +749,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
 
-              const SizedBox(height: AppSpacing.space6),
+              const SizedBox(height: AppSpacing.cardGap),
 
-              // 회원가입 폼 — 흰 화면과 같은 표면에 평평하게(카드 래핑 제거)
+              // 회원가입 폼 — 흰 카드 세 장(가입 유형 · 입력 · 약관)을 간격으로 나눈다
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space2,
-                ),
+                padding: EdgeInsets.zero,
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // 사용자 유형 선택
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.space4),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.backgroundSecondary,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.xl,
-                          ),
-                          border: Border.all(
-                            color: AppSemanticColors.borderDefault,
-                            width: 1,
-                          ),
-                        ),
+                      AppCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -811,520 +818,457 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.space4),
+                      const SizedBox(height: AppSpacing.cardGap),
 
-                      // 이름 입력
-                      SeedTextField(
-                        label: '이름',
-                        controller: _nameController,
-                        placeholder: '홍길동',
-                        prefixIcon: Icons.person_outline,
-                        size: SeedTextFieldSize.large,
-                        // 웹과 같은 기준 — 외자 이름도 통과한다
-                        validator: SignupValidation.validateName,
-                      ),
-                      const SizedBox(height: AppSpacing.space4),
-
-                      // 이메일 입력
-                      SeedTextField(
-                        label: '이메일',
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        placeholder: 'example@company.com',
-                        prefixIcon: Icons.email_outlined,
-                        size: SeedTextFieldSize.large,
-                        // 웹과 같은 기준 — .online·.center 같은 긴 TLD도 통과한다
-                        validator: SignupValidation.validateEmail,
-                      ),
-                      const SizedBox(height: AppSpacing.space4),
-
-                      // 전화번호 (선택) — 웹 직원 가입 화면과 같은 자리·같은 선택 입력
-                      if (_userType == 'employee') ...[
-                        SeedTextField(
-                          label: '전화번호 (선택)',
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          placeholder: '010-0000-0000',
-                          prefixIcon: Icons.phone_outlined,
-                          size: SeedTextFieldSize.large,
-                          validator: SignupValidation.validatePhoneNumber,
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                      ],
-
-                      if (_userType == 'employee' &&
-                          _hasEmployeeCompanyContext) ...[
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.space4),
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.backgroundSecondary,
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.xl,
+                      // 입력 칸 — 흰 카드 한 장(회색 입력칸이 흰 카드 위에서 보인다)
+                      AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // 이름 입력
+                            SeedTextField(
+                              label: '이름',
+                              controller: _nameController,
+                              placeholder: '홍길동',
+                              prefixIcon: Icons.person_outline,
+                              size: SeedTextFieldSize.large,
+                              // 웹과 같은 기준 — 외자 이름도 통과한다
+                              validator: SignupValidation.validateName,
                             ),
-                            border: Border.all(
-                              color: AppSemanticColors.borderDefault,
-                              width: 1,
+                            const SizedBox(height: AppSpacing.space4),
+
+                            // 이메일 입력
+                            SeedTextField(
+                              label: '이메일',
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              placeholder: 'example@company.com',
+                              prefixIcon: Icons.email_outlined,
+                              size: SeedTextFieldSize.large,
+                              // 웹과 같은 기준 — .online·.center 같은 긴 TLD도 통과한다
+                              validator: SignupValidation.validateEmail,
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SeedSectionHeader(
-                                title: '회사 연결 방식',
-                                subtitle:
-                                    '관리자가 프로필에서 복사한 회사 코드로 가입하면 더 빠르게 연결할 수 있습니다.',
+                            const SizedBox(height: AppSpacing.space4),
+
+                            // 전화번호 (선택) — 웹 직원 가입 화면과 같은 자리·같은 선택 입력
+                            if (_userType == 'employee') ...[
+                              SeedTextField(
+                                label: '전화번호 (선택)',
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                placeholder: '010-0000-0000',
+                                prefixIcon: Icons.phone_outlined,
+                                size: SeedTextFieldSize.large,
+                                validator: SignupValidation.validatePhoneNumber,
                               ),
                               const SizedBox(height: AppSpacing.space4),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildChoiceCard(
-                                    selected: _employeeJoinMethod == 'code',
-                                    icon: Icons.key,
-                                    iconSize: 28,
-                                    title: '회사 코드',
-                                    
-                                    onTap: () {
-                                        _companyCodeDebounce?.cancel();
-                                        setState(() {
-                                          _employeeJoinMethod = 'code';
-                                          _companyErrorMessage = null;
-                                          _selectedCompany = null;
-                                        });
-                                        _queueCompanyCodePositionLoad(
-                                          _companyCodeController.text,
-                                        );
-                                      },
-                                  ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.space3),
-                                  Expanded(
-                                    child: _buildChoiceCard(
-                                    selected: _employeeJoinMethod == 'company',
-                                    icon: Icons.apartment,
-                                    iconSize: 28,
-                                    title: '회사 선택',
-                                    
-                                    onTap: () {
-                                        _companyCodeDebounce?.cancel();
-                                        setState(() {
-                                          _employeeJoinMethod = 'company';
-                                          _companyErrorMessage = null;
-                                        });
-                                        if (_selectedCompany != null) {
-                                          _loadPositions(
-                                            companyId: _selectedCompany!.id,
-                                          );
-                                        } else {
-                                          _clearPositionState();
-                                        }
-                                      },
-                                  ),
-                                  ),
-                                ],
-                              ),
                             ],
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                      ],
 
-                      if (_userType == 'employee' &&
-                          _employeeJoinMethod == 'code') ...[
-                        SeedTextField(
-                          label: '회사 코드 *',
-                          controller: _companyCodeController,
-                          textCapitalization: TextCapitalization.characters,
-                          placeholder: '예: CV123456 또는 ABCD2345',
-                          helperText: '관리자가 프로필에서 복사한 코드를 입력해주세요.',
-                          errorText: _companyErrorMessage,
-                          prefixIcon: Icons.key_outlined,
-                          size: SeedTextFieldSize.large,
-                          onChanged: (_) {
-                            if (_companyErrorMessage != null) {
-                              setState(() {
-                                _companyErrorMessage = null;
-                              });
-                            }
-                            _queueCompanyCodePositionLoad(
-                              _companyCodeController.text,
-                            );
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                      ],
-
-                      if (_userType == 'employee' &&
-                          _employeeJoinMethod == 'company') ...[
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            DropdownButtonFormField<Company?>(
-                              value: _selectedCompany,
-                              decoration: InputDecoration(
-                                labelText: '회사 *',
-                                prefixIcon: const Icon(
-                                  Icons.business_outlined,
-                                  size: 18,
-                                  color: AppSemanticColors.textTertiary,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.xl,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.xl,
-                                  ),
-                                  borderSide: BorderSide(
-                                    color: _companyErrorMessage != null
-                                        ? AppSemanticColors.statusErrorBorder
-                                        : AppSemanticColors.borderHover,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.xl,
-                                  ),
-                                  borderSide: BorderSide(
-                                    color: _companyErrorMessage != null
-                                        ? AppSemanticColors.statusErrorIcon
-                                        : AppSemanticColors.borderFocus,
-                                  ),
-                                ),
-                              ),
-                              hint: Text(
-                                '회사를 선택해주세요',
-                                style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textTertiary),
-                              ),
-                              selectedItemBuilder: (BuildContext context) {
-                                return context
-                                    .watch<CompanyProvider>()
-                                    .companies
-                                    .map(
-                                      (company) => DropdownMenuItem<Company?>(
-                                        value: company,
-                                        child: Text(
-                                          company.name,
-                                          style: AppTypography.bodyMedium,
-                                        ),
-                                      ),
-                                    )
-                                    .toList();
-                              },
-                              items: context
-                                  .watch<CompanyProvider>()
-                                  .companies
-                                  .map(
-                                    (company) => DropdownMenuItem<Company?>(
-                                      value: company,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            company.name,
-                                            style: AppTypography.bodyMedium,
-                                          ),
-                                          if (company.userEmails.isNotEmpty)
-                                            Text(
-                                              company.userEmails.first,
-                                              style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedCompany = value;
-                                  _companyErrorMessage = null;
-                                  _positionErrorMessage = null;
-                                });
-                                if (value != null) {
-                                  _loadPositions(companyId: value.id);
-                                } else {
-                                  _clearPositionState();
-                                }
-                              },
-                            ),
-                            if (_companyErrorMessage != null)
+                            if (_userType == 'employee' &&
+                                _hasEmployeeCompanyContext) ...[
+                              // 회사 연결 방식 — 카드 안이라 상자 없이 소제목(15/w600)·안내(14)·고르기 칸만
                               Padding(
                                 padding: const EdgeInsets.only(
                                   top: AppSpacing.space2,
-                                  left: AppSpacing.space3,
                                 ),
-                                child: Text(
-                                  _companyErrorMessage!,
-                                  style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorIcon),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Semantics(
+                                      header: true,
+                                      child: Text(
+                                        '회사 연결 방식',
+                                        style: AppTypography.titleSmall.copyWith(
+                                          color: AppSemanticColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.space1),
+                                    Text(
+                                      '관리자가 프로필에서 복사한 회사 코드로 가입하면 더 빠르게 연결할 수 있습니다.',
+                                      style: AppTypography.bodySmall.copyWith(
+                                        color: AppSemanticColors.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.space3),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildChoiceCard(
+                                          selected: _employeeJoinMethod == 'code',
+                                          icon: Icons.key,
+                                          iconSize: 28,
+                                          title: '회사 코드',
+                                    
+                                          onTap: () {
+                                              _companyCodeDebounce?.cancel();
+                                              setState(() {
+                                                _employeeJoinMethod = 'code';
+                                                _companyErrorMessage = null;
+                                                _selectedCompany = null;
+                                              });
+                                              _queueCompanyCodePositionLoad(
+                                                _companyCodeController.text,
+                                              );
+                                            },
+                                        ),
+                                        ),
+                                        const SizedBox(width: AppSpacing.space3),
+                                        Expanded(
+                                          child: _buildChoiceCard(
+                                          selected: _employeeJoinMethod == 'company',
+                                          icon: Icons.apartment,
+                                          iconSize: 28,
+                                          title: '회사 선택',
+                                    
+                                          onTap: () {
+                                              _companyCodeDebounce?.cancel();
+                                              setState(() {
+                                                _employeeJoinMethod = 'company';
+                                                _companyErrorMessage = null;
+                                              });
+                                              if (_selectedCompany != null) {
+                                                _loadPositions(
+                                                  companyId: _selectedCompany!.id,
+                                                );
+                                              } else {
+                                                _clearPositionState();
+                                              }
+                                            },
+                                        ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                      ],
+                              const SizedBox(height: AppSpacing.space5),
+                            ],
 
-                      if (_userType == 'employee') ...[
-                        if (_isLoadingPositions)
-                          Container(
-                            padding: const EdgeInsets.all(AppSpacing.space4),
-                            decoration: BoxDecoration(
-                              color: AppSemanticColors.backgroundSecondary,
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.xl,
+                            if (_userType == 'employee' &&
+                                _employeeJoinMethod == 'code') ...[
+                              SeedTextField(
+                                label: '회사 코드 *',
+                                controller: _companyCodeController,
+                                textCapitalization: TextCapitalization.characters,
+                                placeholder: '예: CV123456 또는 ABCD2345',
+                                helperText: '관리자가 프로필에서 복사한 코드를 입력해주세요.',
+                                errorText: _companyErrorMessage,
+                                prefixIcon: Icons.key_outlined,
+                                size: SeedTextFieldSize.large,
+                                onChanged: (_) {
+                                  if (_companyErrorMessage != null) {
+                                    setState(() {
+                                      _companyErrorMessage = null;
+                                    });
+                                  }
+                                  _queueCompanyCodePositionLoad(
+                                    _companyCodeController.text,
+                                  );
+                                },
                               ),
-                              border: Border.all(
-                                color: AppSemanticColors.borderDefault,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const SizedBox(
-                                  width: 18, // 스케일 밖 값 — 대응 토큰 없음
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                              const SizedBox(height: AppSpacing.space4),
+                            ],
+
+                            if (_userType == 'employee' &&
+                                _employeeJoinMethod == 'company') ...[
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('회사 *'),
+                                  DropdownButtonFormField<Company?>(
+                                    value: _selectedCompany,
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.control,
+                                    ),
+                                    decoration: _dropdownDecoration(
+                                      icon: Icons.business_outlined,
+                                      hasError: _companyErrorMessage != null,
+                                    ),
+                                    hint: Text(
+                                      '회사를 선택해주세요',
+                                      style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textTertiary),
+                                    ),
+                                    selectedItemBuilder: (BuildContext context) {
+                                      return context
+                                          .watch<CompanyProvider>()
+                                          .companies
+                                          .map(
+                                            (company) => DropdownMenuItem<Company?>(
+                                              value: company,
+                                              child: Text(
+                                                company.name,
+                                                style: AppTypography.bodyMedium,
+                                              ),
+                                            ),
+                                          )
+                                          .toList();
+                                    },
+                                    items: context
+                                        .watch<CompanyProvider>()
+                                        .companies
+                                        .map(
+                                          (company) => DropdownMenuItem<Company?>(
+                                            value: company,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  company.name,
+                                                  style: AppTypography.bodyMedium,
+                                                ),
+                                                if (company.userEmails.isNotEmpty)
+                                                  Text(
+                                                    company.userEmails.first,
+                                                    style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _selectedCompany = value;
+                                        _companyErrorMessage = null;
+                                        _positionErrorMessage = null;
+                                      });
+                                      if (value != null) {
+                                        _loadPositions(companyId: value.id);
+                                      } else {
+                                        _clearPositionState();
+                                      }
+                                    },
                                   ),
-                                ),
-                                const SizedBox(width: AppSpacing.space3),
-                                Text(
-                                  '등록된 역할을 불러오는 중입니다...',
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    color: AppSemanticColors.textSecondary,
+                                  if (_companyErrorMessage != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: AppSpacing.space1_5,
+                                      ),
+                                      child: Text(
+                                        _companyErrorMessage!,
+                                        style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorText),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.space4),
+                            ],
+
+                            if (_userType == 'employee') ...[
+                              if (_isLoadingPositions)
+                                // 불러오는 중 — 테두리 없는 회색 칸(글자가 커지면 줄을 넘긴다)
+                                Container(
+                                  padding: const EdgeInsets.all(AppSpacing.space4),
+                                  decoration: BoxDecoration(
+                                    color: AppSemanticColors.fillDefault,
+                                    borderRadius: BorderRadius.circular(
+                                      AppBorderRadius.control,
+                                    ),
                                   ),
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(
+                                        width: 18, // 스케일 밖 값 — 대응 토큰 없음
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.space3),
+                                      Expanded(
+                                        child: Text(
+                                          '등록된 역할을 불러오는 중입니다...',
+                                          style: AppTypography.bodyMedium.copyWith(
+                                            color: AppSemanticColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else ...[
+                                _buildFieldLabel('역할'),
+                                DropdownButtonFormField<PositionOption?>(
+                                  value: _selectedPosition,
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.control,
+                                  ),
+                                  decoration: _dropdownDecoration(
+                                    icon: Icons.badge_outlined,
+                                    hasError: _positionErrorMessage != null,
+                                    hintText: _positions.isEmpty
+                                        ? '관리자가 등록한 역할이 없습니다'
+                                        : '가입할 역할을 선택해주세요',
+                                    helperText: _selectedPosition?.memberRole != null
+                                        ? '기본 분류: ${_getMemberRoleLabel(_selectedPosition?.memberRole)}'
+                                        : (_positions.isEmpty
+                                              ? '관리자가 역할을 등록하지 않았다면 아래 기본 분류로 가입할 수 있습니다.'
+                                              : '이 역할은 기본 분류가 아직 지정되지 않았습니다. 아래에서 선택해주세요.'),
+                                  ),
+                                  items: _positions
+                                      .map(
+                                        (
+                                          position,
+                                        ) => DropdownMenuItem<PositionOption?>(
+                                          value: position,
+                                          child: Text(
+                                            position.name,
+                                            style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: _positions.isEmpty
+                                      ? null
+                                      : (value) {
+                                          setState(() {
+                                            _selectedPosition = value;
+                                            _positionErrorMessage = null;
+                                          });
+                                        },
                                 ),
-                              ],
-                            ),
-                          )
-                        else ...[
-                          DropdownButtonFormField<PositionOption?>(
-                            value: _selectedPosition,
-                            decoration: InputDecoration(
-                              labelText: '역할',
-                              hintText: _positions.isEmpty
-                                  ? '관리자가 등록한 역할이 없습니다'
-                                  : '가입할 역할을 선택해주세요',
-                              prefixIcon: const Icon(
-                                Icons.badge_outlined,
-                                size: 18,
-                                color: AppSemanticColors.textTertiary,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
-                                borderSide: BorderSide(
-                                  color: _positionErrorMessage != null
-                                      ? AppSemanticColors.statusErrorBorder
-                                      : AppSemanticColors.borderHover,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
-                                borderSide: BorderSide(
-                                  color: _positionErrorMessage != null
-                                      ? AppSemanticColors.statusErrorIcon
-                                      : AppSemanticColors.borderFocus,
-                                ),
-                              ),
-                              helperText: _selectedPosition?.memberRole != null
-                                  ? '기본 분류: ${_getMemberRoleLabel(_selectedPosition?.memberRole)}'
-                                  : (_positions.isEmpty
-                                        ? '관리자가 역할을 등록하지 않았다면 아래 기본 분류로 가입할 수 있습니다.'
-                                        : '이 역할은 기본 분류가 아직 지정되지 않았습니다. 아래에서 선택해주세요.'),
-                            ),
-                            items: _positions
-                                .map(
-                                  (
-                                    position,
-                                  ) => DropdownMenuItem<PositionOption?>(
-                                    value: position,
+                                if (_positionErrorMessage != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: AppSpacing.space1_5,
+                                    ),
                                     child: Text(
-                                      position.name,
+                                      _positionErrorMessage!,
+                                      style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorText),
+                                    ),
+                                  ),
+                                if (_selectedPosition?.description?.isNotEmpty ??
+                                    false)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: AppSpacing.space1_5,
+                                    ),
+                                    child: Text(
+                                      _selectedPosition!.description!,
+                                      style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
+                                    ),
+                                  ),
+                              ],
+                              const SizedBox(height: AppSpacing.space4),
+                            ],
+
+                            if (_shouldShowFallbackRoleSelector) ...[
+                              _buildFieldLabel('기본 분류'),
+                              DropdownButtonFormField<String>(
+                                value: _fallbackRole,
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.control,
+                                ),
+                                decoration: _dropdownDecoration(
+                                  icon: Icons.work_outline,
+                                  helperText: '휴무/근태 계산에 사용하는 내부 기준입니다.',
+                                ),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'CAREGIVER',
+                                    child: Text(
+                                      '요양보호사',
                                       style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                                     ),
                                   ),
-                                )
-                                .toList(),
-                            onChanged: _positions.isEmpty
-                                ? null
-                                : (value) {
-                                    setState(() {
-                                      _selectedPosition = value;
-                                      _positionErrorMessage = null;
-                                    });
-                                  },
-                          ),
-                          if (_positionErrorMessage != null)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: AppSpacing.space2,
-                                left: AppSpacing.space3,
+                                  DropdownMenuItem(
+                                    value: 'OFFICE',
+                                    child: Text(
+                                      '사무직',
+                                      style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _fallbackRole = value ?? 'CAREGIVER';
+                                  });
+                                },
                               ),
-                              child: Text(
-                                _positionErrorMessage!,
-                                style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorIcon),
-                              ),
-                            ),
-                          if (_selectedPosition?.description?.isNotEmpty ??
-                              false)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: AppSpacing.space2,
-                                left: AppSpacing.space3,
-                              ),
-                              child: Text(
-                                _selectedPosition!.description!,
-                                style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.textSecondary),
-                              ),
-                            ),
-                        ],
-                        const SizedBox(height: AppSpacing.space4),
-                      ],
+                              const SizedBox(height: AppSpacing.space4),
+                            ],
 
-                      if (_shouldShowFallbackRoleSelector) ...[
-                        DropdownButtonFormField<String>(
-                          value: _fallbackRole,
-                          decoration: InputDecoration(
-                            labelText: '기본 분류',
-                            helperText: '휴무/근태 계산에 사용하는 내부 기준입니다.',
-                            prefixIcon: const Icon(
-                              Icons.work_outline,
-                              size: 18,
-                              color: AppSemanticColors.textTertiary,
+                            // 관리자인 경우 회사명 입력
+                            if (_userType == 'admin') ...[
+                              SeedTextField(
+                                label: '회사명 *',
+                                controller: _companyNameController,
+                                placeholder: '케어브이 센터',
+                                prefixIcon: Icons.business,
+                                size: SeedTextFieldSize.large,
+                                validator: (value) => _userType == 'admin'
+                                    ? SignupValidation.validateCompanyName(value)
+                                    : null,
+                              ),
+                              const SizedBox(height: AppSpacing.space4),
+
+                              // 회사 주소 입력
+                              SeedTextField(
+                                label: '회사 주소 *',
+                                controller: _companyAddressController,
+                                isReadOnly: true,
+                                placeholder: '주소를 검색해주세요',
+                                prefixIcon: Icons.location_on,
+                                suffixIcon: Icons.search,
+                                onSuffixIconTap: _searchAddress,
+                                onTap: _searchAddress,
+                                size: SeedTextFieldSize.large,
+                                validator: (value) {
+                                  if (_userType == 'admin' &&
+                                      (value == null || value.isEmpty)) {
+                                    return '회사 주소를 입력해주세요';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: AppSpacing.space4),
+                            ],
+
+                            // 비밀번호 입력
+                            SeedTextField(
+                              label: '비밀번호',
+                              controller: _passwordController,
+                              obscureText: true,
+                              enableObscureToggle: true,
+                              prefixIcon: Icons.lock_outline,
+                              size: SeedTextFieldSize.large,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return '비밀번호를 입력해주세요';
+                                }
+                                if (value.length < 8) {
+                                  return '비밀번호는 8자 이상이어야 합니다';
+                                }
+                                return null;
+                              },
                             ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.xl,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.xl,
-                              ),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderHover,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.xl,
-                              ),
-                              borderSide: BorderSide(
-                                color: AppSemanticColors.borderFocus,
-                              ),
-                            ),
-                          ),
-                          items: [
-                            DropdownMenuItem(
-                              value: 'CAREGIVER',
-                              child: Text(
-                                '요양보호사',
-                                style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: 'OFFICE',
-                              child: Text(
-                                '사무직',
-                                style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
-                              ),
+                            const SizedBox(height: AppSpacing.space4),
+
+                            // 비밀번호 확인
+                            SeedTextField(
+                              label: '비밀번호 확인',
+                              controller: _confirmPasswordController,
+                              obscureText: true,
+                              enableObscureToggle: true,
+                              prefixIcon: Icons.lock_outline,
+                              size: SeedTextFieldSize.large,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return '비밀번호를 다시 입력해주세요';
+                                }
+                                if (value != _passwordController.text) {
+                                  return '비밀번호가 일치하지 않습니다';
+                                }
+                                return null;
+                              },
                             ),
                           ],
-                          onChanged: (value) {
-                            setState(() {
-                              _fallbackRole = value ?? 'CAREGIVER';
-                            });
-                          },
                         ),
-                        const SizedBox(height: AppSpacing.space4),
-                      ],
-
-                      // 관리자인 경우 회사명 입력
-                      if (_userType == 'admin') ...[
-                        SeedTextField(
-                          label: '회사명 *',
-                          controller: _companyNameController,
-                          placeholder: '케어브이 센터',
-                          prefixIcon: Icons.business,
-                          size: SeedTextFieldSize.large,
-                          validator: (value) => _userType == 'admin'
-                              ? SignupValidation.validateCompanyName(value)
-                              : null,
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-
-                        // 회사 주소 입력
-                        SeedTextField(
-                          label: '회사 주소 *',
-                          controller: _companyAddressController,
-                          isReadOnly: true,
-                          placeholder: '주소를 검색해주세요',
-                          prefixIcon: Icons.location_on,
-                          suffixIcon: Icons.search,
-                          onSuffixIconTap: _searchAddress,
-                          onTap: _searchAddress,
-                          size: SeedTextFieldSize.large,
-                          validator: (value) {
-                            if (_userType == 'admin' &&
-                                (value == null || value.isEmpty)) {
-                              return '회사 주소를 입력해주세요';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.space4),
-                      ],
-
-                      // 비밀번호 입력
-                      SeedTextField(
-                        label: '비밀번호',
-                        controller: _passwordController,
-                        obscureText: true,
-                        enableObscureToggle: true,
-                        prefixIcon: Icons.lock_outline,
-                        size: SeedTextFieldSize.large,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '비밀번호를 입력해주세요';
-                          }
-                          if (value.length < 8) {
-                            return '비밀번호는 8자 이상이어야 합니다';
-                          }
-                          return null;
-                        },
                       ),
-                      const SizedBox(height: AppSpacing.space4),
-
-                      // 비밀번호 확인
-                      SeedTextField(
-                        label: '비밀번호 확인',
-                        controller: _confirmPasswordController,
-                        obscureText: true,
-                        enableObscureToggle: true,
-                        prefixIcon: Icons.lock_outline,
-                        size: SeedTextFieldSize.large,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '비밀번호를 다시 입력해주세요';
-                          }
-                          if (value != _passwordController.text) {
-                            return '비밀번호가 일치하지 않습니다';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.space6),
+                      const SizedBox(height: AppSpacing.cardGap),
 
                       // 약관 동의 섹션
                       Container(
@@ -1690,60 +1634,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String description,
     IconData icon,
   ) {
-    // 번호는 틸 타일, 역할은 중립 AppTag(꺾쇠 괄호 글자 대신)
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderDefault),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: AppSpacing.space9,
-                height: AppSpacing.space9,
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.interactivePrimaryDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                ),
-                child: Center(
-                  child: Text(
-                    step,
-                    style: AppTypography.heading5.copyWith(
-                      color: AppSemanticColors.textInverse,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              AppTag(label: role),
-            ],
+    // 단계 한 줄 — 옅은 틸 둥근 번호(44) + 역할 꼬리표·제목 + 설명(예전 순서 그대로). 높이를 못 박지 않아 글자가 커져도 다 보인다.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          constraints: const BoxConstraints(
+            minWidth: AppSpacing.iconCircle,
+            minHeight: AppSpacing.iconCircle,
           ),
-          const SizedBox(height: AppSpacing.space3),
-          Text(
-            title,
-            style: AppTypography.titleSmall.copyWith(
-              color: AppSemanticColors.textPrimary,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: AppSemanticColors.brandWeak,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            step,
+            style: AppTypography.titleMedium.copyWith(
+              color: AppSemanticColors.brandWeakForeground,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
-          const SizedBox(height: AppSpacing.space2),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Text(
+        ),
+        const SizedBox(width: AppSpacing.space3_5),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: AppSpacing.space2,
+                runSpacing: AppSpacing.space1,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  AppTag(label: role),
+                  Text(
+                    title,
+                    style: AppTypography.titleMedium.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space1),
+              Text(
                 description,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppSemanticColors.textSecondary,
                   height: AppTypography.lineHeightSnug,
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
