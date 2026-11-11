@@ -11,6 +11,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../common/app_snackbar.dart';
 import '../seed/seed_avatar.dart';
+import 'chat_list_row.dart';
 
 /// 1:1 방 이름 — 웹과 같은 규칙을 써야 같은 방을 찾아 들어간다.
 String directRoomName(String memberName) => '$memberName 님과의 대화';
@@ -170,35 +171,56 @@ class _ChatMemberListState extends State<ChatMemberList> {
         return RefreshIndicator(
           onRefresh: _refresh,
           child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.space2,
+              AppSpacing.screenGutter,
+              AppSpacing.space6,
+            ),
             children: [
-              _buildMyProfileTile(),
+              // 나 — 흰 카드 한 장(예전 회색 띠 대신)
+              ChatCardSlice(
+                isFirst: true,
+                isLast: true,
+                child: _buildMyProfileTile(),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space4,
-                  AppSpacing.space3,
-                  AppSpacing.space4,
+                  AppSpacing.space1,
+                  AppSpacing.space2,
+                  AppSpacing.space1,
                   AppSpacing.space2,
                 ),
                 child: Text(
                   '직원 ${others.length}명 · 접속 중 $onlineCount명',
                   style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textTertiary,
+                    color: AppSemanticColors.textSecondary,
                   ),
                 ),
               ),
-              ...others.map((member) {
-                final id = member['id']?.toString() ?? '';
-                return _buildMemberTile(
-                  id: id,
-                  name: member['name']?.toString() ?? '',
-                  position: member['position']?.toString(),
-                  imageUrl: member['profileImageUrl']?.toString(),
-                  isOnline: chatProvider.isOnline(id),
-                  onTap: () =>
-                      _openDirectChat(id, member['name']?.toString() ?? ''),
-                );
-              }),
+              // 나머지 사람 — 흰 카드 한 장, 줄 사이 구분선 없음
+              for (var i = 0; i < others.length; i++)
+                ChatCardSlice(
+                  isFirst: i == 0,
+                  isLast: i == others.length - 1,
+                  child: Builder(
+                    builder: (context) {
+                      final member = others[i];
+                      final id = member['id']?.toString() ?? '';
+                      return _buildMemberTile(
+                        id: id,
+                        name: member['name']?.toString() ?? '',
+                        position: member['position']?.toString(),
+                        imageUrl: member['profileImageUrl']?.toString(),
+                        isOnline: chatProvider.isOnline(id),
+                        onTap: () => _openDirectChat(
+                          id,
+                          member['name']?.toString() ?? '',
+                        ),
+                      );
+                    },
+                  ),
+                ),
             ],
           ),
         );
@@ -209,21 +231,19 @@ class _ChatMemberListState extends State<ChatMemberList> {
   Widget _buildMyProfileTile() {
     final me = context.watch<AuthProvider>().currentUser;
     final myPosition = (me?.position ?? '').isNotEmpty ? me!.position! : null;
-    return Container(
-      color: AppSemanticColors.backgroundSecondary,
-      child: _buildMemberTile(
-        id: me?.id ?? '',
-        name: me?.name ?? '나',
-        position: myPosition != null ? '$myPosition (나)' : '나',
-        imageUrl: me?.profileImageUrl,
-        // 내가 이 화면을 보고 있다는 것 자체가 접속 중이라는 뜻
-        isOnline: true,
-        onTap: null,
-      ),
+    return _buildMemberTile(
+      id: me?.id ?? '',
+      name: me?.name ?? '나',
+      position: myPosition != null ? '$myPosition (나)' : '나',
+      imageUrl: me?.profileImageUrl,
+      // 내가 이 화면을 보고 있다는 것 자체가 접속 중이라는 뜻
+      isOnline: true,
+      onTap: null,
     );
   }
 
-  /// 사람 한 줄 — 높이 64(위아래 12 + 아바타 40). 이름 titleMedium + 직종 bodySmall을 한 줄에.
+  /// 사람 한 줄 — B안: 흰 카드 안 줄, 높이 60(위아래 10 + 아바타 40), 구분선 없음.
+  /// 이름 titleMedium 16 + 직종 bodySmall 14를 한 줄에(둘 다 길면 말줄임).
   /// 접속 중이면 아바타에 초록 점만 단다(점이 없으면 오프라인 — "오프라인" 문구를 줄마다 반복하지 않는다).
   Widget _buildMemberTile({
     required String id,
@@ -233,80 +253,69 @@ class _ChatMemberListState extends State<ChatMemberList> {
     required bool isOnline,
     VoidCallback? onTap,
   }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        InkWell(
-          onTap: _isOpening ? null : onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space4,
-              vertical: AppSpacing.space3,
-            ),
-            child: Row(
-              children: [
-                Stack(
-                  children: [
-                    SeedAvatar(
-                      name: name,
-                      imageUrl: imageUrl,
-                      size: SeedAvatarSize.medium,
+    return ChatListRow(
+      onTap: _isOpening ? null : onTap,
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              SeedAvatar(
+                name: name,
+                imageUrl: imageUrl,
+                size: SeedAvatarSize.medium,
+              ),
+              if (isOnline)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: AppSpacing.space2_5,
+                    height: AppSpacing.space2_5,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppSemanticColors.statusSuccessIcon,
+                      // 흰 카드와 같은 색 고리 — 점이 아바타에서 떨어져 보이게
+                      border: Border.all(
+                        color: AppSemanticColors.surfaceCard,
+                        width: 2,
+                      ),
                     ),
-                    if (isOnline)
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: AppSpacing.space2_5,
-                          height: AppSpacing.space2_5,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppSemanticColors.statusSuccessIcon,
-                            border: Border.all(
-                              color: AppSemanticColors.surfaceDefault,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(width: AppSpacing.space3),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          name,
-                          style: AppTypography.titleMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if ((position ?? '').isNotEmpty) ...[
-                        const SizedBox(width: AppSpacing.space2),
-                        Text(
-                          position!,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ],
                   ),
                 ),
+            ],
+          ),
+          const SizedBox(width: AppSpacing.space3_5),
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    name,
+                    style: AppTypography.titleMedium.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if ((position ?? '').isNotEmpty) ...[
+                  const SizedBox(width: AppSpacing.space2),
+                  Flexible(
+                    child: Text(
+                      position!,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textTertiary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-        ),
-        const Divider(
-          height: 1,
-          indent: AppSpacing.space4 + AppSpacing.space10 + AppSpacing.space3,
-          color: AppSemanticColors.borderSubtle,
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

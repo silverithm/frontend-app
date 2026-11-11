@@ -5,12 +5,10 @@ import '../providers/chat_provider.dart';
 import '../services/api_service.dart';
 import '../models/chat_room.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/app_action_sheet.dart';
-import '../widgets/common/app_pressable.dart';
 import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_dialog.dart';
@@ -18,6 +16,7 @@ import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/chat/chat_room_avatar_stack.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/chat/chat_list_row.dart';
 import '../widgets/chat/chat_member_list.dart';
 import 'chat_room_screen.dart';
 import 'create_chat_room_screen.dart';
@@ -167,10 +166,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
         children: [
           AppSegmentedTabs(
             controller: _tabController,
-            tabs: const [
-              AppSegmentedTab('대화'),
-              AppSegmentedTab('직원'),
-            ],
+            tabs: const [AppSegmentedTab('대화'), AppSegmentedTab('직원')],
           ),
           Expanded(
             child: TabBarView(
@@ -223,9 +219,10 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
               // 줄마다 자기 몫의 카드 조각을 그려 ListView.builder가 보이는 줄만 만든다.
               final isGroupStart =
                   index == 0 || rooms[index - 1].pinned != room.pinned;
-              final isGroupEnd = index + 1 >= rooms.length ||
+              final isGroupEnd =
+                  index + 1 >= rooms.length ||
                   rooms[index + 1].pinned != room.pinned;
-              return _buildCardSlice(
+              return ChatCardSlice(
                 isFirst: isGroupStart,
                 isLast: isGroupEnd,
                 child: _buildChatRoomTile(room, isAdmin),
@@ -234,37 +231,6 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
           ),
         );
       },
-    );
-  }
-
-  /// 흰 카드(모서리 20)의 한 조각 — 묶음 첫 줄은 위 모서리, 끝 줄은 아래 모서리를 둥글린다.
-  /// 카드 안쪽 여백 8 + 줄 좌우 12 = 글자 시작이 카드 가장자리에서 20(SeedListSection과 같다).
-  Widget _buildCardSlice({
-    required bool isFirst,
-    required bool isLast,
-    required Widget child,
-  }) {
-    const radius = Radius.circular(AppBorderRadius.card);
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? AppSpacing.cardGap : 0),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppSemanticColors.surfaceCard,
-          borderRadius: BorderRadius.vertical(
-            top: isFirst ? radius : Radius.zero,
-            bottom: isLast ? radius : Radius.zero,
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.space2,
-            isFirst ? AppSpacing.space2 : 0,
-            AppSpacing.space2,
-            isLast ? AppSpacing.space2 : 0,
-          ),
-          child: child,
-        ),
-      ),
     );
   }
 
@@ -411,158 +377,102 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
   /// 제목이 모든 줄에서 같은 x에서 시작한다.
   Widget _buildChatRoomTile(ChatRoom room, bool isAdmin) {
     const avatarSize = 48.0;
-    return _PressableRow(
+    return ChatListRow(
       onTap: () => _navigateToChatRoom(room),
       onLongPress: () => _showRoomActions(room, isAdmin),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: AppSpacing.listRowMinHeight,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space3,
-            vertical: AppSpacing.space2_5,
+      child: Row(
+        children: [
+          // 채팅방 아바타/썸네일
+          // 참여자 얼굴을 모아 보여준다 (카카오톡과 같은 방식).
+          // 참여자를 못 받은 방은 위젯이 알아서 방 이름 첫 글자로 그린다.
+          ChatRoomAvatarStack(
+            roomName: room.name,
+            avatars: room.avatars,
+            size: avatarSize,
           ),
-          child: Row(
-            children: [
-              // 채팅방 아바타/썸네일
-              // 참여자 얼굴을 모아 보여준다 (카카오톡과 같은 방식).
-              // 참여자를 못 받은 방은 위젯이 알아서 방 이름 첫 글자로 그린다.
-              ChatRoomAvatarStack(
-                roomName: room.name,
-                avatars: room.avatars,
-                size: avatarSize,
-              ),
-              const SizedBox(width: AppSpacing.space3_5),
+          const SizedBox(width: AppSpacing.space3_5),
 
-              // 채팅방 정보
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // 채팅방 정보
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  room.name,
-                                  style: AppTypography.titleMedium.copyWith(
-                                    color: AppSemanticColors.textPrimary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              room.name,
+                              style: AppTypography.titleMedium.copyWith(
+                                color: AppSemanticColors.textPrimary,
                               ),
-                              if (room.participantCount > 0) ...[
-                                const SizedBox(width: AppSpacing.space1_5),
-                                Text(
-                                  '${room.participantCount}명',
-                                  maxLines: 1,
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: AppSemanticColors.textTertiary,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        if (room.pinned) ...[
-                          Icon(
-                            Icons.push_pin,
-                            size: AppSpacing.space3_5,
-                            color: AppSemanticColors.brandDefault,
-                          ),
-                          const SizedBox(width: AppSpacing.space1),
-                        ],
-                        Text(
-                          _formatLastMessageTime(
-                            room.lastMessageAt ?? room.createdAt,
-                          ),
-                          maxLines: 1,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space0_5),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // 안 읽은 방은 굵기가 아니라 빨간 숫자 하나로만 알린다
-                        Expanded(
-                          child: Text(
-                            room.lastMessage?.displayContent ?? '새로운 채팅방',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: room.unreadCount > 0
-                                  ? AppSemanticColors.textSecondary
-                                  : AppSemanticColors.textTertiary,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        if (room.unreadCount > 0) ...[
-                          const SizedBox(width: AppSpacing.space2),
-                          _UnreadBadge(count: room.unreadCount),
+                          if (room.participantCount > 0) ...[
+                            const SizedBox(width: AppSpacing.space1_5),
+                            Text(
+                              '${room.participantCount}명',
+                              maxLines: 1,
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.space2),
+                    if (room.pinned) ...[
+                      Icon(
+                        Icons.push_pin,
+                        size: AppSpacing.space3_5,
+                        color: AppSemanticColors.brandDefault,
+                      ),
+                      const SizedBox(width: AppSpacing.space1),
+                    ],
+                    Text(
+                      _formatLastMessageTime(
+                        room.lastMessageAt ?? room.createdAt,
+                      ),
+                      maxLines: 1,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textTertiary,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.space0_5),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 안 읽은 방은 굵기가 아니라 빨간 숫자 하나로만 알린다
+                    Expanded(
+                      child: Text(
+                        room.lastMessage?.displayContent ?? '새로운 채팅방',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: room.unreadCount > 0
+                              ? AppSemanticColors.textSecondary
+                              : AppSemanticColors.textTertiary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (room.unreadCount > 0) ...[
+                      const SizedBox(width: AppSpacing.space2),
+                      _UnreadBadge(count: room.unreadCount),
+                    ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 목록 줄 눌림 — 크기는 줄지 않고 줄 바탕이 옅은 회색(모서리 14)으로 바뀐다(SeedListCell과 같다).
-/// 길게 누르면 방 메뉴가 뜬다(impact 햅틱은 AppPressable 기본).
-class _PressableRow extends StatefulWidget {
-  const _PressableRow({
-    required this.child,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  final Widget child;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-
-  @override
-  State<_PressableRow> createState() => _PressableRowState();
-}
-
-class _PressableRowState extends State<_PressableRow> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPressable(
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      pressedScale: 1.0,
-      minTouchSize: Size.zero,
-      focusBorderRadius: BorderRadius.circular(AppBorderRadius.control),
-      onHighlightChanged: (down) {
-        if (mounted) setState(() => _pressed = down);
-      },
-      child: AnimatedContainer(
-        duration: AppMotion.press,
-        decoration: BoxDecoration(
-          color: _pressed
-              ? AppSemanticColors.surfacePressed
-              : AppColors.transparent,
-          borderRadius: BorderRadius.circular(AppBorderRadius.control),
-        ),
-        child: widget.child,
+        ],
       ),
     );
   }
