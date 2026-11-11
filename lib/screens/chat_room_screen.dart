@@ -2012,9 +2012,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         final backgroundColor = severe
             ? AppSemanticColors.statusErrorBackground
             : AppSemanticColors.statusWarningBackground;
-        final borderColor = severe
-            ? AppSemanticColors.statusErrorBorder
-            : AppSemanticColors.statusWarningBorder;
         final textColor = severe
             ? AppSemanticColors.statusErrorText
             : AppSemanticColors.statusWarningText;
@@ -2022,16 +2019,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             ? AppSemanticColors.statusErrorIcon
             : AppSemanticColors.statusWarningIcon;
 
+        // B안: 아래 선 없이 상태 색 띠만(색의 뜻 — 노랑=다시 연결 중, 빨강=오래 끊김 — 은 그대로)
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.space4,
             vertical: AppSpacing.space2,
           ),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            border: Border(bottom: BorderSide(color: borderColor, width: 1)),
-          ),
+          color: backgroundColor,
           child: Row(
             children: [
               if (!severe)
@@ -2066,158 +2061,172 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   Widget _buildNoticeBanner(ChatRoom room, bool isAdmin) {
     if (!room.hasNotice) return const SizedBox.shrink();
 
-    // 틸 상단 바 바로 아래라 파랑(info) 대신 같은 틸의 연한 면을 쓴다(정보 화면 탭바와 같은 면).
+    // B안: 연한 틸 머리띠·아래 선 대신 대화 위에 떠 있는 흰 카드(모서리 14, 아주 옅은 그림자).
     // 접힘·펼침 모두 앞 아이콘(확성기)은 고정, 뒤 꺾쇠만 바뀐다 — 같은 띠의 아이콘 뜻이 뒤집히지 않게.
-    const noticeBorder = Border(
-      bottom: BorderSide(color: AppSemanticColors.subheaderBorder, width: 1),
-    );
+    Widget card({required Widget child}) => Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space3,
+            AppSpacing.space2,
+            AppSpacing.space3,
+            AppSpacing.space1,
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppSemanticColors.surfaceCard,
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              boxShadow: AppShadows.raised,
+            ),
+            child: child,
+          ),
+        );
 
     if (!_noticeExpanded) {
-      return Material(
-        color: AppSemanticColors.subheaderBackground,
-        child: InkWell(
-          onTap: () => setState(() => _noticeExpanded = true),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space4,
-              vertical: AppSpacing.space2,
-            ),
-            decoration: const BoxDecoration(border: noticeBorder),
-            child: Row(
-              children: [
-                Icon(Icons.campaign_outlined, size: AppSpacing.space5, color: AppSemanticColors.subheaderLink),
-                const SizedBox(width: AppSpacing.space2),
-                Expanded(
-                  child: Text(
-                    room.noticeContent ?? '',
-                    style: AppTypography.labelStrong.copyWith(
-                      color: AppSemanticColors.textPrimary,
+      return card(
+        child: Material(
+          color: AppColors.transparent,
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => setState(() => _noticeExpanded = true),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space4,
+                vertical: AppSpacing.space2_5,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.campaign_outlined, size: AppSpacing.space5, color: AppSemanticColors.brandDefault),
+                  const SizedBox(width: AppSpacing.space2),
+                  Expanded(
+                    child: Text(
+                      room.noticeContent ?? '',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Icon(Icons.expand_more, size: AppSpacing.space5, color: AppSemanticColors.textTertiary),
-              ],
+                  Icon(Icons.expand_more, size: AppSpacing.space5, color: AppSemanticColors.iconSubtle),
+                ],
+              ),
             ),
           ),
         ),
       );
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space3,
-      ),
-      decoration: const BoxDecoration(
-        color: AppSemanticColors.subheaderBackground,
-        border: noticeBorder,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.campaign_outlined,
-            size: AppSpacing.space5,
-            color: AppSemanticColors.subheaderLink,
-          ),
-          const SizedBox(width: AppSpacing.space2),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _showNoticeDetail(room),
-              behavior: HitTestBehavior.opaque,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    keepAll(room.noticeContent ?? ''),
-                    style: AppTypography.labelStrong.copyWith(
-                      color: AppSemanticColors.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if ((room.noticeByName ?? '').isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        '${room.noticeByName} 등록',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
-                    ),
-                  if ((room.noticeFileUrl ?? '').isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: GestureDetector(
-                        onTap: () => _openNoticeFile(room),
-                        behavior: HitTestBehavior.opaque,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.attach_file,
-                              size: AppSpacing.space4,
-                              color: AppSemanticColors.textLink,
-                            ),
-                            const SizedBox(width: 2),
-                            Flexible(
-                              child: Text(
-                                room.noticeFileName ?? '파일',
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: AppSemanticColors.textLink,
-                                  decoration: TextDecoration.underline,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+    return card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.space4,
+          AppSpacing.space3,
+          AppSpacing.space3,
+          AppSpacing.space3,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.campaign_outlined,
+              size: AppSpacing.space5,
+              color: AppSemanticColors.brandDefault,
             ),
-          ),
-          if (isAdmin)
-            Semantics(
-              button: true,
-              label: '공지 지우기',
+            const SizedBox(width: AppSpacing.space2),
+            Expanded(
               child: GestureDetector(
-                onTap: _clearNotice,
+                onTap: () => _showNoticeDetail(room),
                 behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space3,
-                    vertical: AppSpacing.space2_5,
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    size: AppSpacing.space4,
-                    color: AppSemanticColors.textTertiary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      keepAll(room.noticeContent ?? ''),
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if ((room.noticeByName ?? '').isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '${room.noticeByName} 등록',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                      ),
+                    if ((room.noticeFileUrl ?? '').isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: GestureDetector(
+                          onTap: () => _openNoticeFile(room),
+                          behavior: HitTestBehavior.opaque,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.attach_file,
+                                size: AppSpacing.space4,
+                                color: AppSemanticColors.textLink,
+                              ),
+                              const SizedBox(width: 2),
+                              Flexible(
+                                child: Text(
+                                  room.noticeFileName ?? '파일',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textLink,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
-          // 아이콘이 아니라 꺾쇠를 눌러 접는다 — 앞 아이콘은 늘 같은 확성기다
-          GestureDetector(
-            onTap: () => setState(() => _noticeExpanded = false),
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.space1),
-              child: Icon(
-                Icons.expand_less,
-                size: AppSpacing.space5,
-                color: AppSemanticColors.textTertiary,
+            if (isAdmin)
+              Semantics(
+                button: true,
+                label: '공지 지우기',
+                child: GestureDetector(
+                  onTap: _clearNotice,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space3,
+                      vertical: AppSpacing.space2_5,
+                    ),
+                    child: Icon(
+                      Icons.close,
+                      size: AppSpacing.space4,
+                      color: AppSemanticColors.iconSubtle,
+                    ),
+                  ),
+                ),
+              ),
+            // 아이콘이 아니라 꺾쇠를 눌러 접는다 — 앞 아이콘은 늘 같은 확성기다
+            GestureDetector(
+              onTap: () => setState(() => _noticeExpanded = false),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.space1),
+                child: Icon(
+                  Icons.expand_less,
+                  size: AppSpacing.space5,
+                  color: AppSemanticColors.iconSubtle,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
