@@ -12,6 +12,7 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/seed/seed_button.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
@@ -73,7 +74,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         return DefaultTabController(
           length: canManageMembers ? 2 : 1,
           child: Scaffold(
-            backgroundColor: AppSemanticColors.backgroundPrimary,
+            backgroundColor: AppSemanticColors.backgroundCanvas,
             appBar: AppBar(
               title: Text('종사자 관리', style: AppTypography.appBarTitle),
               elevation: 0,
@@ -95,31 +96,49 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   onPressed: _loadData,
                 ),
               ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: TabBar(
-                  labelColor: AppSemanticColors.headerForeground,
-                  unselectedLabelColor:
-                      AppSemanticColors.headerForegroundMuted,
-                  indicatorColor: AppSemanticColors.headerTabIndicator,
-                  indicatorWeight: 2,
-                  // 전자결재·채팅 탭 머리와 같은 글자 크기·굵기
-                  labelStyle: AppTypography.titleSmall,
-                  unselectedLabelStyle: AppTypography.bodyMedium,
-                  dividerColor: AppColors.transparent,
-                  tabs: [
-                    // 글자 탭만 — 아이콘+글자 탭(높이 72)을 48 칸에 넣어 제목이 위로 밀려 있었다
-                    if (canManageMembers) const Tab(text: '승인 대기'),
-                    const Tab(text: '전체 종사자'),
-                  ],
-                ),
-              ),
             ),
-            body: TabBarView(
-              children: [
-                if (canManageMembers) const AdminPendingUsersTab(),
-                _buildAllMembersTab(),
-              ],
+            // B안: 상단 바 안 TabBar 대신 본문 맨 위 나눔 조절(같은 TabController).
+            // 조회 권한만 있으면 칸이 하나뿐이라 나눔 조절 대신 묶음 제목으로 같은 글자를 보인다.
+            body: Builder(
+              builder: (context) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (canManageMembers)
+                    AppSegmentedTabs(
+                      controller: DefaultTabController.of(context),
+                      tabs: const [
+                        AppSegmentedTab('승인 대기'),
+                        AppSegmentedTab('전체 종사자'),
+                      ],
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.space5,
+                        AppSpacing.space4,
+                        AppSpacing.space5,
+                        AppSpacing.space1,
+                      ),
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          '전체 종사자',
+                          style: AppTypography.titleSmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        if (canManageMembers) const AdminPendingUsersTab(),
+                        _buildAllMembersTab(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -129,6 +148,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
   Widget _buildNoPermissionView() {
     return Scaffold(
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text('종사자 관리', style: AppTypography.appBarTitle),
         elevation: 0,
@@ -225,7 +245,12 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         return RefreshIndicator(
           onRefresh: () async => _loadData(),
           child: ListView.builder(
-            padding: const EdgeInsets.all(AppSpacing.space4),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.space1,
+              AppSpacing.screenGutter,
+              AppSpacing.space6,
+            ),
             itemCount: adminProvider.companyMembers.length,
             itemBuilder: (context, index) {
               final user = adminProvider.companyMembers[index];
@@ -246,34 +271,32 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       user.id.toString(),
     );
 
-    // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
-      ),
+    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 카드 사이는 간격 12
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      child: Material(
+      color: AppSemanticColors.surfaceCard,
+      borderRadius: BorderRadius.circular(AppBorderRadius.card),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
       onTap: () => _showMemberDetail(user),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space3),
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppSemanticColors.backgroundTertiary,
+                const CircleAvatar(
+                  radius: AppSpacing.iconCircle / 2,
+                  backgroundColor: AppSemanticColors.brandWeak,
                   child: Icon(
                     Icons.person,
-                    size: 18,
-                    color: AppSemanticColors.textSecondary,
+                    size: 22,
+                    color: AppSemanticColors.brandDefault,
                   ),
                 ),
-                const SizedBox(width: AppSpacing.space2),
+                const SizedBox(width: AppSpacing.space3),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,17 +325,20 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             const SizedBox(height: AppSpacing.space1),
             Row(
               children: [
-                const SizedBox(width: 44), // avatar + gap 정렬
+                // 아바타(44) + 간격(12) 만큼 들여 이름과 줄을 맞춘다
+                const SizedBox(width: AppSpacing.iconCircle + AppSpacing.space3),
                 Icon(
                   Icons.work_outline,
-                  size: 14,
+                  size: 16,
                   color: AppSemanticColors.textTertiary,
                 ),
                 const SizedBox(width: AppSpacing.space1),
-                Text(
-                  AdminUtils.getRoleDisplayName(user.role),
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textTertiary,
+                Flexible(
+                  child: Text(
+                    AdminUtils.getRoleDisplayName(user.role),
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
+                    ),
                   ),
                 ),
               ],
@@ -358,6 +384,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         ),
       ),
       ),
+      ),
     );
   }
 
@@ -373,10 +400,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: 72,
+                width: 88,
                 child: Text(
                   label,
-                  style: AppTypography.labelMedium.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textSecondary,
                   ),
                 ),
@@ -415,26 +442,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                       maxLines: 1,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space2,
-                      vertical: AppSpacing.space1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? AppSemanticColors.statusSuccessBackground
-                          : AppSemanticColors.backgroundTertiary,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                    ),
-                    child: Text(
-                      isActive ? '활성' : '비활성',
-                      style: AppTypography.labelSmall.copyWith(
-                        color: isActive
-                            ? AppSemanticColors.statusSuccessText
-                            : AppSemanticColors.textSecondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  // 상태 알약 — 공통 꼬리표(활성=초록, 비활성=회색 뜻 그대로)
+                  AppTag(
+                    label: isActive ? '활성' : '비활성',
+                    tone: isActive ? AppTagTone.success : AppTagTone.neutral,
                   ),
                 ],
               ),
@@ -630,9 +641,11 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
         return RefreshIndicator(
           onRefresh: () async => _loadData(),
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space4,
-              vertical: AppSpacing.space2,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.space1,
+              AppSpacing.screenGutter,
+              AppSpacing.space6,
             ),
             itemCount: adminProvider.pendingUsers.length,
             itemBuilder: (context, index) {
@@ -650,29 +663,29 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
       builder: (context, adminProvider, child) {
         final isProcessing = adminProvider.isLoading;
 
-        // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
-        return Container(
-          margin: const EdgeInsets.only(bottom: AppSpacing.space3),
-          decoration: BoxDecoration(
-            color: AppSemanticColors.surfaceDefault,
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            border: Border.all(color: AppSemanticColors.borderSubtle, width: 1),
-          ),
+        // B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 카드 사이는 간격 12
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+          child: Material(
+          color: AppSemanticColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => _showPendingUserDetail(user),
             child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.space4),
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      backgroundColor: AppSemanticColors.backgroundTertiary,
+                    const CircleAvatar(
+                      radius: AppSpacing.iconCircle / 2,
+                      backgroundColor: AppSemanticColors.brandWeak,
                       child: Icon(
                         Icons.person,
-                        color: AppSemanticColors.textSecondary,
+                        size: 22,
+                        color: AppSemanticColors.brandDefault,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.space3),
@@ -720,7 +733,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                         onPressed: isProcessing
                             ? null
                             : () => _showRejectDialog(user),
-                        variant: SeedButtonVariant.neutralOutline,
+                        variant: SeedButtonVariant.neutralWeak,
                         size: SeedButtonSize.small,
                         isLoading: isProcessing,
                       ),
@@ -729,6 +742,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                 ),
               ],
             ),
+          ),
           ),
           ),
         );
@@ -747,10 +761,10 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: 64,
+                width: 80,
                 child: Text(
                   label,
-                  style: AppTypography.labelMedium.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textSecondary,
                   ),
                 ),
@@ -804,7 +818,8 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                   Expanded(
                     child: SeedButton(
                       label: '거부',
-                      variant: SeedButtonVariant.neutralOutline,
+                      size: SeedButtonSize.large,
+                      variant: SeedButtonVariant.neutralWeak,
                       onPressed: () {
                         Navigator.of(context).pop();
                         _showRejectDialog(user);
@@ -815,6 +830,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                   Expanded(
                     child: SeedButton(
                       label: '승인',
+                      size: SeedButtonSize.large,
                       variant: SeedButtonVariant.brandSolid,
                       onPressed: () {
                         Navigator.of(context).pop();
