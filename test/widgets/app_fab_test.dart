@@ -30,6 +30,34 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets("'동작 줄이기'면 접힐 때 오류 없이 바로 바뀐다", (tester) async {
+    // 예전에는 AnimatedSize에 0초를 줘서 접히는 순간
+    // 'RenderAnimatedSize was mutated in its own performLayout'이 났다.
+    Widget reduced({required bool collapsed}) => MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: host(collapsed: collapsed),
+        );
+    await tester.pumpWidget(reduced(collapsed: false));
+    final wide = tester.getSize(find.byType(AppFab));
+    expect(find.text('휴무 신청'), findsOneWidget);
+
+    await tester.pumpWidget(reduced(collapsed: true));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    // 글자는 한 프레임에 바로 사라진다(크기 연출 없음)
+    expect(find.text('휴무 신청'), findsNothing);
+    expect(find.byType(AnimatedSize), findsNothing);
+    // 오른쪽 여백(20 → 16)만 누름 시간만큼 따라온다
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.getSize(find.byType(AppFab)).width, 56);
+
+    await tester.pumpWidget(reduced(collapsed: false));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.byType(AppFab)).width, wide.width);
+  });
+
   testWidgets('누르면 impact 햅틱', (tester) async {
     final heard = <AppHapticKind>[];
     AppHaptics.debugPerformOverride = (k) async => heard.add(k);

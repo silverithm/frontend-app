@@ -11,6 +11,7 @@ import '../models/vacation_request.dart';
 import '../models/schedule.dart';
 import '../models/schedule_colors.dart';
 import '../models/user.dart';
+import '../utils/korean_keep_all.dart';
 import '../utils/permissions.dart';
 import '../utils/schedule_filter.dart';
 import '../utils/schedule_repeat.dart';
@@ -1664,7 +1665,8 @@ class _CalendarScreenState extends State<CalendarScreen>
         ),
         const SizedBox(height: AppSpacing.space1),
         Text(
-          label,
+          // 낱말 단위로만 줄을 바꾼다 — 글자를 키우면 '11월 총 휴 / 무'로 쪼개졌다
+          keepAll(label),
           style: AppTypography.bodySmall.copyWith(
             color: AppSemanticColors.textSecondary,
           ),

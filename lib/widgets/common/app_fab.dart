@@ -35,11 +35,26 @@ class _AppFabState extends State<AppFab> {
 
   @override
   Widget build(BuildContext context) {
-    final duration = AppMotion.durationOf(
-      context,
-      const Duration(milliseconds: 240),
-      reduced: Duration.zero,
-    );
+    // '동작 줄이기'면 글자가 접히는 움직임 없이 바로 바뀐다. AnimatedSize에 0초를 주면
+    // 배치 도중 스스로 다시 배치를 요청해 오류가 난다 — 아예 감싸지 않는다.
+    final reduceMotion = AppMotion.reduceMotion(context);
+    final Widget labelSlot = widget.collapsed
+        ? const SizedBox(height: 24)
+        : Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: AppSpacing.space1_5,
+            ),
+            child: ExcludeSemantics(
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                softWrap: false,
+                style: AppTypography.buttonLarge.copyWith(
+                  color: AppSemanticColors.textInverse,
+                ),
+              ),
+            ),
+          );
     return Semantics(
       label: widget.label,
       child: AppPressable(
@@ -68,28 +83,14 @@ class _AppFabState extends State<AppFab> {
             children: [
               Icon(widget.icon, size: 24, color: AppSemanticColors.textInverse),
               ClipRect(
-                child: AnimatedSize(
-                  duration: duration,
-                  curve: AppMotion.enterCurve,
-                  alignment: AlignmentDirectional.centerStart,
-                  child: widget.collapsed
-                      ? const SizedBox(height: 24)
-                      : Padding(
-                          padding: const EdgeInsetsDirectional.only(
-                            start: AppSpacing.space1_5,
-                          ),
-                          child: ExcludeSemantics(
-                            child: Text(
-                              widget.label,
-                              maxLines: 1,
-                              softWrap: false,
-                              style: AppTypography.buttonLarge.copyWith(
-                                color: AppSemanticColors.textInverse,
-                              ),
-                            ),
-                          ),
-                        ),
-                ),
+                child: reduceMotion
+                    ? labelSlot
+                    : AnimatedSize(
+                        duration: const Duration(milliseconds: 240),
+                        curve: AppMotion.enterCurve,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: labelSlot,
+                      ),
               ),
             ],
           ),

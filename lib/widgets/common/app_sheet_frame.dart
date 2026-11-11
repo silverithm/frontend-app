@@ -117,23 +117,49 @@ class AppSheetHandle extends StatelessWidget {
 }
 
 /// 시트 단추 줄 — 취소 1 : 확인 1.7(시안 .sh-actions). 취소가 없으면 확인 하나가 꽉 찬다.
+///
+/// 취소 글자가 제 몫(1/2.7)에 한 줄로 안 들어가면 그만큼만 넓어진다(많아도 절반까지) —
+/// 좁은 창에서 글자를 키우면 '나중에'가 '나중 / 에'로 쪼개졌다(2026-11-12 글자 1.3배 점검).
+/// 글자가 들어가는 평소에는 예전과 같은 1 : 1.7이다.
 class AppSheetActions extends StatelessWidget {
   const AppSheetActions({super.key, this.cancel, required this.confirm});
 
   final Widget? cancel;
   final Widget confirm;
 
+  static const double _gap = AppSpacing.space2;
+
   @override
   Widget build(BuildContext context) {
     final c = cancel;
     if (c == null) return confirm;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 10, child: c),
-        const SizedBox(width: AppSpacing.space2),
-        Expanded(flex: 17, child: confirm),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 폭이 정해지지 않은 자리에서는 예전처럼 비율로만 나눈다
+        if (!constraints.hasBoundedWidth) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 10, child: c),
+              const SizedBox(width: _gap),
+              Expanded(flex: 17, child: confirm),
+            ],
+          );
+        }
+        final room = (constraints.maxWidth - _gap).clamp(0.0, double.infinity);
+        final share = room * 10 / 27;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(minWidth: share, maxWidth: room / 2),
+              child: IntrinsicWidth(child: c),
+            ),
+            const SizedBox(width: _gap),
+            Expanded(child: confirm),
+          ],
+        );
+      },
     );
   }
 }
