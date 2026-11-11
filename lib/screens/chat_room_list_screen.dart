@@ -5,14 +5,17 @@ import '../providers/chat_provider.dart';
 import '../services/api_service.dart';
 import '../models/chat_room.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/common/app_action_sheet.dart';
+import '../widgets/common/app_pressable.dart';
+import '../widgets/common/app_segmented_tabs.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
-import '../widgets/seed/seed_avatar.dart';
 import '../widgets/chat/chat_room_avatar_stack.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/chat/chat_member_list.dart';
@@ -146,13 +149,11 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: CareVAppBar(
         // 탭 첫 화면 — 왼쪽 큰 제목(B안)
-        title: Text('채팅', style: AppTypography.appBarTitleLarge),
-        centerTitle: false,
-        titleSpacing: AppSpacing.space5,
-        elevation: 0,
+        title: '채팅',
+        isRoot: true,
         actions: [
           IconButton(
             icon: Icon(Icons.add, color: AppSemanticColors.headerForeground),
@@ -160,28 +161,26 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
             tooltip: '새 채팅방',
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppSemanticColors.headerForeground,
-          unselectedLabelColor: AppSemanticColors.headerForegroundMuted,
-          indicatorColor: AppSemanticColors.headerTabIndicator,
-          labelStyle: AppTypography.labelLarge.copyWith(
-            fontWeight: AppTypography.fontWeightBold,
-          ),
-          unselectedLabelStyle: AppTypography.labelLarge,
-          // 상단 바 아래 선은 AppBar가 긋는다
-          dividerColor: AppColors.transparent,
-          tabs: const [
-            Tab(text: '대화'),
-            Tab(text: '직원'),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      // B안: 대화/직원은 상단 바 안 TabBar가 아니라 본문 맨 위 나눔 조절
+      body: Column(
         children: [
-          _buildRoomsTab(isAdmin),
-          ChatMemberList(onOpenRoom: _navigateToChatRoom),
+          AppSegmentedTabs(
+            controller: _tabController,
+            tabs: const [
+              AppSegmentedTab('대화'),
+              AppSegmentedTab('직원'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildRoomsTab(isAdmin),
+                ChatMemberList(onOpenRoom: _navigateToChatRoom),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -210,27 +209,62 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
         return RefreshIndicator(
           onRefresh: _loadChatRooms,
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.space2,
+              AppSpacing.screenGutter,
+              AppSpacing.space6,
+            ),
             itemCount: chatProvider.chatRooms.length,
             itemBuilder: (context, index) {
               final rooms = chatProvider.chatRooms;
               final room = rooms[index];
-              final tile = _buildChatRoomTile(room, isAdmin);
-              // 고정한 방 묶음의 끝에 구분선 — 고정 방은 목록 맨 위에 모여 있다
-              final isLastPinned = room.pinned &&
-                  (index + 1 >= rooms.length || !rooms[index + 1].pinned);
-              if (!isLastPinned) return tile;
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  tile,
-                  Container(height: 1, color: AppSemanticColors.subheaderBorder),
-                ],
+              // 고정한 방은 목록 맨 위에 모여 있다 — 고정 묶음과 나머지를 흰 카드 둘로 나눈다(구분선 대신 간격).
+              // 줄마다 자기 몫의 카드 조각을 그려 ListView.builder가 보이는 줄만 만든다.
+              final isGroupStart =
+                  index == 0 || rooms[index - 1].pinned != room.pinned;
+              final isGroupEnd = index + 1 >= rooms.length ||
+                  rooms[index + 1].pinned != room.pinned;
+              return _buildCardSlice(
+                isFirst: isGroupStart,
+                isLast: isGroupEnd,
+                child: _buildChatRoomTile(room, isAdmin),
               );
             },
           ),
         );
       },
+    );
+  }
+
+  /// 흰 카드(모서리 20)의 한 조각 — 묶음 첫 줄은 위 모서리, 끝 줄은 아래 모서리를 둥글린다.
+  /// 카드 안쪽 여백 8 + 줄 좌우 12 = 글자 시작이 카드 가장자리에서 20(SeedListSection과 같다).
+  Widget _buildCardSlice({
+    required bool isFirst,
+    required bool isLast,
+    required Widget child,
+  }) {
+    const radius = Radius.circular(AppBorderRadius.card);
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? AppSpacing.cardGap : 0),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppSemanticColors.surfaceCard,
+          borderRadius: BorderRadius.vertical(
+            top: isFirst ? radius : Radius.zero,
+            bottom: isLast ? radius : Radius.zero,
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.space2,
+            isFirst ? AppSpacing.space2 : 0,
+            AppSpacing.space2,
+            isLast ? AppSpacing.space2 : 0,
+          ),
+          child: child,
+        ),
+      ),
     );
   }
 
@@ -370,150 +404,197 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     }
   }
 
-  /// 대화 목록 한 줄 — 높이 72(위아래 12 + 아바타 48).
-  /// 제목 titleMedium(15/w600, 읽음 여부로 굵기를 바꾸지 않는다) · 미리보기 bodyMedium 14 ·
-  /// 시간·인원 bodySmall 12. 고정 핀은 제목 앞이 아니라 시간 옆에 둬서 제목이 모든 줄에서
-  /// 같은 x에서 시작한다. 구분선은 글자가 시작하는 자리부터.
+  /// 대화 목록 한 줄 — B안: 흰 카드 안 줄, 높이 68(위아래 10 + 아바타 48), 구분선 없음.
+  /// 제목 titleMedium(16/w600, 읽음 여부로 굵기를 바꾸지 않는다) · 미리보기 bodyMedium 16 ·
+  /// 시간·인원 bodySmall 14. 시간은 제목 줄 오른쪽, 안 읽은 수는 미리보기 줄 오른쪽 —
+  /// 높이를 못 박지 않아 글자를 크게 해도 넘치지 않는다. 고정 핀은 제목 앞이 아니라 시간 옆에 둬서
+  /// 제목이 모든 줄에서 같은 x에서 시작한다.
   Widget _buildChatRoomTile(ChatRoom room, bool isAdmin) {
     const avatarSize = 48.0;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        InkWell(
-          onTap: () => _navigateToChatRoom(room),
-          onLongPress: () => _showRoomActions(room, isAdmin),
-          child: Container(
-            // 고정한 방은 연한 틸 바탕으로 구분한다
-            color: room.pinned ? AppColors.careTealTint : null,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space4,
-              vertical: AppSpacing.space3,
-            ),
-            child: Row(
-              children: [
-                // 채팅방 아바타/썸네일
-                // 참여자 얼굴을 모아 보여준다 (카카오톡과 같은 방식).
-                // 참여자를 못 받은 방은 위젯이 알아서 방 이름 첫 글자로 그린다.
-                ChatRoomAvatarStack(
-                  roomName: room.name,
-                  avatars: room.avatars,
-                  size: avatarSize,
-                ),
-                const SizedBox(width: AppSpacing.space3),
+    return _PressableRow(
+      onTap: () => _navigateToChatRoom(room),
+      onLongPress: () => _showRoomActions(room, isAdmin),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.listRowMinHeight,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space3,
+            vertical: AppSpacing.space2_5,
+          ),
+          child: Row(
+            children: [
+              // 채팅방 아바타/썸네일
+              // 참여자 얼굴을 모아 보여준다 (카카오톡과 같은 방식).
+              // 참여자를 못 받은 방은 위젯이 알아서 방 이름 첫 글자로 그린다.
+              ChatRoomAvatarStack(
+                roomName: room.name,
+                avatars: room.avatars,
+                size: avatarSize,
+              ),
+              const SizedBox(width: AppSpacing.space3_5),
 
-                // 채팅방 정보
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              room.name,
-                              style: AppTypography.titleMedium.copyWith(
-                                color: AppSemanticColors.textPrimary,
+              // 채팅방 정보
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  room.name,
+                                  style: AppTypography.titleMedium.copyWith(
+                                    color: AppSemanticColors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              if (room.participantCount > 0) ...[
+                                const SizedBox(width: AppSpacing.space1_5),
+                                Text(
+                                  '${room.participantCount}명',
+                                  maxLines: 1,
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textTertiary,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          if (room.participantCount > 0) ...[
-                            const SizedBox(width: AppSpacing.space1),
-                            Text(
-                              '${room.participantCount}명',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppSemanticColors.textTertiary,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.space0_5),
-                      // 안 읽은 방은 굵기가 아니라 빨간 숫자 하나로만 알린다
-                      Text(
-                        room.lastMessage?.displayContent ?? '새로운 채팅방',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: room.unreadCount > 0
-                              ? AppSemanticColors.textSecondary
-                              : AppSemanticColors.textTertiary,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 시간 및 안읽은 수
-                const SizedBox(width: AppSpacing.space2),
-                SizedBox(
-                  height: avatarSize,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (room.pinned) ...[
-                            Icon(
-                              Icons.push_pin,
-                              size: AppSpacing.space3,
-                              color: AppColors.careTeal,
-                            ),
-                            const SizedBox(width: AppSpacing.space1),
-                          ],
-                          Text(
-                            _formatLastMessageTime(
-                              room.lastMessageAt ?? room.createdAt,
-                            ),
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                            ),
+                        const SizedBox(width: AppSpacing.space2),
+                        if (room.pinned) ...[
+                          Icon(
+                            Icons.push_pin,
+                            size: AppSpacing.space3_5,
+                            color: AppSemanticColors.brandDefault,
                           ),
+                          const SizedBox(width: AppSpacing.space1),
                         ],
-                      ),
-                      if (room.unreadCount > 0)
-                        Container(
-                          constraints: const BoxConstraints(
-                            minWidth: AppSpacing.space5,
-                            minHeight: AppSpacing.space5,
+                        Text(
+                          _formatLastMessageTime(
+                            room.lastMessageAt ?? room.createdAt,
                           ),
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.space1_5,
+                          maxLines: 1,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
                           ),
-                          // 안 읽은 수는 아래 탭·알림 종·웹 채팅 목록과 같은 빨강 — 틸은 '누르라'는 단추 색이다
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.statusErrorIcon,
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.full,
-                            ),
-                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space0_5),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // 안 읽은 방은 굵기가 아니라 빨간 숫자 하나로만 알린다
+                        Expanded(
                           child: Text(
-                            room.unreadCount > 99 ? '99+' : '${room.unreadCount}',
-                            style: AppTypography.labelStrong.copyWith(
-                              color: AppSemanticColors.textInverse,
-                              height: 1.2,
+                            room.lastMessage?.displayContent ?? '새로운 채팅방',
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: room.unreadCount > 0
+                                  ? AppSemanticColors.textSecondary
+                                  : AppSemanticColors.textTertiary,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        )
-                      else
-                        const SizedBox.shrink(),
-                    ],
-                  ),
+                        ),
+                        if (room.unreadCount > 0) ...[
+                          const SizedBox(width: AppSpacing.space2),
+                          _UnreadBadge(count: room.unreadCount),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        const Divider(
-          height: 1,
-          indent: AppSpacing.space4 + avatarSize + AppSpacing.space3,
-          color: AppSemanticColors.borderSubtle,
+      ),
+    );
+  }
+}
+
+/// 목록 줄 눌림 — 크기는 줄지 않고 줄 바탕이 옅은 회색(모서리 14)으로 바뀐다(SeedListCell과 같다).
+/// 길게 누르면 방 메뉴가 뜬다(impact 햅틱은 AppPressable 기본).
+class _PressableRow extends StatefulWidget {
+  const _PressableRow({
+    required this.child,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  final Widget child;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  @override
+  State<_PressableRow> createState() => _PressableRowState();
+}
+
+class _PressableRowState extends State<_PressableRow> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPressable(
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      pressedScale: 1.0,
+      minTouchSize: Size.zero,
+      focusBorderRadius: BorderRadius.circular(AppBorderRadius.control),
+      onHighlightChanged: (down) {
+        if (mounted) setState(() => _pressed = down);
+      },
+      child: AnimatedContainer(
+        duration: AppMotion.press,
+        decoration: BoxDecoration(
+          color: _pressed
+              ? AppSemanticColors.surfacePressed
+              : AppColors.transparent,
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
         ),
-      ],
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// 안 읽은 수 — 아래 탭·알림 종·웹 채팅 목록과 같은 빨강(틸은 '누르라'는 단추 색이다).
+class _UnreadBadge extends StatelessWidget {
+  const _UnreadBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(
+        minWidth: AppSpacing.space5,
+        minHeight: AppSpacing.space5,
+      ),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space1_5),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.badgeBackground,
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        maxLines: 1,
+        style: AppTypography.labelStrong.copyWith(
+          color: AppSemanticColors.textInverse,
+          height: 1.2,
+        ),
+      ),
     );
   }
 }
