@@ -8,6 +8,7 @@ import '../utils/role_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -269,8 +270,9 @@ class _AdminVacationLimitsSettingScreenState
       // 슬림 타이틀 — 형제 화면(admin_unified_approval/admin_user_management)과 동일하게
       // 아이콘뱃지+서브텍스트+"ADMIN"배지로 제목을 세 번 반복하지 않는다 (중복 강조 정리)
       appBar: const CareVAppBar(title: '휴무 제한 설정'),
+      // 불러오는 동안(처음·달 바꿈 — 칸을 비우고 새로 채운다)은 날짜 카드 뼈대
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _VacationLimitsSkeleton()
           : Column(
               children: [
                 // 월 선택 헤더 — 회색 바탕 위에 선 없이
@@ -599,6 +601,36 @@ class _AdminVacationLimitsSettingScreenState
           ],
         ),
       ],
+    );
+  }
+}
+
+/// 휴무 제한 첫 불러오기 뼈대 — 월 머리 줄·역할 칩 줄 자리 + 회색 바탕 위 흰 날짜 카드(같은 여백·간격)
+class _VacationLimitsSkeleton extends StatelessWidget {
+  const _VacationLimitsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          // 월 머리 줄(위 8 + 단추 48) + 역할 칩 줄(위아래 4 + 칩 44) 만큼 비워 둔다
+          AppSpacing.space2 + 48 + AppSpacing.space1 * 2 + 44 +
+              AppSpacing.space2,
+          AppSpacing.screenGutter,
+          AppSpacing.space6,
+        ),
+        children: List.generate(
+          4,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+          ),
+        ),
+      ),
     );
   }
 }
