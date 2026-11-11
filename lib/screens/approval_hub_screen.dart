@@ -6,7 +6,7 @@ import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../widgets/common/app_tag.dart';
+import '../widgets/common/app_segmented_tabs.dart';
 import '../utils/permissions.dart';
 import 'admin_approval_management_screen.dart';
 import 'approval_list_screen.dart';
@@ -52,7 +52,7 @@ class _ApprovalHubScreenState extends State<ApprovalHubScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         // 탭 첫 화면 — 왼쪽 큰 제목(B안). 알림에서 push로 열려 뒤로가 생겨도 같은 모양.
         title: Text('전자결재', style: AppTypography.appBarTitleLarge),
@@ -61,9 +61,11 @@ class _ApprovalHubScreenState extends State<ApprovalHubScreen>
         elevation: 0,
         // 탭 루트에선 canPop=false라 자동으로 안 뜨고,
         // 알림에서 push로 열리면 뒤로가기가 생긴다
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Consumer2<ApprovalProvider, AuthProvider>(
+      ),
+      body: Column(
+        children: [
+          // B안: 상단 바 안 TabBar 대신 본문 맨 위 나눔 조절(같은 TabController)
+          Consumer2<ApprovalProvider, AuthProvider>(
             builder: (context, approvalProvider, authProvider, child) {
               final currentUser = authProvider.currentUser;
               final isAdmin = PermissionUtils.has(
@@ -78,84 +80,28 @@ class _ApprovalHubScreenState extends State<ApprovalHubScreen>
                 isAdmin: isAdmin,
               );
 
-              return TabBar(
+              return AppSegmentedTabs(
                 controller: _tabController,
-                labelColor: AppSemanticColors.headerForeground,
-                unselectedLabelColor: AppSemanticColors.headerForegroundMuted,
-                indicatorColor: AppSemanticColors.headerTabIndicator,
-                indicatorWeight: 2,
-                labelStyle: AppTypography.titleSmall,
-                unselectedLabelStyle: AppTypography.bodyMedium,
-                dividerColor: AppColors.transparent,
                 tabs: [
-                  const Tab(text: '결재 신청'),
-                  Tab(
-                    child: _TabLabelWithBadge(
-                      label: '결재 관리',
-                      count: myTurnCount,
-                    ),
-                  ),
+                  const AppSegmentedTab('결재 신청'),
+                  AppSegmentedTab('결재 관리', badgeCount: myTurnCount),
                 ],
               );
             },
           ),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          // 결재 신청 — 내가 기안한 문서 목록 + 작성 FAB
-          ApprovalListScreen(showAppBar: false),
-          // 결재 관리 — 열람 범위 문서함 (내 차례 승인 / 관리자 직권·일괄)
-          AdminApprovalManagementScreen(),
-        ],
-      ),
-    );
-  }
-}
-
-/// 탭 라벨 + 카카오톡 안읽음처럼 눈에 띄는 빨간 원형 배지.
-/// count가 0이면 배지를 아예 그리지 않는다. 두 자리를 넘으면 "99+"로 자른다.
-class _TabLabelWithBadge extends StatelessWidget {
-  final String label;
-  final int count;
-
-  const _TabLabelWithBadge({required this.label, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    // 배지는 라벨 뒤에 이어 붙인다 — 예전엔 라벨 오른쪽 위로 겹쳐 나가 '관리' 글자를 가렸다.
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 스타일은 지정하지 않는다 — TabBar가 선택 상태에 따라
-        // labelColor/labelStyle을 DefaultTextStyle로 내려준다.
-        Text(label),
-        if (count > 0) ...[
-          const SizedBox(width: AppSpacing.space1),
-          // 높이를 16으로 못 박는다 — 아래 alignment는 주어진 세로 칸을 다 채우려 해서,
-          // 최소 높이만 주면 탭 높이(46)만큼 늘어나 빨간 막대가 탭 아래로 삐져나왔다(2026-11-08).
-          Container(
-            height: 16,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            constraints: const BoxConstraints(minWidth: 16),
-            decoration: BoxDecoration(
-              // 앱 토큰 중 error 계열(red600) — 눈에 띄는 경고색으로 새로 만들지 않고 기존 토큰 사용
-              color: AppSemanticColors.statusErrorIcon,
-              borderRadius: BorderRadius.circular(AppBorderRadius.full),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              count > 99 ? '99+' : '$count',
-              style: AppTag.labelStyle.copyWith(
-                color: AppColors.white,
-                letterSpacing: 0,
-                height: 1.2,
-              ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                // 결재 신청 — 내가 기안한 문서 목록 + 작성 FAB
+                ApprovalListScreen(showAppBar: false),
+                // 결재 관리 — 열람 범위 문서함 (내 차례 승인 / 관리자 직권·일괄)
+                AdminApprovalManagementScreen(),
+              ],
             ),
           ),
         ],
-      ],
+      ),
     );
   }
 }
