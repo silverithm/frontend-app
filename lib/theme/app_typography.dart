@@ -21,6 +21,11 @@ class AppTypography {
   static const double fontSize3xl = 24.0;
   static const double fontSize4xl = 30.0;
   static const double fontSize5xl = 36.0;
+  // B안(2026-11-12) 단계에 새로 들어온 크기
+  static const double fontSize13 = 13.0;
+  static const double fontSize17 = 17.0;
+  static const double fontSize19 = 19.0;
+  static const double fontSize21 = 21.0;
 
   // Line heights
   static const double lineHeightTight = 1.25;
@@ -47,18 +52,21 @@ class AppTypography {
 
   // Text styles
   //
-  // 글자 역할 표(2026-10-27) — 같은 역할은 화면이 달라도 같은 토큰 하나를 쓰고, 굵기를 덮어쓰지 않는다.
-  // 굵기는 w400(본문)·w600(제목·강조)·w700(화면·구역 제목, 큰 숫자) 세 단계만 쓴다.
-  //   화면·시트·대화상자 제목   heading5 18/w700
-  //   구역 머리                 heading6 16/w700
-  //   카드·목록 한 줄의 제목    titleMedium 15/w600
-  //   작은 행 제목·폼 라벨      titleSmall 14/w600
-  //   본문                      bodyMedium 14/w400
-  //   부제·메타(날짜·작성자)    bodySmall 12/w400 (textSecondary·textTertiary)
-  //   작은 강조(달력 날짜·상태 숫자 등 12/w600)  labelStrong
-  //   꼬리표·배지 숫자          labelSmall 11 (AppTag) — 11은 이 자리에만
-  //   큰 숫자 요약              heading4 20/w700
-  // 예전에는 같은 '목록 제목'이 14/w600·15/w500·16/w600·16/w700으로 화면마다 달라 들쭉날쭉해 보였다.
+  // 글자 역할 표 — B안(2026-11-12)부터 이 값이 기준. 같은 역할은 화면이 달라도 같은 토큰 하나를 쓰고
+  // 굵기를 덮어쓰지 않는다. 굵기는 w400(본문)·w600(제목·강조)·w700(화면·구역 제목, 큰 숫자) 세 단계.
+  // 쓰는 분이 50~60대가 많아 글자는 커지는 쪽으로만 옮겼다(시안 template.html 값).
+  //   탭 첫 화면 상단 바 제목       appBarTitleLarge 20/w700 (왼쪽 정렬)
+  //   안쪽 화면 상단 바 제목        appBarTitle 17/w600 (가운데)
+  //   시트·대화상자·상세 제목        heading5 21/w700      (예전 18)
+  //   카드·구역 제목                heading6 19/w700      (예전 16)
+  //   목록 한 줄의 제목             titleMedium 16/w600   (예전 15)
+  //   작은 행 제목·폼 라벨          titleSmall 15/w600    (예전 14)
+  //   본문                          bodyMedium 16/w400    (예전 14)
+  //   부제·메타(날짜·작성자)        bodySmall 14/w400     (예전 12) + textSecondary·textTertiary
+  //   작은 강조·꼬리표(상태 알약)    labelStrong 13/w600   (예전 12) — AppTag
+  //   배지 숫자·하단 탭 글자         labelSmall 12         (예전 11) — 12보다 작은 글자는 없다
+  //   큰 숫자 요약                  heading4 24/w700 고정폭 숫자 (예전 20)
+  //   단추                          buttonLarge 17 / buttonMedium 16 / buttonSmall 14 (w600)
   static const TextStyle heading1 = TextStyle(
     fontSize: fontSize5xl,
     fontWeight: fontWeightBold,
@@ -80,126 +88,148 @@ class AppTypography {
     letterSpacing: letterSpacingTight,
   );
 
+  /// 큰 숫자 요약(건수·합계) — 숫자 폭이 같아 세어 올라가도 흔들리지 않는다.
   static const TextStyle heading4 = TextStyle(
+    fontSize: fontSize3xl,
+    fontWeight: fontWeightBold,
+    height: lineHeightTight,
+    letterSpacing: letterSpacingNormal,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
+
+  /// 시트·대화상자·상세 화면 제목
+  static const TextStyle heading5 = TextStyle(
+    fontSize: fontSize21,
+    fontWeight: fontWeightBold,
+    height: lineHeightSnug,
+    letterSpacing: -0.2,
+  );
+
+  /// 카드·구역 제목("공지사항"·"전자결재")
+  static const TextStyle heading6 = TextStyle(
+    fontSize: fontSize19,
+    fontWeight: fontWeightBold,
+    height: 1.35,
+    letterSpacing: -0.2,
+  );
+
+  /// 안쪽 화면 상단 바 제목(가운데)
+  static const TextStyle appBarTitle = TextStyle(
+    fontSize: fontSize17,
+    fontWeight: fontWeightSemibold,
+    height: lineHeightTight,
+    letterSpacing: letterSpacingNormal,
+  );
+
+  /// 탭 첫 화면 상단 바 제목(왼쪽) — 홈 인사말도 이 자리
+  static const TextStyle appBarTitleLarge = TextStyle(
     fontSize: fontSize2xl,
     fontWeight: fontWeightBold,
-    height: lineHeightNormal,
-    letterSpacing: letterSpacingNormal,
-  );
-
-  static const TextStyle heading5 = TextStyle(
-    fontSize: fontSizeXl,
-    fontWeight: fontWeightBold,
-    height: lineHeightNormal,
-    letterSpacing: letterSpacingNormal,
-  );
-
-  static const TextStyle heading6 = TextStyle(
-    fontSize: fontSizeLg,
-    fontWeight: fontWeightBold,
-    height: lineHeightNormal,
+    height: lineHeightTight,
     letterSpacing: letterSpacingNormal,
   );
 
   /// 카드·목록 한 줄의 제목 — 공지·결재·알림·채팅방·게시글·어르신 카드 등
   static const TextStyle titleMedium = TextStyle(
+    fontSize: fontSizeLg,
+    fontWeight: fontWeightSemibold,
+    height: 1.45,
+    letterSpacing: letterSpacingNormal,
+  );
+
+  /// 작은 행 제목·폼 라벨·카드 안 소제목
+  static const TextStyle titleSmall = TextStyle(
     fontSize: fontSizeMd,
     fontWeight: fontWeightSemibold,
     height: lineHeightSnug,
     letterSpacing: letterSpacingNormal,
   );
 
-  /// 작은 행 제목·폼 라벨·카드 안 소제목
-  static const TextStyle titleSmall = TextStyle(
-    fontSize: fontSizeBase,
+  /// 작은 강조 13/w600 — 상태 알약(꼬리표)·달력 날짜 숫자처럼 본문보다 작지만 눈에 띄어야 하는 자리.
+  /// (단추 토큰 buttonSmall을 빌려 쓰지 않는다)
+  static const TextStyle labelStrong = TextStyle(
+    fontSize: fontSize13,
     fontWeight: fontWeightSemibold,
     height: lineHeightSnug,
     letterSpacing: letterSpacingNormal,
   );
 
-  /// 작은 강조 글자 12/w600 — 달력 날짜 숫자·상태 숫자처럼 본문보다 작지만 눈에 띄어야 하는 자리.
-  /// (단추 토큰 buttonSmall을 빌려 쓰지 않는다)
-  static const TextStyle labelStrong = TextStyle(
-    fontSize: fontSizeSm,
-    fontWeight: fontWeightSemibold,
-    height: lineHeightNormal,
-    letterSpacing: letterSpacingNormal,
-  );
-
+  /// 긴 글(공지 본문 등)
   static const TextStyle bodyLarge = TextStyle(
-    fontSize: fontSizeLg,
+    fontSize: fontSize17,
     fontWeight: fontWeightNormal,
-    height: lineHeightRelaxed,
+    height: 1.6,
     letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle bodyMedium = TextStyle(
-    fontSize: fontSizeBase,
+    fontSize: fontSizeLg,
     fontWeight: fontWeightNormal,
     height: lineHeightNormal,
     letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle bodySmall = TextStyle(
-    fontSize: fontSizeSm,
+    fontSize: fontSizeBase,
     fontWeight: fontWeightNormal,
     height: lineHeightNormal,
     letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle labelLarge = TextStyle(
-    fontSize: fontSizeBase,
+    fontSize: fontSizeMd,
     fontWeight: fontWeightMedium,
-    height: lineHeightNormal,
-    letterSpacing: letterSpacingWide,
+    height: lineHeightSnug,
+    letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle labelMedium = TextStyle(
-    fontSize: fontSizeSm,
+    fontSize: fontSize13,
     fontWeight: fontWeightMedium,
-    height: lineHeightNormal,
-    letterSpacing: letterSpacingWide,
+    height: lineHeightSnug,
+    letterSpacing: letterSpacingNormal,
   );
 
+  /// 배지 숫자·하단 탭 글자 — 앱에서 가장 작은 글자(12)
   static const TextStyle labelSmall = TextStyle(
-    fontSize: fontSizeXs,
+    fontSize: fontSizeSm,
     fontWeight: fontWeightMedium,
-    height: lineHeightNormal,
-    letterSpacing: letterSpacingWide,
+    height: 1.35,
+    letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle buttonLarge = TextStyle(
-    fontSize: fontSizeLg,
+    fontSize: fontSize17,
     fontWeight: fontWeightSemibold,
-    height: lineHeightNormal,
+    height: lineHeightTight,
     letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle buttonMedium = TextStyle(
-    fontSize: fontSizeBase,
+    fontSize: fontSizeLg,
     fontWeight: fontWeightSemibold,
-    height: lineHeightNormal,
+    height: lineHeightTight,
     letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle buttonSmall = TextStyle(
-    fontSize: fontSizeSm,
+    fontSize: fontSizeBase,
     fontWeight: fontWeightSemibold,
-    height: lineHeightNormal,
+    height: lineHeightTight,
     letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle caption = TextStyle(
-    fontSize: fontSizeXs,
+    fontSize: fontSizeSm,
     fontWeight: fontWeightNormal,
-    height: lineHeightNormal,
-    letterSpacing: letterSpacingWide,
+    height: lineHeightSnug,
+    letterSpacing: letterSpacingNormal,
   );
 
   static const TextStyle overline = TextStyle(
-    fontSize: fontSizeXs,
+    fontSize: fontSizeSm,
     fontWeight: fontWeightMedium,
-    height: lineHeightNormal,
-    letterSpacing: letterSpacingWider,
+    height: lineHeightSnug,
+    letterSpacing: letterSpacingWide,
   );
 }

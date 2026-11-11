@@ -157,6 +157,40 @@ class AppColors {
   static const Color careTealInkSoft = Color(0xFFE1F0EE); // 진한 틸 위 보조 글자 (4.7:1)
   static const Color careTealTint = Color(0xFFF1F7F6); // 기본 틸 6%
   static const Color careTealTintLine = Color(0xFFC3DDDB); // 기본 틸 25%
+  // B안(2026-11-12) 옅은 틸 — 둥근 아이콘 바탕·숫자 알약·아바타·안내 띠. 위 6%보다 한 단계 짙어
+  // 회색 바탕·흰 카드 위에서 모두 보인다. 이 위 진한 틸 글자(careTealDeep) 6.8:1.
+  static const Color careTealWash = Color(0xFFE6F4F1);
+  static const Color careTealWashPressed = Color(0xFFD4ECE6);
+
+  // ── B안(2026-11-12) 바탕·글자·선 — 시안 template.html :root 값 그대로 ──
+  // 맑은 바탕: 회색 화면 위 흰 카드(테두리 없음). 글자 회색은 회색 바탕에서도 4.5:1을 넘게 짙혔다.
+  static const Color canvas = Color(0xFFF2F4F6); // --bg·--fill: 화면 바탕, 입력·보조 단추 바탕
+  static const Color fillStrong = Color(0xFFE8EBEE); // --fill2: 보조 단추 눌림·나눔 조절 바탕
+  static const Color pressed = Color(0xFFEEF0F3); // --press: 줄·칩 눌림
+  static const Color hairline = Color(0xFFE4E7EB); // --line: 하단 탭 위 선 같은 아주 옅은 선
+  static const Color ink = Color(0xFF191C21); // --ink
+  static const Color ink2 = Color(0xFF4B5361); // --ink2 보조 글자 (회색 바탕 7.0:1)
+  static const Color ink3 = Color(0xFF5F6773); // --ink3 옅은 글자·자리표시 (회색 바탕 5.2:1)
+  static const Color ink4 = Color(0xFF6B7280); // --ink4 꺾쇠·꺼진 탭 아이콘 — 아이콘 전용(흰 바탕 4.8:1, 회색 바탕 4.4:1)
+  static const Color skeleton = Color(0xFFE3E6EA); // --sk 회색 바탕 위 뼈대
+  static const Color skeletonOnCard = Color(0xFFEDEFF2); // --sk-in 흰 카드 위 뼈대
+  static const Color sheetHandle = Color(0xFFD5D9DE); // 시트 손잡이
+  static const Color switchTrackOff = Color(0xFFC5CAD1); // 꺼진 스위치
+  static const Color scrim = Color(0x730B0F14); // rgba(11,15,20,.45) 시트·창 뒤 어둠
+  static const Color toast = Color(0xEB191C21); // rgba(25,28,33,.92) 알림 띠
+  static const Color danger = Color(0xFFC8281E); // 위험 단추(흰 글자 5.6:1)
+  static const Color dangerPressed = Color(0xFFA61F17);
+  static const Color badgeRed = Color(0xFFD92D20); // 숫자 배지(흰 글자 4.8:1)
+  // 상태 알약 — 대기·승인·반려 (바탕 / 글자 / 점)
+  static const Color waitBg = Color(0xFFFFF2CC);
+  static const Color waitInk = Color(0xFF6E5300);
+  static const Color waitDot = Color(0xFFC9971C);
+  static const Color okBg = Color(0xFFE1F4E8);
+  static const Color okInk = Color(0xFF17703F);
+  static const Color okDot = Color(0xFF1E9E61);
+  static const Color rejBg = Color(0xFFFDE8E7);
+  static const Color rejInk = Color(0xFFB42318);
+  static const Color rejDot = Color(0xFFE5483D);
 
   // Pink palette (하위 호환 유지)
   static const Color pink50 = Color(0xFFFDF2F8);
@@ -194,6 +228,9 @@ class AppSemanticColors {
   static const Color chatBackground = AppColors.gray200;
   static const Color backgroundElevated = AppColors.white; // layer-floating
   static const Color backgroundOverlay = Color(0x80000000);
+  // B안(2026-11-12): 화면 바탕은 옅은 회색, 그 위 카드는 흰색(테두리 없음).
+  static const Color backgroundCanvas = AppColors.canvas;
+  static const Color overlayScrim = AppColors.scrim; // 시트·창 뒤
 
   // Surface colors
   static const Color surfaceDefault = AppColors.white;
@@ -201,6 +238,16 @@ class AppSemanticColors {
   static const Color surfaceActive = AppColors.gray100;
   static const Color surfaceDisabled = AppColors.gray100; // bg.disabled
   static const Color surfaceSelected = AppColors.careTealTint; // brand-weak
+  static const Color surfaceCard = AppColors.white; // 회색 바탕 위 흰 카드
+  static const Color surfacePressed = AppColors.pressed; // 줄·칩·카드 눌림
+  static const Color fillDefault = AppColors.canvas; // 입력칸·보조 단추·카드 안 칩 바탕
+  static const Color fillStrong = AppColors.fillStrong; // 보조 단추 눌림·나눔 조절 바탕
+  static const Color skeletonBase = AppColors.skeleton;
+  static const Color skeletonBaseOnCard = AppColors.skeletonOnCard;
+  static const Color sheetHandle = AppColors.sheetHandle;
+  static const Color switchTrackOff = AppColors.switchTrackOff;
+  static const Color toastBackground = AppColors.toast;
+  static const Color badgeBackground = AppColors.badgeRed;
 
   // Border colors (Seed stroke.neutral-*)
   static const Color borderDefault = AppColors.gray300; // stroke.neutral-weak
@@ -209,11 +256,17 @@ class AppSemanticColors {
   static const Color borderHover = AppColors.gray400;
   static const Color borderFocus = AppColors.careTeal; // brand
   static const Color borderDisabled = AppColors.gray200;
+  // B안: 선은 거의 쓰지 않는다 — 하단 탭 위·입력창 아래처럼 꼭 필요한 자리만 이 옅은 선.
+  static const Color borderHairline = AppColors.hairline;
 
   // Text colors (Seed fg.neutral-*)
-  static const Color textPrimary = AppColors.gray900; // fg.neutral
-  static const Color textSecondary = AppColors.gray700; // fg.neutral-muted
-  static const Color textTertiary = AppColors.gray600; // fg.neutral-subtle
+  // B안(2026-11-12): 회색 바탕 위에서도 4.5:1을 넘게 시안의 ink 단계로 짙혔다
+  // (예전 gray700 #555D6D / gray600 #868B94 — gray600은 회색 바탕에서 3.1:1).
+  static const Color textPrimary = AppColors.ink; // fg.neutral
+  static const Color textSecondary = AppColors.ink2; // fg.neutral-muted
+  static const Color textTertiary = AppColors.ink3; // fg.neutral-subtle
+  /// 꺾쇠(›)·꺼진 하단 탭 아이콘·목록 보조 아이콘
+  static const Color iconSubtle = AppColors.ink4;
   static const Color textDisabled = AppColors.gray500; // fg.disabled
   static const Color textInverse = AppColors.white;
   static const Color textLink = AppColors.careTeal; // fg.brand-contrast (흰 바탕 5.5:1)
@@ -240,8 +293,11 @@ class AppSemanticColors {
   // Brand (케어브이 틸 — Seed bg.brand-*)
   static const Color brandDefault = AppColors.careTeal;
   static const Color brandPressed = AppColors.careTealDeep;
-  static const Color brandWeak = AppColors.careTealTint;
-  static const Color brandWeakPressed = AppColors.careTealInkSoft;
+  // B안: 옅은 틸은 한 단계 짙은 careTealWash(#E6F4F1) — 둥근 아이콘 바탕·아바타·숫자 알약·안내 띠
+  static const Color brandWeak = AppColors.careTealWash;
+  static const Color brandWeakPressed = AppColors.careTealWashPressed;
+  /// 옅은 틸 위 글자·아이콘(6.8:1)
+  static const Color brandWeakForeground = AppColors.careTealDeep;
 
   // Interactive colors — 프라이머리 액션은 브랜드 틸
   static const Color interactivePrimaryDefault = AppColors.careTeal;
@@ -254,20 +310,29 @@ class AppSemanticColors {
   static const Color interactiveSecondaryActive = AppColors.gray300;
   static const Color interactiveSecondaryDisabled = AppColors.gray100;
 
+  // 위험 단추(삭제·반려 확인) — 예전 statusErrorIcon(#FA342C) 바탕은 흰 글자 3.6:1로 모자랐다
+  static const Color dangerDefault = AppColors.danger;
+  static const Color dangerPressed = AppColors.dangerPressed;
+
   // Status colors (Seed positive/warning/critical/informative)
-  static const Color statusSuccessBackground = AppColors.green50;
+  // 상태 바탕·글자는 B안 알약 값(뜻은 그대로: 초록=승인·완료, 노랑=대기·주의, 빨강=반려·오류).
+  // 승인 초록 글자를 틸(#0F766E)과 구분되는 #17703F로 옮겼다(예전 #00745F는 틸과 거의 같았다).
+  static const Color statusSuccessBackground = AppColors.okBg;
   static const Color statusSuccessBorder = AppColors.green200;
-  static const Color statusSuccessText = AppColors.green700;
+  static const Color statusSuccessText = AppColors.okInk;
+  static const Color statusSuccessDot = AppColors.okDot;
   static const Color statusSuccessIcon = AppColors.green600;
 
-  static const Color statusWarningBackground = AppColors.yellow50;
+  static const Color statusWarningBackground = AppColors.waitBg;
   static const Color statusWarningBorder = AppColors.yellow200;
-  static const Color statusWarningText = AppColors.yellow700;
+  static const Color statusWarningText = AppColors.waitInk;
+  static const Color statusWarningDot = AppColors.waitDot;
   static const Color statusWarningIcon = AppColors.yellow600;
 
-  static const Color statusErrorBackground = AppColors.red50;
+  static const Color statusErrorBackground = AppColors.rejBg;
   static const Color statusErrorBorder = AppColors.red200;
-  static const Color statusErrorText = AppColors.red700;
+  static const Color statusErrorText = AppColors.rejInk;
+  static const Color statusErrorDot = AppColors.rejDot;
   static const Color statusErrorIcon = AppColors.red600;
 
   static const Color statusInfoBackground = AppColors.blue50;

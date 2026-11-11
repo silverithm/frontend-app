@@ -21,10 +21,8 @@ class AppTag extends StatelessWidget {
     this.icon,
   });
 
-  /// 꼬리표·배지 숫자의 글자 — labelSmall 11에 w600. 화면에서 따로 굵기를 얹지 않고 이걸 쓴다.
-  static final TextStyle labelStyle = AppTypography.labelSmall.copyWith(
-    fontWeight: AppTypography.fontWeightSemibold,
-  );
+  /// 꼬리표(상태 알약)의 글자 — labelStrong 13/w600(B안). 화면에서 따로 굵기를 얹지 않고 이걸 쓴다.
+  static const TextStyle labelStyle = AppTypography.labelStrong;
 
   static ({Color background, Color foreground}) colorsOf(AppTagTone tone) {
     switch (tone) {

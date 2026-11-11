@@ -28,12 +28,13 @@ void main() {
     final title = _styleOf(t, '안내');
     final body = _styleOf(t, '내용');
     expect(title.fontWeight, FontWeight.w600);
-    expect(body.fontSize, 12);
+    expect(body.fontSize, AppTypography.bodySmall.fontSize);
     expect(title.color, isNot(body.color));
   });
 
-  test('AppTag.labelStyle 은 11 / w600', () {
-    expect(AppTag.labelStyle.fontSize, 11);
+  // B안(2026-11-12): 꼬리표는 13/w600 알약(labelStrong)
+  test('AppTag.labelStyle 은 13 / w600', () {
+    expect(AppTag.labelStyle.fontSize, 13);
     expect(AppTag.labelStyle.fontWeight, FontWeight.w600);
   });
 }

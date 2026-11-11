@@ -173,31 +173,25 @@ lib/
 
 ### 1. 타이포그래피 매핑
 
-| 용도 | 크기 | AppTypography 매핑 | 설명 |
-|------|------|-------------------|------|
-| 화면 제목 | 20pt | `heading4` | 스크린 타이틀 |
-| 섹션 제목 | 18pt | `heading5` | 섹션 헤더 |
-| 소제목 | 16pt | `heading6` / `bodyLarge` | 카드 제목 등 |
-| 본문 | 14pt | `bodyMedium` | 일반 텍스트 |
-| 본문 (작은) | 12pt | `bodySmall` | 부가 설명 |
-| 레이블 | 14pt | `labelLarge` | 버튼, 폼 레이블 |
-| 레이블 (작은) | 12pt | `labelMedium` | 배지, 태그 |
-| 캡션 | 11pt | `caption` / `labelSmall` | 작은 정보 |
-| 오버라인 | 11pt | `overline` | 매우 작은 뱃지 |
+> 예전 크기 표(본문 14·보조 12·캡션 11)는 B안(2026-11-12)에서 없앴다 — 아래 역할 표만 본다.
 
-**역할 표 (2026-10-27부터 이 표가 기준):** 같은 역할은 화면이 달라도 같은 토큰을 쓰고 굵기를 `copyWith`로 덮어쓰지 않는다. 굵기는 w400·w600·w700 세 단계만.
+**역할 표 (B안, 2026-11-12부터 이 표가 기준 — 그 전 10-27 표를 대신한다):** 같은 역할은 화면이 달라도 같은 토큰을 쓰고 굵기를 `copyWith`로 덮어쓰지 않는다. 굵기는 w400·w600·w700 세 단계만. 12보다 작은 글자는 없다.
 
 | 역할 | 토큰 |
 |------|------|
-| 화면·시트·대화상자 제목 (상단 바 포함) | `heading5` 18/w700 |
-| 구역 머리 | `heading6` 16/w700 |
-| 카드·목록 한 줄의 제목 (공지·결재·알림·채팅방·게시글·어르신 등) | `titleMedium` 15/w600 |
-| 작은 행 제목·폼 라벨·카드 안 소제목 | `titleSmall` 14/w600 |
-| 본문 | `bodyMedium` 14/w400 |
-| 부제·메타 (날짜·작성자·시간) | `bodySmall` 12 + `textSecondary`/`textTertiary` |
-| 작은 강조 (달력 날짜·상태 숫자 12/w600) | `labelStrong` |
-| 꼬리표·배지 숫자 | `labelSmall` 11 (`AppTag`) — 11은 이 자리에만 |
-| 큰 숫자 요약 | `heading4` 20/w700 |
+| 탭 첫 화면 상단 바 제목(왼쪽, 홈 인사말 포함) | `appBarTitleLarge` 20/w700 |
+| 안쪽 화면 상단 바 제목(가운데) | `appBarTitle` 17/w600 |
+| 시트·대화상자·상세 제목 | `heading5` 21/w700 |
+| 카드·구역 제목 | `heading6` 19/w700 |
+| 카드·목록 한 줄의 제목 (공지·결재·알림·채팅방·게시글·어르신 등) | `titleMedium` 16/w600 |
+| 작은 행 제목·폼 라벨·카드 안 소제목 | `titleSmall` 15/w600 |
+| 본문 | `bodyMedium` 16/w400 |
+| 부제·메타 (날짜·작성자·시간) | `bodySmall` 14 + `textSecondary`/`textTertiary` |
+| 꼬리표(상태 알약)·작은 강조 | `labelStrong` 13/w600 (`AppTag`) |
+| 배지 숫자·하단 탭 글자 | `labelSmall` 12 |
+| 큰 숫자 요약 | `heading4` 24/w700 고정폭 숫자 |
+
+**바탕·카드 (B안):** 화면 바탕 `AppSemanticColors.backgroundCanvas`(#F2F4F6) 위에 흰 카드 `surfaceCard`, 테두리·회색 머리띠·구분선 없이 간격(`AppSpacing.cardGap` 12)으로 나눈다. 카드 모서리 `AppBorderRadius.card`(20)·안쪽 여백 `AppSpacing.cardPadding`(20), 단추·입력칸 `AppBorderRadius.control`(14), 시트 `AppBorderRadius.sheet`(24). 입력칸·보조 단추 바탕은 `fillDefault`, 옅은 틸 바탕은 `brandWeak` + 글자 `brandWeakForeground`.
 
 한글이 여러 줄로 넘어가는 표시용 글(말풍선·공지 본문 등)은 `utils/korean_keep_all.dart`의 `keepAll()`을 거쳐 낱말 중간에서 끊기지 않게 한다(복사·검색·전송에는 원문).
 
@@ -244,6 +238,9 @@ SizedBox(height: AppSpacing.space2) // 8px 간격
 | 카드 | 12px | `xl` |
 | 큰 카드 | 16px | `xl2` |
 | 원형 | 9999px | `full` |
+| (B안) 단추·입력칸·눌린 줄 | 14px | `control` |
+| (B안) 카드 | 20px | `card` |
+| (B안) 시트·대화상자 | 24px | `sheet` |
 
 **사용 예시:**
 ```dart

@@ -35,7 +35,8 @@ void main() {
     test('주색 토큰은 케어브이 틸 값', () {
       expect(AppSemanticColors.interactivePrimaryDefault, AppColors.careTeal);
       expect(AppColors.careTeal, const Color(0xFF0F766E));
-      expect(AppSemanticColors.brandWeak, AppColors.careTealTint);
+      // B안(2026-11-12): 옅은 틸은 한 단계 짙은 careTealWash
+      expect(AppSemanticColors.brandWeak, AppColors.careTealWash);
     });
   });
 }
