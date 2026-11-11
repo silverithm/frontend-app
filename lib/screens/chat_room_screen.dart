@@ -2402,7 +2402,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                         label: '날짜로 이동',
                         child: SeedButton(
                           label: '날짜',
-                          variant: SeedButtonVariant.neutralOutline,
+                          // 흰 시트 위 보조 단추 — 회색 채움(B안)
+                          variant: SeedButtonVariant.neutralWeak,
                           size: SeedButtonSize.small,
                           prefixIcon: Icons.calendar_today,
                           onPressed: _jumpToDate,
@@ -2418,7 +2419,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     ],
                   ),
                 ),
-                const Divider(height: 1),
+                // B안: 검색 줄과 결과 사이는 선 대신 간격(위 줄의 아래 여백)
                 Expanded(
                   child: isSearching
                       ? const Center(child: CircularProgressIndicator())
@@ -2445,7 +2446,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                               const SizedBox(height: AppSpacing.space2),
                               SeedButton(
                                 label: '다시 시도',
-                                variant: SeedButtonVariant.neutralOutline,
+                                variant: SeedButtonVariant.neutralWeak,
                                 size: SeedButtonSize.small,
                                 onPressed: runSearch,
                               ),
@@ -2461,9 +2462,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                             ),
                           ),
                         )
-                      : ListView.separated(
+                      // 줄 사이 선 없이 — 시트 좌우 8 + 줄 좌우 12 = 글자가 가장자리에서 20
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.space2,
+                            0,
+                            AppSpacing.space2,
+                            AppSpacing.space4,
+                          ),
                           itemCount: results.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final message = results[index];
                             return SeedListCell(
@@ -2644,12 +2651,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   child: Text(
                     '${files.length}건',
                     style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
+                      color: AppSemanticColors.textSecondary,
                     ),
                   ),
                 ),
               ),
-              const Divider(height: 1),
               Expanded(
                 child: files.isEmpty
                     ? Center(
@@ -2660,19 +2666,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                           ),
                         ),
                       )
-                    : ListView.separated(
+                    // 줄 사이 선 없이 — 시트 좌우 8 + 줄 좌우 12 = 글자가 가장자리에서 20
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.space2,
+                          0,
+                          AppSpacing.space2,
+                          AppSpacing.space4,
+                        ),
                         itemCount: files.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final file = files[index];
                           final isImage = file.type == MessageType.image;
                           final thumbUrl = resolveChatImageUrl(file);
+                          final showThumb = isImage && thumbUrl != null;
 
                           return SeedListCell(
-                            leading: isImage && thumbUrl != null
+                            leading: showThumb
                                 ? ClipRRect(
                                     borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.md,
+                                      AppBorderRadius.inner,
                                     ),
                                     child: ChatPhoto(
                                       imageUrl: thumbUrl,
@@ -2686,13 +2699,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                                           const Icon(Icons.image_outlined),
                                     ),
                                   )
-                                : Icon(
-                                    // 파일함에서도 동영상은 한눈에 알아보게 한다
-                                    file.isVideoMessage
-                                        ? Icons.videocam_outlined
-                                        : Icons.insert_drive_file_outlined,
-                                    color: AppSemanticColors.textSecondary,
-                                  ),
+                                : null,
+                            // 사진이 아니면 B안 줄 아이콘(옅은 틸 둥근 바탕 44).
+                            // 파일함에서도 동영상은 한눈에 알아보게 한다
+                            leadingIcon: showThumb
+                                ? null
+                                : file.isVideoMessage
+                                    ? Icons.videocam_outlined
+                                    : Icons.insert_drive_file_outlined,
                             title: file.fileName ?? '파일',
                             description:
                                 '${file.senderName} · ${formatChatDateTime(file.createdAt)}',
