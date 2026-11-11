@@ -519,17 +519,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
       return const SizedBox.shrink();
     }
 
+    // 입력 바 바로 위 흰 목록 — 대화와는 입력 바와 같은 아주 옅은 선 하나로만 가른다(B안)
     return Container(
       constraints: const BoxConstraints(maxHeight: 220),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
+      decoration: const BoxDecoration(
+        color: AppSemanticColors.surfaceCard,
         border: Border(
-          top: BorderSide(color: AppSemanticColors.borderSubtle, width: 1),
+          top: BorderSide(color: AppSemanticColors.borderHairline, width: 1),
         ),
       ),
       child: ListView.builder(
         shrinkWrap: true,
-        padding: EdgeInsets.zero,
+        // 좌우 8 + 줄 좌우 12 = 글자가 가장자리에서 20
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
         itemCount: _mentionCandidates.length,
         itemBuilder: (context, index) {
           final participant = _mentionCandidates[index];
@@ -1912,10 +1914,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
   Widget _buildJumpToBottomButton() {
     if (!_showJumpToBottom) return const SizedBox.shrink();
-    return Material(
-      color: AppSemanticColors.surfaceDefault,
+    // B안: 진한 Material 그림자 대신 떠 있는 것(FAB)과 같은 부드러운 그림자
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: AppShadows.floating,
+      ),
+      child: Material(
+      color: AppSemanticColors.surfaceCard,
       shape: const CircleBorder(),
-      elevation: 3,
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: () {
@@ -1933,8 +1940,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             label: '맨 아래로',
             excludeSemantics: true,
             child: SizedBox(
-              width: 44,
-              height: 44,
+              width: AppSpacing.iconCircle,
+              height: AppSpacing.iconCircle,
               child: Icon(
                 Icons.arrow_downward,
                 size: 20,
@@ -1943,6 +1950,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
             ),
           ),
         ),
+      ),
       ),
     );
   }
