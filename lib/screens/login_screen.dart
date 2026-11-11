@@ -7,11 +7,13 @@ import '../services/analytics_service.dart';
 import '../services/storage_service.dart';
 import '../utils/constants.dart';
 import '../utils/admin_utils.dart';
+import '../utils/app_haptics.dart';
 import '../widgets/common/index.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'register_screen.dart';
@@ -123,123 +125,179 @@ class _LoginScreenState extends State<LoginScreen> {
     bool isAdminPasswordReset = false;
     final emailController = TextEditingController();
 
-    AppDialog.showCustom<void>(
+    // B안: 가운데 대화상자 대신 아래에서 올라오는 시트(입력칸이 있어 키보드만큼 올라간다)
+    showAppSheet<void>(
       context,
-      barrierColor: AppColors.black.withValues(alpha: 0.5),
-      child: StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setState) => AppSheetFrame(
+          title: '비밀번호 찾기',
+          message: '가입하신 이메일을 입력하시면 임시 비밀번호를 전송해드립니다.',
+          children: [
+            const SizedBox(height: AppSpacing.space5),
+
+            // 사용자 타입 선택 토글
+            Text(
+              '사용자 타입',
+              style: AppTypography.titleSmall.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.space2),
+            _buildTypeSegments(
+              isAdmin: isAdminPasswordReset,
+              onChanged: (isAdmin) =>
+                  setState(() => isAdminPasswordReset = isAdmin),
+            ),
+            const SizedBox(height: AppSpacing.space4),
+
+            // 이메일 입력 — 본문 폼(SeedTextField)과 동일 컴포넌트로 통일
+            SeedTextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              label: '이메일',
+              placeholder: 'example@email.com',
+              prefixIcon: Icons.email_outlined,
+            ),
+          ],
+          actions: AppSheetActions(
+            cancel: SeedButton(
+              label: '취소',
+              size: SeedButtonSize.large,
+              variant: SeedButtonVariant.neutralWeak,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            confirm: Consumer<AuthProvider>(
+              builder: (context, authProvider, child) => SeedButton(
+                label: '비밀번호 찾기',
+                size: SeedButtonSize.large,
+                variant: SeedButtonVariant.brandSolid,
+                isLoading: authProvider.isLoading,
+                onPressed: authProvider.isLoading
+                    ? null
+                    : () async {
+                        final email = emailController.text.trim();
+                        if (email.isEmpty) {
+                          AppSnackBar.showError(
+                            context,
+                            message: '이메일을 입력해주세요',
+                          );
+                          return;
+                        }
+                        Navigator.of(context).pop();
+                        if (isAdminPasswordReset) {
+                          await authProvider.findAdminPassword(
+                            email,
+                            context,
+                          );
+                        } else {
+                          await authProvider.findPassword(
+                            email,
+                            context,
+                          );
+                        }
+                      },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 직원·관리자 고르기 — B안 나눔 조절(AppSegmentedTabs)과 같은 모습: 회색 띠 위에서 고른 칸만 흰 칸.
+  /// 로그인 화면과 비밀번호 찾기 시트가 같이 쓴다. 다른 칸을 누를 때만 selection 햅틱.
+  Widget _buildTypeSegments({
+    required bool isAdmin,
+    required ValueChanged<bool> onChanged,
+    bool withIcons = false,
+  }) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppSemanticColors.fillDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space1),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildTypeSegment(
+                label: '직원',
+                icon: withIcons ? Icons.person : null,
+                selected: !isAdmin,
+                onTap: () => onChanged(false),
+              ),
+            ),
+            Expanded(
+              child: _buildTypeSegment(
+                label: '관리자',
+                icon: withIcons ? Icons.admin_panel_settings : null,
+                selected: isAdmin,
+                onTap: () => onChanged(true),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeSegment({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    IconData? icon,
+  }) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (!selected) AppHaptics.selection();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: AppMotion.tabSwitch,
+          curve: AppMotion.standardCurve,
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.minTouchTarget,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space2,
+            vertical: AppSpacing.space1,
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppSemanticColors.surfaceCard
+                : AppColors.transparent,
+            borderRadius: BorderRadius.circular(AppBorderRadius.inner),
+            boxShadow: selected ? AppShadows.raised : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 제목·본문은 AppDialog와 같은 가운데 정렬
-              Center(
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: AppSpacing.space5,
+                  color: selected
+                      ? AppSemanticColors.brandDefault
+                      : AppSemanticColors.iconSubtle,
+                ),
+                const SizedBox(width: AppSpacing.space1_5),
+              ],
+              Flexible(
                 child: Text(
-                  '비밀번호 찾기',
-                  style: AppTypography.heading5.copyWith(
-                    color: AppSemanticColors.textPrimary,
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.titleMedium.copyWith(
+                    color: selected
+                        ? AppSemanticColors.textPrimary
+                        : AppSemanticColors.textSecondary,
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              Center(
-                child: Text(
-                  '가입하신 이메일을 입력하시면 임시 비밀번호를 전송해드립니다.',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-
-              // 사용자 타입 선택 토글
-              Text(
-                '사용자 타입',
-                style: AppTypography.titleSmall.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space2),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  border: Border.all(color: AppSemanticColors.borderDefault),
-                  color: AppSemanticColors.backgroundSecondary,
-                ),
-                child: Row(
-                  children: [
-                    _buildTypeOption(
-                      label: '직원',
-                      isSelected: !isAdminPasswordReset,
-                      isFirst: true,
-                      onTap: () => setState(() => isAdminPasswordReset = false),
-                    ),
-                    _buildTypeOption(
-                      label: '관리자',
-                      isSelected: isAdminPasswordReset,
-                      isFirst: false,
-                      onTap: () => setState(() => isAdminPasswordReset = true),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-
-              // 이메일 입력 — 본문 폼(SeedTextField)과 동일 컴포넌트로 통일
-              SeedTextField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                label: '이메일',
-                placeholder: 'example@email.com',
-                prefixIcon: Icons.email_outlined,
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: '취소',
-                      variant: SeedButtonVariant.neutralOutline,
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: Consumer<AuthProvider>(
-                      builder: (context, authProvider, child) => SeedButton(
-                        label: '비밀번호 찾기',
-                        variant: SeedButtonVariant.brandSolid,
-                        isLoading: authProvider.isLoading,
-                        onPressed: authProvider.isLoading
-                            ? null
-                            : () async {
-                                final email = emailController.text.trim();
-                                if (email.isEmpty) {
-                                  AppSnackBar.showError(
-                                    context,
-                                    message: '이메일을 입력해주세요',
-                                  );
-                                  return;
-                                }
-                                Navigator.of(context).pop();
-                                if (isAdminPasswordReset) {
-                                  await authProvider.findAdminPassword(
-                                    email,
-                                    context,
-                                  );
-                                } else {
-                                  await authProvider.findPassword(
-                                    email,
-                                    context,
-                                  );
-                                }
-                              },
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
@@ -248,50 +306,15 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildTypeOption({
-    required String label,
-    required bool isSelected,
-    required bool isFirst,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppSemanticColors.brandWeak
-                : AppColors.transparent,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(isFirst ? AppBorderRadius.lg : 0),
-              bottomLeft: Radius.circular(isFirst ? AppBorderRadius.lg : 0),
-              topRight: Radius.circular(isFirst ? 0 : AppBorderRadius.lg),
-              bottomRight: Radius.circular(isFirst ? 0 : AppBorderRadius.lg),
-            ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: AppTypography.buttonMedium.copyWith(
-              color: isSelected
-                  ? AppSemanticColors.interactivePrimaryDefault
-                  : AppSemanticColors.textTertiary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    // B안: 옅은 회색 바탕 위 흰 카드 한 장에 입력 폼을 담는다(회색 입력칸이 흰 카드 위에서 보인다).
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space6,
+            horizontal: AppSpacing.screenGutter,
             vertical: AppSpacing.space6,
           ),
           child: Form(
@@ -313,107 +336,116 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: AppSpacing.space2),
                 Text(
                   _isAdminLogin ? '관리자 계정으로 로그인' : '직원 계정으로 로그인',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.interactivePrimaryDefault,
-                    fontWeight: AppTypography.fontWeightMedium,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textLink,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppSpacing.space8),
-
-                // 사용자 타입 선택
-                _buildUserTypeToggle(),
                 const SizedBox(height: AppSpacing.space6),
 
-                // 이메일 입력
-                SeedTextField(
-                  label: '이메일',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.person_outline,
-                  size: SeedTextFieldSize.large,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '사용자명 또는 이메일을 입력해주세요';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.space4),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 사용자 타입 선택
+                      _buildUserTypeToggle(),
+                      const SizedBox(height: AppSpacing.space5),
 
-                // 이메일 기억하기 체크박스
-                _buildRememberEmailCheckbox(),
-                const SizedBox(height: AppSpacing.space4),
+                      // 이메일 입력
+                      SeedTextField(
+                        label: '이메일',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icons.person_outline,
+                        size: SeedTextFieldSize.large,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '사용자명 또는 이메일을 입력해주세요';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.space1),
 
-                // 비밀번호 입력
-                SeedTextField(
-                  label: '비밀번호',
-                  controller: _passwordController,
-                  obscureText: true,
-                  enableObscureToggle: true,
-                  prefixIcon: Icons.lock_outline,
-                  size: SeedTextFieldSize.large,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '비밀번호를 입력해주세요';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.space2),
+                      // 이메일 기억하기 체크박스
+                      _buildRememberEmailCheckbox(),
+                      const SizedBox(height: AppSpacing.space2),
 
-                // 비밀번호 찾기 링크
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _buildTextLink(
-                    label: '비밀번호 찾기',
-                    onPressed: _showForgotPasswordDialog,
-                    color: AppSemanticColors.brandPressed,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space6),
+                      // 비밀번호 입력
+                      SeedTextField(
+                        label: '비밀번호',
+                        controller: _passwordController,
+                        obscureText: true,
+                        enableObscureToggle: true,
+                        prefixIcon: Icons.lock_outline,
+                        size: SeedTextFieldSize.large,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '비밀번호를 입력해주세요';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.space1),
 
-                // 로그인 버튼
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) => SeedButton(
-                    label: '로그인',
-                    variant: SeedButtonVariant.brandSolid,
-                    size: SeedButtonSize.large,
-                    isLoading: authProvider.isLoading,
-                    onPressed: authProvider.isLoading ? null : _login,
-                  ),
-                ),
-
-                // 에러 메시지
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    if (authProvider.errorMessage.isNotEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.space4),
-                        child: SeedCallout(
-                          variant: SeedCalloutVariant.danger,
-                          title: authProvider.errorMessage,
+                      // 비밀번호 찾기 링크
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: _buildTextLink(
+                          label: '비밀번호 찾기',
+                          onPressed: _showForgotPasswordDialog,
+                          color: AppSemanticColors.textLink,
                         ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-                const SizedBox(height: AppSpacing.space6),
+                      ),
+                      const SizedBox(height: AppSpacing.space4),
 
-                // 회원가입 링크
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                      // 로그인 버튼
+                      Consumer<AuthProvider>(
+                        builder: (context, authProvider, child) => SeedButton(
+                          label: '로그인',
+                          variant: SeedButtonVariant.brandSolid,
+                          size: SeedButtonSize.large,
+                          isLoading: authProvider.isLoading,
+                          onPressed: authProvider.isLoading ? null : _login,
+                        ),
+                      ),
+
+                      // 에러 메시지
+                      Consumer<AuthProvider>(
+                        builder: (context, authProvider, child) {
+                          if (authProvider.errorMessage.isNotEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.space4,
+                              ),
+                              child: SeedCallout(
+                                variant: SeedCalloutVariant.danger,
+                                title: authProvider.errorMessage,
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space5),
+
+                // 회원가입 링크 — 글자가 커져도 넘치지 않게 줄을 넘길 수 있게 둔다
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
                       '계정이 없으신가요?',
-                      style: AppTypography.bodySmall.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         color: AppSemanticColors.textSecondary,
                       ),
                     ),
                     _buildTextLink(
                       label: '회원가입',
-                      color: AppSemanticColors.brandPressed,
+                      color: AppSemanticColors.textLink,
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -439,138 +471,49 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildUserTypeToggle() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(color: AppSemanticColors.borderDefault),
-        color: AppSemanticColors.backgroundSecondary,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isAdminLogin = false;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space3,
-                ),
-                decoration: BoxDecoration(
-                  color: !_isAdminLogin
-                      ? AppSemanticColors.brandWeak
-                      : AppColors.transparent,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(AppBorderRadius.lg),
-                    bottomLeft: Radius.circular(AppBorderRadius.lg),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.person,
-                      color: !_isAdminLogin
-                          ? AppSemanticColors.interactivePrimaryDefault
-                          : AppSemanticColors.textTertiary,
-                      size: AppSpacing.space5,
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Text(
-                      '직원',
-                      style: AppTypography.buttonMedium.copyWith(
-                        color: !_isAdminLogin
-                            ? AppSemanticColors.interactivePrimaryDefault
-                            : AppSemanticColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isAdminLogin = true;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space3,
-                ),
-                decoration: BoxDecoration(
-                  color: _isAdminLogin
-                      ? AppSemanticColors.brandWeak
-                      : AppColors.transparent,
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(AppBorderRadius.lg),
-                    bottomRight: Radius.circular(AppBorderRadius.lg),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.admin_panel_settings,
-                      color: _isAdminLogin
-                          ? AppSemanticColors.interactivePrimaryDefault
-                          : AppSemanticColors.textTertiary,
-                      size: AppSpacing.space5,
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Text(
-                      '관리자',
-                      style: AppTypography.buttonMedium.copyWith(
-                        color: _isAdminLogin
-                            ? AppSemanticColors.interactivePrimaryDefault
-                            : AppSemanticColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return _buildTypeSegments(
+      isAdmin: _isAdminLogin,
+      withIcons: true,
+      onChanged: (isAdmin) {
+        setState(() {
+          _isAdminLogin = isAdmin;
+        });
+      },
     );
   }
 
   Widget _buildRememberEmailCheckbox() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        onTap: () {
-          setState(() {
-            _rememberEmail = !_rememberEmail;
-          });
-        },
+    // 줄 전체가 눌리는 48 높이 — 체크 상자를 고정 크기 상자에 가두지 않아 글자가 커져도 넘치지 않는다.
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      onTap: () {
+        setState(() {
+          _rememberEmail = !_rememberEmail;
+        });
+      },
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.minTouchTarget,
+        ),
         child: Row(
           children: [
-            SizedBox(
-              width: AppSpacing.space8,
-              height: AppSpacing.space8,
-              child: Checkbox(
-                value: _rememberEmail,
-                onChanged: (value) {
-                  setState(() {
-                    _rememberEmail = value ?? false;
-                  });
-                },
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
+            Checkbox(
+              value: _rememberEmail,
+              onChanged: (value) {
+                setState(() {
+                  _rememberEmail = value ?? false;
+                });
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
             ),
-            const SizedBox(width: AppSpacing.space2),
-            Text(
-              '이메일 기억하기',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textSecondary,
+            const SizedBox(width: AppSpacing.space1),
+            Flexible(
+              child: Text(
+                '이메일 기억하기',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -580,10 +523,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// 보조 링크 — 회색 상자 단추 대신 글자만. 주 행동(로그인)만 채움으로 남긴다.
+  /// 틸 링크는 titleSmall(15/w600), 맨 아래 회색 링크는 [style]로 bodySmall(14)을 준다.
   Widget _buildTextLink({
     required String label,
     required VoidCallback onPressed,
     required Color color,
+    TextStyle style = AppTypography.titleSmall,
   }) {
     return TextButton(
       onPressed: onPressed,
@@ -597,7 +542,7 @@ class _LoginScreenState extends State<LoginScreen> {
         tapTargetSize: MaterialTapTargetSize.padded,
       ),
       // textStyle을 버튼 스타일에 넣으면 테마의 서체(Pretendard)가 빠진다 — 글자에 직접 준다
-      child: Text(label, style: AppTypography.labelMedium),
+      child: Text(label, style: style),
     );
   }
 
@@ -610,6 +555,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _buildTextLink(
             label: '사용방법 보러가기',
             color: AppSemanticColors.textTertiary,
+            style: AppTypography.bodySmall,
             onPressed: () async {
               const url = 'https://youtu.be/x2cJedS6vaU';
               if (await canLaunchUrl(Uri.parse(url))) {
@@ -629,6 +575,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _buildTextLink(
             label: '케어브이 웹사이트',
             color: AppSemanticColors.textTertiary,
+            style: AppTypography.bodySmall,
             onPressed: () async {
               const url = 'https://carev.kr';
               if (await canLaunchUrl(Uri.parse(url))) {
