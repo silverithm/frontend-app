@@ -26,13 +26,13 @@ class DispatchRouteCard extends StatelessWidget {
     final style = DispatchStatusStyle.of(dispatch.status);
     final driver = dispatch.driver;
 
+    // B안 카드 — 테두리 없는 흰 상자, 모서리 20, 안쪽 20, 카드끼리 간격 12
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
-      padding: const EdgeInsets.all(AppSpacing.space4),
+      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderSubtle),
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,15 +74,14 @@ class DispatchRouteCard extends StatelessWidget {
               children: [
                 Icon(
                   Icons.person_outline,
-                  size: 18,
+                  size: 20,
                   color: AppSemanticColors.textTertiary,
                 ),
                 const SizedBox(width: AppSpacing.space2),
                 Text(
                   driver.driverName,
-                  style: AppTypography.bodyMedium.copyWith(
+                  style: AppTypography.titleSmall.copyWith(
                     color: AppSemanticColors.textPrimary,
-                    fontWeight: AppTypography.fontWeightMedium,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.space2),
@@ -100,7 +99,7 @@ class DispatchRouteCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.directions_bus_outlined,
-                    size: 18,
+                    size: 20,
                     color: AppSemanticColors.textTertiary,
                   ),
                   const SizedBox(width: AppSpacing.space2),
@@ -127,7 +126,7 @@ class DispatchRouteCard extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: AppSemanticColors.statusWarningBackground,
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                borderRadius: BorderRadius.circular(AppBorderRadius.control),
               ),
               child: Text(
                 '주운전자 ${dispatch.originalMainDriver!.driverName} 휴무로 대체',
@@ -139,9 +138,8 @@ class DispatchRouteCard extends StatelessWidget {
           ],
 
           if (showPassengers && dispatch.passengers.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.space3),
-            Divider(height: 1, color: AppSemanticColors.borderSubtle),
-            const SizedBox(height: AppSpacing.space3),
+            // B안: 구분선 대신 간격으로 나눈다
+            const SizedBox(height: AppSpacing.space5),
             Text(
               '탑승 어르신 ${dispatch.passengers.length}명',
               style: AppTypography.bodySmall.copyWith(
