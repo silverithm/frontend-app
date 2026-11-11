@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,6 +28,8 @@ import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common/app_action_sheet.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_fab.dart';
+import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'admin_vacation_limits_setting_screen.dart';
@@ -246,7 +250,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
@@ -260,39 +264,14 @@ class _CalendarScreenState extends State<CalendarScreen>
               title: Text('일정', style: AppTypography.appBarTitleLarge),
               centerTitle: false,
               titleSpacing: AppSpacing.space5,
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: Builder(
-                  builder: (context) {
-                    // 일정 탭 상단 탭바 — '일정 관리' 권한 기준(관리자는 항상 true)
-                    final isAdmin = PermissionUtils.has(
-                      context.read<AuthProvider>().currentUser,
-                      AppPermission.scheduleManage,
-                    );
-                    final accentColor =
-                        AppSemanticColors.interactivePrimaryDefault;
-                    return Container(
-                      color: AppSemanticColors.headerBackground,
-                      child: TabBar(
-                        controller: _tabController,
-                        indicatorColor: AppSemanticColors.headerTabIndicator,
-                        indicatorWeight: 2,
-                        labelColor: AppSemanticColors.headerForeground,
-                        unselectedLabelColor:
-                            AppSemanticColors.headerForegroundMuted,
-                        // 상단 바 아래 선은 SliverAppBar가 긋는다
-                        dividerColor: AppColors.transparent,
-                        labelStyle: AppTypography.titleSmall,
-                        unselectedLabelStyle: AppTypography.bodyMedium,
-                        // 웹 관리자 화면과 같은 이름 — 근무조정(휴무)·월간일정(일정)
-                        tabs: const [
-                          Tab(text: '근무조정'),
-                          Tab(text: '월간일정'),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+            ),
+            // 근무조정·월간일정 나눔 조절 — 상단 바 안 TabBar를 빼고 그 아래 회색 바탕 위에
+            // 둔다(B안). 달력을 내려도 늘 보이게 고정하되, 위아래 여백을 줄여 달력 자리를 아낀다.
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _SegmentedTabsHeader(
+                controller: _tabController,
+                textScaler: MediaQuery.textScalerOf(context),
               ),
             ),
           ];
@@ -1864,42 +1843,24 @@ class _CalendarScreenState extends State<CalendarScreen>
       AppPermission.scheduleManage,
     );
 
+    // B안 알약 FAB — 글자는 그 자리에 이미 있던 말을 쓴다(관리자 메뉴의 첫 항목·휴무 추가 단추·일정 등록 시트 제목)
     if (isAdmin) {
       return ScaleTransition(
         scale: _fabAnimationController,
-        child: FloatingActionButton(
-          heroTag: 'admin_calendar_fab',
+        child: AppFab(
+          icon: Icons.add,
+          label: '휴무 추가',
           onPressed: _showAdminActionDialog,
-          backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-          child: Icon(Icons.add, color: AppSemanticColors.textInverse),
         ),
       );
     }
 
     return ScaleTransition(
       scale: _fabAnimationController,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppSemanticColors.interactivePrimaryDefault,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        ),
-        child: FloatingActionButton.extended(
-          heroTag: 'calendar_fab',
-          onPressed: _showVacationRequestDialog,
-          backgroundColor: AppColors.transparent,
-          elevation: 0,
-          icon: Icon(
-            Icons.add_circle_outline,
-            color: AppSemanticColors.textInverse,
-            size: 24,
-          ),
-          label: Text(
-            '휴무 추가',
-            style: AppTypography.titleSmall.copyWith(
-              color: AppSemanticColors.textInverse,
-            ),
-          ),
-        ),
+      child: AppFab(
+        icon: Icons.add,
+        label: '휴무 추가',
+        onPressed: _showVacationRequestDialog,
       ),
     );
   }
@@ -1907,11 +1868,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget _buildScheduleFab() {
     return ScaleTransition(
       scale: _fabAnimationController,
-      child: FloatingActionButton(
-        heroTag: 'schedule_calendar_fab',
+      child: AppFab(
+        icon: Icons.add,
+        label: '일정 등록',
         onPressed: _showAddScheduleDialog,
-        backgroundColor: AppSemanticColors.interactivePrimaryDefault,
-        child: Icon(Icons.add, color: AppSemanticColors.textInverse),
       ),
     );
   }
@@ -3366,6 +3326,61 @@ class _CalendarScreenState extends State<CalendarScreen>
       vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
     }
   }
+}
+
+/// 근무조정·월간일정 나눔 조절을 상단 바 아래에 고정해 두는 머리.
+/// 글자를 키우면 칸이 높아지므로 높이를 글자 배율에 맞춰 잡는다(앱 최대 1.6배에서도 잘리지 않게).
+class _SegmentedTabsHeader extends SliverPersistentHeaderDelegate {
+  _SegmentedTabsHeader({required this.controller, required this.textScaler});
+
+  final TabController controller;
+  final TextScaler textScaler;
+
+  // 기본(위 12·아래 8)보다 줄였다 — 2단계에서 제목 바가 생겨 달력 자리가 56px 줄었다.
+  static const EdgeInsets _padding = EdgeInsets.fromLTRB(
+    AppSpacing.space4,
+    AppSpacing.space2,
+    AppSpacing.space4,
+    AppSpacing.space1,
+  );
+
+  double get _extent {
+    const label = AppTypography.bodyMedium;
+    // 칸 글자 한 줄 높이 + 칸 안 위아래 여백(4+4)
+    final labelHeight =
+        textScaler.scale(label.fontSize!) * label.height! + AppSpacing.space2;
+    final segment = math.max(AppSegmentedTabs.segmentMinHeight, labelHeight);
+    return (segment + AppSegmentedTabs.trackPadding * 2 + _padding.vertical)
+        .ceilToDouble();
+  }
+
+  @override
+  double get minExtent => _extent;
+
+  @override
+  double get maxExtent => _extent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return AppSegmentedTabs(
+      controller: controller,
+      padding: _padding,
+      // 웹 관리자 화면과 같은 이름 — 근무조정(휴무)·월간일정(일정)
+      tabs: const [
+        AppSegmentedTab('근무조정'),
+        AppSegmentedTab('월간일정'),
+      ],
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SegmentedTabsHeader oldDelegate) =>
+      oldDelegate.controller != controller ||
+      oldDelegate.textScaler != textScaler;
 }
 
 /// 일정 상세 응답({schedule: {...}} 또는 일정 그대로)에서 시작일만 꺼낸다
