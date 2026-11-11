@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
-import '../../theme/app_colors.dart';
-import '../../theme/app_typography.dart';
 import '../../utils/app_haptics.dart';
+import '../seed/seed_button.dart';
 
 enum AppButtonSize { small, medium, large }
 enum AppButtonVariant { primary, secondary, outline, text }
 
+/// 예전 shadcn 단추를 감싸던 단추. B안(2026-11-12)부터는 SeedButton과 같은 모양을 그린다
+/// (앱 안에서 쓰는 곳은 없지만 API는 그대로 둔다). 새로 쓸 때는 SeedButton을 쓴다.
 class AppButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -33,117 +33,44 @@ class AppButton extends StatelessWidget {
     this.haptic = AppHapticKind.tap,
   });
 
-  shadcn.ButtonSize _getShadcnSize() {
+  SeedButtonSize get _seedSize {
     switch (size) {
       case AppButtonSize.small:
-        return shadcn.ButtonSize.small;
+        return SeedButtonSize.small;
       case AppButtonSize.medium:
-        return shadcn.ButtonSize.normal;
+        return SeedButtonSize.medium;
       case AppButtonSize.large:
-        return shadcn.ButtonSize.large;
+        return SeedButtonSize.large;
     }
   }
 
-  Widget _buildLoadingIndicator() {
-    final loadingSize = _getLoadingSize();
-    return SizedBox(
-      width: loadingSize,
-      height: loadingSize,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation<Color>(_getLoadingColor()),
-      ),
-    );
+  SeedButtonVariant get _seedVariant {
+    switch (variant) {
+      case AppButtonVariant.primary:
+        return SeedButtonVariant.brandSolid;
+      case AppButtonVariant.secondary:
+        return SeedButtonVariant.neutralWeak;
+      case AppButtonVariant.outline:
+        return SeedButtonVariant.neutralOutline;
+      case AppButtonVariant.text:
+        return SeedButtonVariant.brandGhost;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final shadcnSize = _getShadcnSize();
-    final onPressed = this.onPressed;
-    final effectiveOnPressed = isLoading || onPressed == null
-        ? null
-        : () {
-            final kind = haptic;
-            if (kind != null) AppHaptics.play(kind);
-            onPressed();
-          };
-    final labelChild = isLoading
-        ? _buildLoadingIndicator()
-        : Text(text, style: _getTextStyle());
-
-    Widget button;
-    switch (variant) {
-      case AppButtonVariant.primary:
-        button = shadcn.PrimaryButton(
-          onPressed: effectiveOnPressed,
-          size: shadcnSize,
-          leading: !isLoading ? icon : null,
-          child: labelChild,
-        );
-        break;
-      case AppButtonVariant.secondary:
-        button = shadcn.SecondaryButton(
-          onPressed: effectiveOnPressed,
-          size: shadcnSize,
-          leading: !isLoading ? icon : null,
-          child: labelChild,
-        );
-        break;
-      case AppButtonVariant.outline:
-        button = shadcn.OutlineButton(
-          onPressed: effectiveOnPressed,
-          size: shadcnSize,
-          leading: !isLoading ? icon : null,
-          child: labelChild,
-        );
-        break;
-      case AppButtonVariant.text:
-        button = shadcn.GhostButton(
-          onPressed: effectiveOnPressed,
-          size: shadcnSize,
-          leading: !isLoading ? icon : null,
-          child: labelChild,
-        );
-        break;
-    }
-
+    final button = SeedButton(
+      label: text,
+      onPressed: onPressed,
+      size: _seedSize,
+      variant: _seedVariant,
+      isLoading: isLoading,
+      leading: isLoading ? null : icon,
+      haptic: haptic,
+    );
     if (isFullWidth) {
       return SizedBox(width: double.infinity, child: button);
     }
     return button;
-  }
-
-  TextStyle _getTextStyle() {
-    switch (size) {
-      case AppButtonSize.small:
-        return AppTypography.buttonSmall;
-      case AppButtonSize.medium:
-        return AppTypography.buttonMedium;
-      case AppButtonSize.large:
-        return AppTypography.buttonLarge;
-    }
-  }
-
-  double _getLoadingSize() {
-    switch (size) {
-      case AppButtonSize.small:
-        return 16;
-      case AppButtonSize.medium:
-        return 20;
-      case AppButtonSize.large:
-        return 24;
-    }
-  }
-
-  Color _getLoadingColor() {
-    switch (variant) {
-      case AppButtonVariant.primary:
-        return AppSemanticColors.textInverse;
-      case AppButtonVariant.secondary:
-        return AppSemanticColors.textPrimary;
-      case AppButtonVariant.outline:
-      case AppButtonVariant.text:
-        return AppSemanticColors.interactivePrimaryDefault;
-    }
   }
 }
