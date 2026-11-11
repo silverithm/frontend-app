@@ -9,9 +9,12 @@ import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../common/app_list_entrance.dart';
+import '../common/app_refresh.dart';
 import '../common/app_snackbar.dart';
 import '../seed/seed_avatar.dart';
 import 'chat_list_row.dart';
+import 'chat_list_skeleton.dart';
 
 /// 1:1 방 이름 — 웹과 같은 규칙을 써야 같은 방을 찾아 들어간다.
 String directRoomName(String memberName) => '$memberName 님과의 대화';
@@ -131,7 +134,22 @@ class _ChatMemberListState extends State<ChatMemberList> {
 
   @override
   Widget build(BuildContext context) {
+    // 사람 줄이 처음 한 번만 차례로 떠오른다 — 불러오기 분기 바깥에 두어
+    // 당겨서 새로고침 뒤 목록이 다시 그려져도 또 떠오르지 않게 한다.
+    return AppListEntrance(child: _buildBody(context));
+  }
+
+  Widget _buildBody(BuildContext context) {
+    if (_isLoading && _members.isEmpty) {
+      // 첫 불러오기 — 나 카드 한 줄 + 직원 카드 줄 모양 뼈대(아바타 40)
+      return const ChatListSkeleton(
+        groups: [1, 6],
+        avatarSize: 40,
+        groupLabel: true,
+      );
+    }
     if (_isLoading) {
+      // 이미 받은 목록을 다시 받는 중 — 예전처럼 가운데 동그라미
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -168,7 +186,7 @@ class _ChatMemberListState extends State<ChatMemberList> {
             .where((m) => chatProvider.isOnline(m['id']?.toString() ?? ''))
             .length;
 
-        return RefreshIndicator(
+        return AppRefreshIndicator(
           onRefresh: _refresh,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -182,7 +200,10 @@ class _ChatMemberListState extends State<ChatMemberList> {
               ChatCardSlice(
                 isFirst: true,
                 isLast: true,
-                child: _buildMyProfileTile(),
+                child: AppListEntranceItem(
+                  index: 0,
+                  child: _buildMyProfileTile(),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -203,7 +224,9 @@ class _ChatMemberListState extends State<ChatMemberList> {
                 ChatCardSlice(
                   isFirst: i == 0,
                   isLast: i == others.length - 1,
-                  child: Builder(
+                  child: AppListEntranceItem(
+                    index: i + 1,
+                    child: Builder(
                     builder: (context) {
                       final member = others[i];
                       final id = member['id']?.toString() ?? '';
@@ -219,6 +242,7 @@ class _ChatMemberListState extends State<ChatMemberList> {
                         ),
                       );
                     },
+                  ),
                   ),
                 ),
             ],

@@ -13,9 +13,12 @@ import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/chat/chat_list_row.dart';
+import '../widgets/chat/chat_list_skeleton.dart';
 import '../widgets/chat/chat_member_list.dart';
 import '../widgets/chat/chat_room_list_tile.dart';
 import 'chat_room_screen.dart';
@@ -186,11 +189,8 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
         if (chatProvider.isLoading && chatProvider.chatRooms.isEmpty) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: AppSemanticColors.interactivePrimaryDefault,
-            ),
-          );
+          // 첫 불러오기 — 방 목록과 같은 흰 카드 안 줄 모양 뼈대
+          return const ChatListSkeleton();
         }
 
         if (chatProvider.errorMessage.isNotEmpty &&
@@ -202,8 +202,10 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
           return _buildEmptyState();
         }
 
-        return RefreshIndicator(
+        return AppRefreshIndicator(
           onRefresh: _loadChatRooms,
+          // 방 줄이 처음 한 번만 차례로 떠오른다(흰 카드는 그대로, 카드 안 줄만)
+          child: AppListEntrance(
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.screenGutter,
@@ -225,9 +227,13 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
               return ChatCardSlice(
                 isFirst: isGroupStart,
                 isLast: isGroupEnd,
-                child: _buildChatRoomTile(room, isAdmin),
+                child: AppListEntranceItem(
+                  index: index,
+                  child: _buildChatRoomTile(room, isAdmin),
+                ),
               );
             },
+          ),
           ),
         );
       },
