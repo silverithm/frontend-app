@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../common/app_dialog.dart';
+import '../common/app_sheet_frame.dart';
 import '../common/app_snackbar.dart';
 import '../seed/seed_button.dart';
 import '../seed/seed_callout.dart';
@@ -27,22 +28,29 @@ class WorkTaskEditSheet {
   }) async {
     final isNew = task == null;
     final readOnly = !isNew && !task.canEdit;
-    final changed = await AppBottomSheet.show<bool>(
+    // B안 시트 틀(AppSheetFrame) — 손잡이·제목 21·좌우 20, 키보드가 올라오면 함께 올라가고
+    // 내용이 길면 시트 안에서 스크롤한다.
+    final changed = await showAppSheet<bool>(
       context,
-      title: isNew ? '업무 등록' : (readOnly ? '업무 보기' : '업무 수정'),
-      isScrollControlled: true,
-      child: _WorkTaskForm(task: task, meId: meId, companyId: companyId),
+      builder: (_) => _WorkTaskForm(
+        title: isNew ? '업무 등록' : (readOnly ? '업무 보기' : '업무 수정'),
+        task: task,
+        meId: meId,
+        companyId: companyId,
+      ),
     );
     return changed == true;
   }
 }
 
 class _WorkTaskForm extends StatefulWidget {
+  final String title;
   final WorkTask? task;
   final String meId;
   final String companyId;
 
   const _WorkTaskForm({
+    required this.title,
     required this.task,
     required this.meId,
     required this.companyId,
@@ -199,189 +207,177 @@ class _WorkTaskFormState extends State<_WorkTaskForm> {
   @override
   Widget build(BuildContext context) {
     final task = widget.task;
-    return Padding(
-      padding: EdgeInsets.only(
-        left: AppSpacing.space4,
-        right: AppSpacing.space4,
-        top: AppSpacing.space4,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return AppSheetFrame(
+      title: widget.title,
+      message: _isNew
+          ? '담당자에게 알림이 가고, 다 끝날 때까지 매일 아침 알려 줍니다'
+          : '등록 ${task!.createdBy.name ?? ''}'
+                '${task.createdAt != null ? ' · ${task.createdAt!.month}/${task.createdAt!.day}' : ''}',
+      actions: _buildActions(task),
+      children: [
+        if (_readOnly) ...[
+          const SizedBox(height: AppSpacing.space4),
+          const SeedCallout(
+            variant: SeedCalloutVariant.info,
+            title: '관리자·등록한 사람·담당자만 고칠 수 있습니다',
+            icon: Icons.lock_outline,
+          ),
+        ],
+        const SizedBox(height: AppSpacing.space5),
+        SeedTextField(
+          label: '업무 내용',
+          placeholder: '예: 10월 사업계획서 작성',
+          controller: _content,
+          maxLines: 3,
+          maxLength: workTaskContentMax,
+          isReadOnly: _readOnly,
+        ),
+        const SizedBox(height: AppSpacing.space5),
+        _Label('담당자'),
+        const SizedBox(height: AppSpacing.space2),
+        Wrap(
+          spacing: AppSpacing.space2,
+          runSpacing: AppSpacing.space2,
           children: [
-            Text(
-              _isNew
-                  ? '담당자에게 알림이 가고, 다 끝날 때까지 매일 아침 알려 줍니다'
-                  : '등록 ${task!.createdBy.name ?? ''}'
-                        '${task.createdAt != null ? ' · ${task.createdAt!.month}/${task.createdAt!.day}' : ''}',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textSecondary,
+            for (final id in _assigneeIds)
+              SeedChip(label: _nameOf(id), selected: true),
+            if (!_readOnly)
+              SeedChip(
+                label: _assigneeIds.isEmpty ? '담당자 고르기' : '바꾸기',
+                prefixIcon: Icons.person_add_alt_1_outlined,
+                onTap: _pickAssignees,
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.space5),
+        _Label('기한 (선택)'),
+        const SizedBox(height: AppSpacing.space2),
+        Row(
+          children: [
+            Flexible(
+              child: SeedChip(
+                label: _dueDate == null
+                    ? (_readOnly ? '기한 없음' : '날짜 고르기')
+                    : '${_dueDate!.year}. ${_dueDate!.month}. ${_dueDate!.day}.',
+                prefixIcon: Icons.event_outlined,
+                selected: _dueDate != null,
+                onTap: _readOnly ? null : _pickDueDate,
               ),
             ),
-            if (_readOnly) ...[
-              const SizedBox(height: AppSpacing.space3),
-              const SeedCallout(
-                variant: SeedCalloutVariant.info,
-                title: '관리자·등록한 사람·담당자만 고칠 수 있습니다',
-                icon: Icons.lock_outline,
+            if (_dueDate != null && !_readOnly) ...[
+              const SizedBox(width: AppSpacing.space1),
+              IconButton(
+                tooltip: '기한 지우기',
+                icon: const Icon(Icons.close, size: 22),
+                color: AppSemanticColors.textTertiary,
+                onPressed: () => setState(() => _dueDate = null),
               ),
             ],
-            const SizedBox(height: AppSpacing.space4),
-            SeedTextField(
-              label: '업무 내용',
-              placeholder: '예: 10월 사업계획서 작성',
-              controller: _content,
-              maxLines: 3,
-              maxLength: workTaskContentMax,
-              isReadOnly: _readOnly,
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            _Label('담당자'),
-            const SizedBox(height: AppSpacing.space2),
-            Wrap(
-              spacing: AppSpacing.space2,
-              runSpacing: AppSpacing.space2,
-              children: [
-                for (final id in _assigneeIds)
-                  SeedChip(
-                    label: _nameOf(id),
-                    selected: true,
-                    size: SeedChipSize.small,
-                  ),
-                if (!_readOnly)
-                  SeedChip(
-                    label: _assigneeIds.isEmpty ? '담당자 고르기' : '바꾸기',
-                    prefixIcon: Icons.person_add_alt_1_outlined,
-                    size: SeedChipSize.small,
-                    onTap: _pickAssignees,
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            _Label('기한 (선택)'),
-            const SizedBox(height: AppSpacing.space2),
-            Row(
-              children: [
-                SeedChip(
-                  label: _dueDate == null
-                      ? (_readOnly ? '기한 없음' : '날짜 고르기')
-                      : '${_dueDate!.year}. ${_dueDate!.month}. ${_dueDate!.day}.',
-                  prefixIcon: Icons.event_outlined,
-                  selected: _dueDate != null,
-                  size: SeedChipSize.small,
-                  onTap: _readOnly ? null : _pickDueDate,
-                ),
-                if (_dueDate != null && !_readOnly) ...[
-                  const SizedBox(width: AppSpacing.space1),
-                  IconButton(
-                    tooltip: '기한 지우기',
-                    icon: const Icon(Icons.close, size: 18),
-                    color: AppSemanticColors.textTertiary,
-                    onPressed: () => setState(() => _dueDate = null),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            _Label('중요도'),
-            const SizedBox(height: AppSpacing.space2),
-            Row(
-              children: [
-                for (final importance in WorkTaskImportance.values) ...[
-                  SeedChip(
-                    label: importance.label,
-                    selected: _importance == importance,
-                    isDisabled: _readOnly && _importance != importance,
-                    onTap: _readOnly
-                        ? null
-                        : () => setState(() => _importance = importance),
-                  ),
-                  const SizedBox(width: AppSpacing.space2),
-                ],
-              ],
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            Row(
-              children: [
-                const _Label('수행도'),
-                const Spacer(),
-                Text(
-                  _progress >= 100 ? '완료' : '$_progress%',
-                  style: AppTypography.titleSmall.copyWith(
-                    color: _progress >= 100
-                        ? AppSemanticColors.statusSuccessText
-                        : AppSemanticColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            Slider(
-              value: _progress.toDouble(),
-              min: 0,
-              max: 100,
-              divisions: 100 ~/ workTaskProgressStep,
-              label: _progress >= 100 ? '완료' : '$_progress%',
-              activeColor: AppSemanticColors.brandDefault,
-              semanticFormatterCallback: (value) =>
-                  value >= 100 ? '완료' : '${value.round()}%',
-              onChanged: _readOnly
-                  ? null
-                  : (value) => setState(
-                      () => _progress = snapWorkTaskProgress(value),
-                    ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space4,
+          ],
+        ),
+        const SizedBox(height: AppSpacing.space5),
+        _Label('중요도'),
+        const SizedBox(height: AppSpacing.space2),
+        Wrap(
+          spacing: AppSpacing.space2,
+          runSpacing: AppSpacing.space2,
+          children: [
+            for (final importance in WorkTaskImportance.values)
+              SeedChip(
+                label: importance.label,
+                selected: _importance == importance,
+                isDisabled: _readOnly && _importance != importance,
+                onTap: _readOnly
+                    ? null
+                    : () => setState(() => _importance = importance),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  for (final mark in const ['0%', '50%', '완료'])
-                    Text(
-                      mark,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                    ),
-                ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.space5),
+        Row(
+          children: [
+            const _Label('수행도'),
+            const Spacer(),
+            Text(
+              _progress >= 100 ? '완료' : '$_progress%',
+              style: AppTypography.titleMedium.copyWith(
+                color: _progress >= 100
+                    ? AppSemanticColors.statusSuccessText
+                    : AppSemanticColors.textPrimary,
               ),
-            ),
-            const SizedBox(height: AppSpacing.space5),
-            Row(
-              children: [
-                if (!_isNew && task!.canDelete)
-                  SeedButton(
-                    label: '지우기',
-                    variant: SeedButtonVariant.neutralOutline,
-                    onPressed: _isSaving ? null : _delete,
-                    isDisabled: _isSaving,
-                  ),
-                const Spacer(),
-                SeedButton(
-                  label: _readOnly ? '닫기' : '취소',
-                  variant: SeedButtonVariant.neutralWeak,
-                  onPressed: _isSaving
-                      ? null
-                      : () => Navigator.of(context).pop(false),
-                  isDisabled: _isSaving,
-                ),
-                if (!_readOnly) ...[
-                  const SizedBox(width: AppSpacing.space2),
-                  SeedButton(
-                    label: _isNew ? '등록' : '저장',
-                    onPressed: _canSubmit ? _submit : null,
-                    isDisabled: !_canSubmit,
-                    isLoading: _isSaving,
-                  ),
-                ],
-              ],
             ),
           ],
         ),
-      ),
+        Slider(
+          value: _progress.toDouble(),
+          min: 0,
+          max: 100,
+          divisions: 100 ~/ workTaskProgressStep,
+          label: _progress >= 100 ? '완료' : '$_progress%',
+          activeColor: AppSemanticColors.brandDefault,
+          semanticFormatterCallback: (value) =>
+              value >= 100 ? '완료' : '${value.round()}%',
+          onChanged: _readOnly
+              ? null
+              : (value) => setState(
+                  () => _progress = snapWorkTaskProgress(value),
+                ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (final mark in const ['0%', '50%', '완료'])
+                Text(
+                  mark,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// B안 시트 단추 — 큰 단추(54), 취소 1 : 등록·저장 1.7. 읽기 전용이면 '닫기' 하나가 꽉 찬다.
+  /// '지우기'는 주 단추와 떨어뜨려 아래 줄에 둔다(누르면 한 번 더 묻는다).
+  Widget _buildActions(WorkTask? task) {
+    final close = SeedButton(
+      label: _readOnly ? '닫기' : '취소',
+      variant: SeedButtonVariant.neutralWeak,
+      size: SeedButtonSize.large,
+      onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
+      isDisabled: _isSaving,
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _readOnly
+            ? close
+            : AppSheetActions(
+                cancel: close,
+                confirm: SeedButton(
+                  label: _isNew ? '등록' : '저장',
+                  size: SeedButtonSize.large,
+                  onPressed: _canSubmit ? _submit : null,
+                  isDisabled: !_canSubmit,
+                  isLoading: _isSaving,
+                ),
+              ),
+        if (!_isNew && task!.canDelete) ...[
+          const SizedBox(height: AppSpacing.space2),
+          SeedButton(
+            label: '지우기',
+            variant: SeedButtonVariant.criticalOutline,
+            onPressed: _isSaving ? null : _delete,
+            isDisabled: _isSaving,
+          ),
+        ],
+      ],
     );
   }
 }
