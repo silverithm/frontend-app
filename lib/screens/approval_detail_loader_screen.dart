@@ -5,8 +5,8 @@ import '../models/approval.dart';
 import '../providers/approval_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common/app_empty_state.dart';
-import '../widgets/common/app_loading.dart';
 import '../widgets/common/carev_app_bar.dart';
+import '../widgets/approval/approval_skeletons.dart';
 import 'approval_detail_screen.dart';
 import 'approval_hub_screen.dart';
 
@@ -61,7 +61,8 @@ class _ApprovalDetailLoaderScreenState
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '결재 상세', centerTitle: true),
       body: _error == null
-          ? const Center(child: AppLoading())
+          // 첫 불러오기 — 결재 상세와 같은 자리의 상태 카드·공문 카드 뼈대
+          ? const ApprovalDetailSkeleton()
           : AppEmptyState(
               icon: Icons.fact_check_outlined,
               title: _error!,

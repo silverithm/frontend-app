@@ -12,10 +12,10 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../services/api_service.dart';
+import '../widgets/approval/approval_skeletons.dart';
 import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/approval/official_document_view.dart';
 import '../widgets/common/app_card.dart';
-import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/carev_app_bar.dart';
@@ -469,7 +469,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                           '',
                     )
                   // 양식을 받는 동안 — 공문 한 장 모양 뼈대(제목·기안 정보 표·본문 줄)
-                  : const _DocumentSkeleton(),
+                  : const ApprovalDocumentSkeleton(),
             ),
 
             const SizedBox(height: AppSpacing.cardGap),
@@ -795,55 +795,5 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
     } else {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
-  }
-}
-
-/// 공문 뷰 첫 불러오기 뼈대 — 제목, 기안 정보 표(항목 이름 칸 + 값 줄), 본문 문단.
-/// 흰 카드(안쪽 여백 12) 안에 들어가므로 뼈는 한 단계 옅은 색.
-class _DocumentSkeleton extends StatelessWidget {
-  const _DocumentSkeleton();
-
-  static const List<double> _valueWidths = [0.6, 0.45, 0.7, 0.5];
-  static const List<double> _bodyWidths = [1, 0.94, 0.98, 0.6];
-
-  @override
-  Widget build(BuildContext context) {
-    return AppSkeleton(
-      baseColor: AppSemanticColors.skeletonBaseOnCard,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space3),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const AppSkeletonLine(widthFactor: 0.5, height: AppSpacing.space6),
-            const SizedBox(height: AppSpacing.space6),
-            for (final width in _valueWidths) ...[
-              Row(
-                children: [
-                  const AppSkeletonBox(
-                    width: AppSpacing.space16,
-                    height: AppSpacing.space5,
-                    radius: AppBorderRadius.base,
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: AppSkeletonLine(
-                      widthFactor: width,
-                      height: AppSpacing.space4,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.space3),
-            ],
-            const SizedBox(height: AppSpacing.space3),
-            for (final width in _bodyWidths) ...[
-              AppSkeletonLine(widthFactor: width),
-              const SizedBox(height: AppSpacing.space3),
-            ],
-          ],
-        ),
-      ),
-    );
   }
 }
