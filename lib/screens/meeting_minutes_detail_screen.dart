@@ -10,8 +10,11 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
+import '../widgets/common/app_card.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_callout.dart';
 
 /// 회의록 상세 — 내용을 읽고, 내가 참석자면 서명한다.
 /// 서명은 결재 승인과 같은 방식: 등록 서명 자동 날인 또는 즉석 그리기.
@@ -134,47 +137,33 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
         : startAt;
 
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(title: const Text('회의록')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Text(
-                    _error!,
-                    style: AppTypography.bodyMedium.copyWith(color: AppColors.gray600),
-                  ),
+              ? AppEmptyState(
+                  icon: Icons.error_outline_rounded,
+                  title: _error!,
                 )
               : ListView(
-                  padding: const EdgeInsets.all(AppSpacing.space4),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screenGutter,
+                    AppSpacing.space3,
+                    AppSpacing.screenGutter,
+                    AppSpacing.space6,
+                  ),
                   children: [
                     // 서명 필요 배너 — 아래로 스크롤하면 하단 서명 버튼을 놓치기 쉬워
                     // 진입 즉시 눈에 띄게 알려준다.
+                    // B안 안내 상자(옅은 틸 바탕·모서리 14·테두리 없음)
                     if (canSign) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.space3),
-                        decoration: BoxDecoration(
-                          color: AppColors.careTealTint,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.draw_outlined,
-                                size: 18, color: AppColors.careTeal),
-                            const SizedBox(width: AppSpacing.space2),
-                            Expanded(
-                              child: Text(
-                                '내 서명이 필요한 회의록이에요. 내용을 확인한 뒤 하단 버튼으로 서명해주세요.',
-                                style: AppTypography.labelMedium.copyWith(
-                                  color: AppColors.careTealDeep,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SeedCallout(
+                        variant: SeedCalloutVariant.brand,
+                        icon: Icons.draw_outlined,
+                        title: '내 서명이 필요한 회의록이에요. 내용을 확인한 뒤 하단 버튼으로 서명해주세요.',
                       ),
-                      const SizedBox(height: AppSpacing.space3),
+                      const SizedBox(height: AppSpacing.cardGap),
                     ],
                     // 머리 정보
                     _card(
@@ -183,7 +172,9 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                         children: [
                           Text(
                             minutes?['title']?.toString() ?? '',
-                            style: AppTypography.heading5.copyWith(color: AppColors.gray900),
+                            style: AppTypography.heading5.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.space2),
                           Text(
@@ -193,31 +184,40 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                                 minutes!['location'].toString(),
                               '작성 ${minutes?['authorName'] ?? ''}',
                             ].join(' · '),
-                            style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space3),
+                    const SizedBox(height: AppSpacing.cardGap),
 
                     // 회의 내용
                     ..._sections().map(
                       (section) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.space3),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
                         child: _card(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '${section['label'] ?? ''}',
-                                style: AppTypography.titleSmall
-                                    .copyWith(color: AppSemanticColors.textPrimary),
+                              // 카드·구역 제목(B안 19/w700)
+                              Semantics(
+                                header: true,
+                                child: Text(
+                                  '${section['label'] ?? ''}',
+                                  style: AppTypography.heading6.copyWith(
+                                    color: AppSemanticColors.textPrimary,
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: AppSpacing.space2),
                               Text(
                                 section['content'].toString(),
-                                style: AppTypography.bodyMedium
-                                    .copyWith(color: AppColors.gray800, height: 1.6),
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                  height: 1.6,
+                                ),
                               ),
                             ],
                           ),
@@ -230,30 +230,41 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '참석자 서명',
-                            style: AppTypography.labelLarge.copyWith(color: AppColors.gray900),
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              '참석자 서명',
+                              style: AppTypography.heading6.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                              ),
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.space2),
                           ..._attendees.map((raw) {
                             final attendee = raw as Map<String, dynamic>;
                             final signed = attendee['signedAt'] != null;
                             final isExternal = attendee['attendeeType'] == 'EXTERNAL';
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
+                            return ConstrainedBox(
+                              // 한 사람 한 줄 — 48 이상(서명 그림이 들어가도 줄 높이가 흔들리지 않게)
+                              constraints: const BoxConstraints(
+                                minHeight: AppSpacing.minTouchTarget,
+                              ),
                               child: Row(
                                 children: [
                                   Icon(
                                     signed ? Icons.check_circle : Icons.radio_button_unchecked,
-                                    size: 18,
-                                    color: signed ? AppColors.careTeal : AppColors.gray400,
+                                    size: 22,
+                                    color: signed
+                                        ? AppSemanticColors.brandDefault
+                                        : AppSemanticColors.iconSubtle,
                                   ),
-                                  const SizedBox(width: AppSpacing.space2),
+                                  const SizedBox(width: AppSpacing.space2_5),
                                   Expanded(
                                     child: Text(
                                       '${attendee['attendeeName'] ?? ''}${isExternal ? ' (외부)' : ''}',
-                                      style: AppTypography.bodyMedium
-                                          .copyWith(color: AppColors.gray800),
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        color: AppSemanticColors.textPrimary,
+                                      ),
                                     ),
                                   ),
                                   if (signed && attendee['signatureUrl'] != null)
@@ -266,7 +277,9 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                                     Text(
                                       signed ? '서명 완료' : '대기',
                                       style: AppTypography.bodySmall.copyWith(
-                                        color: signed ? AppColors.careTeal : AppColors.gray500,
+                                        color: signed
+                                            ? AppSemanticColors.textLink
+                                            : AppSemanticColors.textTertiary,
                                       ),
                                     ),
                                 ],
@@ -276,18 +289,27 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.space6),
                   ],
                 ),
       bottomNavigationBar: canSign
           ? SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                child: SeedButton(
-                  label: _isSigning ? '서명 중...' : '확인했습니다 · 서명하기',
-                  onPressed: _isSigning ? null : _sign,
-                  isLoading: _isSigning,
-                  prefixIcon: Icons.draw_outlined,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenGutter,
+                  AppSpacing.space3,
+                  AppSpacing.screenGutter,
+                  AppSpacing.space3,
+                ),
+                // 화면 맨 아래 주 단추 — 큰 것(54), 가로 꽉 채움
+                child: SizedBox(
+                  width: double.infinity,
+                  child: SeedButton(
+                    label: _isSigning ? '서명 중...' : '확인했습니다 · 서명하기',
+                    onPressed: _isSigning ? null : _sign,
+                    isLoading: _isSigning,
+                    prefixIcon: Icons.draw_outlined,
+                    size: SeedButtonSize.large,
+                  ),
                 ),
               ),
             )
@@ -295,15 +317,11 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
     );
   }
 
+  // B안 카드 — 테두리 없는 흰 상자, 모서리 20, 안쪽 20
   Widget _card({required Widget child}) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: child,
+      child: AppCard(child: child),
     );
   }
 }
