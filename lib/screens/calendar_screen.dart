@@ -1942,9 +1942,8 @@ class _CalendarScreenState extends State<CalendarScreen>
         })
         .catchError((_) {});
 
-    // AppBottomSheet.show로 바꾸지 않고 유지: 이미 토큰 스타일(둥근 상단·
-    // surfaceDefault·핸들바)을 자체로 완전히 갖춰서 교체해도 시각적으로
-    // 달라지는 게 없다.
+    // AppBottomSheet.show로 바꾸지 않고 유지: 제목이 내용과 함께 내려가지 않게 머리를 따로
+    // 둔다. 모양은 B안 시트와 같다(모서리 24·흰 바탕·_buildSheetHeader의 손잡이+제목 21).
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2636,9 +2635,8 @@ class _CalendarScreenState extends State<CalendarScreen>
     bool isLoading = true;
     bool isSaving = false;
 
-    // AppBottomSheet.show로 바꾸지 않고 유지: 이미 토큰 스타일(둥근 상단·
-    // surfaceDefault·핸들바)을 자체로 완전히 갖춰서 교체해도 시각적으로
-    // 달라지는 게 없다.
+    // AppBottomSheet.show로 바꾸지 않고 유지: 제목이 내용과 함께 내려가지 않게 머리를 따로
+    // 둔다. 모양은 B안 시트와 같다(모서리 24·흰 바탕·_buildSheetHeader의 손잡이+제목 21).
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
