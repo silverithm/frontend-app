@@ -6,7 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../common/app_dialog.dart';
 import '../common/app_empty_state.dart';
-import '../common/app_loading.dart';
+import '../common/app_skeleton.dart';
 import '../seed/seed_avatar.dart';
 import '../seed/seed_button.dart';
 import '../seed/seed_list_cell.dart';
@@ -117,7 +117,7 @@ class _AssigneeListState extends State<_AssigneeList> {
                         actionLabel: '다시 시도',
                         onAction: _load,
                       )
-                    : const Center(child: AppLoading()))
+                    : const _AssigneeListSkeleton())
               : ListView(
                   // 시트 여백 8 + 줄 안쪽 12 = 제목과 같은 20에서 이름이 시작한다
                   padding: const EdgeInsets.symmetric(
@@ -173,6 +173,44 @@ class _AssigneeListState extends State<_AssigneeList> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 명단 첫 불러오기 뼈대 — 흰 시트 위 사람 줄(작은 얼굴 + 이름·직책), 목록과 같은 여백
+class _AssigneeListSkeleton extends StatelessWidget {
+  const _AssigneeListSkeleton();
+
+  static const List<double> _titleWidths = [0.36, 0.5, 0.42, 0.3, 0.46, 0.38];
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space2,
+          vertical: AppSpacing.space2,
+        ),
+        children: [
+          for (final width in _titleWidths)
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: AppSpacing.listRowMinHeight,
+              ),
+              child: AppSkeletonListTile(
+                leadingSize: AppSpacing.space8,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space3,
+                  vertical: AppSpacing.space2_5,
+                ),
+                titleWidthFactor: width,
+                subtitleWidthFactor: 0.24,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
