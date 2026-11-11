@@ -5,7 +5,9 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
@@ -86,40 +88,46 @@ class _VoiceBoxWriteScreenState extends State<VoiceBoxWriteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text('고충·신고 · 건의함', style: AppTypography.appBarTitle),
-        elevation: 0,
-      ),
+      // B안: 옅은 회색 바탕 위 흰 카드(유형 / 익명 / 제목·내용) — 회색 입력칸은 흰 카드 안에 둔다
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: const CareVAppBar(title: '고충·신고 · 건의함'),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+          padding: const EdgeInsets.all(AppSpacing.screenGutter),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '유형',
-                style: AppTypography.labelLarge.copyWith(
-                  color: AppSemanticColors.textSecondary,
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '유형',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                    Wrap(
+                      spacing: AppSpacing.space2,
+                      runSpacing: AppSpacing.space2,
+                      children: [
+                        SeedChip(
+                          label: VoiceMessageType.grievance.label,
+                          selected: _type == VoiceMessageType.grievance,
+                          onTap: () => _selectType(VoiceMessageType.grievance),
+                        ),
+                        SeedChip(
+                          label: VoiceMessageType.suggestion.label,
+                          selected: _type == VoiceMessageType.suggestion,
+                          onTap: () => _selectType(VoiceMessageType.suggestion),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.space2),
-              Row(
-                children: [
-                  SeedChip(
-                    label: VoiceMessageType.grievance.label,
-                    selected: _type == VoiceMessageType.grievance,
-                    onTap: () => _selectType(VoiceMessageType.grievance),
-                  ),
-                  const SizedBox(width: AppSpacing.space2),
-                  SeedChip(
-                    label: VoiceMessageType.suggestion.label,
-                    selected: _type == VoiceMessageType.suggestion,
-                    onTap: () => _selectType(VoiceMessageType.suggestion),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.cardGap),
 
               SeedCallout(
                 variant: SeedCalloutVariant.info,
@@ -128,14 +136,15 @@ class _VoiceBoxWriteScreenState extends State<VoiceBoxWriteScreen> {
                     ? '대표·시설장·사무국장급 관리자만 열람하며, 관리자 화면에는 작성자가 "익명"으로 표시돼요. 본인은 제출 내역에서 언제든 확인할 수 있어요.'
                     : '대표·시설장·사무국장급 관리자만 열람해요. "익명으로 제출"을 켜면 관리자 화면에서 작성자 이름이 가려져요.',
               ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.cardGap),
 
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  border: Border.all(color: AppSemanticColors.borderDefault),
+              // 익명 켜고 끄기 — 테두리 상자 대신 흰 카드
+              AppCard(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.cardPadding,
+                  AppSpacing.space4,
+                  AppSpacing.space3,
+                  AppSpacing.space4,
                 ),
                 child: Row(
                   children: [
@@ -152,20 +161,21 @@ class _VoiceBoxWriteScreenState extends State<VoiceBoxWriteScreen> {
                         children: [
                           Text(
                             '익명으로 제출',
-                            style: AppTypography.bodyMedium.copyWith(
+                            style: AppTypography.titleMedium.copyWith(
                               color: AppSemanticColors.textPrimary,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
+                          const SizedBox(height: AppSpacing.space0_5),
                           Text(
                             '관리자 화면에 작성자 이름을 표시하지 않아요',
-                            style: AppTypography.caption.copyWith(
+                            style: AppTypography.bodySmall.copyWith(
                               color: AppSemanticColors.textTertiary,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: AppSpacing.space2),
                     Switch(
                       value: _isAnonymous,
                       onChanged: (value) => setState(() => _isAnonymous = value),
@@ -175,24 +185,30 @@ class _VoiceBoxWriteScreenState extends State<VoiceBoxWriteScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.space5),
+              const SizedBox(height: AppSpacing.cardGap),
 
-              SeedTextField(
-                label: '제목',
-                placeholder: '제목을 입력해주세요',
-                controller: _titleController,
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SeedTextField(
+                      label: '제목',
+                      placeholder: '제목을 입력해주세요',
+                      controller: _titleController,
+                    ),
+                    const SizedBox(height: AppSpacing.space5),
+                    SeedTextField(
+                      label: '내용',
+                      placeholder: _type == VoiceMessageType.grievance
+                          ? '어떤 고충·신고 사항인지 자세히 적어주세요'
+                          : '개선했으면 하는 내용을 자세히 적어주세요',
+                      controller: _contentController,
+                      maxLines: 8,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppSpacing.space4),
-
-              SeedTextField(
-                label: '내용',
-                placeholder: _type == VoiceMessageType.grievance
-                    ? '어떤 고충·신고 사항인지 자세히 적어주세요'
-                    : '개선했으면 하는 내용을 자세히 적어주세요',
-                controller: _contentController,
-                maxLines: 8,
-              ),
-              const SizedBox(height: AppSpacing.space8),
+              const SizedBox(height: AppSpacing.space6),
 
               SizedBox(
                 width: double.infinity,
