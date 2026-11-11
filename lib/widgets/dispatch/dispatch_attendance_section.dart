@@ -123,7 +123,7 @@ class _DispatchElderAttendanceTileState extends State<DispatchElderAttendanceTil
             ),
           ),
         ),
-        Divider(height: 1, color: AppSemanticColors.borderSubtle),
+        // B안: 줄 사이 구분선 없이 줄 높이(48)로 나눈다
         _ToggleRow(
           label: personalLabel,
           value: personalChecked,
@@ -142,17 +142,40 @@ class _DispatchElderAttendanceTileState extends State<DispatchElderAttendanceTil
           ),
         ),
         if (isAbsent) ...[
-          Divider(height: 1, color: AppSemanticColors.borderSubtle),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+            // B안 입력칸 — 회색으로 채운 칸, 테두리 없음, 모서리 14, 누르고 있으면 틸 2px
             child: TextField(
               controller: _reasonController,
-              style: AppTypography.bodySmall,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+              cursorColor: AppSemanticColors.brandDefault,
               decoration: InputDecoration(
-                isDense: true,
                 labelText: '사유(선택)',
+                labelStyle: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.textTertiary,
+                ),
+                filled: true,
+                fillColor: AppSemanticColors.fillDefault,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space4,
+                  vertical: AppSpacing.space3,
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
+                  borderSide: const BorderSide(
+                    color: AppSemanticColors.borderFocus,
+                    width: 2,
+                  ),
                 ),
               ),
               onSubmitted: (value) => applyAttendance(
@@ -193,14 +216,14 @@ class _ToggleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: AppSpacing.minTouchTarget),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.bodyMedium.copyWith(
                 color: isDisabled
                     ? AppSemanticColors.textDisabled
                     : AppSemanticColors.textPrimary,
