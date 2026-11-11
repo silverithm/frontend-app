@@ -14,7 +14,11 @@ import '../theme/app_typography.dart';
 import '../services/api_service.dart';
 import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/approval/official_document_view.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_tag.dart';
+import '../widgets/common/carev_app_bar.dart';
+import '../utils/korean_keep_all.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../utils/document_open.dart';
 import '../widgets/seed/seed_button.dart';
@@ -24,10 +28,7 @@ import 'hwp_editor_screen.dart';
 class ApprovalDetailScreen extends StatefulWidget {
   final ApprovalRequest approval;
 
-  const ApprovalDetailScreen({
-    super.key,
-    required this.approval,
-  });
+  const ApprovalDetailScreen({super.key, required this.approval});
 
   @override
   State<ApprovalDetailScreen> createState() => _ApprovalDetailScreenState();
@@ -55,14 +56,17 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
 
   Future<void> _loadDetail() async {
     final approvalProvider = context.read<ApprovalProvider>();
-    final detail = await approvalProvider.loadApprovalDetail(approvalId: _approval.id);
+    final detail = await approvalProvider.loadApprovalDetail(
+      approvalId: _approval.id,
+    );
     if (!mounted) return;
 
     if (detail == null) {
       // 목록에서 눌러 들어온 뒤 그새 웹에서 삭제·처리됐을 수 있다 — 죽은 문서를
       // 계속 띄워두고 승인/반려 버튼을 살려두면 눌렀을 때 서버 오류만 만난다
       // (2026-09-22 운영 사고: 삭제된 결재 777에서 반려 시도가 500으로 실패).
-      if (approvalProvider.errorMessage == ApprovalProvider.goneDocumentMessage) {
+      if (approvalProvider.errorMessage ==
+          ApprovalProvider.goneDocumentMessage) {
         AppSnackBar.showWarning(
           context,
           message: ApprovalProvider.goneDocumentMessage,
@@ -87,8 +91,9 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       return;
     }
     try {
-      final response = await ApiService()
-          .getApprovalTemplateDetail(templateId: _approval.templateId);
+      final response = await ApiService().getApprovalTemplateDetail(
+        templateId: _approval.templateId,
+      );
       final raw = response['template'] ?? response;
       if (raw is Map && mounted) {
         setState(() {
@@ -116,9 +121,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
   /// 임시저장 이어쓰기 — 작성 화면을 그대로 다시 열고, 거기서 저장/상신한다
   Future<void> _continueDraft() async {
     final updated = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => ApprovalFormScreen(draft: _approval),
-      ),
+      MaterialPageRoute(builder: (_) => ApprovalFormScreen(draft: _approval)),
     );
 
     if (updated == true && mounted) {
@@ -222,9 +225,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       }
 
       // 다운로드 URL 구성 (Uri 클래스 사용)
-      final queryParams = <String, String>{
-        'path': _approval.attachmentUrl!,
-      };
+      final queryParams = <String, String>{'path': _approval.attachmentUrl!};
       if (_approval.attachmentFileName != null) {
         queryParams['fileName'] = _approval.attachmentFileName!;
       }
@@ -248,11 +249,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
       await dio.download(
         downloadUri.toString(),
         filePath,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
         onReceiveProgress: (received, total) {
           if (total != -1 && mounted) {
             setState(() {
@@ -305,16 +302,12 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yyyy년 MM월 dd일 HH:mm');
+    final isApproved = _approval.status == ApprovalStatus.approved;
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text(
-          '결재 상세',
-          style: AppTypography.appBarTitle,
-        ),
-        elevation: 0,
-        centerTitle: true,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: CareVAppBar(
+        title: '결재 상세',
         actions: [
           if (_approval.status == ApprovalStatus.pending)
             Container(
@@ -342,20 +335,17 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.space4),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          AppSpacing.space6 + MediaQuery.paddingOf(context).bottom,
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 상태 카드 - 깔끔한 화이트 디자인
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.surfaceDefault,
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                border: Border.all(
-                  color: AppSemanticColors.borderDefault,
-                ),
-              ),
+            // 상태 카드 — B안: 테두리 없는 흰 카드, 제목 21 + 상태 알약, 아래는 이름표·값 두 줄 칸
+            AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -371,7 +361,12 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.space2),
-                      ApprovalStatusBadge(status: _approval.status),
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: AppSpacing.space0_5,
+                        ),
+                        child: ApprovalStatusBadge(status: _approval.status),
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.space4),
@@ -380,7 +375,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                     '요청자',
                     _approval.requesterName,
                   ),
-                  const SizedBox(height: AppSpacing.space2),
+                  const SizedBox(height: AppSpacing.space2_5),
                   _buildInfoRow(
                     Icons.access_time,
                     '요청일시',
@@ -389,7 +384,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                   if (_approval.approvalLine.isNotEmpty &&
                       _approval.status == ApprovalStatus.pending &&
                       _approval.currentStep != null) ...[
-                    const SizedBox(height: AppSpacing.space2),
+                    const SizedBox(height: AppSpacing.space2_5),
                     _buildInfoRow(
                       Icons.pending_actions,
                       '결재 차례',
@@ -398,7 +393,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                   ],
                   // 열람 대상 — 직책·개인 단위로 문서를 볼 수 있게 지정된 사람들 (웹과 동일)
                   if (_approval.viewers.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.space2),
+                    const SizedBox(height: AppSpacing.space2_5),
                     _buildInfoRow(
                       Icons.visibility_outlined,
                       '열람 대상',
@@ -409,28 +404,24 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
               ),
             ),
 
-            const SizedBox(height: AppSpacing.space4),
+            const SizedBox(height: AppSpacing.cardGap),
 
             // 임시저장 안내 — 기안자 본인이면 이어쓰기·상신까지 여기서 한다 (웹과 동일)
             if (_approval.status == ApprovalStatus.draft) ...[
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.statusInfoBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.statusInfoBorder,
-                  ),
-                ),
+              AppCard(
+                backgroundColor: AppSemanticColors.statusInfoBackground,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 20,
-                      color: AppSemanticColors.statusInfoIcon,
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.space0_5),
+                      child: Icon(
+                        Icons.info_outline,
+                        size: 22,
+                        color: AppSemanticColors.statusInfoIcon,
+                      ),
                     ),
-                    const SizedBox(width: AppSpacing.space2),
+                    const SizedBox(width: AppSpacing.space2_5),
                     Expanded(
                       child: Text(
                         _isMyDraft
@@ -457,129 +448,154 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.cardGap),
             ],
 
-            // 공문(표준 기안문) 뷰 — 양식을 받기 전에는 자리만 잡아 둔다
-            if (_templateSettled)
-              OfficialDocumentView(
-                approval: _approval,
-                template: _template,
-                companyName: context.read<AuthProvider>().currentUser?.company?.name ?? '',
-              )
-            else
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: AppSpacing.space8),
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
+            // 공문(표준 기안문) 뷰 — 흰 카드 위에 종이 한 장(종이 테두리·표 선은 문서의 일부라 그대로).
+            // 양식을 받기 전에는 자리만 잡아 둔다
+            AppCard(
+              padding: const EdgeInsets.all(AppSpacing.space3),
+              child: _templateSettled
+                  ? OfficialDocumentView(
+                      approval: _approval,
+                      template: _template,
+                      companyName:
+                          context
+                              .read<AuthProvider>()
+                              .currentUser
+                              ?.company
+                              ?.name ??
+                          '',
+                    )
+                  : const Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppSpacing.space8,
+                      ),
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+            ),
 
-            const SizedBox(height: AppSpacing.space4),
+            const SizedBox(height: AppSpacing.cardGap),
 
             // 첨부파일 카드
             if (_approval.attachmentFileName != null) ...[
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.borderDefault,
-                  ),
-                ),
+              AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.space2),
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.statusInfoBackground,
-                            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                          ),
-                          child: Icon(
-                            Icons.attach_file,
-                            size: 20,
-                            color: AppSemanticColors.statusInfoIcon,
-                          ),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        '첨부파일',
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Text(
-                          '첨부파일',
-                          style: AppTypography.heading6.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.space3),
-                    InkWell(
-                      onTap: _isDownloading ? null : _openAttachment,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      child: Container(
-                        padding: const EdgeInsets.all(AppSpacing.space3),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.backgroundSecondary,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              _getFileIcon(_approval.attachmentFileName!),
-                              size: 32,
-                              color: AppSemanticColors.interactivePrimaryDefault,
+                    Material(
+                      color: AppSemanticColors.fillDefault,
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: _isDownloading ? null : _openAttachment,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minHeight: AppSpacing.listRowMinHeight,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.space3,
+                              vertical: AppSpacing.space3,
                             ),
-                            const SizedBox(width: AppSpacing.space3),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _approval.attachmentFileName!,
-                                    style: AppTypography.bodyMedium.copyWith(
-                                      color: AppSemanticColors.textLink,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: AppSpacing.iconCircle,
+                                  height: AppSpacing.iconCircle,
+                                  decoration: const BoxDecoration(
+                                    color: AppSemanticColors.brandWeak,
+                                    shape: BoxShape.circle,
                                   ),
-                                  if (_isDownloading)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: LinearProgressIndicator(
-                                        value: _downloadProgress,
-                                        backgroundColor: AppSemanticColors.borderDefault,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          AppSemanticColors.interactivePrimaryDefault,
-                                        ),
-                                      ),
-                                    )
-                                  else if (_approval.attachmentFileSize != null)
-                                    Text(
-                                      _formatFileSize(_approval.attachmentFileSize!),
-                                      style: AppTypography.bodySmall.copyWith(
-                                        color: AppSemanticColors.textTertiary,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            if (_isDownloading)
-                              SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppSemanticColors.interactivePrimaryDefault,
+                                  child: Icon(
+                                    _getFileIcon(_approval.attachmentFileName!),
+                                    size: 22,
+                                    color:
+                                        AppSemanticColors.brandWeakForeground,
                                   ),
                                 ),
-                              )
-                            else
-                              Icon(
-                                Icons.download_outlined,
-                                color: AppSemanticColors.interactivePrimaryDefault,
-                              ),
-                          ],
+                                const SizedBox(width: AppSpacing.space3),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _approval.attachmentFileName!,
+                                        style: AppTypography.bodyMedium
+                                            .copyWith(
+                                              color: AppSemanticColors.textLink,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (_isDownloading)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
+                                          child: LinearProgressIndicator(
+                                            value: _downloadProgress,
+                                            backgroundColor:
+                                                AppSemanticColors.borderDefault,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  AppSemanticColors
+                                                      .interactivePrimaryDefault,
+                                                ),
+                                          ),
+                                        )
+                                      else if (_approval.attachmentFileSize !=
+                                          null)
+                                        Text(
+                                          _formatFileSize(
+                                            _approval.attachmentFileSize!,
+                                          ),
+                                          style: AppTypography.bodySmall
+                                              .copyWith(
+                                                color: AppSemanticColors
+                                                    .textTertiary,
+                                              ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.space2),
+                                if (_isDownloading)
+                                  SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppSemanticColors
+                                            .interactivePrimaryDefault,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Icon(
+                                    Icons.download_outlined,
+                                    color: AppSemanticColors
+                                        .interactivePrimaryDefault,
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -589,7 +605,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                         width: double.infinity,
                         child: SeedButton(
                           label: '문서 미리보기',
-                          variant: SeedButtonVariant.neutralOutline,
+                          variant: SeedButtonVariant.neutralWeak,
                           prefixIcon: Icons.visibility_outlined,
                           onPressed: _openHwpPreview,
                         ),
@@ -598,62 +614,77 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.cardGap),
             ],
 
-            // 처리 정보 카드 - 깔끔한 화이트 디자인
-            if (_approval.processedAt != null) ...[
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.borderDefault,
-                  ),
-                ),
+            // 결재 의견 — 단계별 승인 의견(시안 390-11-B-ap-detail). 단계·이름은 작은 회색, 의견은 진한 본문.
+            if (_approval.approvalLine.any(
+              (s) => (s.comment ?? '').trim().isNotEmpty,
+            )) ...[
+              AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          _approval.status == ApprovalStatus.approved
-                              ? Icons.check_circle_outline
-                              : Icons.cancel_outlined,
-                          size: 20,
-                          color: _approval.status == ApprovalStatus.approved
-                              ? AppSemanticColors.statusSuccessIcon
-                              : AppSemanticColors.statusErrorIcon,
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        '결재 의견',
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
-                        const SizedBox(width: AppSpacing.space2),
+                      ),
+                    ),
+                    for (final step in _approval.approvalLine)
+                      if ((step.comment ?? '').trim().isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.space3),
                         Text(
-                          '처리 정보',
-                          style: AppTypography.titleSmall.copyWith(
+                          '${step.roleText} · ${step.approverName}',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.space1),
+                        Text(
+                          keepAll(step.comment!.trim()),
+                          style: AppTypography.bodyMedium.copyWith(
                             color: AppSemanticColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.space2),
-                        // 상태 태그
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.space2,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _approval.status == ApprovalStatus.approved
-                                ? AppSemanticColors.statusSuccessBackground
-                                : AppSemanticColors.statusErrorBackground,
-                            borderRadius: BorderRadius.circular(AppBorderRadius.base),
-                          ),
+                      ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.cardGap),
+            ],
+
+            // 처리 정보 카드 — 제목 19 + 상태 알약(색 뜻 그대로)
+            if (_approval.processedAt != null) ...[
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: AppSpacing.space2,
+                      runSpacing: AppSpacing.space1,
+                      children: [
+                        Semantics(
+                          header: true,
                           child: Text(
-                            _approval.status == ApprovalStatus.approved ? '승인' : '반려',
-                            style: AppTypography.labelSmall.copyWith(
-                              color: _approval.status == ApprovalStatus.approved
-                                  ? AppSemanticColors.statusSuccessText
-                                  : AppSemanticColors.statusErrorText,
+                            '처리 정보',
+                            style: AppTypography.heading6.copyWith(
+                              color: AppSemanticColors.textPrimary,
                             ),
                           ),
+                        ),
+                        AppTag(
+                          label: isApproved ? '승인' : '반려',
+                          tone: isApproved
+                              ? AppTagTone.success
+                              : AppTagTone.error,
+                          icon: isApproved
+                              ? Icons.check_circle_outline
+                              : Icons.cancel_outlined,
                         ),
                       ],
                     ),
@@ -663,7 +694,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                       '처리자',
                       _approval.processedByName ?? '-',
                     ),
-                    const SizedBox(height: AppSpacing.space2),
+                    const SizedBox(height: AppSpacing.space2_5),
                     _buildInfoRow(
                       Icons.access_time,
                       '처리일시',
@@ -672,97 +703,30 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.cardGap),
             ],
 
-            // 결재 의견 — 단계별 승인 의견. 반려 사유와 같은 카드 문법이되 상태색 없이 중립 톤
-            if (_approval.approvalLine.any((s) => (s.comment ?? '').trim().isNotEmpty)) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(color: AppSemanticColors.borderDefault),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 20,
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Text(
-                          '결재 의견',
-                          style: AppTypography.titleSmall.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    for (final step in _approval.approvalLine)
-                      if ((step.comment ?? '').trim().isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.space3),
-                        Text(
-                          '${step.roleText} · ${step.approverName}',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space1),
-                        Text(
-                          step.comment!.trim(),
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-            ],
-
-            // 반려 사유 - 깔끔한 디자인
+            // 반려 사유
             if (_approval.rejectReason != null &&
                 _approval.status == ApprovalStatus.rejected) ...[
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.borderDefault,
-                  ),
-                ),
+              AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 20,
-                          color: AppSemanticColors.textTertiary,
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        '반려 사유',
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Text(
-                          '반려 사유',
-                          style: AppTypography.titleSmall.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.space3),
                     Text(
-                      _approval.rejectReason!,
+                      keepAll(_approval.rejectReason!),
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textSecondary,
+                        color: AppSemanticColors.textPrimary,
                       ),
                     ),
                   ],
@@ -775,25 +739,27 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
     );
   }
 
+  /// 이름표·값 두 칸 줄(시안 상세 카드). 이름표 칸은 글자 크기를 따라 넓어져
+  /// 글자를 크게 해도 '요청일시'가 두 줄로 꺾이지 않는다. [icon]은 예전 호출 호환용.
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    final labelWidth = MediaQuery.textScalerOf(context).scale(84);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: AppSemanticColors.textTertiary,
-        ),
-        const SizedBox(width: AppSpacing.space2),
-        Text(
-          '$label: ',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppSemanticColors.textSecondary,
+        SizedBox(
+          width: labelWidth,
+          child: Text(
+            label,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textSecondary,
+            ),
           ),
         ),
+        const SizedBox(width: AppSpacing.space2),
         Expanded(
           child: Text(
             value,
-            style: AppTypography.bodySmall.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textPrimary,
             ),
           ),
