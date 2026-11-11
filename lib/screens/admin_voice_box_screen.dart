@@ -188,7 +188,7 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           message.type.label,
-                          style: AppTypography.labelSmall.copyWith(
+                          style: AppTypography.bodySmall.copyWith(
                             color: AppSemanticColors.textTertiary,
                           ),
                         ),
@@ -196,13 +196,13 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
                           const SizedBox(width: AppSpacing.space2),
                           Icon(
                             Icons.visibility_off_outlined,
-                            size: 14,
+                            size: 16,
                             color: AppSemanticColors.textTertiary,
                           ),
                           const SizedBox(width: AppSpacing.space1),
                           Text(
                             '익명',
-                            style: AppTypography.labelSmall.copyWith(
+                            style: AppTypography.bodySmall.copyWith(
                               color: AppSemanticColors.textTertiary,
                             ),
                           ),
@@ -212,7 +212,7 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
                     const SizedBox(height: AppSpacing.space2),
                     Text(
                       message.title,
-                      style: AppTypography.titleMedium.copyWith(
+                      style: AppTypography.heading5.copyWith(
                         color: AppSemanticColors.textPrimary,
                       ),
                     ),
@@ -235,8 +235,8 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
                     const SizedBox(height: AppSpacing.space6),
                     Text(
                       '처리 상태',
-                      style: AppTypography.labelLarge.copyWith(
-                        color: AppSemanticColors.textSecondary,
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.space2),
@@ -309,8 +309,9 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // B안: 옅은 회색 바탕 위 흰 목록 카드(SeedListSection), 칩은 바탕 위 흰 칩
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text('고충·건의함 관리', style: AppTypography.appBarTitle),
         elevation: 0,
@@ -319,7 +320,12 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
         child: RefreshIndicator(
           onRefresh: _load,
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.space4),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.space4,
+              AppSpacing.screenGutter,
+              0,
+            ),
             children: [
               const SeedCallout(
                 variant: SeedCalloutVariant.info,
@@ -329,9 +335,12 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
               ),
               const SizedBox(height: AppSpacing.space4),
 
-              Row(
+              // 글자가 커져 한 줄에 다 안 들어가면 다음 줄로 넘긴다
+              Wrap(
+                spacing: AppSpacing.space2,
+                runSpacing: AppSpacing.space2,
                 children: [
-                  for (final filter in _TypeFilter.values) ...[
+                  for (final filter in _TypeFilter.values)
                     SeedChip(
                       label: _filter == _TypeFilter.all &&
                               filter != _TypeFilter.all
@@ -339,11 +348,9 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
                           : filter.label,
                       selected: _filter == filter,
                       isDisabled: _isLoading,
+                      onCanvas: true,
                       onTap: () => _setFilter(filter),
                     ),
-                    if (filter != _TypeFilter.values.last)
-                      const SizedBox(width: AppSpacing.space2),
-                  ],
                 ],
               ),
               const SizedBox(height: AppSpacing.space4),
