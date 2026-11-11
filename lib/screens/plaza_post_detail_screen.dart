@@ -10,6 +10,8 @@ import '../theme/app_typography.dart';
 import '../utils/html_utils.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/plaza_html_body.dart';
 import '../widgets/seed/seed_button.dart';
@@ -157,13 +159,13 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _PostDetailSkeleton()
           : post == null
           ? const Center(child: Text('게시글을 불러올 수 없습니다'))
           : Column(
               children: [
                 Expanded(
-                  child: RefreshIndicator(
+                  child: AppRefreshIndicator(
                     onRefresh: _load,
                     child: ListView(
                       padding: const EdgeInsets.all(AppSpacing.screenGutter),
@@ -526,6 +528,32 @@ class _ContactInfoCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 게시글 상세 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드(본문 카드와 같은 여백)
+class _PostDetailSkeleton extends StatelessWidget {
+  const _PostDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: SingleChildScrollView(
+        physics: NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.all(AppSpacing.screenGutter),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppSkeletonCard(
+              standalone: false,
+              margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+            ),
+            AppSkeletonCard(standalone: false, margin: EdgeInsets.zero),
+          ],
+        ),
       ),
     );
   }
