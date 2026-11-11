@@ -14,9 +14,14 @@ import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../../utils/app_haptics.dart';
 import '../../utils/dispatch_algorithm.dart';
 import '../../utils/dispatch_board_text.dart';
 import '../common/app_dialog.dart';
+import '../common/app_empty_state.dart';
+import '../seed/seed_button.dart';
+import '../seed/seed_chip.dart';
+import '../seed/seed_list_cell.dart';
 import 'dispatch_attendance_section.dart';
 import 'dispatch_status_style.dart';
 import '../common/app_tag.dart';
@@ -111,15 +116,26 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
       title: title,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+          // B안 시트 여백 — 좌우 20(제목과 같은 선), 아래 20
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space5,
+            0,
+            AppSpacing.space5,
+            AppSpacing.space5,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 이름은 테두리 없는 회색 알약(B안 칩) — 보기만 하는 자리라 누르는 동작은 없다
               Wrap(
                 spacing: AppSpacing.space2,
                 runSpacing: AppSpacing.space2,
-                children: names.map((name) => Chip(label: Text(name))).toList(),
+                children: names
+                    .map(
+                      (name) => SeedChip(label: name, size: SeedChipSize.small),
+                    )
+                    .toList(),
               ),
             ],
           ),
@@ -146,23 +162,33 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
       child: SafeArea(
         child: SingleChildScrollView(
           // 결석을 켜면 사유 칸이 늘어나 작은 폰에서 몇 px 넘쳤다 — 스크롤로 받는다
-          padding: const EdgeInsets.all(AppSpacing.space4),
+          // B안 시트 여백 — 좌우 20, 아래 20
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space5,
+            AppSpacing.space2,
+            AppSpacing.space5,
+            AppSpacing.space5,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                senior.name,
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: AppTypography.fontWeightSemibold,
+              // 시트 제목(B안 21/w700)
+              Semantics(
+                header: true,
+                child: Text(
+                  senior.name,
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
                 ),
               ),
               if (vehicleName.isNotEmpty) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.space1),
                 Text(
                   vehicleName,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textTertiary,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
                   ),
                 ),
               ],
@@ -172,14 +198,16 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
                 routeType: routeType,
                 dateStr: formatDate(_date),
               ),
-              const SizedBox(height: AppSpacing.space3),
-              OutlinedButton.icon(
+              const SizedBox(height: AppSpacing.space4),
+              SeedButton(
+                label: '다른 차량으로 이동',
+                prefixIcon: Icons.swap_horiz,
+                variant: SeedButtonVariant.neutralWeak,
+                size: SeedButtonSize.large,
                 onPressed: () {
                   Navigator.of(context).pop();
                   _showMoveVehiclePicker(senior, routeType);
                 },
-                icon: const Icon(Icons.swap_horiz),
-                label: const Text('다른 차량으로 이동'),
               ),
             ],
           ),
@@ -211,18 +239,24 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
       title: '${senior.name}님을 옮길 차량',
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+          // 시트 여백 8 + 줄 안쪽 12 = 제목과 같은 20에서 글자가 시작한다(B안 목록 줄)
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space2,
+            0,
+            AppSpacing.space2,
+            AppSpacing.space4,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (final route in candidates)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(route.name),
-                  subtitle: route.routeDrivers.isEmpty
+                SeedListCell(
+                  leadingIcon: Icons.directions_bus_outlined,
+                  title: route.name,
+                  description: route.routeDrivers.isEmpty
                       ? null
-                      : Text(route.routeDrivers.first.driverName),
+                      : route.routeDrivers.first.driverName,
                   onTap: () => Navigator.of(context).pop(route),
                 ),
             ],
@@ -246,15 +280,19 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
         title: '${targetRoute.name} — 몇 회차',
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.space4),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space2,
+              0,
+              AppSpacing.space2,
+              AppSpacing.space4,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (final trip in const [1, 2])
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text('$trip차'),
+                  SeedListCell(
+                    title: '$trip차',
                     onTap: () => Navigator.of(context).pop(trip),
                   ),
               ],
@@ -341,7 +379,8 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             child: Container(
               width: 720,
               // 배경을 주지 않으면 투명 PNG가 나와 카톡에서 글자가 안 보인다
-              color: AppSemanticColors.backgroundSecondary,
+              // (화면과 같이 회색 바탕 위 흰 카드)
+              color: AppSemanticColors.backgroundCanvas,
               padding: const EdgeInsets.all(AppSpacing.space4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -414,32 +453,20 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
 
   Widget _buildRouteList(List<RouteDispatch> dispatches, DispatchProvider provider) {
     if (dispatches.isEmpty) {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.space4,
-          0,
-          AppSpacing.space4,
-          AppSpacing.space4,
-        ),
-        children: [
-          Center(
-            child: Text(
-              '$_routeType 노선이 없습니다',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
-              ),
-            ),
-          ),
-        ],
+      // B안 빈 화면
+      return AppEmptyState(
+        icon: Icons.directions_bus_outlined,
+        title: '$_routeType 노선이 없습니다',
+        topSpacing: AppSpacing.space8,
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
-        0,
-        AppSpacing.space4,
-        AppSpacing.space4,
+        AppSpacing.screenGutter,
+        AppSpacing.space1,
+        AppSpacing.screenGutter,
+        AppSpacing.space6,
       ),
       itemCount: dispatches.length,
       itemBuilder: (_, index) {
@@ -483,23 +510,34 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             children: [
               Expanded(
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: _pickDate,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.calendar_today_outlined,
-                        size: 18,
-                        color: AppSemanticColors.interactivePrimaryDefault,
-                      ),
-                      const SizedBox(width: AppSpacing.space1_5),
-                      Text(
-                        _formatTitleDate(_date),
-                        style: AppTypography.heading6.copyWith(
-                          color: AppSemanticColors.textPrimary,
+                  child: ConstrainedBox(
+                    // 날짜 글자 전체가 48 높이 누를 자리
+                    constraints: const BoxConstraints(
+                      minHeight: AppSpacing.minTouchTarget,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 20,
+                          color: AppSemanticColors.brandDefault,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: AppSpacing.space2),
+                        Flexible(
+                          child: Text(
+                            _formatTitleDate(_date),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.heading6.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -540,7 +578,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
                 ),
             ],
           ),
-          const SizedBox(height: AppSpacing.space2),
+          const SizedBox(height: AppSpacing.space1),
           Wrap(
             spacing: AppSpacing.space4,
             runSpacing: 0,
@@ -603,7 +641,8 @@ class _ElderRef {
   }
 }
 
-/// 등원/하원 전환
+/// 등원/하원 전환 — B안 나눔 조절과 같은 모양(회색 띠 위 흰 칸, 모서리 14·10, 글자 16/w600).
+/// 다른 칸을 누르면 selection 햅틱.
 class _DirectionToggle extends StatelessWidget {
   final String value;
   final ValueChanged<String> onChanged;
@@ -613,37 +652,45 @@ class _DirectionToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(2),
+      padding: const EdgeInsets.all(AppSpacing.space1),
       decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundTertiary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        color: AppSemanticColors.fillStrong,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: RouteType.values.map((type) {
           final selected = value == type;
-          return GestureDetector(
-            onTap: () => onChanged(type),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space3,
-                vertical: AppSpacing.space2,
-              ),
-              decoration: BoxDecoration(
-                color: selected
-                    ? AppSemanticColors.surfaceDefault
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppBorderRadius.sm),
-              ),
-              child: Text(
-                type,
-                style: AppTypography.bodySmall.copyWith(
+          return Semantics(
+            button: true,
+            selected: selected,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                if (!selected) AppHaptics.selection();
+                onChanged(type);
+              },
+              child: AnimatedContainer(
+                duration: AppTransitions.fast,
+                constraints: const BoxConstraints(minHeight: 40),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space4,
+                ),
+                decoration: BoxDecoration(
                   color: selected
-                      ? AppSemanticColors.textPrimary
-                      : AppSemanticColors.textTertiary,
-                  fontWeight: selected
-                      ? AppTypography.fontWeightSemibold
-                      : AppTypography.fontWeightNormal,
+                      ? AppSemanticColors.surfaceCard
+                      : AppColors.transparent,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.inner),
+                  boxShadow: selected ? AppShadows.raised : null,
+                ),
+                child: Text(
+                  type,
+                  style: AppTypography.titleMedium.copyWith(
+                    color: selected
+                        ? AppSemanticColors.textPrimary
+                        : AppSemanticColors.textSecondary,
+                  ),
                 ),
               ),
             ),
@@ -696,16 +743,24 @@ class _StatChip extends StatelessWidget {
     }
 
     // 알약 상자 대신 글자만 — 요약은 숫자가 읽히면 되고, 색은 결석(빨강)·미배정(노랑)처럼 손볼 것에만 남긴다
-    final chip = Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1_5),
-      child: Text(
-        '$label $count명',
-        style: AppTypography.labelMedium.copyWith(color: foreground),
+    // 글자 15/w600(예전 13), 누르는 칸은 높이 44 이상
+    final chip = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: Align(
+        widthFactor: 1,
+        child: Text(
+          '$label $count명',
+          style: AppTypography.titleSmall.copyWith(color: foreground),
+        ),
       ),
     );
 
     if (onTap == null) return chip;
-    return GestureDetector(onTap: onTap, child: chip);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: chip,
+    );
   }
 }
 
@@ -740,15 +795,22 @@ class _RouteBlock extends StatelessWidget {
     final showRouteNameHint = vehicleName != dispatch.routeName;
     final capacity = dispatch.driver?.vehicleCapacity ?? 0;
 
+    // B안 카드 — 테두리 없는 흰 상자, 모서리 20, 카드끼리 간격 12.
+    // 배차표는 스크롤 없이 많이 보이는 게 목적이라 위아래 여백만 16으로 조금 줄인다.
+    // 운행 없는 차는 흰 카드 대신 화면 바탕보다 한 단계 짙은 회색으로 가라앉힌다.
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
-      padding: const EdgeInsets.all(AppSpacing.space3),
+      margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.cardPadding,
+        AppSpacing.space4,
+        AppSpacing.cardPadding,
+        AppSpacing.space3,
+      ),
       decoration: BoxDecoration(
         color: isOff
-            ? AppSemanticColors.backgroundTertiary
-            : AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderSubtle),
+            ? AppSemanticColors.fillStrong
+            : AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -769,9 +831,9 @@ class _RouteBlock extends StatelessWidget {
                             vehicleName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.bodyMedium.copyWith(
+                            // 카드 한 줄의 제목(B안 16/w600)
+                            style: AppTypography.titleMedium.copyWith(
                               color: AppSemanticColors.textPrimary,
-                              fontWeight: AppTypography.fontWeightSemibold,
                             ),
                           ),
                         ),
@@ -779,7 +841,7 @@ class _RouteBlock extends StatelessWidget {
                           const SizedBox(width: AppSpacing.space1_5),
                           Text(
                             '$capacity인승',
-                            style: AppTypography.caption.copyWith(
+                            style: AppTypography.bodySmall.copyWith(
                               color: AppSemanticColors.textTertiary,
                             ),
                           ),
@@ -790,7 +852,7 @@ class _RouteBlock extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         dispatch.routeName,
-                        style: AppTypography.caption.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),
                       ),
@@ -812,14 +874,14 @@ class _RouteBlock extends StatelessWidget {
             )
           else ...[
             _DriverChip(dispatch: dispatch),
+            // B안: 구분선 대신 간격으로 나눈다
             const SizedBox(height: AppSpacing.space2),
-            Divider(height: 1, color: AppSemanticColors.borderSubtle),
             if (routeSeniors.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
                 child: Text(
                   '탑승 없음',
-                  style: AppTypography.caption.copyWith(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textTertiary,
                   ),
                 ),
@@ -839,12 +901,14 @@ class _RouteBlock extends StatelessWidget {
       if (group.tripOrder != null) {
         widgets.add(
           Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.space1_5, bottom: 2),
+            padding: const EdgeInsets.only(
+              top: AppSpacing.space2,
+              bottom: AppSpacing.space1,
+            ),
             child: Text(
               '${group.tripOrder}차 · ${group.seniors.length}명',
-              style: AppTypography.caption.copyWith(
-                color: AppSemanticColors.interactivePrimaryDefault,
-                fontWeight: AppTypography.fontWeightSemibold,
+              style: AppTypography.titleSmall.copyWith(
+                color: AppSemanticColors.textLink,
               ),
             ),
           ),
@@ -900,15 +964,17 @@ class _DriverChip extends StatelessWidget {
         ? '대체 · ${dispatch.driverRole ?? ''} ${driver.driverName}'
         : '${dispatch.driverRole ?? '운전자'} ${driver.driverName}';
 
+    // B안 알약 — 테두리 없는 옅은 바탕(대체 운행은 경고 노랑), 글자 15/w600
     final chip = Container(
+      constraints: const BoxConstraints(minHeight: 36),
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2_5,
-        vertical: AppSpacing.space1,
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space1_5,
       ),
       decoration: BoxDecoration(
         color: isSubstitute
             ? AppSemanticColors.statusWarningBackground
-            : AppSemanticColors.backgroundTertiary,
+            : AppSemanticColors.fillDefault,
         borderRadius: BorderRadius.circular(AppBorderRadius.full),
       ),
       child: Row(
@@ -916,19 +982,20 @@ class _DriverChip extends StatelessWidget {
         children: [
           Icon(
             Icons.person_outline,
-            size: 14,
+            size: 18,
             color: isSubstitute
                 ? AppSemanticColors.statusWarningText
                 : AppSemanticColors.textSecondary,
           ),
-          const SizedBox(width: AppSpacing.space1),
-          Text(
-            label.trim(),
-            style: AppTypography.bodySmall.copyWith(
-              color: isSubstitute
-                  ? AppSemanticColors.statusWarningText
-                  : AppSemanticColors.textSecondary,
-              fontWeight: AppTypography.fontWeightMedium,
+          const SizedBox(width: AppSpacing.space1_5),
+          Flexible(
+            child: Text(
+              label.trim(),
+              style: AppTypography.titleSmall.copyWith(
+                color: isSubstitute
+                    ? AppSemanticColors.statusWarningText
+                    : AppSemanticColors.textSecondary,
+              ),
             ),
           ),
         ],
@@ -965,21 +1032,24 @@ class _ElderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (senior.elderlyId == null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1_5),
+      return ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.minTouchTarget,
+        ),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 senior.name,
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: AppSemanticColors.textSecondary,
                 ),
               ),
             ),
+            const SizedBox(width: AppSpacing.space2),
             Text(
               '수급자 관리 연결 필요',
-              style: AppTypography.caption.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppSemanticColors.textTertiary,
               ),
             ),
@@ -1003,17 +1073,20 @@ class _ElderRow extends StatelessWidget {
 
     final interactive = onTap != null;
 
+    // 어르신 한 줄 — 글자 16, 누를 자리 48 이상(B안)
     return InkWell(
       onTap: interactive ? () => onTap!(senior) : null,
-      borderRadius: BorderRadius.circular(AppBorderRadius.md),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1_5),
+      borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.minTouchTarget,
+        ),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 senior.name,
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: AppSemanticColors.textPrimary,
                   decoration: state.isAbsent ? TextDecoration.lineThrough : null,
                 ),
@@ -1021,10 +1094,10 @@ class _ElderRow extends StatelessWidget {
             ),
             if (pill != null) ...[pill, const SizedBox(width: AppSpacing.space1)],
             if (interactive)
-              Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: AppSemanticColors.textTertiary,
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: AppSemanticColors.iconSubtle,
               ),
           ],
         ),
