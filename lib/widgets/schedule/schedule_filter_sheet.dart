@@ -169,24 +169,21 @@ class _ScheduleFilterSheetState extends State<ScheduleFilterSheet> {
               ],
             ),
           ),
-          Container(
+          // 아래 단추 줄 — B안: 위 선 없이 흰 띠, 보조 단추는 회색 채움, 큰 단추(54)
+          Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.space4,
+              AppSpacing.space5,
+              AppSpacing.space2,
+              AppSpacing.space5,
               AppSpacing.space3,
-              AppSpacing.space4,
-              AppSpacing.space3,
-            ),
-            decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(color: AppSemanticColors.borderSubtle),
-              ),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: SeedButton(
                     label: '모두 해제',
-                    variant: SeedButtonVariant.neutralOutline,
+                    variant: SeedButtonVariant.neutralWeak,
+                    size: SeedButtonSize.large,
                     isDisabled: _values.isEmpty,
                     onPressed: _clear,
                   ),
@@ -196,6 +193,7 @@ class _ScheduleFilterSheetState extends State<ScheduleFilterSheet> {
                   child: SeedButton(
                     label: '확인',
                     variant: SeedButtonVariant.brandSolid,
+                    size: SeedButtonSize.large,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),

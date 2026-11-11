@@ -73,21 +73,30 @@ class ScheduleRepeatFields extends StatelessWidget {
 
   Widget _buildWeekdayPicker() {
     final selected = value.weekdaysFor(startDate);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        for (final weekday in scheduleRepeatWeekdayOrder)
-          _WeekdayButton(
-            label: scheduleRepeatWeekdayName(weekday),
-            selected: selected.contains(weekday),
-            onTap: () {
-              final next = {...selected};
-              if (!next.remove(weekday)) next.add(weekday);
-              // 마지막 하나를 끄면 시작일 요일로 돌아간다 — 요일 없는 매주는 없다
-              onChanged(value.copyWith(weekdays: next));
-            },
-          ),
-      ],
+    // 요일 동그라미 7개가 한 줄에 들어가도록 폭에 맞춰 지름을 정한다(최대 44).
+    // 예전엔 44로 못 박아 좁은 폰(320)의 시트 안(280)에서 넘쳤다.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = AppSpacing.space1;
+        final size = ((constraints.maxWidth - gap * 6) / 7).clamp(32.0, 44.0);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            for (final weekday in scheduleRepeatWeekdayOrder)
+              _WeekdayButton(
+                label: scheduleRepeatWeekdayName(weekday),
+                selected: selected.contains(weekday),
+                size: size,
+                onTap: () {
+                  final next = {...selected};
+                  if (!next.remove(weekday)) next.add(weekday);
+                  // 마지막 하나를 끄면 시작일 요일로 돌아간다 — 요일 없는 매주는 없다
+                  onChanged(value.copyWith(weekdays: next));
+                },
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -105,13 +114,26 @@ class ScheduleRepeatFields extends StatelessWidget {
         );
         if (picked != null) onChanged(value.copyWith(until: picked));
       },
+      // B안 입력칸 — 회색으로 채우고 테두리 없음, 모서리 14 (일정 등록 시트의 다른 칸과 같다)
+      borderRadius: BorderRadius.circular(AppBorderRadius.control),
       child: InputDecorator(
-        decoration: InputDecoration(
+        decoration: const InputDecoration(
           labelText: '반복 끝나는 날',
+          filled: true,
+          fillColor: AppSemanticColors.fillDefault,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+            borderRadius: BorderRadius.all(
+              Radius.circular(AppBorderRadius.control),
+            ),
+            borderSide: BorderSide.none,
           ),
-          suffixIcon: const Icon(Icons.calendar_today, size: 18),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.all(
+              Radius.circular(AppBorderRadius.control),
+            ),
+            borderSide: BorderSide.none,
+          ),
+          suffixIcon: Icon(Icons.calendar_today, size: 18),
         ),
         child: Text(
           until == null ? '골라 주세요' : formatScheduleRepeatDay(until),
@@ -184,12 +206,14 @@ String formatScheduleRepeatRange(
 class _WeekdayButton extends StatelessWidget {
   final String label;
   final bool selected;
+  final double size;
   final VoidCallback onTap;
 
   const _WeekdayButton({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.size = 44,
   });
 
   @override
@@ -202,22 +226,29 @@ class _WeekdayButton extends StatelessWidget {
       child: Material(
         color: selected
             ? AppSemanticColors.brandDefault
-            : AppSemanticColors.interactiveSecondaryDefault,
+            : AppSemanticColors.fillDefault,
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: SizedBox(
-            width: 44,
-            height: 44,
-            child: Center(
-              child: Text(
-                label,
-                style: (selected ? AppTypography.titleSmall : AppTypography.bodyMedium)
-                    .copyWith(
-                  color: selected
-                      ? AppSemanticColors.textInverse
-                      : AppSemanticColors.textSecondary,
+            width: size,
+            height: size,
+            // 글자를 크게 해도 동그라미 밖으로 넘치지 않게 — 넘칠 때만 맞춰 줄인다
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.space1),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: (selected
+                          ? AppTypography.titleSmall
+                          : AppTypography.bodyMedium)
+                      .copyWith(
+                    color: selected
+                        ? AppSemanticColors.textInverse
+                        : AppSemanticColors.textSecondary,
+                  ),
                 ),
               ),
             ),
