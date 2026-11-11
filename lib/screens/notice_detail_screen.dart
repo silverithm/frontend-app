@@ -34,6 +34,10 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   bool _showReaders = false;
   bool _isSubmittingComment = false;
 
+  /// 이 글의 첫 불러오기가 끝났는지. 조회수·읽음 기록을 먼저 보내는 동안에는 provider의
+  /// isLoading이 아직 false라, 이 값이 없으면 그 사이 '찾을 수 없습니다'(또는 앞서 본 다른 글)가 먼저 보인다.
+  bool _initialLoadDone = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +71,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
 
     // 상세 조회
     await noticeProvider.loadNoticeDetail(noticeId: widget.noticeId);
+    if (mounted) setState(() => _initialLoadDone = true);
 
     // 댓글 로드
     await noticeProvider.loadComments(noticeId: widget.noticeId);
@@ -129,12 +134,15 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       appBar: const CareVAppBar(title: '공지사항', centerTitle: true),
       body: Consumer<NoticeProvider>(
         builder: (context, noticeProvider, child) {
-          if (noticeProvider.isLoading &&
-              noticeProvider.selectedNotice == null) {
+          final notice = noticeProvider.selectedNotice;
+          // 아직 이 글을 받지 못했다(비었거나, 앞서 본 다른 글이 남아 있다) — 뼈대
+          final waitingFirstLoad =
+              !_initialLoadDone &&
+              (notice == null || notice.id != widget.noticeId);
+          if (waitingFirstLoad ||
+              (noticeProvider.isLoading && notice == null)) {
             return const _NoticeDetailSkeleton();
           }
-
-          final notice = noticeProvider.selectedNotice;
 
           if (notice == null) {
             return _buildErrorState();
