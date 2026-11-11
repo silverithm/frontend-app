@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -194,16 +195,16 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text('${widget.elderName} 정보 수정', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
           AppSpacing.space4,
-          AppSpacing.space4,
-          AppSpacing.space4,
+          AppSpacing.screenGutter,
           AppSpacing.space10,
         ),
         children: [
@@ -325,7 +326,7 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
             _textField(_seatNote, '자리 위치', hint: 'TV 앞 좌측'),
           ]),
           _card('메모', [_textField(_careNote, '기타 메모', maxLines: 4)]),
-          const SizedBox(height: AppSpacing.space2),
+          const SizedBox(height: AppSpacing.space3),
           SeedButton(
             label: '저장',
             size: SeedButtonSize.large,
@@ -338,41 +339,28 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
   }
 
   Widget _card(String title, List<Widget> children) {
+    // B안: 머리 없이 흰 카드 안 맨 위에 구역 제목(19/w700), 테두리 없음, 카드끼리는 간격 12
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.space4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(
-              left: AppSpacing.space1,
-              bottom: AppSpacing.space2,
-            ),
-            child: Text(
-              title,
-              style: AppTypography.labelMedium.copyWith(
-                color: AppSemanticColors.textTertiary,
+      padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      child: AppCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: AppTypography.heading6.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
               ),
             ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              border: Border.all(color: AppSemanticColors.borderSubtle),
-            ),
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  if (i > 0) const SizedBox(height: AppSpacing.space3),
-                  children[i],
-                ],
-              ],
-            ),
-          ),
-        ],
+            for (var i = 0; i < children.length; i++) ...[
+              const SizedBox(height: AppSpacing.space4),
+              children[i],
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -382,8 +370,8 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
   Widget _fieldLabel(String label) {
     return Text(
       label,
-      style: AppTypography.labelMedium.copyWith(
-        color: AppSemanticColors.textSecondary,
+      style: AppTypography.titleSmall.copyWith(
+        color: AppSemanticColors.textPrimary,
       ),
     );
   }
@@ -393,17 +381,17 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _fieldLabel(label),
-        const SizedBox(height: AppSpacing.space0_5),
+        const SizedBox(height: AppSpacing.space1),
         Text(
           value,
           style: AppTypography.bodyMedium.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
         ),
-        const SizedBox(height: AppSpacing.space0_5),
+        const SizedBox(height: AppSpacing.space1),
         Text(
           helper,
-          style: AppTypography.labelSmall.copyWith(
+          style: AppTypography.bodySmall.copyWith(
             color: AppSemanticColors.textTertiary,
           ),
         ),
@@ -432,6 +420,8 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
 
   Widget _switch(String label, bool value, ValueChanged<bool> onChanged) {
     return Row(
+      // 글자를 키워 두 줄이 돼도 스위치는 첫 줄 가운데에 둔다
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
@@ -461,35 +451,36 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _fieldLabel(label),
-        const SizedBox(height: AppSpacing.space1_5),
+        const SizedBox(height: AppSpacing.space2),
         DropdownButtonFormField<T?>(
           initialValue: value,
           isExpanded: true,
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
           style: AppTypography.bodyMedium.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
+          // SeedTextField와 같은 모양(B안) — 회색으로 채운 칸, 테두리 없음, 모서리 14,
+          // 누르고 있으면 틸 2px. 같은 카드 안에서 입력칸과 드롭다운이 다른 부품처럼 보이면 안 된다.
           decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space3_5,
-              vertical: AppSpacing.space2_5,
+            filled: true,
+            fillColor: AppSemanticColors.fillDefault,
+            constraints: const BoxConstraints(
+              minHeight: AppSpacing.buttonHeight,
             ),
-            // SeedTextField(medium)의 테두리와 같은 모양 — 같은 카드 안에서
-            // 입력칸과 드롭다운이 다른 컴포넌트처럼 보이면 안 된다.
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space3,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              borderSide: const BorderSide(
-                color: AppSemanticColors.borderDefault,
-              ),
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              borderSide: const BorderSide(
-                color: AppSemanticColors.borderDefault,
-              ),
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
               borderSide: const BorderSide(
                 color: AppSemanticColors.borderFocus,
                 width: 2,
