@@ -3580,18 +3580,29 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 시트 제목과 같은 왼쪽 20에서 시작
                 Padding(
-                  padding: const EdgeInsets.all(AppSpacing.space4),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space5,
+                    0,
+                    AppSpacing.space5,
+                    AppSpacing.space2,
+                  ),
                   child: Text(
                     '${readers.length}명',
                     style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
+                      color: AppSemanticColors.textSecondary,
                     ),
                   ),
                 ),
                 if (readers.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.all(AppSpacing.space4),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space5,
+                      AppSpacing.space2,
+                      AppSpacing.space5,
+                      AppSpacing.space6,
+                    ),
                     child: Text(
                       '아직 읽은 사람이 없습니다',
                       style: AppTypography.bodyMedium.copyWith(
@@ -3602,6 +3613,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 else
                   ListView.builder(
                     shrinkWrap: true,
+                    // 좌우 8 + 줄 좌우 12 = 이름이 가장자리에서 20
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space2,
+                      0,
+                      AppSpacing.space2,
+                      AppSpacing.space4,
+                    ),
                     itemCount: readers.length,
                     itemBuilder: (context, index) {
                       final reader = readers[index];
