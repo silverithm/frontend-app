@@ -6,6 +6,7 @@ import '../models/notice.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_choice_tile.dart';
 import '../utils/html_utils.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -68,8 +69,9 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // B안: 옅은 회색 바탕 위 흰 카드 세 장(제목·내용 / 우선순위·게시 상태 / 상단 고정) + 맨 아래 큰 단추
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text(
           isEditing ? '공지사항 수정' : '공지사항 작성',
@@ -80,97 +82,126 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenGutter,
+            AppSpacing.space3,
+            AppSpacing.screenGutter,
+            AppSpacing.space6,
+          ),
           children: [
-            // Title field
-            _buildSectionTitle('제목'),
-            const SizedBox(height: AppSpacing.space2),
-            SeedTextField(
-              label: '제목',
-              showLabel: false,
-              controller: _titleController,
-              placeholder: '공지사항 제목을 입력하세요',
-              size: SeedTextFieldSize.large,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '제목을 입력해주세요';
-                }
-                if (value.length > 100) {
-                  return '제목은 100자 이내로 입력해주세요';
-                }
-                return null;
-              },
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Title field
+                  _buildSectionTitle('제목'),
+                  const SizedBox(height: AppSpacing.space2),
+                  SeedTextField(
+                    label: '제목',
+                    showLabel: false,
+                    controller: _titleController,
+                    placeholder: '공지사항 제목을 입력하세요',
+                    size: SeedTextFieldSize.large,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return '제목을 입력해주세요';
+                      }
+                      if (value.length > 100) {
+                        return '제목은 100자 이내로 입력해주세요';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.space5),
+
+                  // Content field
+                  _buildSectionTitle('내용'),
+                  const SizedBox(height: AppSpacing.space2),
+                  SeedTextField(
+                    label: '내용',
+                    showLabel: false,
+                    controller: _contentController,
+                    maxLines: 10,
+                    placeholder: '공지사항 내용을 입력하세요',
+                    size: SeedTextFieldSize.large,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return '내용을 입력해주세요';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: AppSpacing.space6),
+            const SizedBox(height: AppSpacing.cardGap),
 
-            // Content field
-            _buildSectionTitle('내용'),
-            const SizedBox(height: AppSpacing.space2),
-            SeedTextField(
-              label: '내용',
-              showLabel: false,
-              controller: _contentController,
-              maxLines: 10,
-              placeholder: '공지사항 내용을 입력하세요',
-              size: SeedTextFieldSize.large,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '내용을 입력해주세요';
-                }
-                return null;
-              },
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Priority selection
+                  _buildSectionTitle('우선순위'),
+                  const SizedBox(height: AppSpacing.space2),
+                  _buildPrioritySelector(),
+                  const SizedBox(height: AppSpacing.space5),
+
+                  // Status selection
+                  _buildSectionTitle('게시 상태'),
+                  const SizedBox(height: AppSpacing.space2),
+                  _buildStatusSelector(),
+                ],
+              ),
             ),
-            const SizedBox(height: AppSpacing.space6),
+            const SizedBox(height: AppSpacing.cardGap),
 
-            // Priority selection
-            _buildSectionTitle('우선순위'),
-            const SizedBox(height: AppSpacing.space2),
-            _buildPrioritySelector(),
-            const SizedBox(height: AppSpacing.space6),
-
-            // Status selection
-            _buildSectionTitle('게시 상태'),
-            const SizedBox(height: AppSpacing.space2),
-            _buildStatusSelector(),
-            const SizedBox(height: AppSpacing.space6),
-
-            // Pin toggle
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.surfaceDefault,
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                border: Border.all(color: AppSemanticColors.borderDefault),
+            // Pin toggle — 테두리 상자 대신 흰 카드 한 줄
+            AppCard(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.cardPadding,
+                vertical: AppSpacing.space4,
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.push_pin,
-                    color: _isPinned
-                        ? AppSemanticColors.interactivePrimaryDefault
-                        : AppSemanticColors.textTertiary,
+                  Container(
+                    width: AppSpacing.iconCircle,
+                    height: AppSpacing.iconCircle,
+                    decoration: BoxDecoration(
+                      color: _isPinned
+                          ? AppSemanticColors.brandWeak
+                          : AppSemanticColors.fillDefault,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.push_pin,
+                      size: 22,
+                      color: _isPinned
+                          ? AppSemanticColors.interactivePrimaryDefault
+                          : AppSemanticColors.textTertiary,
+                    ),
                   ),
-                  const SizedBox(width: AppSpacing.space3),
+                  const SizedBox(width: AppSpacing.space3_5),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           '상단 고정',
-                          style: AppTypography.bodyMedium.copyWith(
+                          style: AppTypography.titleMedium.copyWith(
                             color: AppSemanticColors.textPrimary,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        const SizedBox(height: AppSpacing.space0_5),
                         Text(
                           '공지사항 목록 최상단에 고정됩니다',
-                          style: AppTypography.caption.copyWith(
-                            color: AppSemanticColors.textTertiary,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: AppSpacing.space2),
                   Switch(
                     value: _isPinned,
                     onChanged: (value) {
@@ -182,7 +213,7 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.space8),
+            const SizedBox(height: AppSpacing.space6),
 
             // 제출 버튼 — approval_form_screen과 동일하게 본문 하단 풀와이드 배치
             SizedBox(
@@ -196,7 +227,6 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
                 onPressed: _handleSubmit,
               ),
             ),
-            const SizedBox(height: AppSpacing.space6),
           ],
         ),
       ),
