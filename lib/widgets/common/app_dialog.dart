@@ -5,13 +5,17 @@ import '../../theme/app_typography.dart';
 import '../../utils/app_haptics.dart';
 import '../seed/seed_button.dart';
 import 'app_input.dart';
+import 'app_sheet_frame.dart';
 
+/// 확인·알림·입력 창 — B안(2026-11-12): 가운데 대화상자 대신 아래에서 올라오는 시트(엄지 닿는 곳)
+/// + 큰 단추(54). 돌려주는 값은 예전과 같다 — 확인 true, 취소 false, 바깥을 눌러 닫으면 null.
 class AppDialog {
-  /// 확인 다이얼로그. 되돌릴 수 없는 행위(삭제·탈퇴)만 [confirmVariant]에
+  /// 확인 창. 되돌릴 수 없는 행위(삭제·탈퇴)만 [confirmVariant]에
   /// [SeedButtonVariant.critical]을 넘긴다 — 반려·거절·로그아웃은 파괴적 행위가 아니다.
   ///
   /// 창이 뜰 때 [haptic]을 울린다. 안 넘기면 critical(삭제)은 warning, 나머지는 울리지 않는다.
   /// 반려·거절 확인처럼 빨간 단추는 아니지만 경고가 필요한 자리는 warning을 넘긴다.
+  /// warning이 울리는 창은 제목 위에 경고 아이콘이 붙는다.
   static Future<bool?> showConfirm(
     BuildContext context, {
     required String title,
@@ -19,7 +23,7 @@ class AppDialog {
     String confirmText = '확인',
     String cancelText = '취소',
     SeedButtonVariant confirmVariant = SeedButtonVariant.brandSolid,
-    SeedButtonVariant cancelVariant = SeedButtonVariant.neutralOutline,
+    SeedButtonVariant cancelVariant = SeedButtonVariant.neutralWeak,
     AppHapticKind? haptic,
   }) {
     final openHaptic = haptic ??
@@ -27,54 +31,24 @@ class AppDialog {
             ? AppHapticKind.warning
             : null);
     if (openHaptic != null) AppHaptics.play(openHaptic);
-    return showDialog<bool>(
-      context: context,
-      barrierColor: AppColors.black.withValues(alpha: 0.5),
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              Text(
-                message,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: cancelText,
-                      variant: cancelVariant,
-                      onPressed: () => Navigator.of(context).pop(false),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: SeedButton(
-                      label: confirmText,
-                      variant: confirmVariant,
-                      onPressed: () => Navigator.of(context).pop(true),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return showAppSheet<bool>(
+      context,
+      builder: (sheetContext) => AppSheetFrame(
+        title: title,
+        message: message,
+        warning: openHaptic == AppHapticKind.warning,
+        actions: AppSheetActions(
+          cancel: SeedButton(
+            label: cancelText,
+            size: SeedButtonSize.large,
+            variant: cancelVariant,
+            onPressed: () => Navigator.of(sheetContext).pop(false),
+          ),
+          confirm: SeedButton(
+            label: confirmText,
+            size: SeedButtonSize.large,
+            variant: confirmVariant,
+            onPressed: () => Navigator.of(sheetContext).pop(true),
           ),
         ),
       ),
@@ -91,43 +65,18 @@ class AppDialog {
     AppHapticKind? haptic,
   }) {
     if (haptic != null) AppHaptics.play(haptic);
-    return showDialog<void>(
-      context: context,
-      barrierColor: AppColors.black.withValues(alpha: 0.5),
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: AppTypography.heading5.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              Text(
-                message,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              SizedBox(
-                width: double.infinity,
-                child: SeedButton(
-                  label: buttonText,
-                  variant: buttonVariant,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-            ],
+    return showAppSheet<void>(
+      context,
+      builder: (sheetContext) => AppSheetFrame(
+        title: title,
+        message: message,
+        actions: SizedBox(
+          width: double.infinity,
+          child: SeedButton(
+            label: buttonText,
+            size: SeedButtonSize.large,
+            variant: buttonVariant,
+            onPressed: () => Navigator.of(sheetContext).pop(),
           ),
         ),
       ),
@@ -153,79 +102,44 @@ class AppDialog {
     final controller = TextEditingController(text: initialValue);
     final formKey = GlobalKey<FormState>();
 
-    return showDialog<String>(
-      context: context,
-      barrierColor: AppColors.black.withValues(alpha: 0.5),
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Text(
-                  title,
-                  style: AppTypography.heading5.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
-                ),
-              ),
-              if (message != null) ...[
-                const SizedBox(height: AppSpacing.space3),
-                Center(
-                  child: Text(
-                    message,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.space4),
-              Form(
-                key: formKey,
-                child: AppInput(
-                  controller: controller,
-                  hintText: hintText,
-                  keyboardType: keyboardType,
-                  maxLines: maxLines,
-                  maxLength: maxLength,
-                  validator: validator,
-                  autofocus: true,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: cancelText,
-                      variant: SeedButtonVariant.neutralOutline,
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: SeedButton(
-                      label: confirmText,
-                      onPressed: () {
-                        if (formKey.currentState?.validate() ?? true) {
-                          Navigator.of(context).pop(controller.text);
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return showAppSheet<String>(
+      context,
+      builder: (sheetContext) => AppSheetFrame(
+        title: title,
+        message: message,
+        warning: haptic == AppHapticKind.warning,
+        actions: AppSheetActions(
+          cancel: SeedButton(
+            label: cancelText,
+            size: SeedButtonSize.large,
+            variant: SeedButtonVariant.neutralWeak,
+            onPressed: () => Navigator.of(sheetContext).pop(),
+          ),
+          confirm: SeedButton(
+            label: confirmText,
+            size: SeedButtonSize.large,
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? true) {
+                Navigator.of(sheetContext).pop(controller.text);
+              }
+            },
           ),
         ),
+        children: [
+          const SizedBox(height: AppSpacing.space5),
+          Form(
+            key: formKey,
+            child: AppInput(
+              controller: controller,
+              hintText: hintText,
+              keyboardType: keyboardType,
+              maxLines: maxLines,
+              maxLength: maxLength,
+              validator: validator,
+              autofocus: true,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -240,11 +154,13 @@ class AppDialog {
       context: context,
       barrierDismissible: barrierDismissible,
       barrierColor: barrierColor,
+      // 맞춤 창은 내용이 제각각이라 가운데 창으로 둔다(모서리 24, 뒤 어둠은 테마).
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+          borderRadius: BorderRadius.circular(AppBorderRadius.sheet),
         ),
-        backgroundColor: AppSemanticColors.surfaceDefault,
+        backgroundColor: AppSemanticColors.surfaceCard,
+        surfaceTintColor: AppColors.transparent,
         child: child,
       ),
     );
@@ -252,8 +168,8 @@ class AppDialog {
 }
 
 class AppBottomSheet {
-  /// [title]을 주면 showAppActionSheet와 같은 연한 틸 제목 띠(손잡이가 띠 맨 위)를 그린다.
-  /// 안 주면 손잡이만 있는 시트. 모서리는 둘 다 16(xl2).
+  /// B안(2026-11-12, 시안 .sheet): 손잡이 40×5 + (제목 21/w700, 왼쪽) + 내용, 위 모서리 24.
+  /// 예전의 연한 틸 제목 띠·아래 선은 없앴다. 뒤 어둠은 테마(rgba(11,15,20,.45)).
   static Future<T?> show<T>(
     BuildContext context, {
     required Widget child,
@@ -266,16 +182,6 @@ class AppBottomSheet {
     bool? isScrollControlled,
   }) {
     final hasTitle = title != null && title.isNotEmpty;
-    final handle = Container(
-      width: 36,
-      height: 4,
-      decoration: BoxDecoration(
-        color: hasTitle
-            ? AppSemanticColors.subheaderBorder
-            : AppSemanticColors.borderDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-      ),
-    );
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled ?? (height != null),
@@ -286,51 +192,41 @@ class AppBottomSheet {
         height: height,
         clipBehavior: Clip.antiAlias,
         decoration: const BoxDecoration(
-          color: AppSemanticColors.surfaceDefault,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(AppBorderRadius.xl2),
-            topRight: Radius.circular(AppBorderRadius.xl2),
+          color: AppSemanticColors.surfaceCard,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppBorderRadius.sheet),
           ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Padding(
+              padding: EdgeInsets.only(
+                top: AppSpacing.space2_5,
+                bottom: AppSpacing.space2,
+              ),
+              child: Center(child: AppSheetHandle()),
+            ),
             if (hasTitle)
-              Container(
-                decoration: const BoxDecoration(
-                  color: AppSemanticColors.subheaderBackground,
-                  border: Border(
-                    bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
-                  ),
-                ),
+              Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.space5,
                   AppSpacing.space2,
                   AppSpacing.space5,
                   AppSpacing.space3,
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(child: handle),
-                    const SizedBox(height: AppSpacing.space3),
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.heading6.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                      ),
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.heading5.copyWith(
+                      color: AppSemanticColors.textPrimary,
                     ),
-                  ],
+                  ),
                 ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-                child: Center(child: handle),
               ),
             Flexible(child: child),
           ],

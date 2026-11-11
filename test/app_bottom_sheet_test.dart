@@ -24,26 +24,29 @@ Future<void> _open(WidgetTester tester, {String? title}) async {
 }
 
 void main() {
-  testWidgets('title을 주면 연한 틸 제목 띠와 아래 선, 손잡이가 그려진다', (tester) async {
+  // B안(2026-11-12): 제목 띠·아래 선 없이 제목 21/w700, 손잡이 40×5, 위 모서리 24.
+  testWidgets('title을 주면 띠 없이 큰 제목, 손잡이 40×5', (tester) async {
     await _open(tester, title: '대화 검색');
-    expect(find.text('대화 검색'), findsOneWidget);
-    final strip = tester.widget<Container>(find
-        .ancestor(of: find.text('대화 검색'), matching: find.byType(Container))
-        .first);
-    final deco = strip.decoration as BoxDecoration;
-    expect(deco.color, AppSemanticColors.subheaderBackground);
-    expect((deco.border as Border).bottom.color,
-        AppSemanticColors.subheaderBorder);
+    final title = tester.widget<Text>(find.text('대화 검색'));
+    expect(title.style!.fontSize, 21);
+    expect(title.style!.fontWeight, FontWeight.w700);
+    // 제목 둘레에 색 띠(바탕색 있는 Container)가 없다
+    final tinted = find.ancestor(
+      of: find.text('대화 검색'),
+      matching: find.byWidgetPredicate((w) =>
+          w is Container &&
+          w.decoration is BoxDecoration &&
+          (w.decoration as BoxDecoration).color == AppSemanticColors.subheaderBackground),
+    );
+    expect(tinted, findsNothing);
     final handle = tester.getSize(find.byWidgetPredicate((w) =>
         w is Container &&
         w.decoration is BoxDecoration &&
-        (w.decoration as BoxDecoration).color ==
-            AppSemanticColors.subheaderBorder &&
-        (w.decoration as BoxDecoration).border == null));
-    expect(handle, const Size(36, 4));
+        (w.decoration as BoxDecoration).color == AppSemanticColors.sheetHandle));
+    expect(handle, const Size(40, 5));
   });
 
-  testWidgets('title이 없으면 띠 없이 손잡이만, 모서리는 16', (tester) async {
+  testWidgets('title이 없으면 손잡이만, 모서리는 24', (tester) async {
     await _open(tester);
     expect(find.text('본문'), findsOneWidget);
     final sheet = tester.widget<Container>(find
@@ -51,6 +54,6 @@ void main() {
         .last);
     expect(
         (sheet.decoration as BoxDecoration).borderRadius,
-        const BorderRadius.vertical(top: Radius.circular(AppBorderRadius.xl2)));
+        const BorderRadius.vertical(top: Radius.circular(AppBorderRadius.sheet)));
   });
 }

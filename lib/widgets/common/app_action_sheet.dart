@@ -4,21 +4,23 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../utils/app_haptics.dart';
+import 'app_sheet_frame.dart';
 
 /// 카드·목록의 ⋮(더보기) 액션 메뉴 공용 시트.
 ///
 /// 기본 Material `PopupMenuButton` 대신 앱 공통 문법(둥근 상단 바텀시트 +
 /// 아이콘 한 줄 + Seed 타이포)을 쓴다. 채팅 길게 누르기·첨부·더보기 시트도 이것 하나를 쓴다.
 ///
-/// 모양(2026-10-27 점검 R3-14·R1-14): 머리글은 띠 없이 작은 회색 글자, 항목은 색 칸 없이
-/// 아이콘(20·textSecondary) + bodyMedium 한 줄(높이 48). 삭제처럼 되돌릴 수 없는 항목만 빨강.
+/// 모양(B안 2026-11-12): 손잡이 40×5, 머리글은 띠 없이 작은 회색 글자, 항목은 색 칸 없이
+/// 아이콘(22·textSecondary) + 본문 16 한 줄(높이 56). 누르면 옅은 회색(모서리 14).
+/// 삭제처럼 되돌릴 수 없는 항목만 빨강.
 class AppSheetAction {
   final IconData icon;
   final String label;
   final VoidCallback onSelected;
   final bool isDestructive;
 
-  /// 항목 아래 한 줄 설명(첨부 시트처럼 무엇이 열리는지 알려야 할 때). 있으면 줄이 56으로 커진다.
+  /// 항목 아래 한 줄 설명(첨부 시트처럼 무엇이 열리는지 알려야 할 때). 있으면 줄이 64로 커진다.
   final String? description;
 
   /// 이 항목 위에 구분선 한 줄 — 비슷한 항목끼리 묶을 때.
@@ -58,7 +60,7 @@ Future<void> showAppActionSheet(
     ),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
-        top: Radius.circular(AppBorderRadius.xl2),
+        top: Radius.circular(AppBorderRadius.sheet),
       ),
     ),
     clipBehavior: Clip.antiAlias,
@@ -67,13 +69,15 @@ Future<void> showAppActionSheet(
       return SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(
-            top: AppSpacing.space2,
+            top: AppSpacing.space2_5,
             bottom: AppSpacing.space2,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Center(child: AppSheetHandle()),
+              const SizedBox(height: AppSpacing.space2),
               if (hasTitle)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -93,13 +97,16 @@ Future<void> showAppActionSheet(
                 ),
               if (header != null) ...[
                 header,
-                const Divider(height: 1, color: AppSemanticColors.borderSubtle),
+                const Divider(
+                  height: 1,
+                  color: AppSemanticColors.borderHairline,
+                ),
               ],
               for (final action in actions) ...[
                 if (action.hasDividerAbove)
                   const Divider(
                     height: 1,
-                    color: AppSemanticColors.borderSubtle,
+                    color: AppSemanticColors.borderHairline,
                   ),
                 _ActionTile(action: action),
               ],
@@ -125,51 +132,57 @@ class _ActionTile extends StatelessWidget {
         ? AppSemanticColors.statusErrorText
         : AppSemanticColors.textPrimary;
     final description = action.description;
-    return InkWell(
-      onTap: () {
-        // 고르는 순간 selection. 삭제처럼 위험한 항목은 뒤이어 뜨는 확인 창이 warning을
-        // 울리므로 여기서는 울리지 않는다(두 번 떨리지 않게).
-        if (!action.isDestructive) AppHaptics.selection();
-        Navigator.of(context).pop();
-        action.onSelected();
-      },
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: description == null
-              ? AppSpacing.space12
-              : AppSpacing.space14,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space5,
-            vertical: AppSpacing.space2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+        highlightColor: AppSemanticColors.surfacePressed,
+        splashFactory: NoSplash.splashFactory,
+        onTap: () {
+          // 고르는 순간 selection. 삭제처럼 위험한 항목은 뒤이어 뜨는 확인 창이 warning을
+          // 울리므로 여기서는 울리지 않는다(두 번 떨리지 않게).
+          if (!action.isDestructive) AppHaptics.selection();
+          Navigator.of(context).pop();
+          action.onSelected();
+        },
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: description == null
+                ? AppSpacing.space14
+                : AppSpacing.space16,
           ),
-          child: Row(
-            children: [
-              Icon(action.icon, size: AppSpacing.space5, color: iconColor),
-              const SizedBox(width: AppSpacing.space4),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      action.label,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: textColor,
-                      ),
-                    ),
-                    if (description != null)
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space3,
+              vertical: AppSpacing.space2,
+            ),
+            child: Row(
+              children: [
+                Icon(action.icon, size: 22, color: iconColor),
+                const SizedBox(width: AppSpacing.space4),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        description,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
+                        action.label,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: textColor,
                         ),
                       ),
-                  ],
+                      if (description != null)
+                        Text(
+                          description,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
