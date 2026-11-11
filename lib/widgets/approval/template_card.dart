@@ -135,11 +135,15 @@ class TemplateCard extends StatelessWidget {
           const SizedBox(width: AppSpacing.space2),
         ] else
           const Spacer(),
-        Text(
-          '생성: ${dateFormat.format(template.createdAt)}',
-          maxLines: 1,
-          style: AppTypography.bodySmall.copyWith(
-            color: AppSemanticColors.textTertiary,
+        // 좁은 폰·큰 글자에서는 파일 이름과 날짜가 자리를 나눠 갖고 말줄임한다
+        Flexible(
+          child: Text(
+            '생성: ${dateFormat.format(template.createdAt)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppSemanticColors.textTertiary,
+            ),
           ),
         ),
       ],
