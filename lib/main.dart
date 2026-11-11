@@ -249,12 +249,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
                     semanticLabel: '케어브이',
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  // 못 박은 24/w700 대신 같은 크기·굵기의 글자 토큰(서체도 함께 실린다)
+                  Text(
                     '케어브이',
-                    style: TextStyle(
+                    style: AppTypography.heading4.copyWith(
                       color: AppColors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 24),
