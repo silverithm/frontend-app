@@ -13,6 +13,9 @@ import '../widgets/approval/template_card.dart';
 import 'approval_template_preview_screen.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_fab.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -402,24 +405,33 @@ class _AdminApprovalTemplateScreenState
   @override
   Widget build(BuildContext context) {
     // B안: 옅은 회색 바탕, 알약 FAB(글자는 예전 그대로 '양식 추가', 목록을 내리면 접힘)
+    // 처음 불러올 때(아직 보일 양식이 없을 때)만 뼈대 — 양식이 있는 채로 다시 불러올 때는 예전 스피너
+    final hasNoTemplates = context.select<ApprovalProvider, bool>(
+      (provider) => provider.templates.isEmpty,
+    );
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '결재 양식 관리'),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : NotificationListener<UserScrollNotification>(
-              onNotification: (notification) {
-                final direction = notification.direction;
-                if (direction != ScrollDirection.idle) {
-                  final collapse = direction == ScrollDirection.reverse;
-                  if (collapse != _fabCollapsed) {
-                    setState(() => _fabCollapsed = collapse);
+      // 카드 등장 연출은 처음 한 번만 — 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
+      body: AppListEntrance(
+        child: _isLoading && hasNoTemplates
+            ? const _TemplateListSkeleton()
+            : _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : NotificationListener<UserScrollNotification>(
+                onNotification: (notification) {
+                  final direction = notification.direction;
+                  if (direction != ScrollDirection.idle) {
+                    final collapse = direction == ScrollDirection.reverse;
+                    if (collapse != _fabCollapsed) {
+                      setState(() => _fabCollapsed = collapse);
+                    }
                   }
-                }
-                return false;
-              },
-              child: _buildContent(),
-            ),
+                  return false;
+                },
+                child: _buildContent(),
+              ),
+      ),
       floatingActionButton: AppFab(
         icon: Icons.add,
         label: '양식 추가',
@@ -472,7 +484,7 @@ class _AdminApprovalTemplateScreenState
           );
         }
 
-        return RefreshIndicator(
+        return AppRefreshIndicator(
           onRefresh: _loadData,
           child: ListView.builder(
             // 떠 있는 FAB가 마지막 카드를 가리지 않게 아래 96
@@ -485,20 +497,23 @@ class _AdminApprovalTemplateScreenState
             itemCount: templates.length,
             itemBuilder: (context, index) {
               final template = templates[index];
-              return TemplateCard(
-                template: template,
-                // 카드를 누르면 양식을 바로 열람한다 (웹의 양식 미리보기와 같은 동작)
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ApprovalTemplatePreviewScreen(
-                      template: template,
-                      showUseButton: false,
+              return AppListEntranceItem(
+                index: index,
+                child: TemplateCard(
+                  template: template,
+                  // 카드를 누르면 양식을 바로 열람한다 (웹의 양식 미리보기와 같은 동작)
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ApprovalTemplatePreviewScreen(
+                        template: template,
+                        showUseButton: false,
+                      ),
                     ),
                   ),
+                  onEdit: () => _showEditDialog(template),
+                  onDelete: () => _deleteTemplate(template),
+                  onToggleActive: () => _toggleActive(template),
                 ),
-                onEdit: () => _showEditDialog(template),
-                onDelete: () => _deleteTemplate(template),
-                onToggleActive: () => _toggleActive(template),
               );
             },
           ),
@@ -515,5 +530,33 @@ class _AdminApprovalTemplateScreenState
     } else {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
+  }
+}
+
+/// 결재 양식 첫 불러오기 뼈대 — 회색 바탕 위 흰 양식 카드(목록과 같은 여백·간격)
+class _TemplateListSkeleton extends StatelessWidget {
+  const _TemplateListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          96,
+        ),
+        children: List.generate(
+          4,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+          ),
+        ),
+      ),
+    );
   }
 }
