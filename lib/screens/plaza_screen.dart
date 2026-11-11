@@ -26,6 +26,9 @@ import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_fab.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_tag.dart';
@@ -331,6 +334,42 @@ EdgeInsets _plazaListPadding({bool hasFab = false}) => EdgeInsets.fromLTRB(
       hasFab ? AppSpacing.space20 + AppSpacing.space4 : AppSpacing.space4,
     );
 
+/// 카드 목록 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드([_plazaListPadding]과 같은 여백·간격).
+/// [withChipRow]면 위에 거르기 칩 줄 자리를 비워 둔다(칩 줄까지 통째로 불러오는 자료실).
+class _PlazaCardListSkeleton extends StatelessWidget {
+  final bool hasFab;
+  final bool withChipRow;
+
+  const _PlazaCardListSkeleton({this.hasFab = false, this.withChipRow = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (withChipRow)
+          // _PlazaFilterChips와 같은 높이(위아래 4 + 칩 44)
+          const SizedBox(height: AppSpacing.space1 * 2 + 44),
+        Expanded(
+          child: AppSkeleton(
+            baseColor: AppSemanticColors.skeletonBaseOnCard,
+            child: ListView(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: _plazaListPadding(hasFab: hasFab),
+              children: List.generate(
+                5,
+                (_) => const AppSkeletonCard(
+                  standalone: false,
+                  margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// 목록을 아래로 내리면 FAB 글자를 접고, 위로 올리면 편다(PLAN: 스크롤하면 글자 접힘).
 bool? _fabCollapsedFor(UserScrollNotification notification) {
   if (notification.metrics.axis != Axis.vertical) return null;
@@ -619,8 +658,10 @@ class _NewsTabState extends State<_NewsTab> {
           onSelected: (key) => setState(() => _filter = key),
         ),
         Expanded(
+          // 카드 등장 연출은 처음 한 번만 — 거르기·새로고침으로 다시 그려도 다시 떠오르지 않게 바깥에 둔다
+          child: AppListEntrance(
           child: isInitialLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const _PlazaCardListSkeleton()
               : bothFailed
                   ? _PlazaErrorState(onRetry: _refreshAll)
                   : Builder(builder: (context) {
@@ -632,7 +673,7 @@ class _NewsTabState extends State<_NewsTab> {
                           topSpacing: AppSpacing.space10,
                         );
                       }
-                      return RefreshIndicator(
+                      return AppRefreshIndicator(
                         onRefresh: _refreshAll,
                         child: ListView.separated(
                           controller: _scrollController,
@@ -655,7 +696,9 @@ class _NewsTabState extends State<_NewsTab> {
                             }
                             final item = items[index];
                             // B안: 테두리 없는 흰 카드(모서리 20·여백 20)
-                            return AppCard(
+                            return AppListEntranceItem(
+                              index: index,
+                              child: AppCard(
                               onTap: () => _openUrl(item.url),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -686,11 +729,13 @@ class _NewsTabState extends State<_NewsTab> {
                                   ),
                                 ],
                               ),
+                              ),
                             );
                           },
                         ),
                       );
                     }),
+          ),
         ),
       ],
     );
@@ -812,7 +857,12 @@ class _BoardTabState extends State<_BoardTab> {
             },
           ),
           Expanded(
-            child: _isLoading
+            // 카드 등장 연출은 처음 한 번만 — 거르기·새로고침으로 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
+            child: AppListEntrance(
+            // 처음 불러올 때(아직 보일 글이 없을 때)만 뼈대 — 글이 있는 채로 다시 불러올 때는 예전 스피너
+            child: _isLoading && _posts.isEmpty
+                ? const _PlazaCardListSkeleton(hasFab: true)
+                : _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : (_hasError && _posts.isEmpty)
                     ? _PlazaErrorState(onRetry: _load)
@@ -832,7 +882,7 @@ class _BoardTabState extends State<_BoardTab> {
                           }
                           return false;
                         },
-                        child: RefreshIndicator(
+                        child: AppRefreshIndicator(
                         onRefresh: _load,
                         child: ListView.separated(
                           padding: _plazaListPadding(hasFab: true),
@@ -844,7 +894,9 @@ class _BoardTabState extends State<_BoardTab> {
                             final createdAt = DateTime.tryParse(
                                 post['createdAt']?.toString() ?? '');
                             // B안: 테두리 없는 흰 카드(모서리 20·여백 20)
-                            return AppCard(
+                            return AppListEntranceItem(
+                              index: index,
+                              child: AppCard(
                               onTap: () async {
                                 final postId = post['id'];
                                 if (postId is! int) return;
@@ -932,11 +984,13 @@ class _BoardTabState extends State<_BoardTab> {
                                   ),
                                 ],
                               ),
+                              ),
                             );
                           },
                         ),
                       ),
                       ),
+            ),
           ),
         ],
       ),
@@ -1357,7 +1411,12 @@ class _LibraryTabState extends State<_LibraryTab> {
               onPressed: _showUploadSheet,
             )
           : null,
-      body: _isLoading
+      // 카드 등장 연출은 처음 한 번만 — 분류·새로고침으로 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
+      body: AppListEntrance(
+      // 처음 불러올 때(아직 보일 자료가 없을 때)만 뼈대 — 자료가 있는 채로 다시 불러올 때는 예전 스피너
+      child: _isLoading && _items.isEmpty
+          ? const _PlazaCardListSkeleton(hasFab: true, withChipRow: true)
+          : _isLoading
           ? const Center(child: CircularProgressIndicator())
           : !_accessAllowed
               ? (_hasError
@@ -1395,7 +1454,7 @@ class _LibraryTabState extends State<_LibraryTab> {
                                         }
                                         return false;
                                       },
-                                      child: RefreshIndicator(
+                                      child: AppRefreshIndicator(
                                       onRefresh: _load,
                                       child: ListView.separated(
                                         padding:
@@ -1405,13 +1464,18 @@ class _LibraryTabState extends State<_LibraryTab> {
                                             const SizedBox(
                                                 height: AppSpacing.cardGap),
                                         itemBuilder: (context, index) =>
-                                            _buildItemCard(_items[index]),
+                                            AppListEntranceItem(
+                                              index: index,
+                                              child:
+                                                  _buildItemCard(_items[index]),
+                                            ),
                                       ),
                                     ),
                                     ),
                         ),
       ],
                     ),
+      ),
     );
   }
 }
