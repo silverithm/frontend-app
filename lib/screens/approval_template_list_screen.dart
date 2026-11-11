@@ -77,7 +77,7 @@ class _ApprovalTemplateListScreenState
       appBar: AppBar(
         title: Text(
           '결재 양식 선택',
-          style: AppTypography.heading5,
+          style: AppTypography.appBarTitle,
         ),
         elevation: 0,
         centerTitle: true,

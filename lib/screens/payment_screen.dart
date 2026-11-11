@@ -77,7 +77,7 @@ class _PaymentScreenState extends State<PaymentScreen>
       appBar: AppBar(
         title: Text(
           '결제',
-          style: AppTypography.heading5.copyWith(
+          style: AppTypography.appBarTitle.copyWith(
             color: AppSemanticColors.headerForeground,
             fontWeight: FontWeight.bold,
           ),
@@ -850,7 +850,7 @@ class _PaymentWebViewScreenState extends State<_PaymentWebViewScreen> {
       appBar: AppBar(
         title: Text(
           '토스페이먼츠 결제',
-          style: AppTypography.heading6.copyWith(
+          style: AppTypography.appBarTitle.copyWith(
             color: AppSemanticColors.headerForeground,
           ),
         ),

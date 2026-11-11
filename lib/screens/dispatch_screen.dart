@@ -69,7 +69,7 @@ class _DispatchScreenState extends State<DispatchScreen> {
       appBar: AppBar(
         title: Text(
           '배차관리',
-          style: AppTypography.heading6,
+          style: AppTypography.appBarTitle,
         ),
         elevation: 0,
         actions: [

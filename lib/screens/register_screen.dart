@@ -607,7 +607,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           tooltip: '뒤로 가기',
-          icon: Icon(Icons.arrow_back, color: AppSemanticColors.headerForeground),
+          icon: Icon(Icons.chevron_left_rounded, size: 30, color: AppSemanticColors.headerForeground),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -2042,7 +2042,7 @@ class _AddressSearchScreenState extends State<_AddressSearchScreen> {
       appBar: AppBar(
         title: Text(
           '주소 검색',
-          style: AppTypography.heading6,
+          style: AppTypography.appBarTitle,
         ),
         elevation: 0,
         centerTitle: true,

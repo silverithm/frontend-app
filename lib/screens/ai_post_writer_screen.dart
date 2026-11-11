@@ -250,7 +250,7 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text('AI 글쓰기 도우미', style: AppTypography.heading5),
+        title: Text('AI 글쓰기 도우미', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       body: SafeArea(

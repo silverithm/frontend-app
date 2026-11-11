@@ -353,7 +353,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
-        title: Text('기관 자료실', style: AppTypography.heading5),
+        title: Text('기관 자료실', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       floatingActionButton: isAdmin

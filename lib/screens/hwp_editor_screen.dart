@@ -177,7 +177,7 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
       appBar: AppBar(
         title: Text(
           widget.fileName,
-          style: AppTypography.heading6.copyWith(
+          style: AppTypography.appBarTitle.copyWith(
             fontWeight: AppTypography.fontWeightSemibold,
           ),
           overflow: TextOverflow.ellipsis,

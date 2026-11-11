@@ -75,13 +75,13 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
           child: Scaffold(
             backgroundColor: AppSemanticColors.backgroundPrimary,
             appBar: AppBar(
-              title: Text('종사자 관리', style: AppTypography.heading5),
+              title: Text('종사자 관리', style: AppTypography.appBarTitle),
               elevation: 0,
               automaticallyImplyLeading: widget.showBackButton,
               leading: widget.showBackButton
                   ? IconButton(
                       tooltip: '뒤로 가기',
-                      icon: const Icon(Icons.arrow_back),
+                      icon: const Icon(Icons.chevron_left_rounded, size: 30),
                       onPressed: () => Navigator.of(context).pop(),
                     )
                   : null,
@@ -130,7 +130,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   Widget _buildNoPermissionView() {
     return Scaffold(
       appBar: AppBar(
-        title: Text('종사자 관리', style: AppTypography.heading5),
+        title: Text('종사자 관리', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       body: Center(

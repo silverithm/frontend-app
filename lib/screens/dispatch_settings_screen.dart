@@ -126,7 +126,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       appBar: AppBar(
         title: Text(
           '배차 설정',
-          style: AppTypography.heading6,
+          style: AppTypography.appBarTitle,
         ),
         elevation: 0,
         actions: [

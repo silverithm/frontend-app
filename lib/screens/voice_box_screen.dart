@@ -167,7 +167,7 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
-        title: Text('고충·신고 · 건의함', style: AppTypography.heading5),
+        title: Text('고충·신고 · 건의함', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       body: SafeArea(

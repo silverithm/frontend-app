@@ -159,7 +159,7 @@ class _AdminVacationManagementScreenState
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text('휴무 관리', style: AppTypography.heading5),
+        title: Text('휴무 관리', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       body: _isLoading

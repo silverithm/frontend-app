@@ -847,7 +847,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             floating: false,
             pinned: true,
             elevation: 0,
-            title: Text('프로필', style: AppTypography.heading5),
+            title: Text('프로필', style: AppTypography.appBarTitle),
           ),
 
           Consumer<AuthProvider>(

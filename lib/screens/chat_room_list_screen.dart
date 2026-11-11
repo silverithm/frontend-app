@@ -148,7 +148,10 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text('채팅', style: AppTypography.heading5),
+        // 탭 첫 화면 — 왼쪽 큰 제목(B안)
+        title: Text('채팅', style: AppTypography.appBarTitleLarge),
+        centerTitle: false,
+        titleSpacing: AppSpacing.space5,
         elevation: 0,
         actions: [
           IconButton(

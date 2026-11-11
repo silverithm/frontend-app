@@ -255,7 +255,11 @@ class _CalendarScreenState extends State<CalendarScreen>
               floating: false,
               pinned: true,
               elevation: 0,
-              toolbarHeight: 0,
+              // 탭 첫 화면 — 왼쪽 큰 제목(B안). 예전엔 제목 없이 탭바만 있었다.
+              // 알림에서 push로 열리면 테마의 꺾쇠 뒤로 단추가 저절로 붙는다.
+              title: Text('일정', style: AppTypography.appBarTitleLarge),
+              centerTitle: false,
+              titleSpacing: AppSpacing.space5,
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(48),
                 child: Builder(

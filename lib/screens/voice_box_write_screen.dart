@@ -88,7 +88,7 @@ class _VoiceBoxWriteScreenState extends State<VoiceBoxWriteScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text('고충·신고 · 건의함', style: AppTypography.heading5),
+        title: Text('고충·신고 · 건의함', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       body: SafeArea(

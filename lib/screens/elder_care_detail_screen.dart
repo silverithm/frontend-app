@@ -67,7 +67,7 @@ class _ElderCareDetailScreenState extends State<ElderCareDetailScreen> {
             widget.elder.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.heading5,
+            style: AppTypography.appBarTitle,
           ),
           elevation: 0,
           actions: [

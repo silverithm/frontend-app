@@ -73,7 +73,7 @@ class _AdminNoticeFormScreenState extends State<AdminNoticeFormScreen> {
       appBar: AppBar(
         title: Text(
           isEditing ? '공지사항 수정' : '공지사항 작성',
-          style: AppTypography.heading6,
+          style: AppTypography.appBarTitle,
         ),
         elevation: 0,
       ),

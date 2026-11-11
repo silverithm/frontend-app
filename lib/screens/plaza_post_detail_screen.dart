@@ -137,7 +137,7 @@ class _PlazaPostDetailScreenState extends State<PlazaPostDetailScreen> {
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
         title: Text('게시글',
-            style: AppTypography.heading6),
+            style: AppTypography.appBarTitle),
         actions: [
           if (post?['isMine'] == true) ...[
             IconButton(

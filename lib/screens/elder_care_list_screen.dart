@@ -117,7 +117,7 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
-        title: Text('어르신 정보', style: AppTypography.heading5),
+        title: Text('어르신 정보', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       body: Column(

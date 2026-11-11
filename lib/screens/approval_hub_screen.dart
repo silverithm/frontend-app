@@ -54,7 +54,10 @@ class _ApprovalHubScreenState extends State<ApprovalHubScreen>
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: AppBar(
-        title: Text('전자결재', style: AppTypography.heading5),
+        // 탭 첫 화면 — 왼쪽 큰 제목(B안). 알림에서 push로 열려 뒤로가 생겨도 같은 모양.
+        title: Text('전자결재', style: AppTypography.appBarTitleLarge),
+        centerTitle: false,
+        titleSpacing: AppSpacing.space5,
         elevation: 0,
         // 탭 루트에선 canPop=false라 자동으로 안 뜨고,
         // 알림에서 push로 열리면 뒤로가기가 생긴다

@@ -196,7 +196,7 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
-        title: Text('${widget.elderName} 정보 수정', style: AppTypography.heading5),
+        title: Text('${widget.elderName} 정보 수정', style: AppTypography.appBarTitle),
         elevation: 0,
       ),
       body: ListView(

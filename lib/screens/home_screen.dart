@@ -381,59 +381,57 @@ class _HomeScreenState extends State<HomeScreen> {
               // AppBar가 아니라 상태표시줄 아이콘 밝기를 직접 정한다 — 진한 틸 위라 흰 아이콘.
               AnnotatedRegion<SystemUiOverlayStyle>(
                 value: SystemUiOverlayStyle.light,
+                // B안(2026-11-12): 다른 탭 첫 화면과 같은 높이 56 틸 바, 아래 선 없음.
+                // 인사말은 제목 자리(왼쪽 20/w700), 하루 문구는 바 아래 회색 바탕 위로 내렸다.
                 child: DecoratedBox(
                 decoration: const BoxDecoration(
                   color: AppSemanticColors.headerBackground,
-                  border: Border(
-                    bottom: BorderSide(color: AppSemanticColors.headerBorder),
-                  ),
                 ),
                 child: SafeArea(
                 bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.space5,
-                    AppSpacing.space2,
-                    AppSpacing.space5,
-                    AppSpacing.space3,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppSpacing.toolbarHeight,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${user.name}님, 안녕하세요',
-                                  style: AppTypography.heading5.copyWith(
-                                    color: AppSemanticColors.headerForeground,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.space1),
-                                Text(
-                                  getDailyGreeting(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color:
-                                        AppSemanticColors.headerForegroundMuted,
-                                  ),
-                                ),
-                              ],
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      left: AppSpacing.space5,
+                      right: AppSpacing.space1,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${user.name}님, 안녕하세요',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.appBarTitleLarge.copyWith(
+                              color: AppSemanticColors.headerForeground,
                             ),
                           ),
-                          // 진한 틸 머리줄 위 — 흰 상자 대신 투명 바탕 + 흰 종
-                          const NotificationBell(iconColor: AppSemanticColors.headerForeground),
-                        ],
-                      ),
-                    ],
+                        ),
+                        // 진한 틸 머리줄 위 — 흰 상자 대신 투명 바탕 + 흰 종
+                        const NotificationBell(iconColor: AppSemanticColors.headerForeground),
+                      ],
+                    ),
                   ),
                 ),
               ),
               ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.space5,
+                  AppSpacing.space4,
+                  AppSpacing.space5,
+                  AppSpacing.space1,
+                ),
+                child: Text(
+                  getDailyGreeting(),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
               ),
               if (_isLoading)
                 Padding(

@@ -149,7 +149,10 @@ class MenuScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundSecondary,
       appBar: AppBar(
-        title: Text('전체', style: AppTypography.heading5),
+        // 탭 첫 화면 — 왼쪽 큰 제목(B안)
+        title: Text('전체', style: AppTypography.appBarTitleLarge),
+        centerTitle: false,
+        titleSpacing: AppSpacing.space5,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),

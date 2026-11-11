@@ -134,7 +134,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
       backgroundColor: AppSemanticColors.backgroundPrimary,
       appBar: widget.showAppBar
           ? AppBar(
-              title: Text('결재', style: AppTypography.heading5),
+              title: Text('결재', style: AppTypography.appBarTitle),
               elevation: 0,
             )
           : null,
