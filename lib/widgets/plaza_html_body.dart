@@ -31,10 +31,13 @@ class PlazaHtmlBody extends StatelessWidget {
       data: normalizeNoticeHtml(html),
       onLinkTap: (url, attributes, element) => _openLink(url),
       style: {
+        // B안 본문은 16(평문 공지·게시글의 bodyMedium과 같은 크기) — 서식 글만 14로 작아 보이지 않게.
+        // 서체도 직접 싣는다(테마 기본 서체가 섞이지 않게).
         'body': Style(
           margin: Margins.zero,
           padding: HtmlPaddings.zero,
-          fontSize: FontSize(AppTypography.fontSizeBase),
+          fontFamily: AppTypography.fontFamilySans,
+          fontSize: FontSize(AppTypography.fontSizeLg),
           color: AppSemanticColors.textPrimary,
           lineHeight: const LineHeight(1.6),
         ),
@@ -67,7 +70,7 @@ class PlazaHtmlBody extends StatelessWidget {
           margin: Margins.only(top: 12, bottom: 8),
         ),
         'h3': Style(
-          fontSize: FontSize(AppTypography.fontSizeLg),
+          fontSize: FontSize(AppTypography.fontSize17),
           fontWeight: AppTypography.fontWeightSemibold,
           margin: Margins.only(top: 10, bottom: 6),
         ),
