@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/app_haptics.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_list_cell.dart';
@@ -110,7 +111,8 @@ class _NotificationSettingsScreenState
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '알림 설정'),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          // 첫 불러오기 — 스위치 줄 카드 두 장 모양 뼈대(같은 여백)
+          ? const _NotificationSettingsSkeleton()
           : ListView(
               padding: const EdgeInsets.all(AppSpacing.space4),
               children: [
@@ -144,6 +146,71 @@ class _NotificationSettingsScreenState
                 const _HapticsSettingCard(),
               ],
             ),
+    );
+  }
+}
+
+/// 알림 설정 첫 불러오기 뼈대 — 흰 카드 안 스위치 줄(제목·설명 두 줄·스위치) 두 장.
+/// 카드 사이 안내 글 자리(회색 바탕 위)는 비워 둔다.
+class _NotificationSettingsSkeleton extends StatelessWidget {
+  const _NotificationSettingsSkeleton();
+
+  Widget _switchCard() {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.space2),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.space3,
+          vertical: AppSpacing.space2_5,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppSkeletonLine(widthFactor: 0.45, height: AppSpacing.space4),
+                  SizedBox(height: AppSpacing.space2),
+                  AppSkeletonLine(widthFactor: 0.9, height: AppSpacing.space3_5),
+                  SizedBox(height: AppSpacing.space1_5),
+                  AppSkeletonLine(widthFactor: 0.6, height: AppSpacing.space3_5),
+                ],
+              ),
+            ),
+            SizedBox(width: AppSpacing.space4),
+            AppSkeletonBox(
+              width: AppSpacing.space12,
+              height: AppSpacing.space8,
+              radius: AppBorderRadius.full,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      // 흰 카드 안의 뼈는 한 단계 옅은 색
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(AppSpacing.space4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _switchCard(),
+            const SizedBox(height: AppSpacing.space3 + AppSpacing.space10),
+            const SizedBox(height: AppSpacing.space6),
+            _switchCard(),
+          ],
+        ),
+      ),
     );
   }
 }
