@@ -10,7 +10,9 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_fab.dart';
-import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/work_task/work_task_edit_sheet.dart';
 import '../widgets/work_task/work_task_row.dart';
@@ -90,7 +92,7 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
       ),
       body: switch (provider.status) {
         WorkTaskLoadStatus.idle ||
-        WorkTaskLoadStatus.loading => const Center(child: AppLoading()),
+        WorkTaskLoadStatus.loading => const _WorkTaskListSkeleton(),
         WorkTaskLoadStatus.error => AppEmptyState(
           icon: Icons.cloud_off_outlined,
           title: '업무를 불러오지 못했습니다',
@@ -98,18 +100,20 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
           actionLabel: '다시 시도',
           onAction: provider.load,
         ),
-        WorkTaskLoadStatus.loaded => RefreshIndicator(
+        WorkTaskLoadStatus.loaded => AppRefreshIndicator(
           onRefresh: provider.load,
-          color: AppSemanticColors.brandDefault,
-          child: provider.tasks.isEmpty
-              ? AppEmptyState(
-                  icon: Icons.checklist_rounded,
-                  title: '진행 중인 업무가 없습니다',
-                  description: '등록을 눌러 담당자·기한·중요도를 정해 올려 주세요.',
-                  actionLabel: '업무 등록',
-                  onAction: () => _open(null),
-                )
-              : _buildList(provider, meId, today),
+          // 줄 등장 연출은 처음 한 번만 — 업무가 비었다 다시 생겨도 다시 떠오르지 않게 바깥에 둔다
+          child: AppListEntrance(
+            child: provider.tasks.isEmpty
+                ? AppEmptyState(
+                    icon: Icons.checklist_rounded,
+                    title: '진행 중인 업무가 없습니다',
+                    description: '등록을 눌러 담당자·기한·중요도를 정해 올려 주세요.',
+                    actionLabel: '업무 등록',
+                    onAction: () => _open(null),
+                  )
+                : _buildList(provider, meId, today),
+          ),
         ),
       },
     );
@@ -155,7 +159,7 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
               ),
             ),
           ),
-        ..._rows(inProgress, today),
+        ..._rows(inProgress, today, entrance: true),
         if (done.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.space3),
           InkWell(
@@ -210,7 +214,12 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
 
   // 다른 목록(홈·공지·결재)처럼 흰 카드 안에 행을 모은다 — B안: 테두리·구분선 없이 줄 여백으로 나눈다.
   // 카드 여백 8 + 줄 안쪽 12 = 글자는 카드 끝에서 20(SeedListSection 문법), 눌림 바탕은 둥글게 뜬다.
-  List<Widget> _rows(List<WorkTask> tasks, DateTime today) => tasks.isEmpty
+  // [entrance]면 줄마다 첫 등장 연출(진행 중 목록만 — 끝낸 업무는 펼칠 때 바로 보인다)
+  List<Widget> _rows(
+    List<WorkTask> tasks,
+    DateTime today, {
+    bool entrance = false,
+  }) => tasks.isEmpty
       ? const []
       : [
           Container(
@@ -221,19 +230,89 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
             ),
             child: Column(
               children: [
-                for (final task in tasks)
-                  WorkTaskRow(
-                    task: task,
-                    today: today,
-                    horizontalPadding: AppSpacing.space3,
-                    isHighlighted: task.id == _highlightedId,
-                    onTap: () {
-                      setState(() => _highlightedId = null);
-                      _open(task);
-                    },
+                for (final (index, task) in tasks.indexed)
+                  _maybeEntrance(
+                    entrance ? index : null,
+                    WorkTaskRow(
+                      task: task,
+                      today: today,
+                      horizontalPadding: AppSpacing.space3,
+                      isHighlighted: task.id == _highlightedId,
+                      onTap: () {
+                        setState(() => _highlightedId = null);
+                        _open(task);
+                      },
+                    ),
                   ),
               ],
             ),
           ),
         ];
+
+  Widget _maybeEntrance(int? index, Widget row) =>
+      index == null ? row : AppListEntranceItem(index: index, child: row);
+}
+
+/// 업무진행도 첫 불러오기 뼈대 — 요약 한 줄 자리 + 흰 카드 안 업무 줄(목록과 같은 여백)
+class _WorkTaskListSkeleton extends StatelessWidget {
+  const _WorkTaskListSkeleton();
+
+  static const List<double> _widths = [0.7, 0.55, 0.64, 0.48];
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space4,
+          AppSpacing.screenGutter,
+          AppSpacing.space8,
+        ),
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.space1,
+              vertical: AppSpacing.space1,
+            ),
+            child: AppSkeletonLine(width: 160, height: AppSpacing.space4),
+          ),
+          const SizedBox(height: AppSpacing.space2_5),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.space2),
+            decoration: BoxDecoration(
+              color: AppSemanticColors.surfaceCard,
+              borderRadius: BorderRadius.circular(AppBorderRadius.card),
+            ),
+            child: Column(
+              children: [
+                for (final width in _widths)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      minHeight: AppSpacing.listRowMinHeight,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space3,
+                        vertical: AppSpacing.space3,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppSkeletonLine(widthFactor: width, height: 16),
+                          const SizedBox(height: AppSpacing.space2_5),
+                          const AppSkeletonLine(height: AppSpacing.space2),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
