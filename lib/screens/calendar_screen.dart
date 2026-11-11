@@ -14,6 +14,7 @@ import '../models/user.dart';
 import '../utils/permissions.dart';
 import '../utils/schedule_filter.dart';
 import '../utils/schedule_repeat.dart';
+import '../widgets/schedule/schedule_filter_bar.dart';
 import '../widgets/schedule/schedule_filter_sheet.dart';
 import '../widgets/schedule/schedule_repeat_fields.dart';
 import '../widgets/vacation_calendar_widget.dart';
@@ -37,7 +38,6 @@ import 'admin_vacation_limits_setting_screen.dart';
 import '../providers/notice_provider.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_tag.dart';
-import '../widgets/seed/seed_chip.dart';
 
 class CalendarScreen extends StatefulWidget {
   /// 일정 알림을 눌러 들어온 경우 그 일정이 있는 날로 바로 연다.
@@ -400,59 +400,14 @@ class _CalendarScreenState extends State<CalendarScreen>
         ? month
         : month.where(_matchesScheduleFilter).toList();
     final done = visible.where((s) => s.isCompleted).length;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
-        AppSpacing.space2,
-        AppSpacing.space4,
-        AppSpacing.space2,
-      ),
-      // 담당자를 고르면 칩이 '일정 필터 · 김민지'로 길어진다. 예전엔 Row에 Spacer와 나란히 둬서
-      // 칩이 남은 폭의 절반만 받고 칩 안 글자가 넘쳤다(2단계 뒤 21px). 이제 한 줄에 둘이
-      // 안 들어가면 완료 수가 다음 줄로 내려가고, 칩 하나가 줄보다 넓을 때(글자를 아주 크게
-      // 했을 때)만 칩을 줄 폭에 맞춰 줄인다 — 평소 크기에서는 그대로다.
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: AppSpacing.space2,
-        runSpacing: AppSpacing.space1,
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: SeedChip(
-              label: scheduleFilterButtonLabel(_scheduleFilterValues, month),
-              selected: _scheduleFilterValues.isNotEmpty,
-              size: SeedChipSize.small,
-              prefixIcon: Icons.filter_list,
-              onTap: () => _openScheduleFilter(provider),
-            ),
-          ),
-          if (month.isNotEmpty)
-            Semantics(
-              label: '${_scheduleFilterValues.isEmpty ? '이번 달' : '필터한'} 일정 '
-                  '${visible.length}건 중 $done건 수행완료',
-              excludeSemantics: true,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    size: 16,
-                    color: AppSemanticColors.statusSuccessIcon,
-                  ),
-                  const SizedBox(width: AppSpacing.space1),
-                  Text(
-                    '완료 $done/${visible.length}',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
+    // 담당자를 고르면 칩이 길어져 넘치던 줄 — 자리가 모자라면 완료 수가 다음 줄로(위젯 설명 참고)
+    return ScheduleFilterBar(
+      label: scheduleFilterButtonLabel(_scheduleFilterValues, month),
+      filtered: _scheduleFilterValues.isNotEmpty,
+      onTap: () => _openScheduleFilter(provider),
+      done: done,
+      total: visible.length,
+      showProgress: month.isNotEmpty,
     );
   }
 
