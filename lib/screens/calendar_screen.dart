@@ -227,9 +227,11 @@ class _CalendarScreenState extends State<CalendarScreen>
       setState(() => _selectedDate = targetDate);
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
+    // B안: 가운데 대화상자 대신 아래에서 올라오는 시트. 예전처럼 바깥(어두운 곳)을 눌러서는
+    // 닫히지 않는다 — 쓰던 사유가 날아가지 않게. 닫기 단추나 손잡이를 끌어내려 닫는다.
+    showAppSheet(
+      context,
+      isDismissible: false,
       builder: (context) => VacationRequestDialog(
         selectedDate: _selectedDate!,
         onRequestSubmitted: () {

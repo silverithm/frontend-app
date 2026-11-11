@@ -11,13 +11,19 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../utils/korean_keep_all.dart';
 import '../utils/role_utils.dart';
 import 'common/app_dialog.dart';
+import 'common/app_sheet_frame.dart';
 import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
+import 'seed/seed_chip.dart';
 import 'seed/seed_text_field.dart';
 import 'vacation_planning_banner.dart';
 
+/// 휴무 신청 — B안(2026-11-12)부터 가운데 대화상자가 아니라 아래에서 올라오는 시트의 내용이다.
+/// `showAppSheet(context, builder: (_) => VacationRequestDialog(...))`로 띄운다
+/// (이름·생성자는 예전 그대로 — 부르는 쪽이 바뀌지 않게).
 class VacationRequestDialog extends StatefulWidget {
   final DateTime selectedDate;
   final VoidCallback? onRequestSubmitted;
@@ -32,8 +38,7 @@ class VacationRequestDialog extends StatefulWidget {
   State<VacationRequestDialog> createState() => _VacationRequestDialogState();
 }
 
-class _VacationRequestDialogState extends State<VacationRequestDialog>
-    with TickerProviderStateMixin {
+class _VacationRequestDialogState extends State<VacationRequestDialog> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
   // 웹 VACATION_KIND_OPTIONS·앱 관리자 폼(AdminVacationAddDialog)과 같은 6종 단일 선택.
@@ -49,55 +54,19 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
   int? _dayMaxPeople;
   bool _hasExplicitLimit = false;
 
-  late AnimationController _animationController;
-  late AnimationController _submitAnimationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
+  // 예전 대화상자의 등장(흐려졌다 떠오름)·제출 때 살짝 줄어듦 연출은 뺐다 —
+  // 시트가 스스로 올라오고, 제출 중은 단추의 불러오는 표시가 알린다.
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _submitAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
-      CurvedAnimation(
-        parent: _submitAnimationController,
-        curve: Curves.easeInOut,
-      ),
-    );
-
     // 이 날짜에 몇 명이 쉬는지·제한이 몇 명인지 불러온다 (실패해도 신청은 막지 않는다)
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadDateStatus());
-
-    _animationController.forward();
   }
 
   @override
   void dispose() {
     _reasonController.dispose();
-    _animationController.dispose();
-    _submitAnimationController.dispose();
     super.dispose();
   }
 
@@ -113,30 +82,36 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     '휴무, 연차 사용의 최종 승인은 센터 운영 전반을 고려하여 이루어집니다.',
   ];
 
+  /// B안 안내 상자: 테두리 없이 옅은 빨강 바탕, 모서리 14. 줄은 낱말 단위로만 바꾼다(keepAll).
   Widget _buildNoticeBox() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: AppSpacing.space3_5,
+      ),
       decoration: BoxDecoration(
         color: AppSemanticColors.statusErrorBackground,
-        borderRadius: BorderRadius.circular(AppSpacing.space4),
-        border: Border.all(color: AppSemanticColors.statusErrorBorder),
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
                 Icons.info_outline_rounded,
-                size: 18,
+                size: 20,
                 color: AppSemanticColors.statusErrorIcon,
               ),
               const SizedBox(width: AppSpacing.space2),
-              Text(
-                _vacationNoticeTitle,
-                style: AppTypography.titleSmall.copyWith(
-                  color: AppSemanticColors.textPrimary,
+              Expanded(
+                child: Text(
+                  _vacationNoticeTitle,
+                  style: AppTypography.titleSmall.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -156,7 +131,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
                   ),
                   Expanded(
                     child: Text(
-                      notice,
+                      keepAll(notice),
                       style: AppTypography.bodySmall.copyWith(
                         color: AppSemanticColors.textSecondary,
                       ),
@@ -340,8 +315,6 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
       });
     }
 
-    _submitAnimationController.forward();
-
     try {
       final success = await vacationProvider.createVacationRequest(
         userId: authProvider.currentUser!.id,
@@ -398,7 +371,6 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
         setState(() {
           _isSubmitting = false;
         });
-        _submitAnimationController.reverse();
       }
     }
   }
@@ -434,538 +406,299 @@ class _VacationRequestDialogState extends State<VacationRequestDialog>
     }
   }
 
-  /// 휴무 종류 하나를 고르는 칩. Wrap 안에 놓이므로 Row 전용인 [_buildOptionButton]과 달리
-  /// 고유 폭을 갖는다 (아래 세부 유형 칩과 같은 스타일).
+  /// 휴무 종류 하나를 고르는 칩 — B안 거르기 칩(SeedChip, 높이 44·글자 15, 고르면 틸 + 흰 글자).
+  /// 흰 시트 안이라 고르기 전 바탕은 회색이다. (쓰지 않던 테두리 칸 단추 _buildOptionButton은 뺐다)
   Widget _buildKindOption(VacationKind kind) {
-    final isSelected = _selectedKind == kind;
-    return GestureDetector(
+    return SeedChip(
+      label: kind.label,
+      selected: _selectedKind == kind,
       onTap: () {
         setState(() {
           _selectedKind = kind;
         });
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space3,
-          vertical: AppSpacing.space2,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppSemanticColors.interactivePrimaryDefault
-              : AppSemanticColors.backgroundTertiary,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          kind.label,
-          style: AppTypography.labelStrong.copyWith(
-            color: isSelected
-                ? AppSemanticColors.textInverse
-                : AppSemanticColors.textSecondary,
-          ),
-        ),
-      ),
     );
   }
 
-  Widget _buildOptionButton({
-    required String text,
-    required bool isSelected,
-    required VoidCallback onTap,
-    required Color selectedColor,
-    required Color selectedTextColor,
-  }) {
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected
-              ? selectedColor.withValues(alpha: 0.15)
-              : AppSemanticColors.backgroundSecondary,
-          borderRadius: BorderRadius.circular(AppSpacing.space3),
-          border: Border.all(
-            color: isSelected
-                ? selectedColor.withValues(alpha: 0.6)
-                : AppSemanticColors.borderDefault,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Material(
-          color: AppColors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppSpacing.space3),
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                vertical: AppSpacing.space3,
-                horizontal: AppSpacing.space2,
-              ),
-              child: Center(
-                child: Text(
-                  text,
-                  style: AppTypography.titleSmall.copyWith(
-                    color: isSelected
-                        ? selectedTextColor.withValues(alpha: 0.9)
-                        : AppSemanticColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+  Widget _buildDetailOption(VacationDetailType detail) {
+    return SeedChip(
+      label: detail.label,
+      selected: _detailType == detail,
+      onTap: () {
+        setState(() {
+          _detailType = detail;
+        });
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Dialog(
-            backgroundColor: AppColors.transparent,
-            elevation: 0,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 400),
-              decoration: BoxDecoration(
-                color: AppSemanticColors.surfaceDefault,
-                borderRadius: BorderRadius.circular(AppBorderRadius.xl3),
-                // 다이얼로그 표면 자체의 부양 그림자 — 떠 있는 오버레이 요소로 허용 범위
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x40000000),
-                    blurRadius: 50,
-                    offset: Offset(0, 25),
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.space6),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 헤더
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: AppSemanticColors.brandWeak,
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.xl2,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.event_note_rounded,
-                                  color: AppSemanticColors.brandPressed,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.space3),
-                              Text(
-                                '휴무 신청',
-                                style: AppTypography.heading5.copyWith(
-                                  color: AppSemanticColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppSemanticColors.backgroundSecondary,
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.space2,
-                              ),
-                              border: Border.all(
-                                color: AppSemanticColors.borderDefault,
-                                width: 1,
-                              ),
-                            ),
-                            child: IconButton(
-                              tooltip: '닫기',
-                              onPressed: _isSubmitting
-                                  ? null
-                                  : () => Navigator.pop(context),
-                              icon: Icon(
-                                Icons.close_rounded,
-                                color: AppSemanticColors.textSecondary,
-                                size: 20,
-                              ),
-                              padding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: AppSpacing.space6),
-
-                      // 선택된 날짜 표시
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.space5),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.statusInfoBackground,
-                          borderRadius: BorderRadius.circular(
-                            AppSpacing.space4,
-                          ),
-                          border: Border.all(
-                            color: AppSemanticColors.statusInfoBorder,
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: AppSemanticColors.brandWeak,
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.calendar_today_rounded,
-                                color: AppSemanticColors.brandPressed,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.space4),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '선택된 날짜',
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: AppSemanticColors
-                                          .interactivePrimaryDefault,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.space1),
-                                  Text(
-                                    _formatSelectedDate(widget.selectedDate),
-                                    style: AppTypography.titleMedium.copyWith(
-                                      color: AppSemanticColors.textPrimary,
-                                    ),
-                                  ),
-                                  // 같은 직종이 이 날 몇 명 쉬는지 — 웹 근무조정과 같은 정보
-                                  if (_dayVacationCount != null &&
-                                      _dayMaxPeople != null) ...[
-                                    const SizedBox(height: AppSpacing.space1),
-                                    Text(
-                                      _dayVacationCount! >= _dayMaxPeople!
-                                          ? '휴무 인원 $_dayVacationCount/$_dayMaxPeople명 · 마감'
-                                          : '휴무 인원 $_dayVacationCount/$_dayMaxPeople명',
-                                      style: AppTypography.titleSmall.copyWith(
-                                        color:
-                                            _dayVacationCount! >= _dayMaxPeople!
-                                            ? AppSemanticColors.statusErrorText
-                                            : AppSemanticColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: AppSpacing.space5),
-
-                      // 근무조정 컨텍스트 — 다음 달만 받기 제한 · 이번 달 마감일 · 이 날의 중요 행사
-                      Consumer<VacationProvider>(
-                        builder: (context, vacationProvider, _) {
-                          final month = DateTime(
-                            widget.selectedDate.year,
-                            widget.selectedDate.month,
-                          );
-                          final allowedMonth = vacationProvider.isNextMonthOnly
-                              ? vacationProvider.nextMonthOnlyMonth
-                              : null;
-                          // 신청하려는 날짜가 속한 달의 '신청 마감일' —
-                          // 마감일은 그 전 달에 있다 (9월 휴무 마감 = 8월 16일)
-                          final deadline = vacationProvider
-                              .deadlineForTargetMonth(month);
-                          final warnEvents = vacationProvider
-                              .eventsForDate(widget.selectedDate)
-                              .where((e) => e.warnOnRequest)
-                              .toList();
-                          final hasBanner =
-                              allowedMonth != null ||
-                              deadline != null ||
-                              warnEvents.isNotEmpty;
-                          if (!hasBanner) return const SizedBox.shrink();
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              VacationPlanningBanner(
-                                nextMonthOnly: vacationProvider.isNextMonthOnly,
-                                allowedMonth: allowedMonth,
-                                deadline: deadline,
-                                deadlineTargetMonth: month,
-                                deadlinePassed: vacationProvider
-                                    .isDeadlinePassedForTargetMonth(month),
-                                events: warnEvents,
-                                eventsHeading: '이 날은 기관 행사가 있습니다',
-                              ),
-                              const SizedBox(height: AppSpacing.space5),
-                            ],
-                          );
-                        },
-                      ),
-
-                      // 신청 전 확인할 것들 — 배차·최소 인원처럼 시스템이 다 막지 못하는 부분
-                      _buildNoticeBox(),
-
-                      const SizedBox(height: AppSpacing.space5),
-
-                      // 폼
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // 휴무 종류 — 웹 관리자(VACATION_KIND_OPTIONS)·앱 관리자 폼과 같은
-                            // 6종 단일 선택. 유형(일반·필수·대체)과 기간(연차·반차)을 한 목록에서
-                            // 함께 고르므로 '필수 반차' 같은 조합이 생기지 않는다.
-                            Container(
-                              padding: const EdgeInsets.all(AppSpacing.space5),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl2,
-                                ),
-                                border: Border.all(
-                                  color: AppSemanticColors.borderSubtle,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '휴무 종류',
-                                    style: AppTypography.titleSmall.copyWith(
-                                      color: AppSemanticColors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.space3),
-
-                                  Wrap(
-                                    spacing: AppSpacing.space2,
-                                    runSpacing: AppSpacing.space2,
-                                    children: VacationKind.values
-                                        .map(_buildKindOption)
-                                        .toList(),
-                                  ),
-
-                                  const SizedBox(height: AppSpacing.space2),
-                                  Text(
-                                    _selectedKind.description,
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: AppSemanticColors.textSecondary,
-                                    ),
-                                  ),
-
-                                  // 연차 계열이 아닌 종류(일반/필수/대체)를 골랐을 때만
-                                  // 세부 유형을 이어서 고른다 (대체휴무는 자동으로 substitute)
-                                  if (_selectedKind == VacationKind.regular ||
-                                      _selectedKind ==
-                                          VacationKind.mandatory) ...[
-                                    const SizedBox(height: AppSpacing.space4),
-                                    Text(
-                                      '세부 유형',
-                                      style: AppTypography.titleSmall.copyWith(
-                                        color: AppSemanticColors.textSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: AppSpacing.space2),
-                                    Wrap(
-                                      spacing: AppSpacing.space2,
-                                      runSpacing: AppSpacing.space2,
-                                      children: VacationDetailType.values.map((
-                                        detail,
-                                      ) {
-                                        final isSelected =
-                                            _detailType == detail;
-                                        return GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              _detailType = detail;
-                                            });
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: AppSpacing.space3,
-                                              vertical: AppSpacing.space2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: isSelected
-                                                  ? AppSemanticColors
-                                                        .interactivePrimaryDefault
-                                                  : AppSemanticColors
-                                                        .backgroundTertiary,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: Text(
-                                              detail.label,
-                                              style: AppTypography.labelStrong
-                                                  .copyWith(
-                                                    color: isSelected
-                                                        ? AppSemanticColors
-                                                              .textInverse
-                                                        : AppSemanticColors
-                                                              .textSecondary,
-                                                  ),
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: AppSpacing.space4),
-
-                            // 사유 입력
-                            Container(
-                              padding: const EdgeInsets.all(AppSpacing.space5),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  AppBorderRadius.xl2,
-                                ),
-                                border: Border.all(
-                                  color: AppSemanticColors.borderSubtle,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.edit_note_rounded,
-                                        color: AppSemanticColors.textSecondary,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: AppSpacing.space2),
-                                      Text(
-                                        '휴무 사유',
-                                        style: AppTypography.titleSmall
-                                            .copyWith(
-                                              color:
-                                                  AppSemanticColors.textPrimary,
-                                            ),
-                                      ),
-                                      Container(
-                                        margin: const EdgeInsets.only(
-                                          left: AppSpacing.space2,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.space2,
-                                          vertical: AppSpacing.space1,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _selectedKind.reasonRequired
-                                              ? AppSemanticColors
-                                                    .statusErrorBackground
-                                              : AppSemanticColors
-                                                    .backgroundTertiary,
-                                          borderRadius: BorderRadius.circular(
-                                            AppSpacing.space2,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _selectedKind.reasonRequired
-                                              ? '필수'
-                                              : '선택사항',
-                                          style: AppTypography.bodySmall
-                                              .copyWith(
-                                                color:
-                                                    _selectedKind.reasonRequired
-                                                    ? AppSemanticColors
-                                                          .statusErrorIcon
-                                                    : AppSemanticColors
-                                                          .textTertiary,
-                                              ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: AppSpacing.space4),
-                                  SeedTextField(
-                                    label: '휴무 사유',
-                                    showLabel: false,
-                                    controller: _reasonController,
-                                    maxLines: 5,
-                                    size: SeedTextFieldSize.large,
-                                    placeholder: _selectedKind.reasonRequired
-                                        ? '필수 휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 정기 교육 참석\n• 건강검진\n• 회사 행사 등'
-                                        : '휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 개인 사정\n• 병원 진료\n• 가족 행사 등',
-                                    validator: (value) {
-                                      if (_selectedKind.reasonRequired &&
-                                          (value == null ||
-                                              value.trim().isEmpty)) {
-                                        return '필수 휴무는 사유를 반드시 입력해주세요';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: AppSpacing.space6),
-
-                            // 제출 버튼 — "다음 달만 받기"가 켜져 있고 이 날짜가 밖이면 아예 누르지 못하게 한다
-                            Builder(
-                              builder: (context) {
-                                final isAllowed = context
-                                    .watch<VacationProvider>()
-                                    .isDateAllowedForRequest(
-                                      widget.selectedDate,
-                                    );
-                                return SeedButton(
-                                  label: !isAllowed
-                                      ? '신청할 수 없는 날짜예요'
-                                      : _isSubmitting
-                                      ? '신청 중...'
-                                      : '휴무 신청하기',
-                                  onPressed: (_isSubmitting || !isAllowed)
-                                      ? null
-                                      : _submitRequest,
-                                  variant: SeedButtonVariant.brandSolid,
-                                  size: SeedButtonSize.large,
-                                  isLoading: _isSubmitting,
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+    // B안 시트(시안 390-05c): 손잡이 → 제목 21 + 닫기 → 날짜 칸 → 안내 → 종류 칩 → 사유 → 큰 신청 단추.
+    // 예전 대화상자의 테두리 상자(날짜·종류·사유)는 걷고 간격으로 나눈다.
+    return AppSheetFrame(
+      // 제출 버튼 — "다음 달만 받기"가 켜져 있고 이 날짜가 밖이면 아예 누르지 못하게 한다
+      actions: AppSheetActions(
+        confirm: Builder(
+          builder: (context) {
+            final isAllowed = context
+                .watch<VacationProvider>()
+                .isDateAllowedForRequest(widget.selectedDate);
+            return SeedButton(
+              label: !isAllowed
+                  ? '신청할 수 없는 날짜예요'
+                  : _isSubmitting
+                  ? '신청 중...'
+                  : '휴무 신청하기',
+              onPressed: (_isSubmitting || !isAllowed) ? null : _submitRequest,
+              variant: SeedButtonVariant.brandSolid,
+              size: SeedButtonSize.large,
+              isLoading: _isSubmitting,
+            );
+          },
+        ),
+      ),
+      children: [
+        // 헤더 — 제목 + 닫기
+        Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  '휴무 신청',
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
                   ),
                 ),
               ),
             ),
+            IconButton(
+              tooltip: '닫기',
+              onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+              style: IconButton.styleFrom(
+                backgroundColor: AppSemanticColors.fillDefault,
+              ),
+              icon: Icon(
+                Icons.close_rounded,
+                color: AppSemanticColors.textSecondary,
+                size: 22,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: AppSpacing.space4),
+
+        // 선택된 날짜 — 회색으로 채운 칸 하나(테두리·아이콘 타일 없음)
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space4,
+            vertical: AppSpacing.space3_5,
+          ),
+          decoration: BoxDecoration(
+            color: AppSemanticColors.fillDefault,
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '선택된 날짜',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
+                  Expanded(
+                    child: Text(
+                      _formatSelectedDate(widget.selectedDate),
+                      textAlign: TextAlign.end,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // 같은 직종이 이 날 몇 명 쉬는지 — 웹 근무조정과 같은 정보
+              if (_dayVacationCount != null && _dayMaxPeople != null) ...[
+                const SizedBox(height: AppSpacing.space1),
+                Text(
+                  _dayVacationCount! >= _dayMaxPeople!
+                      ? '휴무 인원 $_dayVacationCount/$_dayMaxPeople명 · 마감'
+                      : '휴무 인원 $_dayVacationCount/$_dayMaxPeople명',
+                  textAlign: TextAlign.end,
+                  style: AppTypography.titleSmall.copyWith(
+                    color: _dayVacationCount! >= _dayMaxPeople!
+                        ? AppSemanticColors.statusErrorText
+                        : AppSemanticColors.textSecondary,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-      ),
+
+        const SizedBox(height: AppSpacing.space4),
+
+        // 근무조정 컨텍스트 — 다음 달만 받기 제한 · 이번 달 마감일 · 이 날의 중요 행사
+        Consumer<VacationProvider>(
+          builder: (context, vacationProvider, _) {
+            final month = DateTime(
+              widget.selectedDate.year,
+              widget.selectedDate.month,
+            );
+            final allowedMonth = vacationProvider.isNextMonthOnly
+                ? vacationProvider.nextMonthOnlyMonth
+                : null;
+            // 신청하려는 날짜가 속한 달의 '신청 마감일' —
+            // 마감일은 그 전 달에 있다 (9월 휴무 마감 = 8월 16일)
+            final deadline = vacationProvider.deadlineForTargetMonth(month);
+            final warnEvents = vacationProvider
+                .eventsForDate(widget.selectedDate)
+                .where((e) => e.warnOnRequest)
+                .toList();
+            final hasBanner =
+                allowedMonth != null ||
+                deadline != null ||
+                warnEvents.isNotEmpty;
+            if (!hasBanner) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                VacationPlanningBanner(
+                  nextMonthOnly: vacationProvider.isNextMonthOnly,
+                  allowedMonth: allowedMonth,
+                  deadline: deadline,
+                  deadlineTargetMonth: month,
+                  deadlinePassed: vacationProvider
+                      .isDeadlinePassedForTargetMonth(month),
+                  events: warnEvents,
+                  eventsHeading: '이 날은 기관 행사가 있습니다',
+                ),
+                const SizedBox(height: AppSpacing.space3),
+              ],
+            );
+          },
+        ),
+
+        // 신청 전 확인할 것들 — 배차·최소 인원처럼 시스템이 다 막지 못하는 부분
+        _buildNoticeBox(),
+
+        const SizedBox(height: AppSpacing.space6),
+
+        // 폼
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 휴무 종류 — 웹 관리자(VACATION_KIND_OPTIONS)·앱 관리자 폼과 같은
+              // 6종 단일 선택. 유형(일반·필수·대체)과 기간(연차·반차)을 한 목록에서
+              // 함께 고르므로 '필수 반차' 같은 조합이 생기지 않는다.
+              Text(
+                '휴무 종류',
+                style: AppTypography.titleSmall.copyWith(
+                  color: AppSemanticColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space2_5),
+              Wrap(
+                spacing: AppSpacing.space2,
+                runSpacing: AppSpacing.space2,
+                children: VacationKind.values.map(_buildKindOption).toList(),
+              ),
+              const SizedBox(height: AppSpacing.space2),
+              Text(
+                _selectedKind.description,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppSemanticColors.textSecondary,
+                ),
+              ),
+
+              // 연차 계열이 아닌 종류(일반/필수/대체)를 골랐을 때만
+              // 세부 유형을 이어서 고른다 (대체휴무는 자동으로 substitute)
+              if (_selectedKind == VacationKind.regular ||
+                  _selectedKind == VacationKind.mandatory) ...[
+                const SizedBox(height: AppSpacing.space5),
+                Text(
+                  '세부 유형',
+                  style: AppTypography.titleSmall.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space2_5),
+                Wrap(
+                  spacing: AppSpacing.space2,
+                  runSpacing: AppSpacing.space2,
+                  children: VacationDetailType.values
+                      .map(_buildDetailOption)
+                      .toList(),
+                ),
+              ],
+
+              const SizedBox(height: AppSpacing.space6),
+
+              // 사유 입력 — 라벨 줄 + 회색으로 채운 입력칸 하나(상자 안 상자 없음)
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      '휴무 사유',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space2,
+                      vertical: AppSpacing.space0_5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _selectedKind.reasonRequired
+                          ? AppSemanticColors.statusErrorBackground
+                          : AppSemanticColors.fillDefault,
+                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                    ),
+                    child: Text(
+                      _selectedKind.reasonRequired ? '필수' : '선택사항',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: _selectedKind.reasonRequired
+                            ? AppSemanticColors.statusErrorText
+                            : AppSemanticColors.textTertiary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space2_5),
+              SeedTextField(
+                label: '휴무 사유',
+                showLabel: false,
+                controller: _reasonController,
+                maxLines: 5,
+                size: SeedTextFieldSize.large,
+                placeholder: _selectedKind.reasonRequired
+                    ? '필수 휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 정기 교육 참석\n• 건강검진\n• 회사 행사 등'
+                    : '휴무 사유를 상세히 입력해주세요...\n\n예시:\n• 개인 사정\n• 병원 진료\n• 가족 행사 등',
+                validator: (value) {
+                  if (_selectedKind.reasonRequired &&
+                      (value == null || value.trim().isEmpty)) {
+                    return '필수 휴무는 사유를 반드시 입력해주세요';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
