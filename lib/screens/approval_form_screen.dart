@@ -11,7 +11,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/document_form_fields.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
@@ -36,7 +38,11 @@ class _SelectedFileInfo {
   final String name;
   final int size;
 
-  _SelectedFileInfo({required this.path, required this.name, required this.size});
+  _SelectedFileInfo({
+    required this.path,
+    required this.name,
+    required this.size,
+  });
 }
 
 class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
@@ -94,11 +100,13 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       final rawId = step.approverId.replaceFirst(RegExp(r'^admin_'), '');
       final approverId = int.tryParse(rawId);
       if (approverId == null) continue;
-      candidates.add(ApproverCandidate(
-        approverType: step.approverType,
-        approverId: approverId,
-        name: step.approverName,
-      ));
+      candidates.add(
+        ApproverCandidate(
+          approverType: step.approverType,
+          approverId: approverId,
+          name: step.approverName,
+        ),
+      );
     }
     return candidates;
   }
@@ -138,8 +146,9 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
   Future<ApprovalTemplate?> _fetchTemplateDetail(int templateId) async {
     try {
-      final response =
-          await ApiService().getApprovalTemplateDetail(templateId: templateId);
+      final response = await ApiService().getApprovalTemplateDetail(
+        templateId: templateId,
+      );
       final raw = response['template'] ?? response['data'];
       if (raw is Map) {
         return ApprovalTemplate.fromJson(Map<String, dynamic>.from(raw));
@@ -167,17 +176,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               SeedListCell(
-                leading: Container(
-                  padding: const EdgeInsets.all(AppSpacing.space2),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.interactivePrimaryDefault.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  ),
-                  child: Icon(
-                    Icons.photo_library,
-                    color: AppSemanticColors.interactivePrimaryDefault,
-                  ),
-                ),
+                leadingIcon: Icons.photo_library_outlined,
                 title: '이미지 첨부',
                 description: 'JPG, PNG 이미지 선택',
                 showChevron: false,
@@ -187,17 +186,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
                 },
               ),
               SeedListCell(
-                leading: Container(
-                  padding: const EdgeInsets.all(AppSpacing.space2),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.statusWarningIcon.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  ),
-                  child: Icon(
-                    Icons.insert_drive_file,
-                    color: AppSemanticColors.statusWarningIcon,
-                  ),
-                ),
+                leadingIcon: Icons.insert_drive_file_outlined,
                 title: '문서 첨부',
                 description: 'PDF, DOC, XLS 문서 선택',
                 showChevron: false,
@@ -314,14 +303,22 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
 
   /// 이전에 올린 기안 가운데 지금도 쓸 수 있는 양식의 것(임시저장 제외, 최근 30건).
   List<ApprovalRequest> _reusableApprovals() {
-    final live =
-        context.read<ApprovalProvider>().activeTemplates.map((t) => t.id).toSet();
-    final list = context
+    final live = context
         .read<ApprovalProvider>()
-        .myApprovalRequests
-        .where((a) => a.status != ApprovalStatus.draft && live.contains(a.templateId))
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        .activeTemplates
+        .map((t) => t.id)
+        .toSet();
+    final list =
+        context
+            .read<ApprovalProvider>()
+            .myApprovalRequests
+            .where(
+              (a) =>
+                  a.status != ApprovalStatus.draft &&
+                  live.contains(a.templateId),
+            )
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return list.take(30).toList();
   }
 
@@ -354,7 +351,8 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     final items = _reusableApprovals();
     if (items.isEmpty) return;
     final nameById = {
-      for (final t in context.read<ApprovalProvider>().activeTemplates) t.id: t.name,
+      for (final t in context.read<ApprovalProvider>().activeTemplates)
+        t.id: t.name,
     };
     final picked = await AppBottomSheet.show<ApprovalRequest>(
       context,
@@ -429,9 +427,14 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       // 온라인 양식 필수 필드 확인
       if (templateType != 'file' && _selectedTemplate!.formFields.isNotEmpty) {
         final missingLabel = DocumentFormFields.validateRequired(
-            _selectedTemplate!.formFields, _formValues);
+          _selectedTemplate!.formFields,
+          _formValues,
+        );
         if (missingLabel != null) {
-          AppSnackBar.showError(context, message: '\'$missingLabel\' 항목을 입력해주세요');
+          AppSnackBar.showError(
+            context,
+            message: '\'$missingLabel\' 항목을 입력해주세요',
+          );
           return;
         }
       }
@@ -495,10 +498,9 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
         ? Map<String, dynamic>.from(_formValues)
         : null;
     final approvalLine = _approvalLine
-        .map((c) => {
-              'approverType': c.approverType,
-              'approverId': c.approverId,
-            })
+        .map(
+          (c) => {'approverType': c.approverType, 'approverId': c.approverId},
+        )
         .toList();
 
     final draft = widget.draft;
@@ -579,499 +581,538 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text(
-          _isEditingDraft ? '임시저장 이어쓰기' : '결재 요청',
-          style: AppTypography.appBarTitle,
-        ),
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 새 기안을 처음 열었을 때만: 이전에 올린 기안으로 시작하는 길
-              if (!_isEditingDraft &&
-                  _selectedTemplate == null &&
-                  _titleController.text.isEmpty &&
-                  _reusableApprovals().isNotEmpty) ...[
-                // 제목 아래 한 줄 링크 — 큰 카드로 두면 폼의 첫 항목처럼 보인다
-                InkWell(
-                  onTap: _openPreviousPicker,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.space1,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.history,
-                          size: 16,
-                          color: AppSemanticColors.interactivePrimaryDefault,
+        backgroundColor: AppSemanticColors.backgroundCanvas,
+        appBar: CareVAppBar(title: _isEditingDraft ? '임시저장 이어쓰기' : '결재 요청'),
+        body: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.space3,
+              AppSpacing.screenGutter,
+              AppSpacing.space6 + MediaQuery.paddingOf(context).bottom,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 새 기안을 처음 열었을 때만: 이전에 올린 기안으로 시작하는 길
+                if (!_isEditingDraft &&
+                    _selectedTemplate == null &&
+                    _titleController.text.isEmpty &&
+                    _reusableApprovals().isNotEmpty) ...[
+                  // 제목 아래 한 줄 링크 — 큰 카드로 두면 폼의 첫 항목처럼 보인다
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: InkWell(
+                      onTap: _openPreviousPicker,
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minHeight: AppSpacing.minTouchTarget,
                         ),
-                        const SizedBox(width: AppSpacing.space1_5),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.space1,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                size: 18,
+                                color:
+                                    AppSemanticColors.interactivePrimaryDefault,
+                              ),
+                              const SizedBox(width: AppSpacing.space1_5),
+                              Flexible(
+                                child: Text(
+                                  '이전 기안에서 불러오기',
+                                  style: AppTypography.titleSmall.copyWith(
+                                    color: AppSemanticColors
+                                        .interactivePrimaryDefault,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space2),
+                ],
+
+                // 결재 양식 — B안: 항목마다 흰 카드 하나(제목 + 회색 채움 칸)
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildSectionHeader(
+                        '결재 양식',
+                        Icons.description_outlined,
+                        isRequired: true,
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                      Consumer<ApprovalProvider>(
+                        builder: (context, approvalProvider, child) {
+                          if (_isLoadingTemplates) {
+                            return Padding(
+                              padding: const EdgeInsets.all(AppSpacing.space4),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppSemanticColors.textTertiary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          final templates = approvalProvider.activeTemplates;
+
+                          if (templates.isEmpty) {
+                            return Container(
+                              padding: const EdgeInsets.all(AppSpacing.space4),
+                              decoration: BoxDecoration(
+                                color: AppSemanticColors.fillDefault,
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.control,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '사용 가능한 결재 양식이 없습니다',
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.textTertiary,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          // 탭하면 양식 카드 목록 → 미리보기(문서 모양/첨부 원본) 순으로 이동한다.
+                          // 미리보기에서 내용을 직접 확인한 뒤에야 양식을 선택하게 되므로,
+                          // "눌러도 어떤 문서인지 알 수 없다"는 문제를 해소한다.
+                          return Material(
+                            color: AppSemanticColors.fillDefault,
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.control,
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () => _openTemplatePicker(templates),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: 56,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    AppSpacing.space4,
+                                    AppSpacing.space3,
+                                    AppSpacing.space2,
+                                    AppSpacing.space3,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: _selectedTemplate == null
+                                            ? Text(
+                                                '결재 양식을 선택하세요',
+                                                style: AppTypography.bodyMedium
+                                                    .copyWith(
+                                                      color: AppSemanticColors
+                                                          .textTertiary,
+                                                    ),
+                                              )
+                                            : Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    _selectedTemplate!.name,
+                                                    style: AppTypography
+                                                        .titleMedium
+                                                        .copyWith(
+                                                          color:
+                                                              AppSemanticColors
+                                                                  .textPrimary,
+                                                        ),
+                                                  ),
+                                                  if (_selectedTemplate!
+                                                              .description !=
+                                                          null &&
+                                                      _selectedTemplate!
+                                                          .description!
+                                                          .isNotEmpty)
+                                                    Text(
+                                                      _selectedTemplate!
+                                                          .description!,
+                                                      style: AppTypography
+                                                          .bodySmall
+                                                          .copyWith(
+                                                            color: AppSemanticColors
+                                                                .textSecondary,
+                                                          ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                ],
+                                              ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.space2),
+                                      Text(
+                                        _selectedTemplate == null
+                                            ? '양식 둘러보기'
+                                            : '변경',
+                                        style: AppTypography.titleSmall
+                                            .copyWith(
+                                              color: AppSemanticColors
+                                                  .interactivePrimaryDefault,
+                                            ),
+                                      ),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: AppSemanticColors.textTertiary,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      if (_canWriteTemplateOnWeb) ...[
+                        const SizedBox(height: AppSpacing.space3),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SeedButton(
+                            label: '양식 문서 바로 작성하기',
+                            variant: SeedButtonVariant.brandWeak,
+                            prefixIcon: Icons.edit_document,
+                            onPressed: _writeTemplateOnWeb,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.cardGap),
+
+                // 제목 입력
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildSectionHeader(
+                        '결재 제목',
+                        Icons.title,
+                        isRequired: true,
+                      ),
+                      const SizedBox(height: AppSpacing.space3),
+                      SeedTextField(
+                        label: '결재 제목',
+                        showLabel: false,
+                        controller: _titleController,
+                        placeholder: '결재 제목을 입력하세요',
+                        size: SeedTextFieldSize.large,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return '결재 제목을 입력해주세요';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 결재선 — 양식에 정의된 기본 결재선을 따른다 (기안자가 임의 지정하지 않음)
+                if (_approvalLine.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.cardGap),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          '이전 기안에서 불러오기',
+                          '결재선 (양식에 지정됨)',
                           style: AppTypography.titleSmall.copyWith(
-                            color: AppSemanticColors.interactivePrimaryDefault,
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.space2),
+                        Text(
+                          _approvalLine
+                              .asMap()
+                              .entries
+                              .map(
+                                (e) =>
+                                    '${e.key + 1}. ${e.value.name}${e.value.position != null ? ' (${e.value.position})' : ''}',
+                              )
+                              .join(' → '),
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.space4),
-              ],
-              // 결재 양식 선택 섹션
-              _buildSectionHeader(
-                '결재 양식',
-                Icons.description_outlined,
-                isRequired: true,
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              Consumer<ApprovalProvider>(
-                builder: (context, approvalProvider, child) {
-                  if (_isLoadingTemplates) {
-                    return Container(
-                      padding: const EdgeInsets.all(AppSpacing.space4),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.surfaceDefault,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                        border: Border.all(
-                          color: AppSemanticColors.borderDefault,
-                        ),
+                ],
+
+                // 온라인 양식 (form/hybrid 타입)
+                if (_selectedTemplate != null &&
+                    _selectedTemplate!.templateType != 'file' &&
+                    _selectedTemplate!.formFields.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.cardGap),
+                  // 공문형 입력 — formSchema의 행/열·섹션 구조를 문서 표 레이아웃 위에서
+                  // 그대로 입력한다(웹 FormRenderer documentFrame과 동일 규칙, 모바일 반응형).
+                  // 칸 묶음이 스스로 흰 카드를 그리므로 제목도 그 카드 안에 넣는다.
+                  DocumentFormFields(
+                    fields: _selectedTemplate!.formFields,
+                    values: _formValues,
+                    header: _buildSectionHeader(
+                      '온라인 양식 작성',
+                      Icons.edit_note,
+                      isRequired: true,
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: AppSpacing.cardGap),
+
+                // 첨부파일 (온라인 폼 전용 양식은 선택사항)
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildSectionHeader(
+                        '첨부파일',
+                        Icons.attach_file,
+                        isRequired: _selectedTemplate?.templateType != 'form',
                       ),
-                      child: Center(
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppSemanticColors.textTertiary,
+                      const SizedBox(height: AppSpacing.space3),
+                      if (_selectedFile != null)
+                        _buildFileRow(
+                          icon: _getFileIcon(_selectedFile!.name),
+                          name: _selectedFile!.name,
+                          meta: _formatFileSize(_selectedFile!.size),
+                          trailing: [
+                            IconButton(
+                              tooltip: '선택한 파일 제거',
+                              onPressed: _removeFile,
+                              icon: Icon(
+                                Icons.close,
+                                color: AppSemanticColors.statusErrorIcon,
+                              ),
                             ),
+                          ],
+                        )
+                      // 임시저장에 이미 붙어 있던 첨부 — 새로 고르면 이 자리를 대체한다
+                      else if (_keptAttachmentFileName != null)
+                        _buildFileRow(
+                          icon: _getFileIcon(_keptAttachmentFileName!),
+                          name: _keptAttachmentFileName!,
+                          meta: _keptAttachmentFileSize != null
+                              ? '${_formatFileSize(_keptAttachmentFileSize!)} · 저장된 첨부'
+                              : '저장된 첨부',
+                          muted: true,
+                          trailing: [
+                            TextButton(
+                              onPressed: _showFilePickOptions,
+                              child: const Text('변경'),
+                            ),
+                            IconButton(
+                              tooltip: '첨부 제거',
+                              onPressed: _removeFile,
+                              icon: Icon(
+                                Icons.close,
+                                color: AppSemanticColors.statusErrorIcon,
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        Material(
+                          color: AppSemanticColors.fillDefault,
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.control,
                           ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  final templates = approvalProvider.activeTemplates;
-
-                  if (templates.isEmpty) {
-                    return Container(
-                      padding: const EdgeInsets.all(AppSpacing.space4),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.surfaceDefault,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                        border: Border.all(
-                          color: AppSemanticColors.borderDefault,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '사용 가능한 결재 양식이 없습니다',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  // 탭하면 양식 카드 목록 → 미리보기(문서 모양/첨부 원본) 순으로 이동한다.
-                  // 미리보기에서 내용을 직접 확인한 뒤에야 양식을 선택하게 되므로,
-                  // "눌러도 어떤 문서인지 알 수 없다"는 문제를 해소한다.
-                  return InkWell(
-                    onTap: () => _openTemplatePicker(templates),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space4,
-                        vertical: AppSpacing.space3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.surfaceDefault,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                        border: Border.all(
-                          color: AppSemanticColors.borderDefault,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _selectedTemplate == null
-                                ? Text(
-                                    '결재 양식을 선택하세요',
-                                    style: AppTypography.bodyMedium.copyWith(
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: _showFilePickOptions,
+                            child: Padding(
+                              padding: const EdgeInsets.all(AppSpacing.space5),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: AppSpacing.space14,
+                                    height: AppSpacing.space14,
+                                    decoration: const BoxDecoration(
+                                      color: AppSemanticColors.brandWeak,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.cloud_upload_outlined,
+                                      size: 26,
+                                      color: AppSemanticColors.brandDefault,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.space3),
+                                  Text(
+                                    '파일을 선택하세요',
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.titleMedium.copyWith(
+                                      color: AppSemanticColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.space1),
+                                  Text(
+                                    'PDF, DOC, XLS, JPG, PNG (최대 10MB)',
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.bodySmall.copyWith(
                                       color: AppSemanticColors.textTertiary,
                                     ),
-                                  )
-                                : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        _selectedTemplate!.name,
-                                        style: AppTypography.bodyMedium.copyWith(
-                                          color: AppSemanticColors.textPrimary,
-                                        ),
-                                      ),
-                                      if (_selectedTemplate!.description != null &&
-                                          _selectedTemplate!.description!.isNotEmpty)
-                                        Text(
-                                          _selectedTemplate!.description!,
-                                          style: AppTypography.bodySmall.copyWith(
-                                            color: AppSemanticColors.textTertiary,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                    ],
                                   ),
-                          ),
-                          const SizedBox(width: AppSpacing.space2),
-                          Text(
-                            _selectedTemplate == null ? '양식 둘러보기' : '변경',
-                            style: AppTypography.titleSmall.copyWith(
-                              color: AppSemanticColors.interactivePrimaryDefault,
+                                ],
+                              ),
                             ),
                           ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                        ),
+                    ],
+                  ),
+                ),
 
-              if (_canWriteTemplateOnWeb) ...[
-                const SizedBox(height: AppSpacing.space3),
+                const SizedBox(height: AppSpacing.space6),
+
+                // 임시저장 / 제출 버튼 — 웹과 같이 상신 전에 저장해 둘 수 있다
                 SizedBox(
                   width: double.infinity,
                   child: SeedButton(
-                    label: '양식 문서 바로 작성하기',
-                    variant: SeedButtonVariant.neutralOutline,
-                    prefixIcon: Icons.edit_document,
-                    onPressed: _writeTemplateOnWeb,
+                    label: '임시저장',
+                    // 회색 바탕 위라 회색 단추는 묻힌다 — 옅은 틸 보조 단추
+                    variant: SeedButtonVariant.brandWeak,
+                    size: SeedButtonSize.large,
+                    isLoading: _isSavingDraft,
+                    isDisabled: _isSubmitting || _isSavingDraft,
+                    onPressed: _saveDraft,
                   ),
                 ),
-              ],
 
-              const SizedBox(height: AppSpacing.space6),
-
-              // 제목 입력 섹션
-              _buildSectionHeader(
-                '결재 제목',
-                Icons.title,
-                isRequired: true,
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              SeedTextField(
-                label: '결재 제목',
-                showLabel: false,
-                controller: _titleController,
-                placeholder: '결재 제목을 입력하세요',
-                size: SeedTextFieldSize.large,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return '결재 제목을 입력해주세요';
-                  }
-                  return null;
-                },
-              ),
-
-              // 결재선 — 양식에 정의된 기본 결재선을 따른다 (기안자가 임의 지정하지 않음)
-              if (_approvalLine.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.space6),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.space4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    border: Border.all(color: AppSemanticColors.borderDefault),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '결재선 (양식에 지정됨)',
-                        style: AppTypography.titleSmall.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space2),
-                      Text(
-                        _approvalLine
-                            .asMap()
-                            .entries
-                            .map((e) =>
-                                '${e.key + 1}. ${e.value.name}${e.value.position != null ? ' (${e.value.position})' : ''}')
-                            .join(' → '),
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              // 온라인 양식 (form/hybrid 타입)
-              if (_selectedTemplate != null &&
-                  _selectedTemplate!.templateType != 'file' &&
-                  _selectedTemplate!.formFields.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.space6),
-                _buildSectionHeader(
-                  '온라인 양식 작성',
-                  Icons.edit_note,
-                  isRequired: true,
-                ),
                 const SizedBox(height: AppSpacing.space3),
-                // 공문형 입력 — formSchema의 행/열·섹션 구조를 문서 표 레이아웃 위에서
-                // 그대로 입력한다(웹 FormRenderer documentFrame과 동일 규칙, 모바일 반응형).
-                DocumentFormFields(
-                  fields: _selectedTemplate!.formFields,
-                  values: _formValues,
+
+                SizedBox(
+                  width: double.infinity,
+                  child: SeedButton(
+                    label: _isEditingDraft ? '상신하기' : '결재 요청',
+                    variant: SeedButtonVariant.brandSolid,
+                    size: SeedButtonSize.large,
+                    isLoading: _isSubmitting,
+                    isDisabled: _isSubmitting || _isSavingDraft,
+                    onPressed: _submit,
+                  ),
                 ),
               ],
-
-              const SizedBox(height: AppSpacing.space6),
-
-              // 첨부파일 섹션 (온라인 폼 전용 양식은 선택사항)
-              _buildSectionHeader(
-                '첨부파일',
-                Icons.attach_file,
-                isRequired: _selectedTemplate?.templateType != 'form',
-              ),
-              const SizedBox(height: AppSpacing.space3),
-              if (_selectedFile != null)
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    border: Border.all(
-                      color: AppSemanticColors.statusInfoBorder,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.space2),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.statusInfoBackground,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                        ),
-                        child: Icon(
-                          _getFileIcon(_selectedFile!.name),
-                          size: 24,
-                          color: AppSemanticColors.statusInfoIcon,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space3),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _selectedFile!.name,
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              _formatFileSize(_selectedFile!.size),
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppSemanticColors.textTertiary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: '선택한 파일 제거',
-                        onPressed: _removeFile,
-                        icon: Icon(
-                          Icons.close,
-                          color: AppSemanticColors.statusErrorIcon,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              // 임시저장에 이미 붙어 있던 첨부 — 새로 고르면 이 자리를 대체한다
-              else if (_keptAttachmentFileName != null)
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space4),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    border: Border.all(
-                      color: AppSemanticColors.borderDefault,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.space2),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.backgroundTertiary,
-                          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                        ),
-                        child: Icon(
-                          _getFileIcon(_keptAttachmentFileName!),
-                          size: 24,
-                          color: AppSemanticColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space3),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _keptAttachmentFileName!,
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              _keptAttachmentFileSize != null
-                                  ? '${_formatFileSize(_keptAttachmentFileSize!)} · 저장된 첨부'
-                                  : '저장된 첨부',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppSemanticColors.textTertiary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _showFilePickOptions,
-                        child: const Text('변경'),
-                      ),
-                      IconButton(
-                        tooltip: '첨부 제거',
-                        onPressed: _removeFile,
-                        icon: Icon(
-                          Icons.close,
-                          color: AppSemanticColors.statusErrorIcon,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                InkWell(
-                  onTap: _showFilePickOptions,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(AppSpacing.space6),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.surfaceDefault,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                      border: Border.all(
-                        color: AppSemanticColors.borderDefault,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.space3),
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.backgroundTertiary,
-                            borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                          ),
-                          child: Icon(
-                            Icons.cloud_upload_outlined,
-                            size: 32,
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space3),
-                        Text(
-                          '파일을 선택하세요',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.space1),
-                        Text(
-                          'PDF, DOC, XLS, JPG, PNG (최대 10MB)',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              const SizedBox(height: AppSpacing.space8),
-
-              // 임시저장 / 제출 버튼 — 웹과 같이 상신 전에 저장해 둘 수 있다
-              SizedBox(
-                width: double.infinity,
-                child: SeedButton(
-                  label: '임시저장',
-                  variant: SeedButtonVariant.neutralOutline,
-                  size: SeedButtonSize.large,
-                  isLoading: _isSavingDraft,
-                  isDisabled: _isSubmitting || _isSavingDraft,
-                  onPressed: _saveDraft,
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.space3),
-
-              SizedBox(
-                width: double.infinity,
-                child: SeedButton(
-                  label: _isEditingDraft ? '상신하기' : '결재 요청',
-                  variant: SeedButtonVariant.brandSolid,
-                  size: SeedButtonSize.large,
-                  isLoading: _isSubmitting,
-                  isDisabled: _isSubmitting || _isSavingDraft,
-                  onPressed: _submit,
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.space6),
-            ],
+            ),
           ),
         ),
       ),
-    ),
+    );
+  }
+
+  /// 첨부 한 줄 — 회색 채움 칸 안에 옅은 틸 둥근 아이콘 44 + 파일 이름 16 + 크기 14 + 뒤 단추.
+  /// [muted]는 임시저장에 붙어 있던 첨부(회색 아이콘).
+  Widget _buildFileRow({
+    required IconData icon,
+    required String name,
+    required String meta,
+    required List<Widget> trailing,
+    bool muted = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space3,
+        AppSpacing.space2,
+        AppSpacing.space1,
+        AppSpacing.space2,
+      ),
+      constraints: const BoxConstraints(minHeight: AppSpacing.listRowMinHeight),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.fillDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: AppSpacing.iconCircle,
+            height: AppSpacing.iconCircle,
+            decoration: BoxDecoration(
+              color: muted
+                  ? AppSemanticColors.surfaceCard
+                  : AppSemanticColors.brandWeak,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 22,
+              color: muted
+                  ? AppSemanticColors.textSecondary
+                  : AppSemanticColors.brandWeakForeground,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  meta,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...trailing,
+        ],
+      ),
     );
   }
 
   /// 항목 제목 — 아이콘 타일 없이 글자만(titleSmall). 필수 표시는 같은 크기의 빨간 별.
-  Widget _buildSectionHeader(String title, IconData icon, {required bool isRequired}) {
+  Widget _buildSectionHeader(
+    String title,
+    IconData icon, {
+    required bool isRequired,
+  }) {
     return Row(
       children: [
-        Text(
-          title,
-          style: AppTypography.titleSmall.copyWith(
-            color: AppSemanticColors.textPrimary,
+        Flexible(
+          child: Text(
+            title,
+            style: AppTypography.titleSmall.copyWith(
+              color: AppSemanticColors.textPrimary,
+            ),
           ),
         ),
         if (isRequired) ...[

@@ -27,12 +27,17 @@ class DocumentFormFields extends StatefulWidget {
   final bool readOnly;
   final VoidCallback? onChanged;
 
+  /// 카드 맨 위에 둘 제목(예: 작성 화면의 '온라인 양식 작성 *'). 칸 글자와 같은 줄에 맞춰
+  /// 카드 안쪽 여백 20에 놓인다 — 다른 흰 카드의 제목과 시작선이 같다.
+  final Widget? header;
+
   const DocumentFormFields({
     super.key,
     required this.fields,
     required this.values,
     this.readOnly = false,
     this.onChanged,
+    this.header,
   });
 
   /// 필수 필드 검증 — 누락된 첫 필드 라벨 반환 (모두 채워지면 null)
@@ -542,6 +547,16 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (widget.header != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space3,
+                AppSpacing.space2_5,
+                AppSpacing.space3,
+                AppSpacing.space1,
+              ),
+              child: widget.header,
+            ),
           for (var i = 0; i < rows.length; i++) ...[
             if (rows[i].length == 1 &&
                 rows[i][0]['type']?.toString() == 'section')
