@@ -17,7 +17,7 @@ import '../utils/app_haptics.dart';
 import '../widgets/common/app_bottom_tab_bar.dart';
 import '../utils/permissions.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
+import '../theme/app_motion.dart';
 import 'approval_hub_screen.dart';
 import 'calendar_screen.dart';
 import 'chat_room_list_screen.dart';
@@ -42,19 +42,13 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
-  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _animationController = AnimationController(
-      duration: AppTransitions.slow,
-      vsync: this,
-    );
 
     _currentIndex = 0;
 
@@ -203,7 +197,6 @@ class _MainScreenState extends State<MainScreen>
   void dispose() {
     if (_pushNavigationAttached) FCMService().detachSession();
     WidgetsBinding.instance.removeObserver(this);
-    _animationController.dispose();
     super.dispose();
   }
 
@@ -255,7 +248,7 @@ class _MainScreenState extends State<MainScreen>
       setState(() {
         _currentIndex = index;
       });
-      _animationController.forward(from: 0);
+      // 새로 보이는 탭이 옅게 나타나는 연출은 MainTabStack이 index 변화를 보고 한다.
       // 홈·전자결재 탭은 결재 "내 차례" 강조/뱃지를 보여주는 화면이다 —
       // 탭을 열 때마다 최신 상태로 맞춘다(가려져 있던 탭은 다시 보일 때까지
       // 저절로 새로고침되지 않는다: IndexedStack이 위젯을 계속 살려둔다).
@@ -282,7 +275,7 @@ class _MainScreenState extends State<MainScreen>
         return Scaffold(
           // B안: 탭 화면 사이·전환 중에 비치는 바탕도 옅은 회색(테마 값과 같지만 명시해 둔다)
           backgroundColor: AppSemanticColors.backgroundCanvas,
-          body: IndexedStack(index: safeIndex, children: screens),
+          body: MainTabStack(index: safeIndex, children: screens),
           // B안(2026-11-12): 흰 바탕 + 위 옅은 선, 고르면 채운 아이콘 + 틸(선택 알약 바탕 없음)
           bottomNavigationBar: AppBottomTabBar(
             items: navItems,
@@ -376,5 +369,67 @@ class _MainScreenState extends State<MainScreen>
         '전체',
       ),
     ];
+  }
+}
+
+/// 하단 탭 화면 묶음 — 탭 화면을 모두 살려 둔 채(IndexedStack, 스크롤·입력 상태 유지)
+/// [index]가 바뀌면 새로 보이는 탭이 [AppMotion.tabSwitch](200ms)로 옅게 나타난다(겹쳐 바뀜).
+///
+/// - 앱이 처음 뜰 때는 연출 없이 바로 보인다(처음 값 1).
+/// - '동작 줄이기'면 연출 없이 바로 바뀐다.
+/// - 탭 전환 햅틱은 하단 탭(AppBottomTabBar 쪽 _onNavBarTapped)이 울린다 — 여기서는 울리지 않는다.
+class MainTabStack extends StatefulWidget {
+  const MainTabStack({
+    super.key,
+    required this.index,
+    required this.children,
+  });
+
+  final int index;
+  final List<Widget> children;
+
+  @override
+  State<MainTabStack> createState() => _MainTabStackState();
+}
+
+class _MainTabStackState extends State<MainTabStack>
+    with SingleTickerProviderStateMixin {
+  // 처음 값 1 — 앱이 처음 뜰 때 탭 내용이 투명하면 안 된다.
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: AppMotion.tabSwitch,
+    value: 1,
+  );
+  late final CurvedAnimation _opacity = CurvedAnimation(
+    parent: _controller,
+    curve: AppMotion.enterCurve,
+  );
+
+  @override
+  void didUpdateWidget(covariant MainTabStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index == widget.index) return;
+    if (AppMotion.reduceMotion(context)) {
+      _controller.value = 1;
+    } else {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _opacity.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      // 옅게 나타나는 200ms 동안에도 화면 낭독기가 탭 내용을 놓치지 않게
+      alwaysIncludeSemantics: true,
+      child: IndexedStack(index: widget.index, children: widget.children),
+    );
   }
 }
