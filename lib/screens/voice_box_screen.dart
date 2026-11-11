@@ -8,6 +8,7 @@ import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_list_cell.dart';
@@ -91,24 +92,25 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
                       const SizedBox(width: AppSpacing.space2),
                       Text(
                         message.type.label,
-                        style: AppTypography.labelSmall.copyWith(
+                        style: AppTypography.bodySmall.copyWith(
                           color: AppSemanticColors.textTertiary,
                         ),
                       ),
                       if (message.isAnonymous) ...[
                         const SizedBox(width: AppSpacing.space2),
-                        Icon(
+                        const Icon(
                           Icons.visibility_off_outlined,
-                          size: 14,
+                          size: 16,
                           color: AppSemanticColors.textTertiary,
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: AppSpacing.space2),
+                  // 시트 안 상세 제목(B안 heading5 21/w700)
                   Text(
                     message.title,
-                    style: AppTypography.titleMedium.copyWith(
+                    style: AppTypography.heading5.copyWith(
                       color: AppSemanticColors.textPrimary,
                     ),
                   ),
@@ -125,16 +127,17 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppSpacing.space4),
                       decoration: BoxDecoration(
-                        color: AppSemanticColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        color: AppSemanticColors.fillDefault,
+                        borderRadius:
+                            BorderRadius.circular(AppBorderRadius.control),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '관리자 답변',
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppSemanticColors.textTertiary,
+                            style: AppTypography.titleSmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
                             ),
                           ),
                           const SizedBox(height: AppSpacing.space1_5),
@@ -165,11 +168,9 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
-      appBar: AppBar(
-        title: Text('고충·신고 · 건의함', style: AppTypography.appBarTitle),
-        elevation: 0,
-      ),
+      // B안: 옅은 회색 바탕 위 흰 목록 카드(SeedListSection)
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: const CareVAppBar(title: '고충·신고 · 건의함'),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _load,
@@ -195,10 +196,19 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
               ),
               const SizedBox(height: AppSpacing.space6),
 
-              Text(
-                '내 제출 내역',
-                style: AppTypography.labelLarge.copyWith(
-                  color: AppSemanticColors.textSecondary,
+              // 묶음 제목 — SeedListSection 제목과 같은 모양(15/w600 회색)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space1,
+                ),
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    '내 제출 내역',
+                    style: AppTypography.titleSmall.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.space2),
