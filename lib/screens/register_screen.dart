@@ -151,7 +151,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         children: [
-          Center(child: _buildSuccessCircle(Icons.check, 30)),
+          // 완료 — 옅은 초록 원이 커지고 체크가 그려진다 + 성공 진동(같은 순간 알림이 없어 여기서 한 번)
+          const Center(child: AppSuccessCheck(size: AppSpacing.space16)),
           const SizedBox(height: AppSpacing.space4),
           Text(
             '회원가입 완료!',
@@ -169,23 +170,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// 완료 시트 맨 위 옅은 초록 원 + 체크(시안의 빈 화면·완료 원과 같은 문법).
-  Widget _buildSuccessCircle(IconData icon, double iconSize) {
-    return Container(
-      width: AppSpacing.space16,
-      height: AppSpacing.space16,
-      decoration: const BoxDecoration(
-        color: AppSemanticColors.statusSuccessBackground,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        color: AppSemanticColors.statusSuccessIcon,
-        size: iconSize,
       ),
     );
   }
@@ -269,7 +253,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         children: [
-          Center(child: _buildSuccessCircle(Icons.check_circle_outline, 40)),
+          const Center(child: AppSuccessCheck(size: AppSpacing.space16)),
           const SizedBox(height: AppSpacing.space4),
           Text(
             '회원가입 요청 완료!',
