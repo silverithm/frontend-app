@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -41,6 +40,7 @@ import 'chat_room_info_screen.dart';
 import 'document_viewer_screen.dart';
 import 'hwp_editor_screen.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -1437,10 +1437,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppSemanticColors.surfaceDefault,
+      backgroundColor: AppSemanticColors.surfaceCard,
+      // B안 시트 — 위 모서리 24
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppBorderRadius.xl2),
+          top: Radius.circular(AppBorderRadius.sheet),
         ),
       ),
       builder: (bottomSheetContext) {
@@ -1460,18 +1461,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Container(
-                        width: AppSpacing.space10,
-                        height: AppSpacing.space1,
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.borderDefault,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.sm,
-                          ),
-                        ),
-                      ),
-                    ),
+                    const Center(child: AppSheetHandle()),
                     const SizedBox(height: AppSpacing.space4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1513,14 +1503,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     // 일정 구분 (기본 4종)
                     DropdownButtonFormField<String>(
                       value: selectedCategory,
-                      decoration: InputDecoration(
-                        labelText: '일정 구분',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.lg,
-                          ),
-                        ),
-                      ),
+                      decoration: _sheetFieldDecoration('일정 구분'),
                       items: const [
                         DropdownMenuItem(value: 'MEETING', child: Text('회의')),
                         DropdownMenuItem(value: 'EVENT', child: Text('행사')),
@@ -1540,9 +1523,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
                     Text(
                       '색상',
-                      style: AppTypography.labelLarge.copyWith(
+                      style: AppTypography.titleSmall.copyWith(
                         color: AppSemanticColors.textPrimary,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.space2),
@@ -1626,17 +1608,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                               }
                             },
                             child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: '시작일',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.lg,
-                                  ),
-                                ),
-                                suffixIcon: const Icon(
-                                  Icons.calendar_today,
-                                  size: 18,
-                                ),
+                              decoration: _sheetFieldDecoration(
+                                '시작일',
+                                suffixIcon: Icons.calendar_today,
                               ),
                               child: Text(
                                 '${startDate.month}/${startDate.day}',
@@ -1662,17 +1636,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                               }
                             },
                             child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: '종료일',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.lg,
-                                  ),
-                                ),
-                                suffixIcon: const Icon(
-                                  Icons.calendar_today,
-                                  size: 18,
-                                ),
+                              decoration: _sheetFieldDecoration(
+                                '종료일',
+                                suffixIcon: Icons.calendar_today,
                               ),
                               child: Text(
                                 '${endDate.month}/${endDate.day}',
@@ -1702,17 +1668,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                                 }
                               },
                               child: InputDecorator(
-                                decoration: InputDecoration(
-                                  labelText: '시작 시간',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.lg,
-                                    ),
-                                  ),
-                                  suffixIcon: const Icon(
-                                    Icons.access_time,
-                                    size: 18,
-                                  ),
+                                decoration: _sheetFieldDecoration(
+                                  '시작 시간',
+                                  suffixIcon: Icons.access_time,
                                 ),
                                 child: Text(
                                   '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
@@ -1736,17 +1694,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                                 }
                               },
                               child: InputDecorator(
-                                decoration: InputDecoration(
-                                  labelText: '종료 시간',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.lg,
-                                    ),
-                                  ),
-                                  suffixIcon: const Icon(
-                                    Icons.access_time,
-                                    size: 18,
-                                  ),
+                                decoration: _sheetFieldDecoration(
+                                  '종료 시간',
+                                  suffixIcon: Icons.access_time,
                                 ),
                                 child: Text(
                                   '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
@@ -1867,6 +1817,35 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     );
   }
 
+  /// 일정 등록 시트의 고르기 칸(구분·날짜·시간) — SeedTextField와 같은 B안 입력칸:
+  /// 회색 채움·테두리 없음·모서리 14, 누르고 있으면 틸 2px.
+  InputDecoration _sheetFieldDecoration(String label, {IconData? suffixIcon}) {
+    const radius = BorderRadius.all(Radius.circular(AppBorderRadius.control));
+    const none = OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide.none,
+    );
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: AppSemanticColors.fillDefault,
+      border: none,
+      enabledBorder: none,
+      disabledBorder: none,
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: AppSemanticColors.borderFocus, width: 2),
+      ),
+      suffixIcon: suffixIcon == null
+          ? null
+          : Icon(
+              suffixIcon,
+              size: 18,
+              color: AppSemanticColors.iconSubtle,
+            ),
+    );
+  }
+
   Widget _buildScheduleSwatch({
     required Color? color,
     required bool isSelected,
@@ -1882,15 +1861,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
           width: 36,
           height: 36,
           alignment: Alignment.center,
+          // B안: 테두리 상자 대신 — 고른 것만 틸 고리, '색상 없음'은 회색 채움으로 보이게
           decoration: BoxDecoration(
-            color: color ?? AppSemanticColors.surfaceDefault,
+            color: color ?? AppSemanticColors.fillStrong,
             shape: BoxShape.circle,
-            border: Border.all(
-              color: isSelected
-                  ? AppSemanticColors.interactivePrimaryDefault
-                  : AppSemanticColors.borderDefault,
-              width: isSelected ? 2 : 1,
-            ),
+            border: isSelected
+                ? Border.all(
+                    color: AppSemanticColors.interactivePrimaryDefault,
+                    width: 2,
+                  )
+                : null,
           ),
           child: color == null
               ? Icon(
