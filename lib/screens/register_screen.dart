@@ -608,9 +608,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         size: AppSpacing.space5,
         color: AppSemanticColors.textTertiary,
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space3_5,
+      // 칸 안 고르기 단추가 이미 48 높이라 위아래는 조금만 — 전체 56 안팎(SeedTextField 큰 칸 54와 비슷)
+      contentPadding: const EdgeInsets.fromLTRB(
+        AppSpacing.space4,
+        AppSpacing.space1,
+        AppSpacing.space3,
+        AppSpacing.space1,
       ),
       border: stroke(null),
       enabledBorder:
@@ -978,6 +981,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   _buildFieldLabel('회사 *'),
                                   DropdownButtonFormField<Company?>(
                                     value: _selectedCompany,
+                                    // 칸 폭에 맞춰 글자가 줄을 넘기게(dense면 높이가 24로 묶여 긴 안내가 오른쪽으로 넘쳤다)
+                                    isExpanded: true,
+                                    isDense: false,
                                     borderRadius: BorderRadius.circular(
                                       AppBorderRadius.control,
                                     ),
@@ -1093,6 +1099,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 _buildFieldLabel('역할'),
                                 DropdownButtonFormField<PositionOption?>(
                                   value: _selectedPosition,
+                                  // 칸 폭에 맞춰 글자가 줄을 넘기게(dense면 높이가 24로 묶여 긴 안내가 오른쪽으로 넘쳤다)
+                                  isExpanded: true,
+                                  isDense: false,
                                   borderRadius: BorderRadius.circular(
                                     AppBorderRadius.control,
                                   ),
@@ -1159,6 +1168,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _buildFieldLabel('기본 분류'),
                               DropdownButtonFormField<String>(
                                 value: _fallbackRole,
+                                // 칸 폭에 맞춰 글자가 줄을 넘기게(dense면 높이가 24로 묶여 긴 안내가 오른쪽으로 넘쳤다)
+                                isExpanded: true,
+                                isDense: false,
                                 borderRadius: BorderRadius.circular(
                                   AppBorderRadius.control,
                                 ),
