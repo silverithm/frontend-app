@@ -1270,29 +1270,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: AppSpacing.cardGap),
 
-                      // 약관 동의 섹션
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.space4),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.backgroundSecondary,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.xl,
-                          ),
-                          border: Border.all(
-                            color: _agreementErrorMessage != null
-                                ? AppSemanticColors.statusErrorBorder
-                                : AppSemanticColors.borderDefault,
-                            width: 1,
-                          ),
-                        ),
+                      // 약관 동의 섹션 — 흰 카드. 동의하지 않고 누르면 카드 둘레가 옅은 빨강으로 바뀐다
+                      AppCard(
+                        hasBorder: _agreementErrorMessage != null,
+                        borderColor: AppSemanticColors.statusErrorBorder,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SeedSectionHeader(title: '약관 동의 (필수)'),
-                            const SizedBox(height: AppSpacing.space4),
+                            const SizedBox(height: AppSpacing.space3),
 
                             // 개인정보 처리방침 동의
-                            InkWell(
+                            _buildAgreementRow(
+                              checked: _agreeToPrivacyPolicy,
                               onTap: () {
                                 setState(() {
                                   _agreeToPrivacyPolicy =
@@ -1303,93 +1293,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   }
                                 });
                               },
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.lg,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppSpacing.space2,
-                                ),
-                                child: Row(
+                              label: Text.rich(
+                                TextSpan(
                                   children: [
-                                    Container(
-                                      width: AppSpacing.space5,
-                                      height: AppSpacing.space5,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: _agreeToPrivacyPolicy
-                                              ? AppSemanticColors.interactivePrimaryDefault
-                                              : AppSemanticColors.textDisabled,
-                                          width: 2,
-                                        ),
-                                        color: _agreeToPrivacyPolicy
-                                            ? AppSemanticColors.interactivePrimaryDefault
-                                            : AppColors.transparent,
-                                      ),
-                                      child: _agreeToPrivacyPolicy
-                                          ? const Icon(
-                                              Icons.check,
-                                              color: AppColors.white,
-                                              size: AppSpacing.space3_5,
-                                            )
-                                          : null,
+                                    TextSpan(
+                                      text: '개인정보 처리방침',
+                                      style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                                     ),
-                                    const SizedBox(width: AppSpacing.space3),
-                                    Expanded(
-                                      child: Text.rich(
-                                        TextSpan(
-                                          children: [
-                                            TextSpan(
-                                              text: '개인정보 처리방침',
-                                              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
-                                            ),
-                                            TextSpan(
-                                              text: '에 동의합니다',
-                                              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.space2),
-                                    InkWell(
-                                      onTap: () => _launchURL(
-                                        'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
-                                      ),
-                                      borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.md,
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.space2,
-                                          vertical: AppSpacing.space1,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppSemanticColors
-                                              .backgroundSecondary,
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.md,
-                                          ),
-                                          border: Border.all(
-                                            color:
-                                                AppSemanticColors.borderDefault,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          '보기',
-                                          style: AppTypography.labelMedium.copyWith(color: AppSemanticColors.textSecondary),
-                                        ),
-                                      ),
+                                    TextSpan(
+                                      text: '에 동의합니다',
+                                      style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
                                     ),
                                   ],
                                 ),
                               ),
+                              trailing: _buildViewButton(
+                                'https://plip.kr/pcc/d9017bf3-00dc-4f8f-b750-f7668e2b7bb7/privacy/1.html',
+                              ),
                             ),
 
                             // 서비스 이용약관 동의
-                            InkWell(
+                            _buildAgreementRow(
+                              checked: _agreeToTermsOfService,
                               onTap: () {
                                 setState(() {
                                   _agreeToTermsOfService =
@@ -1400,157 +1325,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   }
                                 });
                               },
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.lg,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppSpacing.space2,
-                                ),
-                                child: Row(
+                              label: Text.rich(
+                                TextSpan(
                                   children: [
-                                    Container(
-                                      width: AppSpacing.space5,
-                                      height: AppSpacing.space5,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: _agreeToTermsOfService
-                                              ? AppSemanticColors.interactivePrimaryDefault
-                                              : AppSemanticColors.textDisabled,
-                                          width: 2,
-                                        ),
-                                        color: _agreeToTermsOfService
-                                            ? AppSemanticColors.interactivePrimaryDefault
-                                            : AppColors.transparent,
-                                      ),
-                                      child: _agreeToTermsOfService
-                                          ? const Icon(
-                                              Icons.check,
-                                              color: AppColors.white,
-                                              size: AppSpacing.space3_5,
-                                            )
-                                          : null,
+                                    TextSpan(
+                                      text: '서비스 이용약관',
+                                      style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
                                     ),
-                                    const SizedBox(width: AppSpacing.space3),
-                                    Expanded(
-                                      child: Text.rich(
-                                        TextSpan(
-                                          children: [
-                                            TextSpan(
-                                              text: '서비스 이용약관',
-                                              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textPrimary),
-                                            ),
-                                            TextSpan(
-                                              text: '에 동의합니다',
-                                              style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.space2),
-                                    InkWell(
-                                      onTap: () => _launchURL(
-                                        'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
-                                      ),
-                                      borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.md,
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.space2,
-                                          vertical: AppSpacing.space1,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppSemanticColors
-                                              .backgroundSecondary,
-                                          borderRadius: BorderRadius.circular(
-                                            AppBorderRadius.md,
-                                          ),
-                                          border: Border.all(
-                                            color:
-                                                AppSemanticColors.borderDefault,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          '보기',
-                                          style: AppTypography.labelMedium.copyWith(color: AppSemanticColors.textSecondary),
-                                        ),
-                                      ),
+                                    TextSpan(
+                                      text: '에 동의합니다',
+                                      style: AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
                                     ),
                                   ],
                                 ),
+                              ),
+                              trailing: _buildViewButton(
+                                'https://relic-baboon-412.notion.site/silverithm-13c766a8bb468082b91ddbd2dd6ce45d',
                               ),
                             ),
 
-                            // 전체 동의 체크박스
+                            // 전체 동의 — 구분선 대신 옅은 회색 칸으로 묶어 위 두 줄과 나눈다
                             const SizedBox(height: AppSpacing.space3),
-                            Container(
-                              height: 1,
-                              color: AppSemanticColors.borderHover,
-                            ),
-                            const SizedBox(height: AppSpacing.space3),
-                            InkWell(
-                              onTap: () {
-                                final newValue =
-                                    !(_agreeToPrivacyPolicy &&
-                                        _agreeToTermsOfService);
-                                setState(() {
-                                  _agreeToPrivacyPolicy = newValue;
-                                  _agreeToTermsOfService = newValue;
-                                  if (newValue) {
-                                    _agreementErrorMessage = null;
-                                  }
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(
-                                AppBorderRadius.lg,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppSpacing.space2,
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: AppSemanticColors.fillDefault,
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.control,
                                 ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: AppSpacing.space5,
-                                      height: AppSpacing.space5,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color:
-                                              (_agreeToPrivacyPolicy &&
-                                                  _agreeToTermsOfService)
-                                              ? AppSemanticColors
-                                                    .statusSuccessIcon
-                                              : AppSemanticColors.textDisabled,
-                                          width: 2,
-                                        ),
-                                        color:
-                                            (_agreeToPrivacyPolicy &&
-                                                _agreeToTermsOfService)
-                                            ? AppSemanticColors
-                                                  .statusSuccessIcon
-                                            : AppColors.transparent,
-                                      ),
-                                      child:
-                                          (_agreeToPrivacyPolicy &&
-                                              _agreeToTermsOfService)
-                                          ? const Icon(
-                                              Icons.check,
-                                              color: AppColors.white,
-                                              size: AppSpacing.space3_5,
-                                            )
-                                          : null,
-                                    ),
-                                    const SizedBox(width: AppSpacing.space3),
-                                    Text(
-                                      '위 약관에 모두 동의합니다',
-                                      style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.textPrimary),
-                                    ),
-                                  ],
+                              ),
+                              child: _buildAgreementRow(
+                                checked: _agreeToPrivacyPolicy &&
+                                    _agreeToTermsOfService,
+                                checkedColor:
+                                    AppSemanticColors.statusSuccessIcon,
+                                horizontalPadding: AppSpacing.space3,
+                                onTap: () {
+                                  final newValue =
+                                      !(_agreeToPrivacyPolicy &&
+                                          _agreeToTermsOfService);
+                                  setState(() {
+                                    _agreeToPrivacyPolicy = newValue;
+                                    _agreeToTermsOfService = newValue;
+                                    if (newValue) {
+                                      _agreementErrorMessage = null;
+                                    }
+                                  });
+                                },
+                                label: Text(
+                                  '위 약관에 모두 동의합니다',
+                                  style: AppTypography.titleSmall.copyWith(color: AppSemanticColors.textPrimary),
                                 ),
                               ),
                             ),
@@ -1559,17 +1382,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             if (_agreementErrorMessage != null) ...[
                               const SizedBox(height: AppSpacing.space2),
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Icon(
                                     Icons.error_outline,
                                     color: AppSemanticColors.statusErrorIcon,
-                                    size: AppSpacing.space4,
+                                    size: AppSpacing.space5,
                                   ),
                                   const SizedBox(width: AppSpacing.space1_5),
                                   Expanded(
                                     child: Text(
                                       _agreementErrorMessage!,
-                                      style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorIcon),
+                                      style: AppTypography.bodySmall.copyWith(color: AppSemanticColors.statusErrorText),
                                     ),
                                   ),
                                 ],
@@ -1624,6 +1448,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 약관 한 줄 — 둥근 체크 + 글자(+ '보기'). 줄 전체가 눌리고 높이 48 이상.
+  Widget _buildAgreementRow({
+    required bool checked,
+    required VoidCallback onTap,
+    required Widget label,
+    Color checkedColor = AppSemanticColors.brandDefault,
+    double horizontalPadding = 0,
+    Widget? trailing,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AppSpacing.minTouchTarget,
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: AppSpacing.space1,
+          ),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: AppMotion.press,
+                width: AppSpacing.space6,
+                height: AppSpacing.space6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: checked
+                        ? checkedColor
+                        : AppSemanticColors.textDisabled,
+                    width: 2,
+                  ),
+                  color: checked ? checkedColor : AppColors.transparent,
+                ),
+                child: checked
+                    ? const Icon(
+                        Icons.check,
+                        color: AppColors.white,
+                        size: AppSpacing.space4,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: AppSpacing.space3),
+              Expanded(child: label),
+              if (trailing != null) ...[
+                const SizedBox(width: AppSpacing.space2),
+                trailing,
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 약관 '보기' — 테두리 없는 회색 알약 단추(터치 48).
+  Widget _buildViewButton(String url) {
+    return SeedButton(
+      label: '보기',
+      size: SeedButtonSize.xsmall,
+      variant: SeedButtonVariant.neutralWeak,
+      onPressed: () => _launchURL(url),
     );
   }
 
