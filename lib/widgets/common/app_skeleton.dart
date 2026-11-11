@@ -24,8 +24,9 @@ class AppSkeleton extends StatefulWidget {
     super.key,
     required this.child,
     this.semanticLabel = '불러오는 중',
-    this.baseColor = AppSemanticColors.surfaceDisabled,
-    this.highlightColor = AppSemanticColors.surfaceDefault,
+    // B안(시안 --sk): 회색 바탕 위 #E3E6EA, 흰 카드 안은 AppSkeletonCard처럼 skeletonBaseOnCard
+    this.baseColor = AppSemanticColors.skeletonBase,
+    this.highlightColor = AppColors.gray50,
   });
 
   final Widget child;
@@ -211,8 +212,8 @@ class _Bone extends LeafRenderObjectWidget {
     final scope = _AppSkeletonScope.maybeOf(context);
     return _RenderBone(
       borderRadius: borderRadius,
-      baseColor: scope?.baseColor ?? AppSemanticColors.surfaceDisabled,
-      highlightColor: scope?.highlightColor ?? AppSemanticColors.surfaceDefault,
+      baseColor: scope?.baseColor ?? AppSemanticColors.skeletonBase,
+      highlightColor: scope?.highlightColor ?? AppColors.gray50,
       shimmer: scope?.shimmer,
       anchor: scope?.anchor,
     );
@@ -223,8 +224,8 @@ class _Bone extends LeafRenderObjectWidget {
     final scope = _AppSkeletonScope.maybeOf(context);
     renderObject
       ..borderRadius = borderRadius
-      ..baseColor = scope?.baseColor ?? AppSemanticColors.surfaceDisabled
-      ..highlightColor = scope?.highlightColor ?? AppSemanticColors.surfaceDefault
+      ..baseColor = scope?.baseColor ?? AppSemanticColors.skeletonBase
+      ..highlightColor = scope?.highlightColor ?? AppColors.gray50
       ..shimmer = scope?.shimmer
       ..anchor = scope?.anchor;
   }
@@ -494,7 +495,7 @@ class AppSkeletonDetail extends StatelessWidget {
 class AppSkeletonCard extends StatelessWidget {
   const AppSkeletonCard({
     super.key,
-    this.padding = const EdgeInsets.all(AppSpacing.space4),
+    this.padding = const EdgeInsets.all(AppSpacing.cardPadding),
     this.margin = const EdgeInsets.all(AppSpacing.space4),
     this.standalone = true,
   });
@@ -507,13 +508,13 @@ class AppSkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // B안: 테두리 없는 흰 카드(모서리 20) 안의 뼈는 한 단계 옅은 색(시안 --sk-in)
     final card = Container(
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderDefault),
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -526,6 +527,11 @@ class AppSkeletonCard extends StatelessWidget {
         ],
       ),
     );
-    return standalone ? AppSkeleton(child: card) : card;
+    return standalone
+        ? AppSkeleton(
+            baseColor: AppSemanticColors.skeletonBaseOnCard,
+            child: card,
+          )
+        : card;
   }
 }

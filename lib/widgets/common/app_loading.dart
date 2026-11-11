@@ -21,11 +21,13 @@ class AppLoading extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // B안: 스피너는 짧게 끝나는 자리용. 화면 첫 불러오기는 AppSkeletonList·AppSkeletonDetail 뼈대를 쓴다.
           SizedBox(
             width: size ?? 32,
             height: size ?? 32,
             child: CircularProgressIndicator(
               strokeWidth: 3,
+              strokeCap: StrokeCap.round,
               valueColor: AlwaysStoppedAnimation<Color>(
                 color ?? AppSemanticColors.interactivePrimaryDefault,
               ),

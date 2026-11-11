@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../seed/seed_button.dart';
 
 /// 공통 빈 상태 위젯 (D7): 부드러운 원 안 아이콘 + 제목 + 설명 + 선택적 액션 버튼.
 ///
@@ -40,24 +41,25 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // B안(시안 .empty-card): 옅은 틸 둥근 바탕 56 + 틸 아이콘, 제목 19/w700, 설명 14 회색
             Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppSemanticColors.backgroundSecondary,
+              width: AppSpacing.space14,
+              height: AppSpacing.space14,
+              decoration: const BoxDecoration(
+                color: AppSemanticColors.brandWeak,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                size: 30,
-                color: AppSemanticColors.textTertiary,
+                size: 26,
+                color: AppSemanticColors.brandDefault,
               ),
             ),
-            const SizedBox(height: AppSpacing.space4),
+            const SizedBox(height: AppSpacing.space3_5),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: AppTypography.titleSmall.copyWith(
+              style: AppTypography.heading6.copyWith(
                 color: AppSemanticColors.textPrimary,
               ),
             ),
@@ -67,26 +69,16 @@ class AppEmptyState extends StatelessWidget {
                 description!,
                 textAlign: TextAlign.center,
                 style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
+                  color: AppSemanticColors.textSecondary,
                 ),
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: AppSpacing.space5),
-              OutlinedButton(
+              SeedButton(
+                label: actionLabel!,
+                variant: SeedButtonVariant.neutralWeak,
                 onPressed: onAction,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppSemanticColors.textPrimary,
-                  side: BorderSide(color: AppSemanticColors.borderDefault),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.space5,
-                    vertical: AppSpacing.space2_5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                  ),
-                ),
-                child: Text(actionLabel!),
               ),
             ],
           ],

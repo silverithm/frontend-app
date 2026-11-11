@@ -23,6 +23,8 @@ class AppSnackBar {
     final hapticKind = haptic ? hapticFor(type) : null;
     if (hapticKind != null) AppHaptics.play(hapticKind);
 
+    // B안(2026-11-12, 시안 .toast): 짙은 반투명 띠 + 흰 글자 15, 모서리 14, 테두리 없음.
+    // 뜻(성공·실패·주의·안내)은 앞 아이콘 색으로 — 짙은 바탕 위에서 보이는 밝은 점 색.
     messenger.showSnackBar(
       SnackBar(
         content: Row(
@@ -30,31 +32,32 @@ class AppSnackBar {
             Icon(
               _getStatusIcon(type),
               color: colors.icon,
-              size: 20,
+              size: 22,
             ),
-            const SizedBox(width: AppSpacing.space3),
+            const SizedBox(width: AppSpacing.space2_5),
             Expanded(
               child: Text(
                 message,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: colors.text,
+                style: AppTypography.labelLarge.copyWith(
+                  color: AppSemanticColors.textInverse,
                 ),
               ),
             ),
           ],
         ),
-        backgroundColor: colors.background,
+        backgroundColor: AppSemanticColors.toastBackground,
         duration: duration ?? const Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          side: BorderSide(
-            color: colors.border,
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
         ),
         action: action,
         margin: const EdgeInsets.all(AppSpacing.space4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space4,
+          vertical: AppSpacing.space3,
+        ),
       ),
     );
   }
@@ -136,63 +139,36 @@ class AppSnackBar {
     );
   }
 
+  // 짙은 알림 띠 위 아이콘 색(3:1 이상) — 바탕·글자는 띠가 정한다
   static _StatusColors _getStatusColors(AppStatusType type) {
     switch (type) {
       case AppStatusType.success:
-        return _StatusColors(
-          background: AppSemanticColors.statusSuccessBackground,
-          border: AppSemanticColors.statusSuccessBorder,
-          text: AppSemanticColors.statusSuccessText,
-          icon: AppSemanticColors.statusSuccessIcon,
-        );
+        return _StatusColors(icon: AppColors.okDot);
       case AppStatusType.warning:
-        return _StatusColors(
-          background: AppSemanticColors.statusWarningBackground,
-          border: AppSemanticColors.statusWarningBorder,
-          text: AppSemanticColors.statusWarningText,
-          icon: AppSemanticColors.statusWarningIcon,
-        );
+        return _StatusColors(icon: AppColors.waitDot);
       case AppStatusType.error:
-        return _StatusColors(
-          background: AppSemanticColors.statusErrorBackground,
-          border: AppSemanticColors.statusErrorBorder,
-          text: AppSemanticColors.statusErrorText,
-          icon: AppSemanticColors.statusErrorIcon,
-        );
+        return _StatusColors(icon: AppColors.rejDot);
       case AppStatusType.info:
-        return _StatusColors(
-          background: AppSemanticColors.statusInfoBackground,
-          border: AppSemanticColors.statusInfoBorder,
-          text: AppSemanticColors.statusInfoText,
-          icon: AppSemanticColors.statusInfoIcon,
-        );
+        return _StatusColors(icon: AppColors.teal300);
     }
   }
 
   static IconData _getStatusIcon(AppStatusType type) {
     switch (type) {
       case AppStatusType.success:
-        return Icons.check_circle_outline;
+        return Icons.check_circle_rounded;
       case AppStatusType.warning:
-        return Icons.warning_amber_outlined;
+        return Icons.warning_rounded;
       case AppStatusType.error:
-        return Icons.error_outline;
+        return Icons.error_rounded;
       case AppStatusType.info:
-        return Icons.info_outline;
+        return Icons.info_rounded;
     }
   }
 }
 
 class _StatusColors {
-  final Color background;
-  final Color border;
-  final Color text;
   final Color icon;
 
-  _StatusColors({
-    required this.background,
-    required this.border,
-    required this.text,
-    required this.icon,
-  });
+  _StatusColors({required this.icon});
 }
