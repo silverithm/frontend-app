@@ -7,9 +7,10 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_tag.dart';
-import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'elder_care_detail_screen.dart';
@@ -115,7 +116,7 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
     final items = _filtered;
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text('어르신 정보', style: AppTypography.appBarTitle),
         elevation: 0,
@@ -139,14 +140,15 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
                   : ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.space4,
-                        AppSpacing.space2,
-                        AppSpacing.space4,
+                        AppSpacing.screenGutter,
+                        AppSpacing.space3,
+                        AppSpacing.screenGutter,
                         AppSpacing.space8,
                       ),
                       itemCount: items.length,
+                      // B안: 카드끼리는 선 대신 간격으로 나눈다
                       separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppSpacing.space2),
+                          const SizedBox(height: AppSpacing.cardGap),
                       itemBuilder: (context, index) =>
                           _ElderRow(elder: items[index], onTap: _openDetail),
                     ),
@@ -160,18 +162,14 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
   Widget _buildSearchAndFilter() {
     final floors = _floors;
 
-    // 검색·층 필터 띠 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
+    // 검색·층 필터 — B안: 상단 바 아래 흰 면(아래 선 없음). 입력칸은 회색으로 채운 칸이라
+    // 회색 화면 바탕에 바로 두면 칸이 보이지 않아 흰 면 위에 둔다. 목록은 그 아래 회색 바탕 위 흰 카드.
     return Container(
-      decoration: const BoxDecoration(
-        color: AppSemanticColors.subheaderBackground,
-        border: Border(
-          bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
-        ),
-      ),
+      color: AppSemanticColors.surfaceCard,
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
+        AppSpacing.screenGutter,
         AppSpacing.space2,
-        AppSpacing.space4,
+        AppSpacing.screenGutter,
         AppSpacing.space3,
       ),
       child: Column(
@@ -194,22 +192,26 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
           ),
           if (floors.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.space3),
-            Row(
-              children: [
-                SeedChip(
-                  label: '전체',
-                  selected: _floorFilter == null,
-                  onTap: () => setState(() => _floorFilter = null),
-                ),
-                for (final floor in floors) ...[
-                  const SizedBox(width: AppSpacing.space2),
+            // 층이 많거나 글자를 크게 키워도 넘치지 않게 가로로 밀어 본다
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
                   SeedChip(
-                    label: '$floor층',
-                    selected: _floorFilter == floor,
-                    onTap: () => setState(() => _floorFilter = floor),
+                    label: '전체',
+                    selected: _floorFilter == null,
+                    onTap: () => setState(() => _floorFilter = null),
                   ),
+                  for (final floor in floors) ...[
+                    const SizedBox(width: AppSpacing.space2),
+                    SeedChip(
+                      label: '$floor층',
+                      selected: _floorFilter == floor,
+                      onTap: () => setState(() => _floorFilter = floor),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ],
         ],
@@ -218,40 +220,22 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
   }
 
   Widget _message(String text, {bool retry = false}) {
-    // RefreshIndicator가 동작하려면 스크롤 가능한 자식이 필요하다
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(
-            top: AppSpacing.space20 + AppSpacing.space10,
-          ),
-          child: Center(
-            child: Column(
-              children: [
-                Text(
-                  text,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textTertiary,
-                  ),
-                ),
-                if (retry) ...[
-                  const SizedBox(height: AppSpacing.space4),
-                  SeedButton(
-                    label: '다시 시도',
-                    variant: SeedButtonVariant.neutralWeak,
-                    onPressed: () {
-                      setState(() => _isLoading = true);
-                      _load();
-                    },
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
+    // B안 빈 화면. 글은 그대로 — 첫 줄은 제목, 줄바꿈 뒤는 설명으로 나눠 보일 뿐이다.
+    // AppEmptyState 안의 스크롤이 RefreshIndicator(당겨서 새로고침)를 받는다.
+    final lineBreak = text.indexOf('\n');
+    final title = lineBreak < 0 ? text : text.substring(0, lineBreak);
+    final description = lineBreak < 0 ? null : text.substring(lineBreak + 1);
+    return AppEmptyState(
+      icon: retry ? Icons.error_outline_rounded : Icons.elderly,
+      title: title,
+      description: description,
+      actionLabel: retry ? '다시 시도' : null,
+      onAction: retry
+          ? () {
+              setState(() => _isLoading = true);
+              _load();
+            }
+          : null,
     );
   }
 }
@@ -272,81 +256,75 @@ class _ElderRow extends StatelessWidget {
       if (profile != null) profile.careGradeLabel,
     ];
 
-    return Material(
-      color: AppSemanticColors.surfaceDefault,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        onTap: () => onTap(elder),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            border: Border.all(color: AppSemanticColors.borderSubtle),
-          ),
-          padding: const EdgeInsets.all(AppSpacing.space4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    // B안: 회색 바탕 위 흰 카드(테두리 없음, 모서리 20, 안쪽 20). 누르면 살짝 줄었다 돌아온다.
+    return AppCard(
+      onTap: () => onTap(elder),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          elder.name,
-                          style: AppTypography.titleMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
+                    Flexible(
+                      child: Text(
+                        elder.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.titleMedium.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
-                        if (profile != null) ...[
-                          const SizedBox(width: AppSpacing.space2),
-                          Text(
-                            profile.seatSummary,
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space0_5),
-                    Text(
-                      profile == null ? '케어 정보 미등록' : subtitleParts.join(' · '),
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textSecondary,
                       ),
                     ),
-                    if (profile != null && profile.riskTags.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.space2),
-                      Wrap(
-                        spacing: AppSpacing.space1,
-                        runSpacing: AppSpacing.space1,
-                        children: [
-                          for (final tag in profile.riskTags)
-                            AppTag(
-                              label: tag,
-                              tone: (tag == '낙상' || tag == '욕창')
-                                  ? AppTagTone.warning
-                                  : AppTagTone.neutral,
-                            ),
-                        ],
+                    if (profile != null) ...[
+                      const SizedBox(width: AppSpacing.space2),
+                      Text(
+                        profile.seatSummary,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
                       ),
                     ],
                   ],
                 ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                // 공용 SeedListCell의 chevron과 같은 크기
-                size: 18,
-                color: AppSemanticColors.textTertiary,
-              ),
-            ],
+                const SizedBox(height: AppSpacing.space0_5),
+                Text(
+                  profile == null ? '케어 정보 미등록' : subtitleParts.join(' · '),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+                if (profile != null && profile.riskTags.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.space2_5),
+                  Wrap(
+                    spacing: AppSpacing.space1_5,
+                    runSpacing: AppSpacing.space1_5,
+                    children: [
+                      for (final tag in profile.riskTags)
+                        AppTag(
+                          label: tag,
+                          tone: (tag == '낙상' || tag == '욕창')
+                              ? AppTagTone.warning
+                              : AppTagTone.neutral,
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: AppSpacing.space2),
+          // 공용 SeedListCell의 꺾쇠와 같은 모양
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 22,
+            color: AppSemanticColors.iconSubtle,
+          ),
+        ],
       ),
     );
   }
