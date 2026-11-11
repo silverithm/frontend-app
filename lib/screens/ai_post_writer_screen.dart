@@ -12,7 +12,10 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_snackbar.dart';
+import '../widgets/common/app_tag.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
@@ -248,14 +251,12 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        title: Text('AI 글쓰기 도우미', style: AppTypography.appBarTitle),
-        elevation: 0,
-      ),
+      // B안: 옅은 회색 바탕 위 흰 카드(사진 / 올릴 곳·상황 설명 / 완성된 글) — 회색 입력칸은 흰 카드 안에 둔다
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: const CareVAppBar(title: 'AI 글쓰기 도우미'),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+          padding: const EdgeInsets.all(AppSpacing.screenGutter),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -265,73 +266,88 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
                 description:
                     '오늘 찍은 식사·프로그램 사진을 올리면 밴드·블로그 글, 보호자 안내문, 기관 공지문, 인스타그램 글을 자동으로 작성해요. 완성된 글을 복사해서 붙여넣기만 하면 됩니다.',
               ),
-              const SizedBox(height: AppSpacing.space5),
+              const SizedBox(height: AppSpacing.cardGap),
 
-              Text(
-                '오늘의 사진 (${_images.length}/$_maxImages)',
-                style: AppTypography.titleSmall.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space2),
-              Text(
-                '식사, 프로그램, 만들기 활동 사진 등을 최대 $_maxImages장까지 올릴 수 있어요.',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space3),
-
-              if (_images.isNotEmpty) ...[
-                _buildThumbnailStrip(),
-                const SizedBox(height: AppSpacing.space3),
-              ],
-
-              SizedBox(
-                width: double.infinity,
-                child: SeedButton(
-                  label: _images.isEmpty ? '사진 선택하기' : '사진 더 담기',
-                  variant: SeedButtonVariant.neutralOutline,
-                  prefixIcon: Icons.add_photo_alternate_outlined,
-                  isDisabled: _isGenerating || _images.length >= _maxImages,
-                  onPressed: _pickImages,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space5),
-
-              Text(
-                '어디에 올릴 글인가요?',
-                style: AppTypography.titleSmall.copyWith(
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space2),
-              // 다섯 종류라 한 줄에 다 안 들어간다 — 줄바꿈되는 칩 묶음으로
-              Wrap(
-                spacing: AppSpacing.space2,
-                runSpacing: AppSpacing.space2,
-                children: [
-                  for (final channel in _Channel.values)
-                    SeedChip(
-                      label: channel.label,
-                      selected: _channel == channel,
-                      isDisabled: _isGenerating,
-                      onTap: () => setState(() => _channel = channel),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '오늘의 사진 (${_images.length}/$_maxImages)',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
                     ),
-                ],
+                    const SizedBox(height: AppSpacing.space1),
+                    Text(
+                      '식사, 프로그램, 만들기 활동 사진 등을 최대 $_maxImages장까지 올릴 수 있어요.',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space3),
+
+                    if (_images.isNotEmpty) ...[
+                      _buildThumbnailStrip(),
+                      const SizedBox(height: AppSpacing.space3),
+                    ],
+
+                    // 흰 카드 안 보조 단추 — 테두리 대신 회색 채움
+                    SizedBox(
+                      width: double.infinity,
+                      child: SeedButton(
+                        label: _images.isEmpty ? '사진 선택하기' : '사진 더 담기',
+                        variant: SeedButtonVariant.neutralWeak,
+                        prefixIcon: Icons.add_photo_alternate_outlined,
+                        isDisabled: _isGenerating || _images.length >= _maxImages,
+                        onPressed: _pickImages,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.cardGap),
+
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '어디에 올릴 글인가요?',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space2),
+                    // 다섯 종류라 한 줄에 다 안 들어간다 — 줄바꿈되는 칩 묶음으로
+                    Wrap(
+                      spacing: AppSpacing.space2,
+                      runSpacing: AppSpacing.space2,
+                      children: [
+                        for (final channel in _Channel.values)
+                          SeedChip(
+                            label: channel.label,
+                            selected: _channel == channel,
+                            isDisabled: _isGenerating,
+                            onTap: () => setState(() => _channel = channel),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space5),
+
+                    SeedTextField(
+                      label: '상황 설명 (선택)',
+                      placeholder:
+                          '예: 오늘 오전엔 원예 프로그램으로 다육이 화분을 만들었고, 점심은 잡채와 미역국이었어요.',
+                      helperText: '적어주시면 글이 훨씬 정확해져요. 비워두면 사진만 보고 작성합니다.',
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      isDisabled: _isGenerating,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.space5),
-
-              SeedTextField(
-                label: '상황 설명 (선택)',
-                placeholder:
-                    '예: 오늘 오전엔 원예 프로그램으로 다육이 화분을 만들었고, 점심은 잡채와 미역국이었어요.',
-                helperText: '적어주시면 글이 훨씬 정확해져요. 비워두면 사진만 보고 작성합니다.',
-                controller: _descriptionController,
-                maxLines: 3,
-                isDisabled: _isGenerating,
-              ),
-              const SizedBox(height: AppSpacing.space4),
 
               if (_errorMessage != null) ...[
                 SeedCallout(
@@ -388,7 +404,7 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
             clipBehavior: Clip.none,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                borderRadius: BorderRadius.circular(AppBorderRadius.control),
                 child: Image.file(
                   _images[index],
                   width: 96,
@@ -416,12 +432,11 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
                     onTap: () => _removeImageAt(index),
                     child: Container(
                       padding: const EdgeInsets.all(AppSpacing.space1),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.backgroundPrimary,
+                      // 사진 위에서도 보이게 — 테두리 대신 부드러운 그림자
+                      decoration: const BoxDecoration(
+                        color: AppSemanticColors.surfaceCard,
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppSemanticColors.borderDefault,
-                        ),
+                        boxShadow: AppShadows.raised,
                       ),
                       child: Icon(
                         Icons.close,
@@ -440,14 +455,8 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
   }
 
   Widget _buildResult(_AiPostResult result) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.borderSubtle),
-      ),
+    // B안: 테두리 없는 흰 카드
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -462,21 +471,9 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
                 ),
               ),
               const SizedBox(width: AppSpacing.space2),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space2,
-                  vertical: AppSpacing.space0_5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.brandWeak,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                ),
-                child: Text(
-                  (_resultChannel ?? _channel).resultLabel,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppSemanticColors.brandDefault,
-                  ),
-                ),
+              AppTag(
+                label: (_resultChannel ?? _channel).resultLabel,
+                tone: AppTagTone.accent,
               ),
             ],
           ),
@@ -496,24 +493,7 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
               spacing: AppSpacing.space1_5,
               runSpacing: AppSpacing.space1_5,
               children: [
-                for (final tag in result.hashtags)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space2,
-                      vertical: AppSpacing.space0_5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.backgroundTertiary,
-                      borderRadius:
-                          BorderRadius.circular(AppBorderRadius.full),
-                    ),
-                    child: Text(
-                      tag,
-                      style: AppTypography.labelSmall.copyWith(
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                    ),
-                  ),
+                for (final tag in result.hashtags) AppTag(label: tag),
               ],
             ),
           ],
@@ -535,7 +515,7 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
               Expanded(
                 child: SeedButton(
                   label: '본문만 복사',
-                  variant: SeedButtonVariant.neutralOutline,
+                  variant: SeedButtonVariant.neutralWeak,
                   prefixIcon: Icons.copy_outlined,
                   isDisabled: _isGenerating,
                   onPressed: () =>
