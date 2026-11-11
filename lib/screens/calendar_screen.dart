@@ -434,7 +434,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 children: [
                   const Icon(
                     Icons.check_circle,
-                    size: 14,
+                    size: 16,
                     color: AppSemanticColors.statusSuccessIcon,
                   ),
                   const SizedBox(width: AppSpacing.space1),
@@ -463,19 +463,17 @@ class _CalendarScreenState extends State<CalendarScreen>
         return SingleChildScrollView(
           child: Column(
             children: [
-              // 달력 위젯
+              // 달력 카드 — B안: 회색 바탕 위 흰 카드, 테두리 없음
               Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space4,
-                  vertical: AppSpacing.space3,
+                margin: const EdgeInsets.fromLTRB(
+                  AppSpacing.space4,
+                  AppSpacing.space2,
+                  AppSpacing.space4,
+                  0,
                 ),
                 decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.borderSubtle,
-                    width: 1,
-                  ),
+                  color: AppSemanticColors.surfaceCard,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.card),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: _buildScheduleCalendarWidget(scheduleProvider),
@@ -498,17 +496,13 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget _buildScheduleCalendarWidget(ScheduleProvider provider) {
     return Column(
       children: [
-        // 월 네비게이션 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space4,
-            vertical: AppSpacing.space3,
-          ),
-          decoration: const BoxDecoration(
-            color: AppSemanticColors.subheaderBackground,
-            border: Border(
-              bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
-            ),
+        // 월 네비게이션 — B안: 머리띠 없이 카드 맨 위에 달 이름과 회색 동그라미 꺾쇠
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space3,
+            AppSpacing.space3,
+            AppSpacing.space3,
+            AppSpacing.space1,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -535,15 +529,19 @@ class _CalendarScreenState extends State<CalendarScreen>
                   color: AppSemanticColors.textSecondary,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: AppSemanticColors.surfaceDefault,
-                  shape: const CircleBorder(
-                    side: BorderSide(color: AppSemanticColors.subheaderBorder),
-                  ),
+                  backgroundColor: AppSemanticColors.fillDefault,
+                  shape: const CircleBorder(),
                 ),
               ),
-              Text(
-                '${_scheduleCurrentDate.year}년 ${_scheduleCurrentDate.month}월',
-                style: AppTypography.heading6,
+              Flexible(
+                child: Text(
+                  '${_scheduleCurrentDate.year}년 ${_scheduleCurrentDate.month}월',
+                  style: AppTypography.heading6.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               IconButton(
                 tooltip: '다음 달',
@@ -567,10 +565,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                   color: AppSemanticColors.textSecondary,
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor: AppSemanticColors.surfaceDefault,
-                  shape: const CircleBorder(
-                    side: BorderSide(color: AppSemanticColors.subheaderBorder),
-                  ),
+                  backgroundColor: AppSemanticColors.fillDefault,
+                  shape: const CircleBorder(),
                 ),
               ),
             ],
@@ -579,18 +575,13 @@ class _CalendarScreenState extends State<CalendarScreen>
 
         _buildScheduleFilterBar(provider),
 
-        // 요일 헤더 — 옅은 회색 면 + 하단 구분선. 틸을 쓰지 않는 건 오늘·선택
-        // 표시가 틸 계열이라 겹치지 않게 하려는 것
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space4,
-            vertical: AppSpacing.space3,
-          ),
-          decoration: const BoxDecoration(
-            color: AppSemanticColors.backgroundSecondary,
-            border: Border(
-              bottom: BorderSide(color: AppSemanticColors.borderSubtle),
-            ),
+        // 요일 줄 — B안: 회색 면·아래 선 없이 글자만. 좌우 여백을 달력 칸(8)과 맞춰 줄이 어긋나지 않게
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space2,
+            AppSpacing.space2,
+            AppSpacing.space2,
+            AppSpacing.space1,
           ),
           child: Row(
             children: ['일', '월', '화', '수', '목', '금', '토'].map((day) {
@@ -600,7 +591,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 child: Center(
                   child: Text(
                     day,
-                    style: AppTypography.labelMedium.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: isSunday
                           ? AppSemanticColors.statusErrorIcon
                           : isSaturday
@@ -684,23 +675,16 @@ class _CalendarScreenState extends State<CalendarScreen>
               _scheduleSelectedDate = date;
             });
           },
+          // B안: 고른 날은 틸로 채운 동그라미, 오늘은 옅은 틸 동그라미(테두리 없음)
           child: Container(
             margin: const EdgeInsets.all(2),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppSemanticColors.interactivePrimaryDefault
+                  ? AppSemanticColors.brandDefault
                   : isToday
-                  ? AppSemanticColors.interactivePrimaryDefault.withValues(
-                      alpha: 0.1,
-                    )
+                  ? AppSemanticColors.brandWeak
                   : null,
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              border: isToday && !isSelected
-                  ? Border.all(
-                      color: AppSemanticColors.interactivePrimaryDefault,
-                      width: 1,
-                    )
-                  : null,
+              shape: BoxShape.circle,
             ),
             // 칸은 정사각형이라 폭이 좁은 폰(360dp)에서 글자를 가장 크게 하면 날짜 숫자와 일정 점이
             // 칸 높이를 넘었다. 넘칠 때만 칸에 맞춰 줄이고, 평소 크기에서는 그대로 둔다.
@@ -728,8 +712,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                   if (hasSchedule)
                     Container(
                       margin: const EdgeInsets.only(top: 2),
-                      width: 4,
-                      height: 4,
+                      width: 5,
+                      height: 5,
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppSemanticColors.textInverse
@@ -759,55 +743,38 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget _buildScheduleDateDetail(ScheduleProvider provider) {
     final schedules = _visibleSchedulesForDate(provider, _scheduleSelectedDate!);
 
+    // B안: 테두리 없는 흰 카드, 머리띠·아이콘 타일 없이 맨 위에 날짜 제목만
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.space4,
-        AppSpacing.space2,
+        AppSpacing.cardGap,
         AppSpacing.space4,
         AppSpacing.space4,
       ),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: AppSemanticColors.surfaceDefault,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-          border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
+          color: AppSemanticColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space5),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.cardPadding,
+            AppSpacing.space3,
+            AppSpacing.space3,
+            AppSpacing.cardPadding,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.space3),
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.backgroundTertiary,
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.xl2,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.event_note,
-                            color: AppSemanticColors.textSecondary,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Expanded(
-                          child: Text(
-                            _formatSelectedDate(_scheduleSelectedDate!),
-                            style: AppTypography.heading6.copyWith(
-                              color: AppSemanticColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      _formatSelectedDate(_scheduleSelectedDate!),
+                      style: AppTypography.heading6.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -819,25 +786,28 @@ class _CalendarScreenState extends State<CalendarScreen>
                     },
                     icon: Container(
                       padding: const EdgeInsets.all(AppSpacing.space2),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                      decoration: const BoxDecoration(
+                        color: AppSemanticColors.fillDefault,
+                        shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.close,
-                        size: 16,
-                        color: AppSemanticColors.textTertiary,
+                        size: 18,
+                        color: AppSemanticColors.textSecondary,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.space2),
 
               if (schedules.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.space2,
+                  padding: const EdgeInsets.fromLTRB(
+                    0,
+                    AppSpacing.space2,
+                    AppSpacing.space2,
+                    0,
                   ),
                   child: Row(
                     children: [
@@ -847,46 +817,50 @@ class _CalendarScreenState extends State<CalendarScreen>
                         size: 24,
                       ),
                       const SizedBox(width: AppSpacing.space3),
-                      Text(
-                        _scheduleFilterValues.isEmpty
-                            ? '이 날짜에는 등록된 일정이 없습니다.'
-                            : '이 날짜에는 필터에 맞는 일정이 없습니다.',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
+                      Expanded(
+                        child: Text(
+                          _scheduleFilterValues.isEmpty
+                              ? '이 날짜에는 등록된 일정이 없습니다.'
+                              : '이 날짜에는 필터에 맞는 일정이 없습니다.',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textTertiary,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 )
               else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space3,
-                        vertical: AppSpacing.space1_5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.statusSuccessIcon.withValues(
-                          alpha: 0.1,
+                Padding(
+                  // 닫기 단추가 카드 끝에 붙도록 카드 오른쪽 여백을 12로 줄였다 — 목록은 20을 맞춘다
+                  padding: const EdgeInsets.only(right: AppSpacing.space2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.space3,
+                          vertical: AppSpacing.space1,
                         ),
-                        borderRadius: BorderRadius.circular(
-                          AppBorderRadius.full,
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.statusSuccessBackground,
+                          borderRadius: BorderRadius.circular(
+                            AppBorderRadius.full,
+                          ),
+                        ),
+                        child: Text(
+                          '일정 ${schedules.length}건',
+                          style: AppTypography.titleSmall.copyWith(
+                            color: AppSemanticColors.statusSuccessText,
+                          ),
                         ),
                       ),
-                      child: Text(
-                        '일정 ${schedules.length}건',
-                        style: AppTypography.labelLarge.copyWith(
-                          color: AppSemanticColors.statusSuccessIcon,
-                        ),
+                      const SizedBox(height: AppSpacing.space3),
+                      ...schedules.map(
+                        (schedule) => _buildScheduleItem(schedule),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-                    ...schedules.map(
-                      (schedule) => _buildScheduleItem(schedule),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -967,19 +941,17 @@ class _CalendarScreenState extends State<CalendarScreen>
       onLongPress: isMySchedule
           ? () => _showDeleteScheduleDialog(schedule)
           : null,
+      // B안: 흰 카드 안의 일정 한 건은 테두리 없는 회색 칸. 짚어 온 일정만 일정 색 테두리 2로 강조한다
       child: Container(
         key: isHighlighted ? _highlightedScheduleKey : null,
         margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-        padding: const EdgeInsets.all(AppSpacing.space4),
+        padding: const EdgeInsets.all(AppSpacing.space3),
         decoration: BoxDecoration(
-          color: AppSemanticColors.surfaceDefault,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-          border: Border.all(
-            color: isHighlighted
-                ? scheduleColor
-                : scheduleColor.withValues(alpha: 0.2),
-            width: isHighlighted ? 2 : 1,
-          ),
+          color: AppSemanticColors.fillDefault,
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
+          border: isHighlighted
+              ? Border.all(color: scheduleColor, width: 2)
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -999,8 +971,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                 // 수행완료 체크 — 웹 월간일정과 같은 동작. 할 일이 있는 일정은 할 일 진행에
                 // 따라 자동으로 완료되므로 수동 토글 버튼을 숨기고 상태만 보여준다
                 SizedBox(
-                  width: 36,
-                  height: 36,
+                  width: 44,
+                  height: 44,
                   child: hasTasks
                       ? Center(
                           child: Icon(
@@ -1027,7 +999,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           tooltip: schedule.isCompleted ? '수행완료 해제' : '수행완료',
                           visualDensity: VisualDensity.compact,
                           constraints:
-                              const BoxConstraints(minWidth: 36, minHeight: 36),
+                              const BoxConstraints(minWidth: 44, minHeight: 44),
                           padding: EdgeInsets.zero,
                         ),
                 ),
@@ -1071,7 +1043,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                           if (schedule.timeText.isNotEmpty) ...[
                             Icon(
                               Icons.access_time,
-                              size: 12,
+                              size: 14,
                               color: AppSemanticColors.textTertiary,
                             ),
                             const SizedBox(width: AppSpacing.space1),
@@ -1087,14 +1059,17 @@ class _CalendarScreenState extends State<CalendarScreen>
                               schedule.location!.isNotEmpty) ...[
                             Icon(
                               Icons.location_on_outlined,
-                              size: 12,
+                              size: 14,
                               color: AppSemanticColors.textTertiary,
                             ),
                             const SizedBox(width: AppSpacing.space1),
-                            Text(
-                              schedule.location!,
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppSemanticColors.textTertiary,
+                            // 장소가 길면 줄을 넘기지 않고 남은 폭 안에서 줄바꿈한다
+                            Flexible(
+                              child: Text(
+                                schedule.location!,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textTertiary,
+                                ),
                               ),
                             ),
                           ],
@@ -1184,7 +1159,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                   ),
                   decoration: BoxDecoration(
                     color: scheduleColor,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.full),
                   ),
                   child: Text(
                     schedule.categoryText,
@@ -1197,8 +1172,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             ),
             // 할 일 체크리스트 — 별도 상세 화면이 없어 항목을 눌러 이 자리에서 편다
             if (hasTasks && isTaskListExpanded) ...[
-              const SizedBox(height: AppSpacing.space3),
-              Container(height: 1, color: AppSemanticColors.borderSubtle),
+              // B안: 구분선 대신 간격
               const SizedBox(height: AppSpacing.space3),
               if (taskItems.isEmpty)
                 Text(
@@ -1223,12 +1197,13 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget _buildScheduleTaskItem(Schedule schedule, ScheduleTask task) {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space1),
+      // 회색 일정 칸 안의 할 일 한 줄 — 흰 칸(끝난 일은 옅은 초록)
       decoration: BoxDecoration(
         color: task.isCompleted
             ? AppSemanticColors.statusSuccessBackground
-            : AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+            : AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.inner),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1246,10 +1221,10 @@ class _CalendarScreenState extends State<CalendarScreen>
             ),
             tooltip: task.isCompleted ? '완료 해제' : '완료',
             visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
             padding: EdgeInsets.zero,
           ),
-          const SizedBox(width: AppSpacing.space2),
+          const SizedBox(width: AppSpacing.space1),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.space1),
@@ -1259,7 +1234,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 children: [
                   Text(
                     task.content,
-                    style: AppTypography.bodySmall.copyWith(
+                    style: AppTypography.bodyMedium.copyWith(
                       color: task.isCompleted
                           ? AppSemanticColors.textTertiary
                           : AppSemanticColors.textPrimary,
