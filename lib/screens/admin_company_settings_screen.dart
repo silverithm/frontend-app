@@ -7,6 +7,7 @@ import '../models/subscription.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../utils/app_haptics.dart';
 import '../widgets/common/index.dart';
 import '../widgets/seed/seed_button.dart';
 import 'admin_payment_screen.dart';
@@ -49,41 +50,34 @@ class _AdminCompanySettingsScreenState
 
         if (company == null) {
           return Scaffold(
+            backgroundColor: AppSemanticColors.backgroundCanvas,
             appBar: const CareVAppBar(title: '회사 정보'),
             body: const Center(child: Text('회사 정보를 불러올 수 없습니다.')),
           );
         }
 
+        // B안: 옅은 회색 바탕 위 테두리 없는 흰 카드를 간격(12)으로 나눈다. 구독·결제 문구는 그대로.
         return Scaffold(
-          backgroundColor: AppSemanticColors.backgroundSecondary,
+          backgroundColor: AppSemanticColors.backgroundCanvas,
           appBar: const CareVAppBar(title: '회사 정보', centerTitle: true),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.space6),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenGutter,
+              vertical: AppSpacing.space6,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 회사 정보 카드 — 흰 바탕에 아이콘 타일을 왼쪽에 둔 가로 배치
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.space5),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    border: Border.all(
-                      color: AppSemanticColors.borderDefault,
-                      width: 1,
-                    ),
-                  ),
+                // 회사 정보 카드 — 흰 카드에 옅은 틸 둥근 아이콘을 왼쪽에 둔 가로 배치
+                AppCard(
                   child: Row(
                     children: [
                       Container(
                         width: AppSpacing.space12,
                         height: AppSpacing.space12,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppSemanticColors.brandWeak,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.lg,
-                          ),
+                          shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.business,
@@ -116,19 +110,10 @@ class _AdminCompanySettingsScreenState
                   ),
                 ),
 
-                const SizedBox(height: AppSpacing.space8),
+                const SizedBox(height: AppSpacing.cardGap),
 
                 // 상세 정보 섹션
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space6),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                    border: Border.all(
-                      color: AppSemanticColors.borderDefault,
-                      width: 1,
-                    ),
-                  ),
+                AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -162,19 +147,10 @@ class _AdminCompanySettingsScreenState
                   ),
                 ),
 
-                const SizedBox(height: AppSpacing.space6),
+                const SizedBox(height: AppSpacing.cardGap),
 
                 // 관리자 정보 섹션
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.space6),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceDefault,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-                    border: Border.all(
-                      color: AppSemanticColors.borderDefault,
-                      width: 1,
-                    ),
-                  ),
+                AppCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -208,23 +184,12 @@ class _AdminCompanySettingsScreenState
                   ),
                 ),
 
-                const SizedBox(height: AppSpacing.space6),
+                const SizedBox(height: AppSpacing.cardGap),
 
                 // 구독 정보 섹션 (관리자도 구독 정보 확인 가능)
                 Consumer<SubscriptionProvider>(
                   builder: (context, subscriptionProvider, child) {
-                    return Container(
-                      padding: const EdgeInsets.all(AppSpacing.space6),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.surfaceDefault,
-                        borderRadius: BorderRadius.circular(
-                          AppBorderRadius.xl2,
-                        ),
-                        border: Border.all(
-                          color: AppSemanticColors.borderDefault,
-                          width: 1,
-                        ),
-                      ),
+                    return AppCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -243,7 +208,7 @@ class _AdminCompanySettingsScreenState
                   },
                 ),
 
-                const SizedBox(height: AppSpacing.space6),
+                const SizedBox(height: AppSpacing.cardGap),
 
                 // 로그아웃 버튼 (제일 하단)
                 _buildLogoutSection(authProvider),
@@ -262,16 +227,17 @@ class _AdminCompanySettingsScreenState
   }) {
     return Row(
       children: [
+        // 옅은 틸 둥근 아이콘 44(B안 목록 줄과 같은 모양) — 글자 없는 칸이라 크기를 정해 둔다
         Container(
-          width: AppSpacing.space10,
-          height: AppSpacing.space10,
-          decoration: BoxDecoration(
-            color: AppSemanticColors.backgroundTertiary,
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          width: AppSpacing.iconCircle,
+          height: AppSpacing.iconCircle,
+          decoration: const BoxDecoration(
+            color: AppSemanticColors.brandWeak,
+            shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: AppSemanticColors.textSecondary, size: 20),
+          child: Icon(icon, color: AppSemanticColors.brandDefault, size: 22),
         ),
-        const SizedBox(width: AppSpacing.space4),
+        const SizedBox(width: AppSpacing.space3_5),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,10 +289,12 @@ class _AdminCompanySettingsScreenState
             ),
           ),
           const SizedBox(width: AppSpacing.space3),
-          Text(
-            '구독 정보를 불러오는 중...',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppSemanticColors.textSecondary,
+          Expanded(
+            child: Text(
+              '구독 정보를 불러오는 중...',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
             ),
           ),
         ],
@@ -347,8 +315,7 @@ class _AdminCompanySettingsScreenState
             padding: const EdgeInsets.all(AppSpacing.space4),
             decoration: BoxDecoration(
               color: AppSemanticColors.statusWarningBackground,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              border: Border.all(color: AppSemanticColors.statusWarningBorder),
+              borderRadius: BorderRadius.circular(AppBorderRadius.control),
             ),
             child: Row(
               children: [
@@ -414,8 +381,7 @@ class _AdminCompanySettingsScreenState
           padding: const EdgeInsets.all(AppSpacing.space4),
           decoration: BoxDecoration(
             color: AppSemanticColors.statusSuccessBackground,
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            border: Border.all(color: AppSemanticColors.statusSuccessBorder),
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
           ),
           child: Row(
             children: [
@@ -460,13 +426,7 @@ class _AdminCompanySettingsScreenState
   }
 
   Widget _buildLogoutSection(AuthProvider authProvider) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space6),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl2),
-        border: Border.all(color: AppSemanticColors.borderDefault, width: 1),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -497,7 +457,7 @@ class _AdminCompanySettingsScreenState
             width: double.infinity,
             child: SeedButton(
               label: '로그아웃',
-              variant: SeedButtonVariant.neutralOutline,
+              variant: SeedButtonVariant.neutralWeak,
               prefixIcon: Icons.logout,
               onPressed: () => _showLogoutDialog(authProvider),
             ),
@@ -553,8 +513,7 @@ class _AdminCompanySettingsScreenState
         padding: const EdgeInsets.all(AppSpacing.space4),
         decoration: BoxDecoration(
           color: AppSemanticColors.statusWarningBackground,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          border: Border.all(color: AppSemanticColors.statusWarningBorder),
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
         ),
         child: Row(
           children: [
@@ -569,10 +528,12 @@ class _AdminCompanySettingsScreenState
               ),
             ),
             const SizedBox(width: AppSpacing.space3),
-            Text(
-              '결제 실패 정보를 확인 중...',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.statusWarningText,
+            Expanded(
+              child: Text(
+                '결제 실패 정보를 확인 중...',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppSemanticColors.statusWarningText,
+                ),
               ),
             ),
           ],
@@ -589,8 +550,7 @@ class _AdminCompanySettingsScreenState
     return Container(
       decoration: BoxDecoration(
         color: AppSemanticColors.statusErrorBackground,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(color: AppSemanticColors.statusErrorBorder),
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,7 +562,7 @@ class _AdminCompanySettingsScreenState
                 _isPaymentFailuresExpanded = !_isPaymentFailuresExpanded;
               });
             },
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            borderRadius: BorderRadius.circular(AppBorderRadius.control),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.space4),
               child: Row(
@@ -629,7 +589,7 @@ class _AdminCompanySettingsScreenState
                     ),
                     decoration: BoxDecoration(
                       color: AppSemanticColors.statusErrorIcon,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.full),
                     ),
                     child: Text(
                       '${subscriptionProvider.paymentFailures.length}건',
@@ -699,10 +659,10 @@ class _AdminCompanySettingsScreenState
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.space2),
       padding: const EdgeInsets.all(AppSpacing.space3),
+      // 옅은 빨강 칸 안의 흰 줄 — 테두리 없이 바탕색 차이로 나눈다
       decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(color: AppSemanticColors.statusErrorBorder),
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.inner),
       ),
       child: Row(
         children: [
@@ -743,7 +703,7 @@ class _AdminCompanySettingsScreenState
           child: subscription.isActive
               ? SeedButton(
                   label: '구독 일시정지',
-                  variant: SeedButtonVariant.neutralOutline,
+                  variant: SeedButtonVariant.neutralWeak,
                   prefixIcon: Icons.pause_circle_outline,
                   isLoading: subscriptionProvider.isLoading,
                   onPressed: subscriptionProvider.isLoading
@@ -803,152 +763,120 @@ class _AdminCompanySettingsScreenState
   void _showAdminWithdrawalDialog(AuthProvider authProvider) {
     bool isWithdrawing = false;
 
-    AppDialog.showCustom<void>(
+    // B안: 가운데 대화상자 대신 아래 시트(경고 아이콘 + 경고 진동 — AppDialog의 삭제 확인과 같다)
+    AppHaptics.warning();
+    showAppSheet<void>(
       context,
-      child: StatefulBuilder(
-        builder: (context, setState) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.space2),
-                    decoration: BoxDecoration(
-                      color: AppSemanticColors.statusErrorBackground,
-                      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    ),
-                    child: Icon(
-                      Icons.person_remove,
-                      color: AppSemanticColors.statusErrorIcon,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: Text(
-                      '관리자 회원탈퇴',
-                      style: AppTypography.heading6,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.statusErrorBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                  border: Border.all(
-                    color: AppSemanticColors.statusErrorBorder,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.warning_amber_rounded,
-                          size: 18,
-                          color: AppSemanticColors.statusErrorIcon,
-                        ),
-                        const SizedBox(width: AppSpacing.space1_5),
-                        Text(
-                          '주의사항',
-                          style: AppTypography.bodyLarge.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppSemanticColors.statusErrorText,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.space2),
-                    Text(
-                      '• 관리자 계정이 영구적으로 삭제됩니다\n• 회사의 모든 데이터가 삭제됩니다\n• 직원들의 계정도 모두 삭제됩니다\n• 삭제된 데이터는 복구할 수 없습니다\n• 구독도 자동으로 취소됩니다',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.statusErrorText,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              Text(
-                '정말로 관리자 회원탈퇴를 진행하시겠습니까?',
-                style: AppTypography.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: AppSemanticColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Row(
-                children: [
-                  Expanded(
-                    child: SeedButton(
-                      label: '취소',
-                      variant: SeedButtonVariant.neutralOutline,
-                      isDisabled: isWithdrawing,
-                      onPressed: isWithdrawing
-                          ? null
-                          : () => Navigator.pop(context),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  Expanded(
-                    child: SeedButton(
-                      label: '탈퇴하기',
-                      variant: SeedButtonVariant.critical,
-                      isLoading: isWithdrawing,
-                      onPressed: isWithdrawing
-                          ? null
-                          : () async {
-                              setState(() => isWithdrawing = true);
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setState) => AppSheetFrame(
+          title: '관리자 회원탈퇴',
+          warning: true,
+          actions: AppSheetActions(
+            cancel: SeedButton(
+              label: '취소',
+              size: SeedButtonSize.large,
+              variant: SeedButtonVariant.neutralWeak,
+              isDisabled: isWithdrawing,
+              onPressed: isWithdrawing
+                  ? null
+                  : () => Navigator.pop(context),
+            ),
+            confirm: SeedButton(
+              label: '탈퇴하기',
+              size: SeedButtonSize.large,
+              variant: SeedButtonVariant.critical,
+              isLoading: isWithdrawing,
+              onPressed: isWithdrawing
+                  ? null
+                  : () async {
+                      setState(() => isWithdrawing = true);
 
-                              final success = await authProvider
-                                  .deleteAdminAccount();
+                      final success = await authProvider
+                          .deleteAdminAccount();
 
-                              if (success && context.mounted) {
-                                Navigator.pop(context);
+                      if (success && context.mounted) {
+                        Navigator.pop(context);
 
-                                await Future.delayed(
-                                  const Duration(milliseconds: 100),
-                                );
+                        await Future.delayed(
+                          const Duration(milliseconds: 100),
+                        );
 
-                                if (context.mounted) {
-                                  Navigator.of(context).pushAndRemoveUntil(
-                                    MaterialPageRoute(
-                                      builder: (_) => const LoginScreen(),
-                                    ),
-                                    (route) => false,
-                                  );
+                        if (context.mounted) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                            (route) => false,
+                          );
 
-                                  AppSnackBar.showSuccess(
-                                    context,
-                                    message:
-                                        '관리자 회원탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사했습니다.',
-                                  );
-                                }
-                              } else if (context.mounted) {
-                                setState(() => isWithdrawing = false);
+                          AppSnackBar.showSuccess(
+                            context,
+                            message:
+                                '관리자 회원탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사했습니다.',
+                          );
+                        }
+                      } else if (context.mounted) {
+                        setState(() => isWithdrawing = false);
 
-                                AppSnackBar.showError(
-                                  context,
-                                  message: authProvider.errorMessage.isNotEmpty
-                                      ? authProvider.errorMessage
-                                      : '관리자 회원탈퇴에 실패했습니다',
-                                );
-                              }
-                            },
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                        AppSnackBar.showError(
+                          context,
+                          message: authProvider.errorMessage.isNotEmpty
+                              ? authProvider.errorMessage
+                              : '관리자 회원탈퇴에 실패했습니다',
+                        );
+                      }
+                    },
+            ),
           ),
+          children: [
+            const SizedBox(height: AppSpacing.space4),
+            // 주의사항 — 테두리 없는 옅은 빨강 칸
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              decoration: BoxDecoration(
+                color: AppSemanticColors.statusErrorBackground,
+                borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        size: 18,
+                        color: AppSemanticColors.statusErrorIcon,
+                      ),
+                      const SizedBox(width: AppSpacing.space1_5),
+                      Text(
+                        '주의사항',
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppSemanticColors.statusErrorText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.space2),
+                  Text(
+                    '• 관리자 계정이 영구적으로 삭제됩니다\n• 회사의 모든 데이터가 삭제됩니다\n• 직원들의 계정도 모두 삭제됩니다\n• 삭제된 데이터는 복구할 수 없습니다\n• 구독도 자동으로 취소됩니다',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.statusErrorText,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.space4),
+            Text(
+              '정말로 관리자 회원탈퇴를 진행하시겠습니까?',
+              style: AppTypography.bodyLarge.copyWith(
+                fontWeight: FontWeight.w500,
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );
