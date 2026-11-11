@@ -9,7 +9,10 @@ import '../theme/app_typography.dart';
 import '../widgets/notice/notice_card.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/carev_app_bar.dart';
+import '../widgets/common/app_list_entrance.dart';
 import '../widgets/common/app_loading.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/seed/seed_button.dart';
 import 'notice_detail_screen.dart';
 
@@ -65,46 +68,55 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
       // B안: 옅은 회색 바탕 위 흰 공지 카드
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: widget.showAppBar ? const CareVAppBar(title: '공지사항') : null,
-      body: Consumer<NoticeProvider>(
-        builder: (context, noticeProvider, child) {
-          if (noticeProvider.isLoading && noticeProvider.publishedNotices.isEmpty) {
-            return const Center(child: AppLoading());
-          }
+      // 목록 등장 연출은 처음 한 번만 — 새로고침으로 목록이 비었다 다시 차도 다시 떠오르지 않게 Consumer 바깥에 둔다
+      body: AppListEntrance(
+        child: Consumer<NoticeProvider>(
+          builder: (context, noticeProvider, child) {
+            if (noticeProvider.isLoading &&
+                noticeProvider.publishedNotices.isEmpty) {
+              return const _NoticeListSkeleton();
+            }
 
-          if (noticeProvider.errorMessage.isNotEmpty &&
-              noticeProvider.publishedNotices.isEmpty) {
-            return _buildErrorState(noticeProvider.errorMessage);
-          }
+            if (noticeProvider.errorMessage.isNotEmpty &&
+                noticeProvider.publishedNotices.isEmpty) {
+              return _buildErrorState(noticeProvider.errorMessage);
+            }
 
-          if (noticeProvider.publishedNotices.isEmpty) {
-            return _buildEmptyState();
-          }
+            if (noticeProvider.publishedNotices.isEmpty) {
+              return _buildEmptyState();
+            }
 
-          return RefreshIndicator(
-            onRefresh: () => _loadNotices(refresh: true),
-            color: AppSemanticColors.interactivePrimaryDefault,
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-              itemCount: noticeProvider.publishedNotices.length +
-                  (noticeProvider.hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == noticeProvider.publishedNotices.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(AppSpacing.space4),
-                    child: Center(child: AppLoading(size: 24)),
+            return AppRefreshIndicator(
+              onRefresh: () => _loadNotices(refresh: true),
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.space2,
+                ),
+                itemCount:
+                    noticeProvider.publishedNotices.length +
+                    (noticeProvider.hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == noticeProvider.publishedNotices.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(AppSpacing.space4),
+                      child: Center(child: AppLoading(size: 24)),
+                    );
+                  }
+
+                  final notice = noticeProvider.publishedNotices[index];
+                  return AppListEntranceItem(
+                    index: index,
+                    child: NoticeCard(
+                      notice: notice,
+                      onTap: () => _navigateToDetail(notice),
+                    ),
                   );
-                }
-
-                final notice = noticeProvider.publishedNotices[index];
-                return NoticeCard(
-                  notice: notice,
-                  onTap: () => _navigateToDetail(notice),
-                );
-              },
-            ),
-          );
-        },
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -161,6 +173,32 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => NoticeDetailScreen(noticeId: notice.id),
+      ),
+    );
+  }
+}
+
+/// 공지 목록 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드(공지 카드와 같은 바깥 여백)
+class _NoticeListSkeleton extends StatelessWidget {
+  const _NoticeListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+        children: List.generate(
+          5,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenGutter,
+              vertical: AppSpacing.cardGap / 2,
+            ),
+          ),
+        ),
       ),
     );
   }
