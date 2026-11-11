@@ -9,7 +9,8 @@ import '../utils/app_haptics.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../widgets/common/app_card.dart' show AppStatusType;
+import '../widgets/common/app_card.dart' show AppCard, AppStatusType;
+import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -156,8 +157,9 @@ class _AdminVacationManagementScreenState
     }
 
     // 슬림 상단: 타이틀 1개만 (아이콘 배지·ADMIN 배지로 이중 강조하지 않는다).
+    // B안: 옅은 회색 바탕 위 흰 카드(거르기 · 일괄 처리 · 신청 카드)
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
         title: Text('휴무 관리', style: AppTypography.appBarTitle),
         elevation: 0,
@@ -226,24 +228,24 @@ class _AdminVacationManagementScreenState
       onRefresh: _loadData,
       child: CustomScrollView(
         slivers: [
-          // 필터 섹션 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
+          // 필터 섹션 — 머리띠(연한 틸 면 + 선) 대신 흰 카드 한 장
           SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: const BoxDecoration(
-                color: AppSemanticColors.subheaderBackground,
-                border: Border(
-                  bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
-                ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                AppSpacing.space3,
+                AppSpacing.screenGutter,
+                0,
               ),
+              child: AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 상태 필터
                   Text(
                     '상태',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
+                    style: AppTypography.titleSmall.copyWith(
+                      color: AppSemanticColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.space2),
@@ -307,16 +309,26 @@ class _AdminVacationManagementScreenState
                   ),
                 ],
               ),
+              ),
             ),
           ),
 
-          // 일괄 처리 버튼 (승인 대기 상태일 때만 표시)
+          // 일괄 처리 버튼 (승인 대기 상태일 때만 표시) — 흰 카드, 아래 구분선 없음
           if (_statusFilter == 'pending' && filteredRequests.isNotEmpty)
             SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space4,
-                  vertical: AppSpacing.space2,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenGutter,
+                  AppSpacing.cardGap,
+                  AppSpacing.screenGutter,
+                  0,
+                ),
+                child: AppCard(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.space2,
+                  AppSpacing.space2,
+                  AppSpacing.space4,
+                  AppSpacing.space2,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,34 +360,18 @@ class _AdminVacationManagementScreenState
                         ),
                         Text(
                           '전체 선택',
-                          style: AppTypography.bodyMedium.copyWith(
-                            fontWeight: FontWeight.w600,
+                          style: AppTypography.titleMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
                           ),
                         ),
                         const SizedBox(width: AppSpacing.space2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.space2,
-                            vertical: AppSpacing.space0_5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _selectedRequests.isNotEmpty
-                                ? AppSemanticColors.interactiveSecondaryDefault
-                                      .withValues(alpha: 0.1)
-                                : AppSemanticColors.backgroundSecondary,
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.xl,
-                            ),
-                          ),
-                          child: Text(
-                            '${_selectedRequests.length}/${filteredRequests.length}',
-                            style: AppTypography.labelSmall.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: _selectedRequests.isNotEmpty
-                                  ? AppSemanticColors.textPrimary
-                                  : AppSemanticColors.textSecondary,
-                            ),
-                          ),
+                        // 고른 건수 — 공통 꼬리표(고른 게 있으면 옅은 틸)
+                        AppTag(
+                          label:
+                              '${_selectedRequests.length}/${filteredRequests.length}',
+                          tone: _selectedRequests.isNotEmpty
+                              ? AppTagTone.accent
+                              : AppTagTone.neutral,
                         ),
                       ],
                     ),
@@ -387,7 +383,7 @@ class _AdminVacationManagementScreenState
                           Expanded(
                             child: SeedButton(
                               label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
-                              variant: SeedButtonVariant.neutralOutline,
+                              variant: SeedButtonVariant.neutralWeak,
                               isLoading: _isBulkProcessing,
                               prefixIcon: Icons.close,
                               onPressed: _isBulkProcessing ? null : _bulkReject,
@@ -407,44 +403,32 @@ class _AdminVacationManagementScreenState
                           ),
                         ],
                       ),
+                      const SizedBox(height: AppSpacing.space2),
                     ],
-                    const SizedBox(height: AppSpacing.space2),
-                    const Divider(),
                   ],
+                ),
                 ),
               ),
             ),
 
           // 휴무 목록
           if (filteredRequests.isEmpty)
-            SliverFillRemaining(
+            const SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.event_available,
-                      size: 64,
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                    const SizedBox(height: AppSpacing.space4),
-                    Text(
-                      '휴무 요청이 없습니다',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+              // 공통 빈 화면 — 옅은 틸 원 안 아이콘 + 제목(글자 그대로)
+              child: AppEmptyState(
+                icon: Icons.event_available,
+                title: '휴무 요청이 없습니다',
+                topSpacing: AppSpacing.space8,
               ),
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space4,
-                vertical: AppSpacing.space2,
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                AppSpacing.cardGap,
+                AppSpacing.screenGutter,
+                AppSpacing.space6,
               ),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
@@ -478,29 +462,33 @@ class _AdminVacationManagementScreenState
 
   /// 접힌 필터 한 개 — "직무 · 전체 ▾" 같은 요약 칩. 누르면 시트가 열린다.
   Widget _buildFilterSummaryChip({required String label, required VoidCallback onTap}) {
+    // 흰 카드 안 회색 알약(SeedChip 작은 것과 같은 높이 36·글자 15/w600)
     return Material(
-      color: AppSemanticColors.backgroundTertiary,
-      borderRadius: BorderRadius.circular(999),
+      color: AppSemanticColors.fillDefault,
+      borderRadius: BorderRadius.circular(AppBorderRadius.full),
       child: InkWell(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space3,
-            vertical: AppSpacing.space1,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: AppTypography.labelMedium.copyWith(
-                  color: AppSemanticColors.textPrimary,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppSpacing.space9),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space4,
+              vertical: AppSpacing.space1,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.titleSmall.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 2),
-              Icon(Icons.expand_more, size: 16, color: AppSemanticColors.textSecondary),
-            ],
+                const SizedBox(width: AppSpacing.space0_5),
+                Icon(Icons.expand_more, size: 18, color: AppSemanticColors.textSecondary),
+              ],
+            ),
           ),
         ),
       ),
@@ -693,20 +681,19 @@ class _AdminVacationManagementScreenState
     final requestId = request['id'].toString();
     final isSelected = _selectedRequests.contains(requestId);
 
-    // 정적 리스트 카드 — 그림자 대신 보더만 (Seed 레이아웃 원칙)
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? AppSemanticColors.brandWeak
-            : AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        border: Border.all(
-          color: isSelected
-              ? AppSemanticColors.brandDefault
-              : AppSemanticColors.borderSubtle,
-          width: isSelected ? 1.5 : 1,
-        ),
+    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 카드 사이 간격 12.
+    // 일괄 선택으로 고른 카드만 옅은 틸 바탕 + 틸 2px 둘레(고름 표시).
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+      child: Material(
+      color: isSelected
+          ? AppSemanticColors.brandWeak
+          : AppSemanticColors.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        side: isSelected
+            ? const BorderSide(color: AppSemanticColors.brandDefault, width: 2)
+            : BorderSide.none,
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -735,7 +722,7 @@ class _AdminVacationManagementScreenState
               }
             : null,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space3),
+          padding: const EdgeInsets.all(AppSpacing.space4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -779,6 +766,7 @@ class _AdminVacationManagementScreenState
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -801,14 +789,14 @@ class _AdminVacationManagementScreenState
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 종사자 관리 카드와 같은 회색 원 — 상태는 오른쪽 꼬리표 하나로만 말한다
-        CircleAvatar(
-          radius: 18,
-          backgroundColor: AppSemanticColors.backgroundTertiary,
+        // 종사자 관리 카드와 같은 옅은 틸 원 44 — 상태는 오른쪽 꼬리표 하나로만 말한다
+        const CircleAvatar(
+          radius: AppSpacing.iconCircle / 2,
+          backgroundColor: AppSemanticColors.brandWeak,
           child: Icon(
             Icons.person,
-            color: AppSemanticColors.textSecondary,
-            size: 18,
+            color: AppSemanticColors.brandDefault,
+            size: 22,
           ),
         ),
         const SizedBox(width: AppSpacing.space3),
@@ -860,10 +848,11 @@ class _AdminVacationManagementScreenState
 
   Widget _buildReasonSection(String reason) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.space3),
       decoration: BoxDecoration(
-        color: AppSemanticColors.backgroundSecondary,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        color: AppSemanticColors.fillDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Text(
         reason,
@@ -879,16 +868,12 @@ class _AdminVacationManagementScreenState
     final status = request['status'] ?? '';
     final isPending = status == 'pending';
     final bool isApproved = status == 'approved';
-    final Color statusColor = isApproved
-        ? AppSemanticColors.statusSuccessText
+    // 상태 색의 뜻은 그대로: 승인=초록, 대기=노랑, 거절=빨강(카드의 꼬리표와 같다)
+    final AppTagTone statusTone = isApproved
+        ? AppTagTone.success
         : isPending
-            ? AppSemanticColors.statusWarningText
-            : AppSemanticColors.statusErrorText;
-    final Color statusBackground = isApproved
-        ? AppSemanticColors.statusSuccessBackground
-        : isPending
-            ? AppSemanticColors.statusWarningBackground
-            : AppSemanticColors.statusErrorBackground;
+            ? AppTagTone.warning
+            : AppTagTone.error;
     final String statusText = isApproved
         ? '승인됨'
         : isPending
@@ -920,23 +905,7 @@ class _AdminVacationManagementScreenState
                         maxLines: 1,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space2,
-                        vertical: AppSpacing.space1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusBackground,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    AppTag(label: statusText, tone: statusTone),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.space4),
@@ -947,7 +916,7 @@ class _AdminVacationManagementScreenState
                   const SizedBox(height: AppSpacing.space3),
                   Text(
                     '사유',
-                    style: AppTypography.labelMedium.copyWith(
+                    style: AppTypography.bodySmall.copyWith(
                       color: AppSemanticColors.textSecondary,
                     ),
                   ),
@@ -957,8 +926,8 @@ class _AdminVacationManagementScreenState
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppSpacing.space3),
                       decoration: BoxDecoration(
-                        color: AppSemanticColors.backgroundSecondary,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                        color: AppSemanticColors.fillDefault,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.control),
                       ),
                       child: SingleChildScrollView(
                         child: Text(
@@ -979,7 +948,8 @@ class _AdminVacationManagementScreenState
                       Expanded(
                         child: SeedButton(
                           label: '거절',
-                          variant: SeedButtonVariant.neutralOutline,
+                          size: SeedButtonSize.large,
+                          variant: SeedButtonVariant.neutralWeak,
                           onPressed: () {
                             Navigator.of(sheetContext).pop();
                             _rejectRequest(request['id'].toString());
@@ -990,6 +960,7 @@ class _AdminVacationManagementScreenState
                       Expanded(
                         child: SeedButton(
                           label: '승인',
+                          size: SeedButtonSize.large,
                           variant: SeedButtonVariant.brandSolid,
                           onPressed: () {
                             Navigator.of(sheetContext).pop();
@@ -1015,10 +986,10 @@ class _AdminVacationManagementScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 64,
+            width: 80,
             child: Text(
               label,
-              style: AppTypography.labelMedium.copyWith(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppSemanticColors.textSecondary,
               ),
             ),
@@ -1061,7 +1032,7 @@ class _AdminVacationManagementScreenState
             width: 96,
             child: SeedButton(
               label: isRejecting ? '처리중...' : '거절',
-              variant: SeedButtonVariant.neutralOutline,
+              variant: SeedButtonVariant.neutralWeak,
               size: SeedButtonSize.small,
               isLoading: isRejecting,
               onPressed: isRejecting || isApproving
