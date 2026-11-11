@@ -13,6 +13,7 @@ import '../services/fcm_service.dart';
 import '../services/permission_sync_service.dart';
 import '../services/subscription_guard.dart';
 import '../utils/admin_utils.dart';
+import '../utils/app_haptics.dart';
 import '../utils/permissions.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -248,6 +249,13 @@ class _MainScreenState extends State<MainScreen>
     await Future.wait(futures);
   }
 
+  /// 하단 탭을 손으로 눌렀을 때 — 다른 탭으로 옮길 때만 selection 햅틱.
+  /// (홈 카드에서 탭을 옮기는 _onItemTapped 직접 호출에는 울리지 않는다.)
+  void _onNavBarTapped(int index) {
+    if (index != _currentIndex) AppHaptics.selection();
+    _onItemTapped(index);
+  }
+
   void _onItemTapped(int index) {
     if (_currentIndex != index) {
       setState(() {
@@ -292,7 +300,7 @@ class _MainScreenState extends State<MainScreen>
             ),
             child: BottomNavigationBar(
               currentIndex: safeIndex,
-              onTap: _onItemTapped,
+              onTap: _onNavBarTapped,
               type: BottomNavigationBarType.fixed,
               backgroundColor: AppColors.transparent,
               elevation: 0,

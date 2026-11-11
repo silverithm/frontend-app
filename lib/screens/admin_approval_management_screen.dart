@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/app_haptics.dart';
 import '../utils/permissions.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_card.dart';
@@ -321,6 +322,7 @@ class _AdminApprovalManagementScreenState
       maxLines: 3,
       confirmText: '반려',
       cancelText: '취소',
+      haptic: AppHapticKind.warning,
     );
 
     if (reasonInput == null || !mounted) return;
@@ -419,6 +421,7 @@ class _AdminApprovalManagementScreenState
       maxLines: 3,
       confirmText: '반려',
       cancelText: '취소',
+      haptic: AppHapticKind.warning,
     );
 
     if (reasonInput == null) return;

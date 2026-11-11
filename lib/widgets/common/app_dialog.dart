@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../../utils/app_haptics.dart';
 import '../seed/seed_button.dart';
 import 'app_input.dart';
 
 class AppDialog {
   /// 확인 다이얼로그. 되돌릴 수 없는 행위(삭제·탈퇴)만 [confirmVariant]에
   /// [SeedButtonVariant.critical]을 넘긴다 — 반려·거절·로그아웃은 파괴적 행위가 아니다.
+  ///
+  /// 창이 뜰 때 [haptic]을 울린다. 안 넘기면 critical(삭제)은 warning, 나머지는 울리지 않는다.
+  /// 반려·거절 확인처럼 빨간 단추는 아니지만 경고가 필요한 자리는 warning을 넘긴다.
   static Future<bool?> showConfirm(
     BuildContext context, {
     required String title,
@@ -16,7 +20,13 @@ class AppDialog {
     String cancelText = '취소',
     SeedButtonVariant confirmVariant = SeedButtonVariant.brandSolid,
     SeedButtonVariant cancelVariant = SeedButtonVariant.neutralOutline,
+    AppHapticKind? haptic,
   }) {
+    final openHaptic = haptic ??
+        (confirmVariant == SeedButtonVariant.critical
+            ? AppHapticKind.warning
+            : null);
+    if (openHaptic != null) AppHaptics.play(openHaptic);
     return showDialog<bool>(
       context: context,
       barrierColor: AppColors.black.withValues(alpha: 0.5),
@@ -71,13 +81,16 @@ class AppDialog {
     );
   }
 
+  /// 알림 창. 실패를 알리는 창이면 [haptic]에 error를 넘긴다(기본은 울리지 않음).
   static Future<void> showAlert(
     BuildContext context, {
     required String title,
     required String message,
     String buttonText = '확인',
     SeedButtonVariant buttonVariant = SeedButtonVariant.brandSolid,
+    AppHapticKind? haptic,
   }) {
+    if (haptic != null) AppHaptics.play(haptic);
     return showDialog<void>(
       context: context,
       barrierColor: AppColors.black.withValues(alpha: 0.5),
@@ -133,7 +146,10 @@ class AppDialog {
     int maxLines = 1,
     int? maxLength,
     String? Function(String?)? validator,
+    // 창이 뜰 때 울릴 햅틱(반려 사유 입력처럼 경고가 필요한 자리는 warning). 기본은 울리지 않음.
+    AppHapticKind? haptic,
   }) {
+    if (haptic != null) AppHaptics.play(haptic);
     final controller = TextEditingController(text: initialValue);
     final formKey = GlobalKey<FormState>();
 

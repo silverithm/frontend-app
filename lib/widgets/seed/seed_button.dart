@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../../utils/app_haptics.dart';
 
 /// 당근 Seed 디자인 시스템 — Action Button.
 /// 스펙 참조: docs/seed-component-specs.md §1 Action Button
@@ -39,6 +40,9 @@ class SeedButton extends StatefulWidget {
   final bool isDisabled;
   final IconData? prefixIcon;
 
+  /// 눌렀을 때 울릴 햅틱. 기본 tap(약함), null이면 울리지 않는다.
+  final AppHapticKind? haptic;
+
   const SeedButton({
     super.key,
     required this.label,
@@ -48,6 +52,7 @@ class SeedButton extends StatefulWidget {
     this.isLoading = false,
     this.isDisabled = false,
     this.prefixIcon,
+    this.haptic = AppHapticKind.tap,
   });
 
   @override
@@ -265,6 +270,12 @@ class _SeedButtonState extends State<SeedButton> {
     }
   }
 
+  void _handleTap() {
+    final kind = widget.haptic;
+    if (kind != null) AppHaptics.play(kind);
+    widget.onPressed?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = _colors;
@@ -298,7 +309,7 @@ class _SeedButtonState extends State<SeedButton> {
       onTapDown: _isInteractive ? (_) => setState(() => _pressed = true) : null,
       onTapCancel: _isInteractive ? () => setState(() => _pressed = false) : null,
       onTapUp: _isInteractive ? (_) => setState(() => _pressed = false) : null,
-      onTap: _isInteractive ? widget.onPressed : null,
+      onTap: _isInteractive ? _handleTap : null,
       child: AnimatedScale(
         scale: (_pressed && _isInteractive) ? _pressedScale : 1.0,
         duration: const Duration(milliseconds: 100),

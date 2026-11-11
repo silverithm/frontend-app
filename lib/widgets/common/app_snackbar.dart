@@ -2,19 +2,28 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../../utils/app_haptics.dart';
 import 'app_card.dart';
 
 class AppSnackBar {
+  /// [haptic]이 true면 뜻에 맞게 울린다 — 성공은 success, 실패는 error.
+  /// 안내(info)·주의(warning)는 울리지 않는다: 주의 알림은 "입력해주세요" 같은 안내나
+  /// 반려·거절을 마친 결과라, 경고 진동은 그 앞의 확인 창에서 이미 울렸다.
   static void show(
     BuildContext context, {
     required String message,
     AppStatusType type = AppStatusType.info,
     Duration? duration,
     SnackBarAction? action,
+    bool haptic = true,
   }) {
     final colors = _getStatusColors(type);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    // 알림을 띄울 수 있을 때만 울린다(위에서 of가 실패하면 여기까지 오지 않는다).
+    final hapticKind = haptic ? hapticFor(type) : null;
+    if (hapticKind != null) AppHaptics.play(hapticKind);
+
+    messenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -50,11 +59,25 @@ class AppSnackBar {
     );
   }
 
+  /// 알림 종류 → 햅틱. 울리지 않는 종류는 null.
+  static AppHapticKind? hapticFor(AppStatusType type) {
+    switch (type) {
+      case AppStatusType.success:
+        return AppHapticKind.success;
+      case AppStatusType.error:
+        return AppHapticKind.error;
+      case AppStatusType.warning:
+      case AppStatusType.info:
+        return null;
+    }
+  }
+
   static void showSuccess(
     BuildContext context, {
     required String message,
     Duration? duration,
     SnackBarAction? action,
+    bool haptic = true,
   }) {
     show(
       context,
@@ -62,6 +85,7 @@ class AppSnackBar {
       type: AppStatusType.success,
       duration: duration,
       action: action,
+      haptic: haptic,
     );
   }
 
@@ -70,6 +94,7 @@ class AppSnackBar {
     required String message,
     Duration? duration,
     SnackBarAction? action,
+    bool haptic = true,
   }) {
     show(
       context,
@@ -77,6 +102,7 @@ class AppSnackBar {
       type: AppStatusType.error,
       duration: duration,
       action: action,
+      haptic: haptic,
     );
   }
 

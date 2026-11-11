@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../../utils/app_haptics.dart';
 
 /// 카드·목록의 ⋮(더보기) 액션 메뉴 공용 시트.
 ///
@@ -40,7 +41,11 @@ Future<void> showAppActionSheet(
 
   /// 항목 위에 끼울 위젯(예: 길게 누르기 시트의 이모지 줄). 아래에 구분선이 자동으로 붙는다.
   Widget? header,
+
+  /// 시트가 뜰 때 울릴 햅틱. 길게 눌러 여는 메뉴는 impact를 넘긴다. 기본은 울리지 않음.
+  AppHapticKind? haptic,
 }) {
+  if (haptic != null) AppHaptics.play(haptic);
   return showModalBottomSheet(
     context: context,
     backgroundColor: AppSemanticColors.surfaceDefault,
@@ -122,6 +127,9 @@ class _ActionTile extends StatelessWidget {
     final description = action.description;
     return InkWell(
       onTap: () {
+        // 고르는 순간 selection. 삭제처럼 위험한 항목은 뒤이어 뜨는 확인 창이 warning을
+        // 울리므로 여기서는 울리지 않는다(두 번 떨리지 않게).
+        if (!action.isDestructive) AppHaptics.selection();
         Navigator.of(context).pop();
         action.onSelected();
       },

@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
+import '../utils/app_haptics.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 
@@ -146,8 +147,55 @@ class _NotificationSettingsScreenState
                     color: AppSemanticColors.textSecondary,
                   ),
                 ),
+                const SizedBox(height: AppSpacing.space6),
+                const _HapticsSettingCard(),
               ],
             ),
+    );
+  }
+}
+
+/// '진동 반응' — 누르거나 저장할 때 휴대폰이 짧게 떨리는 것(햅틱)을 켜고 끈다.
+/// 이 기기에만 저장된다(서버에 보내지 않는다). 기본 켬.
+class _HapticsSettingCard extends StatelessWidget {
+  const _HapticsSettingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppHaptics.enabled,
+      builder: (context, enabled, _) {
+        return Card(
+          elevation: 0,
+          color: AppSemanticColors.surfaceDefault,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+            side: BorderSide(color: AppSemanticColors.borderSubtle),
+          ),
+          child: SwitchListTile(
+            value: enabled,
+            onChanged: (next) {
+              // 켤 때는 켜진 뒤에 한 번 떨어 어떤 느낌인지 알려 준다.
+              AppHaptics.setEnabled(next);
+              if (next) AppHaptics.selection();
+            },
+            activeThumbColor: AppSemanticColors.textInverse,
+            activeTrackColor: AppSemanticColors.brandDefault,
+            title: Text(
+              '진동 반응',
+              style: AppTypography.titleSmall.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+            subtitle: Text(
+              '버튼을 누르거나 저장할 때 휴대폰이 짧게 떨립니다',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/in_app_review_service.dart';
 import '../utils/role_utils.dart';
+import '../utils/app_haptics.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -1313,6 +1314,7 @@ class _AdminVacationManagementScreenState
       message: '선택한 ${selectedList.length}개의 휴무 요청을 모두 거절하시겠습니까?',
       confirmText: '거절',
       cancelText: '취소',
+      haptic: AppHapticKind.warning,
     );
 
     if (confirmed != true) return;

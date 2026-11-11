@@ -26,6 +26,7 @@ import 'providers/dispatch_provider.dart';
 import 'providers/work_task_provider.dart';
 import 'providers/schedule_provider.dart';
 import 'services/storage_service.dart';
+import 'utils/app_haptics.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
 import 'services/fcm_service.dart';
@@ -68,6 +69,9 @@ void main() async {
 
   // 저장소 서비스 초기화
   await StorageService().init();
+
+  // '진동 반응' 설정(알림 설정 화면) — 기본 켬
+  await AppHaptics.load();
 
   // FCM 서비스 초기화
   if (!isScreenshotRun) {

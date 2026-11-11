@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
+import '../../utils/app_haptics.dart';
 
 enum AppButtonSize { small, medium, large }
 enum AppButtonVariant { primary, secondary, outline, text }
@@ -16,6 +17,9 @@ class AppButton extends StatelessWidget {
   final Widget? icon;
   final EdgeInsets? padding;
 
+  /// 눌렀을 때 울릴 햅틱. 기본 tap(약함), null이면 울리지 않는다.
+  final AppHapticKind? haptic;
+
   const AppButton({
     super.key,
     required this.text,
@@ -26,6 +30,7 @@ class AppButton extends StatelessWidget {
     this.isFullWidth = false,
     this.icon,
     this.padding,
+    this.haptic = AppHapticKind.tap,
   });
 
   shadcn.ButtonSize _getShadcnSize() {
@@ -54,7 +59,14 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shadcnSize = _getShadcnSize();
-    final effectiveOnPressed = isLoading ? null : onPressed;
+    final onPressed = this.onPressed;
+    final effectiveOnPressed = isLoading || onPressed == null
+        ? null
+        : () {
+            final kind = haptic;
+            if (kind != null) AppHaptics.play(kind);
+            onPressed();
+          };
     final labelChild = isLoading
         ? _buildLoadingIndicator()
         : Text(text, style: _getTextStyle());
