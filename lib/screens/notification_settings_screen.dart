@@ -10,6 +10,7 @@ import '../utils/admin_utils.dart';
 import '../utils/app_haptics.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
+import '../widgets/seed/seed_list_cell.dart';
 
 /// 알림 설정 화면.
 ///
@@ -105,46 +106,38 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      // B안: 옅은 회색 바탕 위 흰 카드
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '알림 설정'),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(AppSpacing.space4),
               children: [
-                Card(
-                  elevation: 0,
-                  color: AppSemanticColors.surfaceDefault,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-                    side: BorderSide(color: AppSemanticColors.borderSubtle),
-                  ),
-                  child: SwitchListTile(
-                    value: _enabled,
-                    onChanged: _isSaving ? null : _toggle,
-                    activeThumbColor: AppSemanticColors.textInverse,
-                    activeTrackColor: AppSemanticColors.brandDefault,
-                    title: Text(
-                      '푸시 알림 받기',
-                      style: AppTypography.titleSmall.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                      ),
+                // B안: 테두리 있는 Card 대신 테두리 없는 흰 카드(SeedListSection) 한 줄
+                SeedListSection(
+                  children: [
+                    _SettingSwitchTile(
+                      value: _enabled,
+                      onChanged: _isSaving ? null : _toggle,
+                      title: '푸시 알림 받기',
+                      subtitle: '휴무 승인, 결재 요청, 공지 등의 알림을 휴대폰으로 받습니다',
                     ),
-                    subtitle: Text(
-                      '휴무 승인, 결재 요청, 공지 등의 알림을 휴대폰으로 받습니다',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.space4),
-                Text(
+                const SizedBox(height: AppSpacing.space3),
+                Padding(
+                  // 카드 안 글자 시작(20)에 맞춘다
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space1,
+                  ),
+                  child: Text(
                   _enabled
                       ? '알림이 오지 않는다면 휴대폰 설정에서 케어브이 알림 권한이 켜져 있는지도 확인해주세요.'
                       : '알림을 꺼두면 휴무 승인이나 결재 요청도 알려드리지 못합니다.',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textSecondary,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.space6),
@@ -165,37 +158,71 @@ class _HapticsSettingCard extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: AppHaptics.enabled,
       builder: (context, enabled, _) {
-        return Card(
-          elevation: 0,
-          color: AppSemanticColors.surfaceDefault,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            side: BorderSide(color: AppSemanticColors.borderSubtle),
-          ),
-          child: SwitchListTile(
-            value: enabled,
-            onChanged: (next) {
-              // 켤 때는 켜진 뒤에 한 번 떨어 어떤 느낌인지 알려 준다.
-              AppHaptics.setEnabled(next);
-              if (next) AppHaptics.selection();
-            },
-            activeThumbColor: AppSemanticColors.textInverse,
-            activeTrackColor: AppSemanticColors.brandDefault,
-            title: Text(
-              '진동 반응',
-              style: AppTypography.titleSmall.copyWith(
-                color: AppSemanticColors.textPrimary,
-              ),
+        return SeedListSection(
+          children: [
+            _SettingSwitchTile(
+              value: enabled,
+              onChanged: (next) {
+                // 켤 때는 켜진 뒤에 한 번 떨어 어떤 느낌인지 알려 준다.
+                AppHaptics.setEnabled(next);
+                if (next) AppHaptics.selection();
+              },
+              title: '진동 반응',
+              subtitle: '버튼을 누르거나 저장할 때 휴대폰이 짧게 떨립니다',
             ),
-            subtitle: Text(
-              '버튼을 누르거나 저장할 때 휴대폰이 짧게 떨립니다',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textSecondary,
-              ),
-            ),
-          ),
+          ],
         );
       },
+    );
+  }
+}
+
+/// 설정 스위치 한 줄 — B안 목록 줄(SeedListCell)과 같은 치수: 줄 높이 60 이상,
+/// 제목 16/w600, 설명 14 회색, 누름 모서리 14. [SeedListSection] 카드 안(여백 8)에서
+/// 좌우 12를 써 글자 시작이 카드 가장자리에서 20이 된다.
+class _SettingSwitchTile extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final String title;
+  final String subtitle;
+
+  const _SettingSwitchTile({
+    required this.value,
+    required this.onChanged,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      value: value,
+      onChanged: onChanged,
+      activeThumbColor: AppSemanticColors.textInverse,
+      activeTrackColor: AppSemanticColors.brandDefault,
+      minTileHeight: AppSpacing.listRowMinHeight,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space1,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      ),
+      title: Text(
+        title,
+        style: AppTypography.titleMedium.copyWith(
+          color: AppSemanticColors.textPrimary,
+        ),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.space0_5),
+        child: Text(
+          subtitle,
+          style: AppTypography.bodySmall.copyWith(
+            color: AppSemanticColors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }
