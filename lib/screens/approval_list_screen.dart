@@ -9,6 +9,10 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_card.dart';
+import '../widgets/common/app_count_up.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_fab.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/approval/approval_card.dart';
@@ -31,6 +35,9 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   bool _hasLoadedInitialData = false;
+
+  /// 결재 현황 숫자를 한 번 세었는지 — 새로고침 뒤 다시 그려질 때는 0부터 다시 세지 않는다.
+  bool _statusCounted = false;
 
   /// 목록을 아래로 내리면 FAB 글자를 접는다(B안 알약 FAB).
   bool _fabCollapsed = false;
@@ -140,14 +147,26 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
       appBar: widget.showAppBar ? const CareVAppBar(title: '결재') : null,
       body: NotificationListener<UserScrollNotification>(
         onNotification: _onUserScroll,
-        child: RefreshIndicator(
+        child: AppRefreshIndicator(
           onRefresh: _refreshData,
+          // 현황 카드·결재 카드가 처음 한 번만 차례로 떠오른다 — 불러오기 분기 바깥에 두어
+          // 새로고침 뒤 다시 그려져도 또 떠오르지 않는다.
+          child: AppListEntrance(
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               Consumer<ApprovalProvider>(
                 builder: (context, approvalProvider, child) {
+                  if (approvalProvider.isLoading &&
+                      approvalProvider.myApprovalRequests.isEmpty) {
+                    // 첫 불러오기 — 결재 현황 카드 + 결재 카드 모양 뼈대
+                    return const SliverToBoxAdapter(
+                      child: _ApprovalListSkeleton(),
+                    );
+                  }
+
                   if (approvalProvider.isLoading) {
+                    // 이미 받은 목록을 다시 받는 중 — 예전처럼 가운데 동그라미
                     return SliverFillRemaining(
                       child: Center(
                         child: Column(
@@ -293,11 +312,16 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                       .where((r) => r.status == ApprovalStatus.rejected)
                       .toList();
 
+                  // 줄마다 차례 — 현황 카드·묶음 제목·결재 카드 순서(처음 8개만 연출)
+                  var rise = 0;
+                  final countStatus = !_statusCounted;
+                  _statusCounted = true;
+
                   return SliverList(
                     delegate: SliverChildListDelegate([
                       // 결재 현황 요약 — B안: 테두리 없는 흰 카드 하나, 안은 선 대신 간격으로 나눈다
-                      FadeTransition(
-                        opacity: _fadeAnimation,
+                      AppListEntranceItem(
+                        index: rise++,
                         child: AppCard(
                           margin: const EdgeInsets.fromLTRB(
                             AppSpacing.screenGutter,
@@ -327,6 +351,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                         '임시저장',
                                         draftRequests.length,
                                         AppTagTone.neutral,
+                                        countUp: countStatus,
                                       ),
                                     ),
                                     const SizedBox(width: AppSpacing.space2),
@@ -336,6 +361,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                       '진행중',
                                       pendingRequests.length,
                                       AppTagTone.warning,
+                                      countUp: countStatus,
                                     ),
                                   ),
                                   const SizedBox(width: AppSpacing.space2),
@@ -344,6 +370,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                       '승인',
                                       approvedRequests.length,
                                       AppTagTone.success,
+                                      countUp: countStatus,
                                     ),
                                   ),
                                   const SizedBox(width: AppSpacing.space2),
@@ -352,6 +379,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                       '반려',
                                       rejectedRequests.length,
                                       AppTagTone.error,
+                                      countUp: countStatus,
                                     ),
                                   ),
                                 ],
@@ -365,8 +393,8 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                       // 결재 목록
                       // 임시저장 — 웹에서 상신 전 저장한 문서. 승인 대기와 혼동되지 않도록 별도 섹션.
                       if (draftRequests.isNotEmpty) ...[
-                        SlideTransition(
-                          position: _slideAnimation,
+                        AppListEntranceItem(
+                          index: rise++,
                           child: _buildSectionHeader(
                             '임시저장',
                             draftRequests.length,
@@ -374,50 +402,25 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                           ),
                         ),
                         ...draftRequests.asMap().entries.map(
-                          (entry) => AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              final delay = entry.key * 0.1;
-                              final animation =
-                                  Tween<double>(begin: 0.0, end: 1.0).animate(
-                                    CurvedAnimation(
-                                      parent: _animationController,
-                                      curve: Interval(
-                                        delay,
-                                        delay + 0.3,
-                                        curve: Curves.easeOutBack,
-                                      ),
-                                    ),
-                                  );
-
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0.3, 0),
-                                    end: Offset.zero,
-                                  ).animate(animation),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.space4,
-                                    ),
-                                    child: ApprovalCard(
-                                      approval: entry.value,
-                                      onTap: () =>
-                                          _navigateToDetail(entry.value),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                          (entry) => AppListEntranceItem(
+                            index: rise++,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.space4,
+                              ),
+                              child: ApprovalCard(
+                                approval: entry.value,
+                                onTap: () => _navigateToDetail(entry.value),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.space3),
                       ],
 
                       if (pendingRequests.isNotEmpty) ...[
-                        SlideTransition(
-                          position: _slideAnimation,
+                        AppListEntranceItem(
+                          index: rise++,
                           child: _buildSectionHeader(
                             '진행중',
                             pendingRequests.length,
@@ -425,51 +428,25 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                           ),
                         ),
                         ...pendingRequests.asMap().entries.map(
-                          (entry) => AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              final delay =
-                                  (draftRequests.length + entry.key) * 0.1;
-                              final animation =
-                                  Tween<double>(begin: 0.0, end: 1.0).animate(
-                                    CurvedAnimation(
-                                      parent: _animationController,
-                                      curve: Interval(
-                                        delay,
-                                        delay + 0.3,
-                                        curve: Curves.easeOutBack,
-                                      ),
-                                    ),
-                                  );
-
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0.3, 0),
-                                    end: Offset.zero,
-                                  ).animate(animation),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.space4,
-                                    ),
-                                    child: ApprovalCard(
-                                      approval: entry.value,
-                                      onTap: () =>
-                                          _navigateToDetail(entry.value),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                          (entry) => AppListEntranceItem(
+                            index: rise++,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.space4,
+                              ),
+                              child: ApprovalCard(
+                                approval: entry.value,
+                                onTap: () => _navigateToDetail(entry.value),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.space3),
                       ],
 
                       if (approvedRequests.isNotEmpty) ...[
-                        SlideTransition(
-                          position: _slideAnimation,
+                        AppListEntranceItem(
+                          index: rise++,
                           child: _buildSectionHeader(
                             '승인됨',
                             approvedRequests.length,
@@ -477,54 +454,25 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                           ),
                         ),
                         ...approvedRequests.asMap().entries.map(
-                          (entry) => AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              final delay =
-                                  (draftRequests.length +
-                                      pendingRequests.length +
-                                      entry.key) *
-                                  0.1;
-                              final animation =
-                                  Tween<double>(begin: 0.0, end: 1.0).animate(
-                                    CurvedAnimation(
-                                      parent: _animationController,
-                                      curve: Interval(
-                                        delay,
-                                        delay + 0.3,
-                                        curve: Curves.easeOutBack,
-                                      ),
-                                    ),
-                                  );
-
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0.3, 0),
-                                    end: Offset.zero,
-                                  ).animate(animation),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.space4,
-                                    ),
-                                    child: ApprovalCard(
-                                      approval: entry.value,
-                                      onTap: () =>
-                                          _navigateToDetail(entry.value),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                          (entry) => AppListEntranceItem(
+                            index: rise++,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.space4,
+                              ),
+                              child: ApprovalCard(
+                                approval: entry.value,
+                                onTap: () => _navigateToDetail(entry.value),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.space3),
                       ],
 
                       if (rejectedRequests.isNotEmpty) ...[
-                        SlideTransition(
-                          position: _slideAnimation,
+                        AppListEntranceItem(
+                          index: rise++,
                           child: _buildSectionHeader(
                             '반려됨',
                             rejectedRequests.length,
@@ -532,47 +480,17 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                           ),
                         ),
                         ...rejectedRequests.asMap().entries.map(
-                          (entry) => AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              final delay =
-                                  (draftRequests.length +
-                                      pendingRequests.length +
-                                      approvedRequests.length +
-                                      entry.key) *
-                                  0.1;
-                              final animation =
-                                  Tween<double>(begin: 0.0, end: 1.0).animate(
-                                    CurvedAnimation(
-                                      parent: _animationController,
-                                      curve: Interval(
-                                        delay,
-                                        delay + 0.3,
-                                        curve: Curves.easeOutBack,
-                                      ),
-                                    ),
-                                  );
-
-                              return FadeTransition(
-                                opacity: animation,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0.3, 0),
-                                    end: Offset.zero,
-                                  ).animate(animation),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.space4,
-                                    ),
-                                    child: ApprovalCard(
-                                      approval: entry.value,
-                                      onTap: () =>
-                                          _navigateToDetail(entry.value),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                          (entry) => AppListEntranceItem(
+                            index: rise++,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.space4,
+                              ),
+                              child: ApprovalCard(
+                                approval: entry.value,
+                                onTap: () => _navigateToDetail(entry.value),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -583,6 +501,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                 },
               ),
             ],
+          ),
           ),
         ),
       ),
@@ -609,11 +528,18 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
     return false;
   }
 
-  Widget _buildStatusCard(String label, int count, AppTagTone tone) {
+  Widget _buildStatusCard(
+    String label,
+    int count,
+    AppTagTone tone, {
+    bool countUp = true,
+  }) {
     return Column(
       children: [
-        Text(
-          count.toString(),
+        // 큰 숫자는 0에서 세어 올라간다(처음 한 번). 글자 모양은 그대로.
+        AppCountUp(
+          value: count,
+          animateOnFirstBuild: countUp,
           style: AppTypography.heading4.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
@@ -654,6 +580,90 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
           const SizedBox(width: AppSpacing.space2),
           // 카운트 태그 — B안 옅은 알약
           AppTag(label: count.toString(), tone: tone),
+        ],
+      ),
+    );
+  }
+}
+
+/// 결재 신청 첫 불러오기 뼈대 — 결재 현황 카드(제목 + 숫자 네 칸) + 묶음 제목 + 결재 카드 세 장.
+/// 실제 목록과 같은 바깥 여백(좌우 20/16·카드 사이 12)이라 내용이 떠도 덜 튄다.
+class _ApprovalListSkeleton extends StatelessWidget {
+  const _ApprovalListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final cardDecoration = BoxDecoration(
+      color: AppSemanticColors.surfaceCard,
+      borderRadius: BorderRadius.circular(AppBorderRadius.card),
+    );
+    return AppSkeleton(
+      // 흰 카드 안의 뼈는 한 단계 옅은 색
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.space3,
+              AppSpacing.screenGutter,
+              0,
+            ),
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
+            decoration: cardDecoration,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AppSkeletonLine(widthFactor: 0.3, height: AppSpacing.space5),
+                const SizedBox(height: AppSpacing.space4),
+                Row(
+                  children: [
+                    for (var i = 0; i < 3; i++) ...[
+                      if (i > 0) const SizedBox(width: AppSpacing.space2),
+                      const Expanded(
+                        child: Column(
+                          children: [
+                            AppSkeletonBox(
+                              width: AppSpacing.space8,
+                              height: AppSpacing.space6,
+                              radius: AppBorderRadius.base,
+                            ),
+                            SizedBox(height: AppSpacing.space1_5),
+                            AppSkeletonBox(
+                              width: AppSpacing.space12,
+                              height: AppSpacing.space6,
+                              radius: AppBorderRadius.full,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space3),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter + AppSpacing.space1,
+              AppSpacing.space3,
+              AppSpacing.screenGutter,
+              AppSpacing.space2_5,
+            ),
+            child: AppSkeletonLine(widthFactor: 0.2, height: AppSpacing.space4),
+          ),
+          for (var i = 0; i < 3; i++)
+            const AppSkeletonCard(
+              standalone: false,
+              margin: EdgeInsets.fromLTRB(
+                AppSpacing.space4,
+                0,
+                AppSpacing.space4,
+                AppSpacing.cardGap,
+              ),
+            ),
         ],
       ),
     );
