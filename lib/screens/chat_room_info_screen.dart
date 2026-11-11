@@ -12,8 +12,13 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/chat_image_url.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_segmented_tabs.dart';
+import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_tag.dart';
+import '../widgets/chat/chat_list_row.dart';
 import '../widgets/chat/chat_room_avatar_stack.dart';
 import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -220,19 +225,18 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
     final currentUserId = authProvider.currentUser?.chatUserId ?? '';
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
-      appBar: AppBar(
-        // 상단 바 기본 제목(heading5)을 그대로 — 채팅 목록 ↔ 방 ↔ 정보를 오갈 때 제목 글자가 변하지 않게
-        title: const Text('채팅방 정보'),
-        elevation: 0,
-      ),
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: const CareVAppBar(title: '채팅방 정보'),
       body: Column(
         children: [
-          // 채팅방 기본 정보
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            color: AppSemanticColors.surfaceDefault,
+          // 채팅방 기본 정보 — 회색 바탕 위에 바로(카드·구분선 없이)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenGutter,
+              AppSpacing.space5,
+              AppSpacing.screenGutter,
+              AppSpacing.space3,
+            ),
             child: Column(
               children: [
                 // 채팅 목록과 같은 얼굴 모음(더 크게) — 말풍선 아이콘 하나만 있던 머리를 대체
@@ -273,7 +277,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                     child: Text(
                       widget.room.description!,
                       style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textTertiary,
+                        color: AppSemanticColors.textSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -282,36 +286,15 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             ),
           ),
 
-          Divider(height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
-
           _buildPinRow(),
 
-          Divider(height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
-
-          // 탭바 — 화면 안쪽 머리(연한 틸 면 + 아래 연한 틸 선)
-          Container(
-            decoration: const BoxDecoration(
-              color: AppSemanticColors.subheaderBackground,
-              border: Border(
-                bottom: BorderSide(color: AppSemanticColors.subheaderBorder),
-              ),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              // 연한 안쪽 머리(subheader) 위라 상단 바 글자색(흰색)이 아니라 본문 글자색
-              labelColor: AppSemanticColors.textPrimary,
-              unselectedLabelColor: AppSemanticColors.textSecondary,
-              indicatorColor: AppSemanticColors.sectionMarker,
-              labelStyle: AppTypography.labelLarge.copyWith(
-                fontWeight: AppTypography.fontWeightBold,
-              ),
-              unselectedLabelStyle: AppTypography.labelLarge,
-              dividerColor: AppColors.transparent,
-              tabs: [
-                Tab(text: '참가자 (${widget.room.participantCount})'),
-                const Tab(text: '미디어'),
-              ],
-            ),
+          // 참가자/미디어 — 상단 바 아래 머리띠 TabBar 대신 나눔 조절(B안)
+          AppSegmentedTabs(
+            controller: _tabController,
+            tabs: [
+              AppSegmentedTab('참가자 (${widget.room.participantCount})'),
+              const AppSegmentedTab('미디어'),
+            ],
           ),
 
           // 탭 내용
@@ -325,19 +308,13 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
             ),
           ),
 
-          // 하단 버튼
-          Container(
+          // 하단 버튼 — 회색 바탕 위 큰 단추(선 없이)
+          Padding(
             padding: EdgeInsets.only(
-              left: AppSpacing.space4,
-              right: AppSpacing.space4,
+              left: AppSpacing.screenGutter,
+              right: AppSpacing.screenGutter,
               top: AppSpacing.space3,
               bottom: AppSpacing.space3 + MediaQuery.of(context).padding.bottom,
-            ),
-            decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
-              border: Border(
-                top: BorderSide(color: AppSemanticColors.borderSubtle),
-              ),
             ),
             child: SizedBox(
               width: double.infinity,
@@ -345,6 +322,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                 label: '채팅방 나가기',
                 // 되돌릴 수 없는 행동은 빨간 글자로 — 중립 외곽 단추는 '취소'처럼 읽혔다
                 variant: SeedButtonVariant.criticalOutline,
+                size: SeedButtonSize.large,
                 onPressed: _leaveRoom,
               ),
             ),
@@ -366,34 +344,22 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
         break;
       }
     }
-    return Container(
-      color: AppSemanticColors.surfaceDefault,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space1,
-      ),
-      child: Row(
+    // 흰 카드 한 장에 줄 하나 — 옅은 틸 둥근 아이콘 + 제목 + 스위치(B안 설정 줄)
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenGutter),
+      child: SeedListSection(
         children: [
-          Icon(
-            Icons.push_pin_outlined,
-            size: AppSpacing.space5,
-            color: AppSemanticColors.textSecondary,
-          ),
-          const SizedBox(width: AppSpacing.space3),
-          Expanded(
-            child: Text(
-              '상단 고정',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppSemanticColors.textPrimary,
-              ),
+          SeedListCell(
+            leadingIcon: Icons.push_pin_outlined,
+            title: '상단 고정',
+            showChevron: false,
+            trailing: Switch(
+              trackOutlineColor: WidgetStatePropertyAll(AppColors.transparent),
+              value: pinned,
+              onChanged: (_) => _togglePin(current ?? widget.room),
+              activeTrackColor: AppSemanticColors.interactivePrimaryDefault,
+              activeThumbColor: AppSemanticColors.textInverse,
             ),
-          ),
-          Switch(
-            trackOutlineColor: WidgetStatePropertyAll(AppColors.transparent),
-            value: pinned,
-            onChanged: (_) => _togglePin(current ?? widget.room),
-            activeTrackColor: AppSemanticColors.interactivePrimaryDefault,
-            activeThumbColor: AppSemanticColors.textInverse,
           ),
         ],
       ),
@@ -470,8 +436,11 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                             ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSpacing.space2,
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.screenGutter,
+                        AppSpacing.space1,
+                        AppSpacing.screenGutter,
+                        AppSpacing.space3,
                       ),
                       itemCount: participants.length,
                       itemBuilder: (context, index) {
@@ -494,77 +463,73 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                         final showRemoveAction =
                             isRoomAdmin && !isCurrentUser;
 
-                        // 사람 한 줄 — 채팅 탭 직원 목록과 같은 규칙(높이 64, 이름 titleMedium + 메타 bodySmall)
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.space4,
-                                vertical: AppSpacing.space3,
-                              ),
-                              child: Row(
-                                children: [
-                                  SeedAvatar(
-                                    name: participant.userName,
-                                    imageUrl: participant.profileImageUrl,
-                                    size: SeedAvatarSize.medium,
-                                  ),
-                                  const SizedBox(width: AppSpacing.space3),
-                                  Expanded(
-                                    child: Row(
-                                      children: [
+                        // 사람 한 줄 — 채팅 탭 직원 목록과 같은 규칙(흰 카드 안 줄, 높이 60 이상,
+                        // 이름 titleMedium + 메타 bodySmall, 구분선 없음)
+                        return ChatCardSlice(
+                          isFirst: index == 0,
+                          isLast: index == participants.length - 1,
+                          child: ChatListRow(
+                            child: Row(
+                              children: [
+                                SeedAvatar(
+                                  name: participant.userName,
+                                  imageUrl: participant.profileImageUrl,
+                                  size: SeedAvatarSize.medium,
+                                ),
+                                const SizedBox(width: AppSpacing.space3_5),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          participant.userName +
+                                              (isCurrentUser ? ' (나)' : ''),
+                                          style: AppTypography.titleMedium
+                                              .copyWith(
+                                            color: AppSemanticColors.textPrimary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (participantMeta.isNotEmpty) ...[
+                                        const SizedBox(width: AppSpacing.space2),
                                         Flexible(
                                           child: Text(
-                                            participant.userName +
-                                                (isCurrentUser ? ' (나)' : ''),
-                                            style: AppTypography.titleMedium
+                                            participantMeta.join(' · '),
+                                            style: AppTypography.bodySmall
                                                 .copyWith(
-                                              color: AppSemanticColors.textPrimary,
+                                              color:
+                                                  AppSemanticColors.textTertiary,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        if (participantMeta.isNotEmpty) ...[
-                                          const SizedBox(width: AppSpacing.space2),
-                                          Text(
-                                            participantMeta.join(' · '),
-                                            style: AppTypography.bodySmall.copyWith(
-                                              color: AppSemanticColors.textTertiary,
-                                            ),
-                                          ),
-                                        ],
                                       ],
-                                    ),
+                                    ],
                                   ),
-                                  if (showAdminBadge) ...[
-                                    const SizedBox(width: AppSpacing.space2),
-                                    const AppTag(
-                                      label: '방장',
-                                      tone: AppTagTone.accent,
-                                    ),
-                                  ],
-                                  if (showRemoveAction)
-                                    IconButton(
-                                      tooltip: '참가자 내보내기',
-                                      icon: Icon(
-                                        Icons.remove_circle_outline,
-                                        color: AppSemanticColors.statusErrorIcon,
-                                      ),
-                                      onPressed: () => _kickParticipant(participant),
-                                    ),
+                                ),
+                                if (showAdminBadge) ...[
+                                  const SizedBox(width: AppSpacing.space2),
+                                  const AppTag(
+                                    label: '방장',
+                                    tone: AppTagTone.accent,
+                                  ),
                                 ],
-                              ),
+                                if (showRemoveAction)
+                                  IconButton(
+                                    tooltip: '참가자 내보내기',
+                                    icon: Icon(
+                                      Icons.remove_circle_outline,
+                                      color: AppSemanticColors.statusErrorIcon,
+                                    ),
+                                    onPressed: () =>
+                                        _kickParticipant(participant),
+                                  ),
+                              ],
                             ),
-                            const Divider(
-                              height: 1,
-                              indent: AppSpacing.space4 +
-                                  AppSpacing.space10 +
-                                  AppSpacing.space3,
-                              color: AppSemanticColors.borderSubtle,
-                            ),
-                          ],
+                          ),
                         );
                       },
                     ),
@@ -581,24 +546,9 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
         final media = chatProvider.sharedMedia;
 
         if (media.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.photo_library_outlined,
-                  size: 48,
-                  color: AppSemanticColors.textDisabled,
-                ),
-                const SizedBox(height: AppSpacing.space3),
-                Text(
-                  '공유된 미디어가 없습니다',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textTertiary,
-                  ),
-                ),
-              ],
-            ),
+          return const AppEmptyState(
+            icon: Icons.photo_library_outlined,
+            title: '공유된 미디어가 없습니다',
           );
         }
 
@@ -606,90 +556,120 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
         final images = media.where((m) => m.type == MessageType.image).toList();
         final files = media.where((m) => m.type == MessageType.file).toList();
 
+        // 사진·파일을 흰 카드 한 장씩에 — 카드 안 맨 위에 제목 글자만(머리띠·선 없음)
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space4),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenGutter,
+            AppSpacing.space1,
+            AppSpacing.screenGutter,
+            AppSpacing.space3,
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 이미지
               if (images.isNotEmpty) ...[
-                Text(
-                  '사진 (${images.length})',
-                  style: AppTypography.heading6.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.space2),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: AppSpacing.space2,
-                    crossAxisSpacing: AppSpacing.space2,
-                  ),
-                  itemCount: images.length,
-                  itemBuilder: (context, index) {
-                    final image = images[index];
-                    // 썸네일을 누르면 말풍선과 같은 전체화면 원본 보기
-                    return Semantics(
-                      button: true,
-                      label: '사진 확대 보기',
-                      child: GestureDetector(
-                        onTap: () => _openMedia(image),
-                        child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                        // 그리드는 목록 표시이므로 서버 썸네일이 있으면 그걸 쓰고
-                        // (chat_room_screen.dart와 같은 단일 지점), 탭했을 때
-                        // 열리는 전체화면(_openMedia)은 계속 원본 fileUrl을 쓴다.
-                        child: CachedNetworkImage(
-                          imageUrl: resolveChatImageUrl(image) ?? '',
-                          fit: BoxFit.cover,
-                          // 3열 그리드 썸네일 크기에 맞춰 원본 디코드를 제한
-                          memCacheWidth: 300,
-                          errorWidget: (_, __, ___) => Container(
-                            color: AppSemanticColors.backgroundTertiary,
-                            child: Icon(
-                              Icons.broken_image,
-                              color: AppSemanticColors.textTertiary,
-                            ),
-                          ),
-                        ),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '사진 (${images.length})',
+                        style: AppTypography.heading6.copyWith(
+                          color: AppSemanticColors.textPrimary,
                         ),
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.space6),
-              ],
-
-              // 파일
-              if (files.isNotEmpty) ...[
-                Text(
-                  '파일 (${files.length})',
-                  style: AppTypography.heading6.copyWith(
-                    color: AppSemanticColors.textPrimary,
+                      const SizedBox(height: AppSpacing.space3),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: AppSpacing.space2,
+                          crossAxisSpacing: AppSpacing.space2,
+                        ),
+                        itemCount: images.length,
+                        itemBuilder: (context, index) {
+                          final image = images[index];
+                          // 썸네일을 누르면 말풍선과 같은 전체화면 원본 보기
+                          return Semantics(
+                            button: true,
+                            label: '사진 확대 보기',
+                            child: GestureDetector(
+                              onTap: () => _openMedia(image),
+                              child: ClipRRect(
+                                borderRadius:
+                                    BorderRadius.circular(AppBorderRadius.inner),
+                                // 그리드는 목록 표시이므로 서버 썸네일이 있으면 그걸 쓰고
+                                // (chat_room_screen.dart와 같은 단일 지점), 탭했을 때
+                                // 열리는 전체화면(_openMedia)은 계속 원본 fileUrl을 쓴다.
+                                child: CachedNetworkImage(
+                                  imageUrl: resolveChatImageUrl(image) ?? '',
+                                  fit: BoxFit.cover,
+                                  // 3열 그리드 썸네일 크기에 맞춰 원본 디코드를 제한
+                                  memCacheWidth: 300,
+                                  errorWidget: (_, __, ___) => Container(
+                                    color: AppSemanticColors.fillDefault,
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: AppSemanticColors.textTertiary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.space2),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: files.length,
-                  itemBuilder: (context, index) {
-                    final file = files[index];
-                    return SeedListCell(
-                      leadingIcon: file.isVideoMessage
-                          ? Icons.videocam_outlined
-                          : Icons.insert_drive_file,
-                      title: file.fileName ?? '파일',
-                      description: _formatFileSize(file.fileSize),
-                      showChevron: false,
-                      onTap: () => _openMedia(file),
-                    );
-                  },
-                ),
+                const SizedBox(height: AppSpacing.cardGap),
               ],
+
+              // 파일 — 카드 안쪽 8 + 줄 좌우 12 = 제목·줄 글자 모두 카드 가장자리에서 20
+              if (files.isNotEmpty)
+                AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.space2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.space3,
+                          AppSpacing.space3,
+                          AppSpacing.space3,
+                          AppSpacing.space1,
+                        ),
+                        child: Text(
+                          '파일 (${files.length})',
+                          style: AppTypography.heading6.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: files.length,
+                        itemBuilder: (context, index) {
+                          final file = files[index];
+                          return SeedListCell(
+                            leadingIcon: file.isVideoMessage
+                                ? Icons.videocam_outlined
+                                : Icons.insert_drive_file,
+                            title: file.fileName ?? '파일',
+                            description: _formatFileSize(file.fileSize),
+                            showChevron: false,
+                            onTap: () => _openMedia(file),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         );
