@@ -6,6 +6,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/signature_pad.dart';
 import '../widgets/common/app_card.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -98,7 +99,8 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '결재 서명 관리'),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          // 첫 불러오기 — 등록된 서명 카드 + 서명 그리기 카드 모양 뼈대(같은 여백)
+          ? const _SignatureSkeleton()
           : SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
                 AppSpacing.screenGutter,
@@ -239,6 +241,54 @@ class _SignatureManageScreenState extends State<SignatureManageScreen> {
                 ],
               ),
             ),
+    );
+  }
+}
+
+/// 서명 관리 첫 불러오기 뼈대 — 흰 카드 두 장(제목 + 서명 그림 칸 130 / 서명 그리기 칸 200).
+class _SignatureSkeleton extends StatelessWidget {
+  const _SignatureSkeleton();
+
+  Widget _card(double boxHeight) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppSkeletonLine(widthFactor: 0.32, height: AppSpacing.space5),
+          const SizedBox(height: AppSpacing.space3),
+          AppSkeletonBox(height: boxHeight, radius: AppBorderRadius.control),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      // 흰 카드 안의 뼈는 한 단계 옅은 색
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          AppSpacing.space6,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _card(130),
+            const SizedBox(height: AppSpacing.cardGap),
+            _card(200),
+          ],
+        ),
+      ),
     );
   }
 }
