@@ -10,21 +10,20 @@ import '../models/notice.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
 
 class NoticeDetailScreen extends StatefulWidget {
   final int noticeId;
 
-  const NoticeDetailScreen({
-    super.key,
-    required this.noticeId,
-  });
+  const NoticeDetailScreen({super.key, required this.noticeId});
 
   @override
   State<NoticeDetailScreen> createState() => _NoticeDetailScreenState();
@@ -125,11 +124,13 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundPrimary,
+      // B안: 옅은 회색 바탕 위 흰 카드 — 제목·본문 / 첨부 / 읽은 사람 / 댓글을 카드로 나눈다(구분선 없음)
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '공지사항', centerTitle: true),
       body: Consumer<NoticeProvider>(
         builder: (context, noticeProvider, child) {
-          if (noticeProvider.isLoading && noticeProvider.selectedNotice == null) {
+          if (noticeProvider.isLoading &&
+              noticeProvider.selectedNotice == null) {
             return const Center(child: AppLoading());
           }
 
@@ -143,84 +144,91 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.space4),
+                  padding: const EdgeInsets.all(AppSpacing.screenGutter),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // 제목
-                      Text(
-                        notice.title,
-                        style: AppTypography.heading5.copyWith(
-                          color: AppSemanticColors.textPrimary,
+                      AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 제목
+                            Text(
+                              notice.title,
+                              style: AppTypography.heading5.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.space3),
+
+                            // 메타 정보 — 이름이 길어도 조회수를 밀어내지 않게 줄임표
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    notice.authorName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppSemanticColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.space3),
+                                Text(
+                                  DateFormat(
+                                    'yyyy.MM.dd',
+                                  ).format(notice.createdAt),
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textTertiary,
+                                  ),
+                                ),
+                                const Spacer(),
+                                const Icon(
+                                  Icons.visibility_outlined,
+                                  size: 16,
+                                  color: AppSemanticColors.textTertiary,
+                                ),
+                                const SizedBox(width: AppSpacing.space1),
+                                Text(
+                                  '${notice.viewCount}',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textTertiary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // 구분선 대신 간격
+                            const SizedBox(height: AppSpacing.space6),
+
+                            // 내용 — 웹에서 서식을 넣어 쓴 공지는 HTML로 그린다.
+                            // 평문으로 쌓여 온 옛 공지는 그대로 둬야 줄바꿈이 살아 있다.
+                            if (containsHtmlTags(notice.content))
+                              PlazaHtmlBody(html: notice.content)
+                            else
+                              Text(
+                                notice.content,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                  height: 1.6,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.space4),
-
-                      // 메타 정보
-                      Row(
-                        children: [
-                          Text(
-                            notice.authorName,
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.space3),
-                          Text(
-                            DateFormat('yyyy.MM.dd').format(notice.createdAt),
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                            ),
-                          ),
-                          const Spacer(),
-                          Icon(
-                            Icons.visibility_outlined,
-                            size: 14,
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                          const SizedBox(width: AppSpacing.space1),
-                          Text(
-                            '${notice.viewCount}',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textTertiary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.space4),
-
-                      // 구분선
-                      Divider(
-                        color: AppSemanticColors.borderDefault,
-                        height: 1,
-                      ),
-                      const SizedBox(height: AppSpacing.space4),
-
-                      // 내용 — 웹에서 서식을 넣어 쓴 공지는 HTML로 그린다.
-                      // 평문으로 쌓여 온 옛 공지는 그대로 둬야 줄바꿈이 살아 있다.
-                      if (containsHtmlTags(notice.content))
-                        PlazaHtmlBody(html: notice.content)
-                      else
-                        Text(
-                          notice.content,
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                            height: 1.6,
-                          ),
-                        ),
 
                       // 첨부파일 섹션
                       if (notice.attachments.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.space6),
+                        const SizedBox(height: AppSpacing.cardGap),
                         _buildAttachmentsSection(notice.attachments),
                       ],
 
-                      const SizedBox(height: AppSpacing.space6),
+                      const SizedBox(height: AppSpacing.cardGap),
 
                       // 읽은 사람 섹션
                       _buildReadersSection(noticeProvider),
 
-                      const SizedBox(height: AppSpacing.space4),
+                      const SizedBox(height: AppSpacing.cardGap),
 
                       // 댓글 섹션
                       _buildCommentsSection(noticeProvider),
@@ -238,78 +246,84 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
     );
   }
 
+  /// 카드 안 맨 위 제목(B안 카드·구역 제목 19/w700). 줄 목록 카드(안쪽 여백 8)에서는
+  /// 줄 글자와 같은 자리(20)에서 시작하도록 좌우 12를 더한다.
+  Widget _cardTitle(String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space3,
+        AppSpacing.space3,
+        AppSpacing.space3,
+        AppSpacing.space2,
+      ),
+      child: Semantics(
+        header: true,
+        child: Text(
+          text,
+          style: AppTypography.heading6.copyWith(
+            color: AppSemanticColors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildReadersSection(NoticeProvider noticeProvider) {
     final readers = noticeProvider.readers;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: () {
-            setState(() {
-              _showReaders = !_showReaders;
-            });
-          },
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.space3),
-            decoration: BoxDecoration(
-              color: AppSemanticColors.backgroundSecondary,
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+    // B안: 흰 카드 안 한 줄(누르면 펼침) — 펼친 명단도 같은 카드 안에 이어 붙인다
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.space2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SeedListCell(
+            leadingIcon: Icons.people_outline,
+            title: '읽은 사람 ${readers.length}명',
+            trailing: Icon(
+              _showReaders ? Icons.expand_less : Icons.expand_more,
+              color: AppSemanticColors.textSecondary,
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.people_outline,
-                  size: 18,
-                  color: AppSemanticColors.textSecondary,
-                ),
-                const SizedBox(width: AppSpacing.space2),
-                Text(
-                  '읽은 사람 ${readers.length}명',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
+            onTap: () {
+              setState(() {
+                _showReaders = !_showReaders;
+              });
+            },
+          ),
+          if (_showReaders) ...[
+            const SizedBox(height: AppSpacing.space1),
+            if (readers.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.space3),
+                child: Text(
+                  '아직 읽은 사람이 없습니다',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
                   ),
                 ),
-                const Spacer(),
-                Icon(
-                  _showReaders ? Icons.expand_less : Icons.expand_more,
-                  color: AppSemanticColors.textSecondary,
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        if (_showReaders) ...[
-          const SizedBox(height: AppSpacing.space3),
-          if (readers.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              child: Text(
-                '아직 읽은 사람이 없습니다',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
-              ),
-            )
-          else
-            ...readers.map((reader) => _buildReaderItem(reader)),
+              )
+            else
+              ...readers.map((reader) => _buildReaderItem(reader)),
+            const SizedBox(height: AppSpacing.space2),
+          ],
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildReaderItem(NoticeReader reader) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space1_5,
+      ),
       child: Row(
         children: [
           Container(
-            width: AppSpacing.space7,
-            height: AppSpacing.space7,
+            width: AppSpacing.space8,
+            height: AppSpacing.space8,
             decoration: BoxDecoration(
-              color: AppSemanticColors.backgroundTertiary,
+              color: AppSemanticColors.fillDefault,
               borderRadius: BorderRadius.circular(AppBorderRadius.full),
             ),
             child: Center(
@@ -325,11 +339,14 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
           Expanded(
             child: Text(
               reader.userName,
-              style: AppTypography.bodySmall.copyWith(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.bodyMedium.copyWith(
                 color: AppSemanticColors.textPrimary,
               ),
             ),
           ),
+          const SizedBox(width: AppSpacing.space2),
           Text(
             DateFormat('MM.dd HH:mm').format(reader.readAt),
             style: AppTypography.bodySmall.copyWith(
@@ -344,44 +361,30 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   Widget _buildCommentsSection(NoticeProvider noticeProvider) {
     final comments = noticeProvider.comments;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.comment_outlined,
-              size: 18,
-              color: AppSemanticColors.textSecondary,
-            ),
-            const SizedBox(width: AppSpacing.space2),
-            Text(
-              '댓글 ${comments.length}',
-              style: AppTypography.titleSmall.copyWith(
-                color: AppSemanticColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.space3),
-
-        if (comments.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            child: Center(
-              child: Text(
-                '아직 댓글이 없습니다',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
+    // B안: 흰 카드 하나에 제목 + 댓글들. 댓글끼리는 테두리 상자 대신 간격으로 나눈다
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.space2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _cardTitle('댓글 ${comments.length}'),
+          if (comments.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              child: Center(
+                child: Text(
+                  '아직 댓글이 없습니다',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
                 ),
               ),
-            ),
-          )
-        else
-          ...comments.map((comment) => _buildCommentItem(comment)),
-
-        const SizedBox(height: AppSpacing.space4),
-      ],
+            )
+          else
+            ...comments.map((comment) => _buildCommentItem(comment)),
+          const SizedBox(height: AppSpacing.space2),
+        ],
+      ),
     );
   }
 
@@ -389,15 +392,12 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
     final authProvider = context.read<AuthProvider>();
     final isMyComment = authProvider.currentUser?.id == comment.authorId;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
-      padding: const EdgeInsets.all(AppSpacing.space3),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(
-          color: AppSemanticColors.borderDefault,
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space3,
+        AppSpacing.space2,
+        AppSpacing.space1,
+        AppSpacing.space2,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,10 +405,10 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
           Row(
             children: [
               Container(
-                width: AppSpacing.space6,
-                height: AppSpacing.space6,
+                width: AppSpacing.space7,
+                height: AppSpacing.space7,
                 decoration: BoxDecoration(
-                  color: AppSemanticColors.backgroundTertiary,
+                  color: AppSemanticColors.fillDefault,
                   borderRadius: BorderRadius.circular(AppBorderRadius.full),
                 ),
                 child: Center(
@@ -421,10 +421,14 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                 ),
               ),
               const SizedBox(width: AppSpacing.space2),
-              Text(
-                comment.authorName,
-                style: AppTypography.labelMedium.copyWith(
-                  color: AppSemanticColors.textPrimary,
+              Flexible(
+                child: Text(
+                  comment.authorName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.titleSmall.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.space2),
@@ -441,11 +445,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                   label: '댓글 삭제',
                   child: GestureDetector(
                     onTap: () => _deleteComment(comment.id),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
                       child: Icon(
                         Icons.close,
-                        size: 16,
+                        size: 18,
                         color: AppSemanticColors.textTertiary,
                       ),
                     ),
@@ -453,11 +457,14 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: AppSpacing.space2),
-          Text(
-            comment.content,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textPrimary,
+          const SizedBox(height: AppSpacing.space1),
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.space2),
+            child: Text(
+              comment.content,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -473,14 +480,8 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         top: AppSpacing.space3,
         bottom: MediaQuery.of(context).padding.bottom + AppSpacing.space3,
       ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        border: Border(
-          top: BorderSide(
-            color: AppSemanticColors.borderDefault,
-          ),
-        ),
-      ),
+      // B안: 회색 바탕 위 흰 띠라 위 선 없이도 나뉜다
+      color: AppSemanticColors.surfaceCard,
       child: Row(
         children: [
           Expanded(
@@ -499,34 +500,34 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
             enabled: !_isSubmittingComment,
             label: '댓글 등록',
             child: GestureDetector(
-            onTap: _isSubmittingComment ? null : _submitComment,
-            child: Container(
-              // 채팅 전송 버튼(space10=40px)과 같은 터치 타깃 크기로 통일
-              width: AppSpacing.space10,
-              height: AppSpacing.space10,
-              decoration: BoxDecoration(
-                color: AppSemanticColors.interactivePrimaryDefault,
-                borderRadius: BorderRadius.circular(AppBorderRadius.full),
-              ),
-              child: Center(
-                child: _isSubmittingComment
-                    ? SizedBox(
-                        width: AppSpacing.space4,
-                        height: AppSpacing.space4,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppSemanticColors.textInverse,
+              onTap: _isSubmittingComment ? null : _submitComment,
+              child: Container(
+                // 채팅 전송 버튼(space10=40px)과 같은 터치 타깃 크기로 통일
+                width: AppSpacing.space10,
+                height: AppSpacing.space10,
+                decoration: BoxDecoration(
+                  color: AppSemanticColors.interactivePrimaryDefault,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                ),
+                child: Center(
+                  child: _isSubmittingComment
+                      ? SizedBox(
+                          width: AppSpacing.space4,
+                          height: AppSpacing.space4,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppSemanticColors.textInverse,
+                            ),
                           ),
+                        )
+                      : Icon(
+                          Icons.send,
+                          size: AppSpacing.space4,
+                          color: AppSemanticColors.textInverse,
                         ),
-                      )
-                    : Icon(
-                        Icons.send,
-                        size: AppSpacing.space4,
-                        color: AppSemanticColors.textInverse,
-                      ),
+                ),
               ),
-            ),
             ),
           ),
         ],
@@ -535,95 +536,45 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
   }
 
   Widget _buildAttachmentsSection(List<NoticeAttachment> attachments) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.attach_file,
-              size: 18,
-              color: AppSemanticColors.textSecondary,
-            ),
-            const SizedBox(width: AppSpacing.space2),
-            Text(
-              '첨부파일 ${attachments.length}',
-              style: AppTypography.titleSmall.copyWith(
-                color: AppSemanticColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.space3),
-        ...attachments.map((attachment) => _buildAttachmentItem(attachment)),
-      ],
+    // B안: 흰 카드 하나에 제목 + 파일 줄(SeedListCell). 줄마다 테두리 상자를 두르지 않는다
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.space2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _cardTitle('첨부파일 ${attachments.length}'),
+          ...attachments.map((attachment) => _buildAttachmentItem(attachment)),
+        ],
+      ),
     );
   }
 
   Widget _buildAttachmentItem(NoticeAttachment attachment) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(
-          color: AppSemanticColors.borderDefault,
+    return SeedListCell(
+      // 파일 종류 색(PDF 빨강·문서 파랑·표 초록·사진 노랑)은 그대로 — 모양만 둥근 44
+      leading: Container(
+        width: AppSpacing.iconCircle,
+        height: AppSpacing.iconCircle,
+        decoration: BoxDecoration(
+          color: _getFileBackgroundColor(attachment),
+          shape: BoxShape.circle,
         ),
-      ),
-      child: InkWell(
-        onTap: () => _downloadFile(attachment),
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space3),
-          child: Row(
-            children: [
-              Container(
-                width: AppSpacing.space10,
-                height: AppSpacing.space10,
-                decoration: BoxDecoration(
-                  color: _getFileBackgroundColor(attachment),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                ),
-                child: Center(
-                  child: Icon(
-                    _getFileIcon(attachment.fileName),
-                    size: 20,
-                    color: _getFileIconColor(attachment),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.space3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      attachment.fileName,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSpacing.space1),
-                    Text(
-                      attachment.fileSizeText,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.download,
-                size: 20,
-                color: AppSemanticColors.interactivePrimaryDefault,
-              ),
-            ],
+        child: Center(
+          child: Icon(
+            _getFileIcon(attachment.fileName),
+            size: 22,
+            color: _getFileIconColor(attachment),
           ),
         ),
       ),
+      title: attachment.fileName,
+      description: attachment.fileSizeText,
+      trailing: const Icon(
+        Icons.download,
+        size: 22,
+        color: AppSemanticColors.interactivePrimaryDefault,
+      ),
+      onTap: () => _downloadFile(attachment),
     );
   }
 
@@ -667,7 +618,9 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         ext.endsWith('.gif') ||
         ext.endsWith('.webp')) {
       return Icons.image;
-    } else if (ext.endsWith('.zip') || ext.endsWith('.rar') || ext.endsWith('.7z')) {
+    } else if (ext.endsWith('.zip') ||
+        ext.endsWith('.rar') ||
+        ext.endsWith('.7z')) {
       return Icons.folder_zip;
     } else {
       return Icons.insert_drive_file;
