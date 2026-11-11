@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../widgets/common/app_card.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_tag.dart';
 import 'meeting_minutes_detail_screen.dart';
@@ -71,7 +72,7 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(title: const Text('회의록')),
       body: RefreshIndicator(
         onRefresh: _load,
@@ -83,10 +84,16 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
                     ? _emptyState()
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(AppSpacing.space4),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screenGutter,
+                          AppSpacing.space3,
+                          AppSpacing.screenGutter,
+                          AppSpacing.space8,
+                        ),
                         itemCount: _items.length,
+                        // B안: 카드끼리는 선 대신 간격으로 나눈다
                         separatorBuilder: (_, __) =>
-                            const SizedBox(height: AppSpacing.space2),
+                            const SizedBox(height: AppSpacing.cardGap),
                         itemBuilder: (context, index) {
                           final item = _items[index] as Map<String, dynamic>;
                           final status = _statusStyle(item['status']?.toString() ?? '');
@@ -97,59 +104,47 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
                           final signed = item['signedCount'] ?? 0;
                           final total = item['attendeeCount'] ?? 0;
 
-                          return Material(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () async {
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => MeetingMinutesDetailScreen(
-                                      minutesId: item['id'] as int,
-                                    ),
+                          // B안: 회색 바탕 위 흰 카드(테두리 없음, 모서리 20, 안쪽 20)
+                          return AppCard(
+                            onTap: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => MeetingMinutesDetailScreen(
+                                    minutesId: item['id'] as int,
                                   ),
-                                );
-                                _load();
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(AppSpacing.space4),
-                                child: Column(
+                                ),
+                              );
+                              _load();
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            item['title']?.toString() ?? '',
-                                            style: AppTypography.titleMedium
-                                                .copyWith(
-                                              color: AppSemanticColors
-                                                  .textPrimary,
-                                            ),
-                                          ),
+                                    Expanded(
+                                      child: Text(
+                                        item['title']?.toString() ?? '',
+                                        style: AppTypography.titleMedium.copyWith(
+                                          color: AppSemanticColors.textPrimary,
                                         ),
-                                        const SizedBox(
-                                          width: AppSpacing.space2,
-                                        ),
-                                        AppTag(
-                                          label: status.label,
-                                          tone: status.tone,
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: AppSpacing.space1),
-                                    Text(
-                                      '$when · ${item['authorName'] ?? ''} · 서명 $signed/$total',
-                                      style: AppTypography.bodySmall.copyWith(
-                                        color: AppSemanticColors.textSecondary,
                                       ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.space2),
+                                    AppTag(
+                                      label: status.label,
+                                      tone: status.tone,
                                     ),
                                   ],
                                 ),
-                              ),
+                                const SizedBox(height: AppSpacing.space1_5),
+                                Text(
+                                  '$when · ${item['authorName'] ?? ''} · 서명 $signed/$total',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         },
@@ -173,21 +168,10 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
   }
 
   Widget _message(String text) {
-    // RefreshIndicator가 동작하려면 스크롤 가능한 자식이 필요하다
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 120),
-          child: Center(
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium.copyWith(color: AppColors.gray600),
-            ),
-          ),
-        ),
-      ],
+    // B안 빈 화면 모양으로 — AppEmptyState 안의 스크롤이 당겨서 새로고침을 받는다
+    return AppEmptyState(
+      icon: Icons.error_outline_rounded,
+      title: text,
     );
   }
 }
