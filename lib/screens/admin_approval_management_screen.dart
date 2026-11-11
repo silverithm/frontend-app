@@ -16,6 +16,9 @@ import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
+import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
@@ -476,11 +479,20 @@ class _AdminApprovalManagementScreenState
 
   @override
   Widget build(BuildContext context) {
+    // 처음 불러올 때(아직 보일 문서가 없을 때)만 뼈대 — 문서가 있는 채로 다시 불러올 때는 예전 스피너
+    final hasNoRequests = context.select<ApprovalProvider, bool>(
+      (provider) => provider.approvalRequests.isEmpty,
+    );
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundCanvas,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildContent(),
+      // 카드 등장 연출은 처음 한 번만 — 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
+      body: AppListEntrance(
+        child: _isLoading && hasNoRequests
+            ? const _ApprovalManagementSkeleton()
+            : _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _buildContent(),
+      ),
     );
   }
 
@@ -496,7 +508,7 @@ class _AdminApprovalManagementScreenState
           isAdmin: _canManage,
         );
 
-        return RefreshIndicator(
+        return AppRefreshIndicator(
           onRefresh: _loadData,
           child: CustomScrollView(
             slivers: [
@@ -561,7 +573,10 @@ class _AdminApprovalManagementScreenState
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final request = filteredRequests[index];
-                      return _buildRequestCard(request);
+                      return AppListEntranceItem(
+                        index: index,
+                        child: _buildRequestCard(request),
+                      );
                     }, childCount: filteredRequests.length),
                   ),
                 ),
@@ -837,8 +852,12 @@ class _AdminApprovalManagementScreenState
               ),
             );
           },
+          // 길게 눌러 일괄 선택이 시작되는 순간 impact 진동 한 번 — InkWell 자체 길게 누르기 진동(Android)은
+          // 꺼서 두 번 울리지 않게 하고, '진동 반응' 스위치를 따르는 AppHaptics로만 울린다
+          enableFeedback: false,
           onLongPress: isPending
               ? () {
+                  AppHaptics.impact();
                   setState(() {
                     _selectedRequests.add(request.id);
                     _isSelectMode = true;
@@ -1123,5 +1142,33 @@ class _AdminApprovalManagementScreenState
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+}
+
+/// 결재 관리 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드(거르기 카드 + 문서 카드, 같은 좌우 여백·간격)
+class _ApprovalManagementSkeleton extends StatelessWidget {
+  const _ApprovalManagementSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          AppSpacing.space6,
+        ),
+        children: List.generate(
+          4,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+          ),
+        ),
+      ),
+    );
   }
 }
