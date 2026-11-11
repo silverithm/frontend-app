@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:provider/provider.dart';
@@ -764,30 +766,6 @@ class _BoardTabState extends State<_BoardTab> {
   String _board = '';
   bool _fabCollapsed = false;
 
-  /// 조회·좋아요·댓글 수 — 아이콘 + 숫자로 오른쪽 끝에 모은다
-  Widget _countStat(IconData icon, Object? count, String semanticLabel) {
-    return Padding(
-      padding: const EdgeInsets.only(left: AppSpacing.space3),
-      child: Semantics(
-        label: '$semanticLabel ${count ?? 0}',
-        excludeSemantics: true,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: AppSemanticColors.textTertiary),
-            const SizedBox(width: AppSpacing.space0_5),
-            Text(
-              '${count ?? 0}',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   List<Map<String, dynamic>> _posts = [];
   bool _isLoading = true;
   bool _hasError = false;
@@ -891,99 +869,22 @@ class _BoardTabState extends State<_BoardTab> {
                               const SizedBox(height: AppSpacing.cardGap),
                           itemBuilder: (context, index) {
                             final post = _posts[index];
-                            final createdAt = DateTime.tryParse(
-                                post['createdAt']?.toString() ?? '');
-                            // B안: 테두리 없는 흰 카드(모서리 20·여백 20)
                             return AppListEntranceItem(
                               index: index,
-                              child: AppCard(
-                              onTap: () async {
-                                final postId = post['id'];
-                                if (postId is! int) return;
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        PlazaPostDetailScreen(postId: postId),
-                                  ),
-                                );
-                                _load();
-                              },
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      AppTag(
-                                        label: plazaBoardLabel(
-                                            post['board']?.toString()),
-                                      ),
-                                      if (post['isPinned'] == true) ...[
-                                        const SizedBox(
-                                            width: AppSpacing.space1_5),
-                                        const Icon(Icons.push_pin,
-                                            size: 16,
-                                            color: AppSemanticColors
-                                                .statusWarningIcon),
-                                      ],
-                                      if (post['hasAccepted'] == true) ...[
-                                        const SizedBox(
-                                            width: AppSpacing.space1_5),
-                                        const Icon(Icons.check_circle,
-                                            size: 16,
-                                            color: AppSemanticColors
-                                                .statusSuccessIcon),
-                                      ],
-                                    ],
-                                  ),
-                                  const SizedBox(height: AppSpacing.space2),
-                                  Text(
-                                    post['title']?.toString() ?? '',
-                                    style: AppTypography.titleMedium.copyWith(
-                                      color: AppSemanticColors.textPrimary,
+                              child: PlazaBoardPostCard(
+                                post: post,
+                                onTap: () async {
+                                  final postId = post['id'];
+                                  if (postId is! int) return;
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          PlazaPostDetailScreen(postId: postId),
                                     ),
-                                  ),
-                                  if ((post['preview']?.toString() ?? '')
-                                      .trim()
-                                      .isNotEmpty) ...[
-                                    const SizedBox(height: AppSpacing.space1),
-                                    Text(
-                                      // 서버가 내려주는 preview는 HTML 원문 일부라 태그를 제거해 보여준다
-                                      htmlToPreviewText(
-                                          post['preview'].toString(),
-                                          maxLength: 60),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTypography.bodySmall.copyWith(
-                                          color:
-                                              AppSemanticColors.textSecondary),
-                                    ),
-                                  ],
-                                  const SizedBox(height: AppSpacing.space2),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('MM.dd').format(createdAt)}' : ''}',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style:
-                                              AppTypography.bodySmall.copyWith(
-                                            color:
-                                                AppSemanticColors.textTertiary,
-                                          ),
-                                        ),
-                                      ),
-                                      _countStat(Icons.visibility_outlined,
-                                          post['viewCount'], '조회'),
-                                      _countStat(Icons.favorite_border,
-                                          post['likeCount'], '좋아요'),
-                                      _countStat(Icons.chat_bubble_outline,
-                                          post['commentCount'], '댓글'),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                  );
+                                  _load();
+                                },
                               ),
                             );
                           },
@@ -991,6 +892,150 @@ class _BoardTabState extends State<_BoardTab> {
                       ),
                       ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 게시판 글 카드 한 장 — B안: 테두리 없는 흰 카드(모서리 20·여백 20).
+/// 게시판 탭 목록에서 쓴다(따로 떼어 둔 것은 큰 글자에서 아랫줄이 넘치지 않는지 확인하려고 — 모양은 그대로).
+class PlazaBoardPostCard extends StatelessWidget {
+  final Map<String, dynamic> post;
+  final VoidCallback onTap;
+
+  const PlazaBoardPostCard({
+    super.key,
+    required this.post,
+    required this.onTap,
+  });
+
+  /// 조회·좋아요·댓글 수 — 아이콘 + 숫자로 오른쪽 끝에 모은다
+  Widget _countStat(IconData icon, Object? count, String semanticLabel) {
+    return Padding(
+      padding: const EdgeInsets.only(left: AppSpacing.space3),
+      child: Semantics(
+        label: '$semanticLabel ${count ?? 0}',
+        excludeSemantics: true,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: AppSemanticColors.textTertiary),
+            const SizedBox(width: AppSpacing.space0_5),
+            Text(
+              '${count ?? 0}',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final createdAt = DateTime.tryParse(post['createdAt']?.toString() ?? '');
+    return AppCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AppTag(label: plazaBoardLabel(post['board']?.toString())),
+              if (post['isPinned'] == true) ...[
+                const SizedBox(width: AppSpacing.space1_5),
+                const Icon(
+                  Icons.push_pin,
+                  size: 16,
+                  color: AppSemanticColors.statusWarningIcon,
+                ),
+              ],
+              if (post['hasAccepted'] == true) ...[
+                const SizedBox(width: AppSpacing.space1_5),
+                const Icon(
+                  Icons.check_circle,
+                  size: 16,
+                  color: AppSemanticColors.statusSuccessIcon,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSpacing.space2),
+          Text(
+            post['title']?.toString() ?? '',
+            style: AppTypography.titleMedium.copyWith(
+              color: AppSemanticColors.textPrimary,
+            ),
+          ),
+          if ((post['preview']?.toString() ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.space1),
+            Text(
+              // 서버가 내려주는 preview는 HTML 원문 일부라 태그를 제거해 보여준다
+              htmlToPreviewText(post['preview'].toString(), maxLength: 60),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.space2),
+          // 숫자 묶음은 작성자 칸을 최소 48(글자 배율만큼)은 남기는 폭까지만 쓴다 — 글자를 키우고
+          // 수가 커서(조회 5자리 등) 그 폭을 넘으면 넘치는 대신 숫자 묶음이 줄을 바꿔 오른쪽에 쌓인다.
+          // 보통은 예전처럼 한 줄(작성자는 줄임표, 숫자는 오른쪽 끝).
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final minAuthorWidth = MediaQuery.textScalerOf(
+                context,
+              ).scale(AppSpacing.space12);
+              return Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${post['displayAuthor'] ?? ''}${createdAt != null ? ' · ${DateFormat('MM.dd').format(createdAt)}' : ''}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textTertiary,
+                      ),
+                    ),
+                  ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: math.max(
+                        0,
+                        constraints.maxWidth - minAuthorWidth,
+                      ),
+                    ),
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _countStat(
+                          Icons.visibility_outlined,
+                          post['viewCount'],
+                          '조회',
+                        ),
+                        _countStat(
+                          Icons.favorite_border,
+                          post['likeCount'],
+                          '좋아요',
+                        ),
+                        _countStat(
+                          Icons.chat_bubble_outline,
+                          post['commentCount'],
+                          '댓글',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
