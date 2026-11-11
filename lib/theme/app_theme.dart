@@ -3,14 +3,19 @@ import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_typography.dart';
 import 'app_spacing.dart';
+import 'app_page_transitions.dart';
 
 class AppTheme {
   /// 화면 상단 바·구분선을 앱 전체에 한 번에 입힌다.
   /// 실제로 쓰이는 Material 테마는 ShadcnApp이 만들기 때문에(아래 lightTheme은 연결돼
   /// 있지 않다) main.dart의 builder에서 그 테마 위에 덧씌운다.
+  ///
+  /// 화면 넘김(pageTransitionsTheme)도 여기서 건다 — 앱의 MaterialPageRoute가 전부 이걸 쓴다
+  /// (theme/app_page_transitions.dart).
   static ThemeData withAppChrome(ThemeData base) {
     return base.copyWith(
       appBarTheme: headerTheme,
+      pageTransitionsTheme: appPageTransitionsTheme,
       dividerTheme: base.dividerTheme.copyWith(
         color: AppSemanticColors.borderSubtle,
       ),
