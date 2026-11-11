@@ -11,7 +11,7 @@ import '../seed/seed_button.dart';
 ///
 /// 칸마다 그날 노선이 어떻게 돌아가는지를 점 세 개(정상/대체/운행없음)로 요약한다.
 /// 숫자를 다 적으면 폰 화면에서 읽히지 않아 색점으로 줄였고, 대체나 운행없음이
-/// 있는 날만 눈에 띄도록 테두리를 준다.
+/// 있는 날만 눈에 띄도록 옅은 노랑 바탕을 깐다(B안: 칸 테두리 없이 회색 바탕 위 흰 칸).
 class DispatchCalendarView extends StatelessWidget {
   final DateTime month;
   final Map<String, DispatchDaySummary> summary;
@@ -44,7 +44,8 @@ class DispatchCalendarView extends StatelessWidget {
   });
 
   /// 접었을 때는 날짜와 점만, 펼치면 이름까지 들어가야 하므로 칸이 커진다.
-  double get _cellHeight => isExpanded ? 96 : 52;
+  /// 최소 높이다 — 글자를 키우면 줄 단위로 같이 늘어난다(_buildGrid).
+  double get _cellHeight => isExpanded ? 96 : 56;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +60,7 @@ class DispatchCalendarView extends StatelessWidget {
             subtitle!,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.caption.copyWith(
+            style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
           ),
@@ -88,7 +89,6 @@ class DispatchCalendarView extends StatelessWidget {
             overflow: TextOverflow.fade,
             style: AppTypography.heading6.copyWith(
               color: AppSemanticColors.textPrimary,
-              fontWeight: AppTypography.fontWeightBold,
             ),
           ),
         ),
@@ -102,7 +102,10 @@ class DispatchCalendarView extends StatelessWidget {
         const Spacer(),
         IconButton(
           onPressed: onToggleExpanded,
-          icon: Icon(isExpanded ? Icons.unfold_less : Icons.unfold_more, size: 20),
+          icon: Icon(
+            isExpanded ? Icons.unfold_less : Icons.unfold_more,
+            size: 20,
+          ),
           tooltip: isExpanded ? '접기' : '펼쳐보기',
           color: AppSemanticColors.textSecondary,
         ),
@@ -134,7 +137,6 @@ class DispatchCalendarView extends StatelessWidget {
                 color: index == 0
                     ? AppSemanticColors.statusErrorText
                     : AppSemanticColors.textTertiary,
-                fontWeight: AppTypography.fontWeightMedium,
               ),
             ),
           ),
@@ -154,29 +156,33 @@ class DispatchCalendarView extends StatelessWidget {
 
     return Column(
       children: List.generate(rows, (row) {
-        // 세로로 늘리라고(stretch) 하면 안 된다. 이 달력은 스크롤 목록 안에 들어가
-        // 높이가 무한대라, 늘리려는 순간 칸이 무한 높이를 받아 레이아웃이 통째로
-        // 무너지고 화면이 빈 채로 남았다. 칸(_DayCell)은 스스로 62의 높이를 가진다.
-        return Row(
-          children: List.generate(7, (col) {
-            final cellIndex = row * 7 + col;
-            final day = cellIndex - leadingBlanks + 1;
+        // 이 달력은 스크롤 목록 안에 들어가 높이가 무한대라, 맨 Row에 늘리라고(stretch)
+        // 하면 칸이 무한 높이를 받아 레이아웃이 통째로 무너지고 화면이 빈 채로 남았다.
+        // IntrinsicHeight로 그 줄에서 가장 큰 칸의 높이를 먼저 정한 뒤 늘린다 —
+        // 글자를 키워 한 칸이 커져도 같은 줄 칸이 같이 커져 넘치지 않는다.
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: List.generate(7, (col) {
+              final cellIndex = row * 7 + col;
+              final day = cellIndex - leadingBlanks + 1;
 
-            if (day < 1 || day > daysInMonth) {
-              return Expanded(child: SizedBox(height: _cellHeight));
-            }
+              if (day < 1 || day > daysInMonth) {
+                return Expanded(child: SizedBox(height: _cellHeight));
+              }
 
-            final date = DateTime(month.year, month.month, day);
-            return Expanded(
-              child: _DayCell(
-                date: date,
-                summary: summary[formatDate(date)],
-                height: _cellHeight,
-                showNames: isExpanded,
-                onTap: () => onDateSelected(date),
-              ),
-            );
-          }),
+              final date = DateTime(month.year, month.month, day);
+              return Expanded(
+                child: _DayCell(
+                  date: date,
+                  summary: summary[formatDate(date)],
+                  height: _cellHeight,
+                  showNames: isExpanded,
+                  onTap: () => onDateSelected(date),
+                ),
+              );
+            }),
+          ),
         );
       }),
     );
@@ -213,7 +219,9 @@ class _DayCell extends StatelessWidget {
 
   bool get _isToday {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   @override
@@ -221,58 +229,62 @@ class _DayCell extends StatelessWidget {
     final isSunday = date.weekday == DateTime.sunday;
     final isHoliday = summary?.isHoliday ?? isSunday;
 
-    // 손볼 일이 있는 날(대체·운행없음)만 테두리로 도드라지게 한다
+    // 손볼 일이 있는 날(대체·운행없음)만 옅은 노랑 바탕으로 도드라지게 한다
     final needsAttention =
-        (summary?.substituteCount ?? 0) > 0 || (summary?.noServiceCount ?? 0) > 0;
+        (summary?.substituteCount ?? 0) > 0 ||
+        (summary?.noServiceCount ?? 0) > 0;
+
+    // B안: 칸 테두리 없이 회색 바탕 위 흰 칸(모서리 10). 휴일은 한 단계 짙은 회색,
+    // 오늘은 틸 2px 테두리(겹쳐 그려 자리를 차지하지 않는다).
+    final background = isHoliday
+        ? AppSemanticColors.fillStrong
+        : needsAttention
+        ? AppSemanticColors.statusWarningBackground
+        : AppSemanticColors.surfaceCard;
+    final radius = BorderRadius.circular(AppBorderRadius.inner);
 
     return Padding(
       padding: const EdgeInsets.all(2),
       child: Material(
-        color: isHoliday
-            ? AppSemanticColors.backgroundTertiary
-            : AppSemanticColors.surfaceDefault,
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        color: background,
+        borderRadius: radius,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          borderRadius: radius,
           child: Container(
-            height: height,
+            constraints: BoxConstraints(minHeight: height),
             padding: const EdgeInsets.symmetric(
               vertical: AppSpacing.space1,
-              horizontal: AppSpacing.space1,
+              horizontal: 2,
             ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              border: Border.all(
-                color: _isToday
-                    ? AppSemanticColors.borderFocus
-                    : needsAttention
-                    ? AppSemanticColors.statusWarningBorder
-                    : AppSemanticColors.borderSubtle,
-                width: _isToday ? 2 : 1,
-              ),
-            ),
+            foregroundDecoration: _isToday
+                ? BoxDecoration(
+                    borderRadius: radius,
+                    border: Border.all(
+                      color: AppSemanticColors.borderFocus,
+                      width: 2,
+                    ),
+                  )
+                : null,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   '${date.day}',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.titleSmall.copyWith(
                     color: isSunday
                         ? AppSemanticColors.statusErrorText
                         : AppSemanticColors.textPrimary,
-                    fontWeight: _isToday
-                        ? AppTypography.fontWeightBold
-                        : AppTypography.fontWeightMedium,
                   ),
                 ),
                 const SizedBox(height: 1),
                 if (isHoliday)
                   Text(
                     '휴무',
-                    style: AppTypography.bodySmall.copyWith(
-                      fontSize: 10,
-                      color: AppSemanticColors.textDisabled,
+                    maxLines: 1,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
                     ),
                   )
                 else ...[
@@ -295,7 +307,9 @@ class _DayCell extends StatelessWidget {
   /// 이름 뒤 직책("이광성팀장")까지 넣으면 칸 폭을 넘겨 "이광성…"으로 잘렸다.
   /// 달력에서 알아야 할 것은 누가 나오는지이지 직책이 아니므로 이름만 남긴다.
   Widget _buildDriverNames() {
-    final names = (summary?.driverNames ?? const <String>[]).map(_stripTitle).toList();
+    final names = (summary?.driverNames ?? const <String>[])
+        .map(_stripTitle)
+        .toList();
     if (names.isEmpty) return const SizedBox(height: 24);
 
     const visible = 3;
@@ -306,25 +320,22 @@ class _DayCell extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         for (final name in shown)
+          // 예전 9px — 앱에서 가장 작은 글자 토큰(12)으로 키웠다. 칸이 좁으면 말줄임
           Text(
             name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: AppTypography.bodySmall.copyWith(
-              fontSize: 9,
-              height: 1.2,
+            style: AppTypography.labelSmall.copyWith(
               color: AppSemanticColors.textSecondary,
             ),
           ),
         if (rest > 0)
           Text(
             '+$rest',
-            style: AppTypography.bodySmall.copyWith(
-              fontSize: 9,
-              height: 1.2,
-              fontWeight: AppTypography.fontWeightSemibold,
-              color: AppSemanticColors.interactivePrimaryDefault,
+            maxLines: 1,
+            style: AppTypography.labelStrong.copyWith(
+              color: AppSemanticColors.textLink,
             ),
           ),
       ],
@@ -333,7 +344,19 @@ class _DayCell extends StatelessWidget {
 
   /// "이광성팀장" -> "이광성". 이름만 남기고 흔한 직책 꼬리를 뗀다.
   static String _stripTitle(String name) {
-    const titles = ['팀장', '실장', '부장', '과장', '차장', '대리', '주임', '반장', '소장', '원장', '센터장'];
+    const titles = [
+      '팀장',
+      '실장',
+      '부장',
+      '과장',
+      '차장',
+      '대리',
+      '주임',
+      '반장',
+      '소장',
+      '원장',
+      '센터장',
+    ];
     for (final t in titles) {
       // 이름이 통째로 직책인 경우까지 지우지 않도록 남는 글자가 두 자 이상일 때만 뗀다
       if (name.endsWith(t) && name.length - t.length >= 2) {
@@ -366,7 +389,10 @@ class _DayCell extends StatelessWidget {
               count: s.substituteCount,
             ),
           if (s.noServiceCount > 0)
-            _Dot(color: AppSemanticColors.statusErrorIcon, count: s.noServiceCount),
+            _Dot(
+              color: AppSemanticColors.statusErrorIcon,
+              count: s.noServiceCount,
+            ),
         ],
       ),
     );
@@ -399,7 +425,7 @@ class _Dot extends StatelessWidget {
           if (count > 3)
             Text(
               '$count',
-              style: AppTypography.bodySmall.copyWith(fontSize: 10, color: color),
+              style: AppTypography.labelSmall.copyWith(color: color),
             ),
         ],
       ),
