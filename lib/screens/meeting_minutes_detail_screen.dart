@@ -12,6 +12,7 @@ import '../utils/admin_utils.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/app_empty_state.dart';
+import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
@@ -140,7 +141,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(title: const Text('회의록')),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const _MeetingMinutesDetailSkeleton()
           : _error != null
               ? AppEmptyState(
                   icon: Icons.error_outline_rounded,
@@ -322,6 +323,34 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
     return SizedBox(
       width: double.infinity,
       child: AppCard(child: child),
+    );
+  }
+}
+
+/// 회의록 상세 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드(머리 정보·회의 내용과 같은 여백·간격)
+class _MeetingMinutesDetailSkeleton extends StatelessWidget {
+  const _MeetingMinutesDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSkeleton(
+      baseColor: AppSemanticColors.skeletonBaseOnCard,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space3,
+          AppSpacing.screenGutter,
+          AppSpacing.space6,
+        ),
+        children: List.generate(
+          3,
+          (_) => const AppSkeletonCard(
+            standalone: false,
+            margin: EdgeInsets.only(bottom: AppSpacing.cardGap),
+          ),
+        ),
+      ),
     );
   }
 }
