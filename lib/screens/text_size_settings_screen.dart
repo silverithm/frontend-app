@@ -6,6 +6,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/text_scale.dart';
+import '../widgets/common/app_card.dart';
+import '../widgets/common/carev_app_bar.dart';
+import '../widgets/seed/seed_list_cell.dart';
 
 /// 글자 크기 설정.
 ///
@@ -23,20 +26,13 @@ class TextSizeSettingsScreen extends StatelessWidget {
     final current = appProvider.textSize;
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundSecondary,
-      appBar: AppBar(
-        title: const Text('글자 크기'),
-      ),
+      // B안: 옅은 회색 바탕 위 테두리 없는 흰 카드
+      backgroundColor: AppSemanticColors.backgroundCanvas,
+      appBar: const CareVAppBar(title: '글자 크기'),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.space4),
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceDefault,
-              borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-              border: Border.all(color: AppSemanticColors.borderDefault),
-            ),
+          AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -63,22 +59,27 @@ class TextSizeSettingsScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.space4),
-          for (final size in AppTextSize.values)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.space2),
-              child: _SizeOption(
-                size: size,
-                selected: size == current,
-                onTap: () => context.read<AppProvider>().setTextSize(size),
-              ),
-            ),
+          const SizedBox(height: AppSpacing.cardGap),
+          // B안: 칸마다 테두리 상자 대신 흰 카드 하나에 네 줄, 고른 줄은 옅은 틸 바탕 + 틸 체크
+          SeedListSection(
+            children: [
+              for (final size in AppTextSize.values)
+                _SizeOption(
+                  size: size,
+                  selected: size == current,
+                  onTap: () => context.read<AppProvider>().setTextSize(size),
+                ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.space3),
-          Text(
-            '기기 설정의 글자 크기도 함께 반영됩니다. '
-            '화면이 깨지지 않는 범위까지만 커집니다.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppSemanticColors.textTertiary,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space1),
+            child: Text(
+              '기기 설정의 글자 크기도 함께 반영됩니다. '
+              '화면이 깨지지 않는 범위까지만 커집니다.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
             ),
           ),
         ],
@@ -100,35 +101,49 @@ class _SizeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppSemanticColors.surfaceDefault,
-      borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.space4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-            border: Border.all(
-              color: selected
-                  ? AppSemanticColors.brandDefault
-                  : AppSemanticColors.borderDefault,
-              width: selected ? 2 : 1,
+    final radius = BorderRadius.circular(AppBorderRadius.control);
+    // 목록 줄(SeedListCell)과 같은 치수 — 줄 높이 60 이상, 좌우 12, 누름 모서리 14.
+    // 고른 줄은 테두리 대신 옅은 틸 바탕 + 틸 글자·체크로 드러낸다.
+    return Semantics(
+      selected: selected,
+      child: Material(
+        color: selected ? AppSemanticColors.brandWeak : AppColors.transparent,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: AppSpacing.listRowMinHeight,
             ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  size.label,
-                  style: (selected ? AppTypography.titleSmall : AppTypography.bodyMedium)
-                      .copyWith(color: AppSemanticColors.textPrimary),
-                ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space3,
+                vertical: AppSpacing.space2_5,
               ),
-              if (selected)
-                Icon(Icons.check_circle, color: AppSemanticColors.brandDefault, size: 22),
-            ],
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      size.label,
+                      style: selected
+                          ? AppTypography.titleMedium.copyWith(
+                              color: AppSemanticColors.brandWeakForeground,
+                            )
+                          : AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                            ),
+                    ),
+                  ),
+                  if (selected)
+                    const Icon(
+                      Icons.check_circle,
+                      color: AppSemanticColors.brandDefault,
+                      size: 24,
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
