@@ -27,7 +27,7 @@ class SeedCallout extends StatelessWidget {
     switch (variant) {
       case SeedCalloutVariant.neutral:
         return const _SeedCalloutColors(
-          background: AppSemanticColors.backgroundSecondary,
+          background: AppSemanticColors.fillDefault,
           foreground: AppSemanticColors.textSecondary,
           titleColor: AppSemanticColors.textPrimary,
           bodyColor: AppSemanticColors.textSecondary,
@@ -57,7 +57,7 @@ class SeedCallout extends StatelessWidget {
       case SeedCalloutVariant.brand:
         return const _SeedCalloutColors(
           background: AppSemanticColors.brandWeak,
-          foreground: AppSemanticColors.brandPressed,
+          foreground: AppSemanticColors.brandWeakForeground,
           defaultIcon: Icons.campaign_outlined,
         );
     }
@@ -66,21 +66,22 @@ class SeedCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _colors;
+    // B안(시안 .soft-line·.banner): 옅은 바탕 + 모서리 14, 아이콘 20
     return Container(
-      constraints: const BoxConstraints(minHeight: 50),
+      constraints: const BoxConstraints(minHeight: 52),
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space3_5,
+        horizontal: AppSpacing.space4,
         vertical: AppSpacing.space3_5,
       ),
       decoration: BoxDecoration(
         color: colors.background,
-        borderRadius: BorderRadius.circular(AppSpacing.space2_5), // r2_5
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon ?? colors.defaultIcon, size: 16, color: colors.foreground), // x4
-          const SizedBox(width: AppSpacing.space3), // gap
+          Icon(icon ?? colors.defaultIcon, size: 20, color: colors.foreground),
+          const SizedBox(width: AppSpacing.space2_5),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

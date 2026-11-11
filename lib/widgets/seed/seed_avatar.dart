@@ -35,14 +35,15 @@ class SeedAvatar extends StatelessWidget {
     }
   }
 
+  // B안(시안 .av): 옅은 틸 바탕 위 진한 틸 첫 글자 w700 — 32→13 / 40→15 / 56→20
   double get _fontSize {
     switch (size) {
       case SeedAvatarSize.small:
-        return AppTypography.fontSizeSm;
+        return AppTypography.fontSize13;
       case SeedAvatarSize.medium:
-        return AppTypography.fontSizeBase;
+        return AppTypography.fontSizeMd;
       case SeedAvatarSize.large:
-        return AppTypography.fontSizeXl;
+        return AppTypography.fontSize2xl;
     }
   }
 
@@ -94,8 +95,8 @@ class SeedAvatar extends StatelessWidget {
       _initial,
       style: TextStyle(
         fontSize: _fontSize,
-        fontWeight: AppTypography.fontWeightSemibold,
-        color: AppSemanticColors.brandPressed,
+        fontWeight: AppTypography.fontWeightBold,
+        color: AppSemanticColors.brandWeakForeground,
         height: 1,
       ),
     );

@@ -7,23 +7,31 @@ import 'package:frontend_app/widgets/common/app_choice_tile.dart';
 void main() {
   Widget wrap(Widget child) => MaterialApp(home: Scaffold(body: Center(child: SizedBox(width: 120, child: child))));
 
-  testWidgets('선택 타일은 brandWeak 바탕과 틸 1.5px 테두리 — 의미 색을 줘도 테두리는 틸', (tester) async {
-    await tester.pumpWidget(wrap(AppChoiceTile(
-      label: '긴급',
-      icon: Icons.priority_high,
-      selected: true,
-      accentColor: AppSemanticColors.statusErrorIcon,
-      onTap: () {},
-    )));
-    final box = tester.widget<Container>(find.descendant(
-      of: find.byType(AppChoiceTile),
-      matching: find.byType(Container),
-    ).first);
-    final deco = box.decoration as BoxDecoration;
-    expect(deco.color, AppSemanticColors.brandWeak);
-    final border = deco.border as Border;
-    expect(border.top.color, AppSemanticColors.interactivePrimaryDefault);
-    expect(border.top.width, 1.5);
+  testWidgets('B안: 고르면 틸 바탕 + 흰 글자, 테두리 없음 — 의미 색은 고르기 전 아이콘에만', (tester) async {
+    Future<BoxDecoration> deco(bool selected) async {
+      await tester.pumpWidget(wrap(AppChoiceTile(
+        label: '긴급',
+        icon: Icons.priority_high,
+        selected: selected,
+        accentColor: AppSemanticColors.statusErrorIcon,
+        onTap: () {},
+      )));
+      return tester.widget<AnimatedContainer>(find.descendant(
+        of: find.byType(AppChoiceTile),
+        matching: find.byType(AnimatedContainer),
+      )).decoration! as BoxDecoration;
+    }
+
+    final on = await deco(true);
+    expect(on.color, AppSemanticColors.brandDefault);
+    expect(on.border, isNull);
+    expect(tester.widget<Icon>(find.byIcon(Icons.priority_high)).color,
+        AppSemanticColors.textInverse);
+
+    final off = await deco(false);
+    expect(off.color, AppSemanticColors.fillDefault);
+    expect(tester.widget<Icon>(find.byIcon(Icons.priority_high)).color,
+        AppSemanticColors.statusErrorIcon);
   });
 
   testWidgets('선택 전후로 라벨 굵기가 같다', (tester) async {
