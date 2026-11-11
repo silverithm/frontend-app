@@ -37,7 +37,9 @@ class DocumentFormFields extends StatefulWidget {
 
   /// 필수 필드 검증 — 누락된 첫 필드 라벨 반환 (모두 채워지면 null)
   static String? validateRequired(
-      List<Map<String, dynamic>> fields, Map<String, dynamic> values) {
+    List<Map<String, dynamic>> fields,
+    Map<String, dynamic> values,
+  ) {
     for (final field in fields) {
       final type = field['type']?.toString();
       if (type == 'section' || type == 'file') continue;
@@ -46,7 +48,8 @@ class DocumentFormFields extends StatefulWidget {
       final value = type == 'dateRange'
           ? (values['${id}_start'] ?? values['${id}_end'])
           : values[id];
-      final isEmpty = value == null ||
+      final isEmpty =
+          value == null ||
           (value is String && value.trim().isEmpty) ||
           (value is List && value.isEmpty);
       if (isEmpty) {
@@ -68,7 +71,8 @@ class DocumentFormFields extends StatefulWidget {
   /// 다만 작성 화면은 손가락으로 입력하는 곳이라 한 줄에 둘까지만 둔다
   /// (공문 보기는 넷까지 — official_document_view 참고).
   static List<List<Map<String, dynamic>>> groupRows(
-      List<Map<String, dynamic>> fields) {
+    List<Map<String, dynamic>> fields,
+  ) {
     return groupIntoRowsBySpan<Map<String, dynamic>>(
       fields,
       spanOf: (field) => fieldWidthSpan(field['width']),
@@ -86,8 +90,9 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
 
   TextEditingController _controllerFor(String id) {
     return _controllers.putIfAbsent(id, () {
-      final controller =
-          TextEditingController(text: widget.values[id]?.toString() ?? '');
+      final controller = TextEditingController(
+        text: widget.values[id]?.toString() ?? '',
+      );
       controller.addListener(() {
         widget.values[id] = controller.text;
         widget.onChanged?.call();
@@ -117,7 +122,8 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
 
   Future<void> _pickDate(String key) async {
     final now = DateTime.now();
-    final initial = DateTime.tryParse(widget.values[key]?.toString() ?? '') ?? now;
+    final initial =
+        DateTime.tryParse(widget.values[key]?.toString() ?? '') ?? now;
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
@@ -135,50 +141,105 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
   Widget _dateButton(String key, {String placeholder = '날짜 선택'}) {
     final value = widget.values[key]?.toString();
     final hasValue = value != null && value.isNotEmpty;
-    return InkWell(
-      onTap: widget.readOnly ? null : () => _pickDate(key),
-      borderRadius: BorderRadius.circular(AppBorderRadius.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space2_5,
-          vertical: AppSpacing.space2,
-        ),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppSemanticColors.borderDefault),
-          borderRadius: BorderRadius.circular(AppBorderRadius.md),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.calendar_today,
-                size: 13, color: AppSemanticColors.textTertiary),
-            const SizedBox(width: AppSpacing.space1_5),
-            Text(
-              hasValue ? value : placeholder,
-              style: AppTypography.bodySmall.copyWith(
-                color: hasValue
-                    ? AppSemanticColors.textPrimary
-                    : AppSemanticColors.textTertiary,
-              ),
+    // B안 입력칸 — 테두리 없이 회색 채움, 모서리 14, 높이 48 이상
+    return Material(
+      color: AppSemanticColors.fillDefault,
+      borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: widget.readOnly ? null : () => _pickDate(key),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.minTouchTarget,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space3_5,
+              vertical: AppSpacing.space2,
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.calendar_today_outlined,
+                  size: 18,
+                  color: AppSemanticColors.textTertiary,
+                ),
+                const SizedBox(width: AppSpacing.space2),
+                Flexible(
+                  child: Text(
+                    hasValue ? value : placeholder,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: hasValue
+                          ? AppSemanticColors.textPrimary
+                          : AppSemanticColors.textTertiary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  InputDecoration _decoration(String? hint) => InputDecoration(
-        hintText: hint,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space2_5,
-          vertical: AppSpacing.space2,
+  // B안 입력칸 — 테두리 없이 회색 채움(SeedTextField와 같은 모양), 고르는 중에만 틸 테두리
+  InputDecoration _decoration(String? hint) {
+    final none = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      borderSide: BorderSide.none,
+    );
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: AppTypography.bodyMedium.copyWith(
+        color: AppSemanticColors.textTertiary,
+      ),
+      isDense: true,
+      filled: true,
+      fillColor: AppSemanticColors.fillDefault,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3_5,
+        vertical: AppSpacing.space3,
+      ),
+      border: none,
+      enabledBorder: none,
+      disabledBorder: none,
+      focusedBorder: none.copyWith(
+        borderSide: const BorderSide(
+          color: AppSemanticColors.borderFocus,
+          width: 2,
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.md),
-          borderSide: BorderSide(color: AppSemanticColors.borderDefault),
-        ),
-      );
+      ),
+    );
+  }
+
+  /// 미리보기 칸 — 실제 입력칸과 같은 회색 채움 상자(높이 48 이상) 안에 안내 글을 둔다.
+  Widget _placeholderBox({String? text}) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: AppSpacing.minTouchTarget),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3_5,
+        vertical: AppSpacing.space3,
+      ),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.fillDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      ),
+      alignment: AlignmentDirectional.centerStart,
+      child: text == null
+          ? null
+          : Text(
+              text,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
+            ),
+    );
+  }
 
   /// 미리보기(readOnly) 모드 — 실제 입력 위젯 대신 항목 구성만 보여준다.
   Widget _placeholderCell(Map<String, dynamic> field) {
@@ -188,32 +249,19 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           .map((o) => o['label']?.toString() ?? '')
           .where((s) => s.isNotEmpty)
           .join(' / ');
-      return Text(
-        labels.isEmpty ? '선택 항목' : labels,
-        style: AppTypography.bodySmall
-            .copyWith(color: AppSemanticColors.textTertiary),
-      );
+      return _placeholderBox(text: labels.isEmpty ? '선택 항목' : labels);
     }
     if (type == 'date') {
-      return Text('날짜 선택',
-          style: AppTypography.bodySmall
-              .copyWith(color: AppSemanticColors.textTertiary));
+      return _placeholderBox(text: '날짜 선택');
     }
     if (type == 'dateRange') {
-      return Text('시작일 ~ 종료일',
-          style: AppTypography.bodySmall
-              .copyWith(color: AppSemanticColors.textTertiary));
+      return _placeholderBox(text: '시작일 ~ 종료일');
     }
     if (type == 'image') {
-      return Text('이미지 첨부 영역',
-          style: AppTypography.bodySmall
-              .copyWith(color: AppSemanticColors.textTertiary));
+      return _placeholderBox(text: '이미지 첨부 영역');
     }
-    return Container(
-      height: 1,
-      color: AppSemanticColors.borderDefault,
-      margin: const EdgeInsets.only(top: AppSpacing.space3),
-    );
+    // 글 입력 칸 — 예전 밑줄 대신 빈 회색 입력칸
+    return _placeholderBox();
   }
 
   Widget _control(Map<String, dynamic> field) {
@@ -251,7 +299,12 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _dateButton('${id}_start', placeholder: '시작일'),
-            Text('~', style: AppTypography.bodySmall),
+            Text(
+              '~',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
             _dateButton('${id}_end', placeholder: '종료일'),
           ],
         );
@@ -263,17 +316,24 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           isExpanded: true,
           isDense: true,
           decoration: _decoration('선택하세요'),
-          style: AppTypography.bodySmall.copyWith(
-              fontFamily: AppTypography.fontFamilySans,
-              color: AppSemanticColors.textPrimary),
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
+          style: AppTypography.bodyMedium.copyWith(
+            fontFamily: AppTypography.fontFamilySans,
+            color: AppSemanticColors.textPrimary,
+          ),
           items: options
-              .map((o) => DropdownMenuItem<String>(
-                    value: o['value']?.toString(),
-                    child: Text(o['label']?.toString() ?? '',
-                        style: AppTypography.bodySmall.copyWith(
-                            fontFamily: AppTypography.fontFamilySans,
-                            color: AppSemanticColors.textPrimary)),
-                  ))
+              .map(
+                (o) => DropdownMenuItem<String>(
+                  value: o['value']?.toString(),
+                  child: Text(
+                    o['label']?.toString() ?? '',
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontFamily: AppTypography.fontFamilySans,
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                ),
+              )
               .toList(),
           onChanged: (value) {
             setState(() => widget.values[id] = value);
@@ -285,15 +345,14 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
         // 단일 선택 — 탭하면 해당 옵션 값으로 교체
         final options = _options(field);
         return Wrap(
-          spacing: AppSpacing.space1_5,
-          runSpacing: AppSpacing.space1_5,
+          spacing: AppSpacing.space2,
+          runSpacing: AppSpacing.space2,
           children: options.map((option) {
             final value = option['value']?.toString();
             final selected = widget.values[id]?.toString() == value;
             return SeedChip(
               label: option['label']?.toString() ?? '',
               selected: selected,
-              size: SeedChipSize.small,
               onTap: () {
                 setState(() => widget.values[id] = value);
                 widget.onChanged?.call();
@@ -307,18 +366,18 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
         final options = _options(field);
         final selectedValues = (widget.values[id] is List)
             ? List<String>.from(
-                (widget.values[id] as List).map((v) => v.toString()))
+                (widget.values[id] as List).map((v) => v.toString()),
+              )
             : <String>[];
         return Wrap(
-          spacing: AppSpacing.space1_5,
-          runSpacing: AppSpacing.space1_5,
+          spacing: AppSpacing.space2,
+          runSpacing: AppSpacing.space2,
           children: options.map((option) {
             final value = option['value']?.toString() ?? '';
             final selected = selectedValues.contains(value);
             return SeedChip(
               label: option['label']?.toString() ?? '',
               selected: selected,
-              size: SeedChipSize.small,
               onTap: () {
                 setState(() {
                   final next = List<String>.from(selectedValues);
@@ -338,14 +397,14 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
       case 'file':
         return Text(
           '아래 첨부파일 영역에서 올려주세요',
-          style: AppTypography.bodySmall
-              .copyWith(color: AppSemanticColors.textTertiary),
+          style: AppTypography.bodySmall.copyWith(
+            color: AppSemanticColors.textTertiary,
+          ),
         );
 
       case 'image':
         final raw = widget.values[id];
-        final imageValue =
-            raw is Map ? Map<String, dynamic>.from(raw) : null;
+        final imageValue = raw is Map ? Map<String, dynamic>.from(raw) : null;
         return _ImageFieldControl(
           field: field,
           value: imageValue,
@@ -386,47 +445,49 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
           if (required)
             TextSpan(
               text: ' *',
-              style: AppTypography.bodySmall
-                  .copyWith(color: AppSemanticColors.statusErrorIcon),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.statusErrorIcon,
+              ),
             ),
         ],
       ),
     );
   }
 
-  Widget _sectionRow(Map<String, dynamic> field) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space3,
-        vertical: AppSpacing.space2,
+  /// 구획 이름 — B안: 회색 머리띠 대신 간격 + 회색 소제목 글자.
+  Widget _sectionRow(Map<String, dynamic> field, {required bool isFirst}) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.space3,
+        isFirst ? AppSpacing.space2 : AppSpacing.space5,
+        AppSpacing.space3,
+        AppSpacing.space0_5,
       ),
-      color: AppSemanticColors.backgroundTertiary,
-      child: Text(
-        field['label']?.toString() ?? '',
-        style: AppTypography.titleSmall.copyWith(
-          color: AppSemanticColors.textSecondary,
+      child: Semantics(
+        header: true,
+        child: Text(
+          field['label']?.toString() ?? '',
+          style: AppTypography.titleMedium.copyWith(
+            color: AppSemanticColors.textSecondary,
+          ),
         ),
       ),
     );
   }
 
+  /// 칸 하나(이름표 + 입력). 칸 사이는 선 대신 여백으로 나눈다 — [bordered]는 예전 호출 호환용.
   Widget _fieldCell(Map<String, dynamic> field, {bool bordered = false}) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space3),
-      decoration: bordered
-          ? BoxDecoration(
-              border: Border(
-                left: BorderSide(color: AppSemanticColors.borderSubtle),
-              ),
-            )
-          : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space2_5,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           _labelCell(field),
-          const SizedBox(height: AppSpacing.space1_5),
+          const SizedBox(height: AppSpacing.space2),
           _control(field),
           if (!widget.readOnly &&
               field['description'] != null &&
@@ -434,8 +495,9 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
             const SizedBox(height: AppSpacing.space1),
             Text(
               field['description'].toString(),
-              style: AppTypography.bodySmall
-                  .copyWith(color: AppSemanticColors.textTertiary),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+              ),
             ),
           ],
         ],
@@ -445,19 +507,21 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
 
   @override
   Widget build(BuildContext context) {
+    // B안: 테두리 표 대신 테두리 없는 흰 카드 하나(모서리 20). 칸 구분은 회색 채움 입력칸과 여백으로.
     if (widget.fields.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.space6),
         decoration: BoxDecoration(
-          border: Border.all(color: AppSemanticColors.borderDefault),
-          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          color: AppSemanticColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
         ),
         child: Center(
           child: Text(
             '입력할 항목이 없습니다',
-            style: AppTypography.bodySmall
-                .copyWith(color: AppSemanticColors.textTertiary),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textTertiary,
+            ),
           ),
         ),
       );
@@ -467,20 +531,21 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
 
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        border: Border.all(color: AppSemanticColors.borderDefault),
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space2,
+        vertical: AppSpacing.space2_5,
       ),
-      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppSemanticColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < rows.length; i++) ...[
-            if (i > 0)
-              Divider(
-                  height: 1, thickness: 1, color: AppSemanticColors.borderSubtle),
             if (rows[i].length == 1 &&
                 rows[i][0]['type']?.toString() == 'section')
-              _sectionRow(rows[i][0])
+              _sectionRow(rows[i][0], isFirst: i == 0)
             else if (rows[i].length == 2)
               IntrinsicHeight(
                 child: Row(
@@ -570,8 +635,8 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
   @override
   Widget build(BuildContext context) {
     final value = widget.value;
-    final hasValue = value != null &&
-        (value['fileUrl']?.toString() ?? '').isNotEmpty;
+    final hasValue =
+        value != null && (value['fileUrl']?.toString() ?? '').isNotEmpty;
 
     if (hasValue) {
       return Column(
@@ -590,8 +655,9 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
               Flexible(
                 child: Text(
                   value['fileName']?.toString() ?? '',
-                  style: AppTypography.bodySmall
-                      .copyWith(color: AppSemanticColors.textTertiary),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -616,41 +682,50 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        InkWell(
-          onTap: _isUploading ? null : _pickAndUpload,
-          borderRadius: BorderRadius.circular(AppBorderRadius.md),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.space4,
-              horizontal: AppSpacing.space3,
-            ),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppSemanticColors.borderDefault),
-              borderRadius: BorderRadius.circular(AppBorderRadius.md),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_isUploading)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  Icon(Icons.add_photo_alternate_outlined,
-                      size: 18, color: AppSemanticColors.textSecondary),
-                const SizedBox(width: AppSpacing.space2),
-                Text(
-                  _isUploading
-                      ? '업로드 중...'
-                      : (widget.field['placeholder']?.toString() ??
-                          '클릭해서 jpg·png 이미지 첨부'),
-                  style: AppTypography.bodySmall
-                      .copyWith(color: AppSemanticColors.textSecondary),
-                ),
-              ],
+        // B안: 테두리 상자 대신 회색 채움 칸(모서리 14)
+        Material(
+          color: AppSemanticColors.fillDefault,
+          borderRadius: BorderRadius.circular(AppBorderRadius.control),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: _isUploading ? null : _pickAndUpload,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.space4,
+                horizontal: AppSpacing.space3,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_isUploading)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Icon(
+                      Icons.add_photo_alternate_outlined,
+                      size: 20,
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  const SizedBox(width: AppSpacing.space2),
+                  // 좁은 반 칸·큰 글자에서도 넘치지 않게 줄바꿈을 허용한다
+                  Flexible(
+                    child: Text(
+                      _isUploading
+                          ? '업로드 중...'
+                          : (widget.field['placeholder']?.toString() ??
+                                '클릭해서 jpg·png 이미지 첨부'),
+                      textAlign: TextAlign.center,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -658,8 +733,9 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
           const SizedBox(height: AppSpacing.space1),
           Text(
             _error!,
-            style: AppTypography.bodySmall
-                .copyWith(color: AppSemanticColors.statusErrorIcon),
+            style: AppTypography.bodySmall.copyWith(
+              color: AppSemanticColors.statusErrorIcon,
+            ),
           ),
         ],
       ],

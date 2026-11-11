@@ -127,10 +127,13 @@ class _ApprovalImageFieldValueState extends State<ApprovalImageFieldValue> {
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
           const SizedBox(width: AppSpacing.space2),
-          Text(
-            '이미지 불러오는 중...',
-            style: AppTypography.bodySmall
-                .copyWith(color: AppSemanticColors.textTertiary),
+          // 좁은 칸·큰 글자에서 넘치지 않게
+          Flexible(
+            child: Text(
+              '이미지 불러오는 중...',
+              style: AppTypography.bodySmall
+                  .copyWith(color: AppSemanticColors.textTertiary),
+            ),
           ),
         ],
       );
