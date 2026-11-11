@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/widgets/chat/chat_list_skeleton.dart';
+import 'package:frontend_app/widgets/chat/chat_messages_skeleton.dart';
 import 'package:frontend_app/widgets/common/app_skeleton.dart';
 
-/// 채팅 목록 첫 불러오기 뼈대 — 스피너 대신 흰 카드 안 줄 모양, 화면 낭독기는 "불러오는 중" 하나.
+/// 채팅 목록·채팅방 첫 불러오기 뼈대 — 스피너 대신 흰 카드 안 줄·말풍선 모양, 화면 낭독기는 "불러오는 중" 하나.
 void main() {
   Widget host(Widget child, {double textScale = 1.0}) => MaterialApp(
         builder: (context, c) => MediaQuery(
@@ -48,4 +49,28 @@ void main() {
     expect(find.bySemanticsLabel('불러오는 중'), findsOneWidget);
     semantics.dispose();
   });
+
+  for (final width in [960.0, 1170.0]) {
+    testWidgets('채팅방 말풍선 뼈대 — 폭 ${width ~/ 3}에서 넘치지 않고 왼쪽·오른쪽 말풍선이 섞인다',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 1600);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(host(const ChatMessagesSkeleton(), textScale: 1.3));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(tester.takeException(), isNull);
+      expect(find.byType(AppSkeleton), findsOneWidget);
+      // 남의 말풍선 묶음 첫 줄마다 아바타 동그라미
+      expect(find.byType(AppSkeletonCircle), findsNWidgets(3));
+      final screenWidth = width / 3;
+      final boxes = find.byType(AppSkeletonBox);
+      final rights = boxes
+          .evaluate()
+          .where((e) => tester.getTopRight(find.byWidget(e.widget)).dx > screenWidth - 20)
+          .length;
+      expect(rights, greaterThan(0));
+      expect(rights, lessThan(boxes.evaluate().length));
+    });
+  }
 }

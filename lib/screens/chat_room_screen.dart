@@ -51,8 +51,10 @@ import '../widgets/chat/chat_file_card.dart';
 import '../widgets/chat/chat_image_viewer.dart';
 import '../widgets/chat/chat_photo.dart';
 import '../widgets/chat/chat_photo_group.dart';
+import '../widgets/chat/chat_messages_skeleton.dart';
 import '../widgets/chat/chat_sender_header.dart';
 import '../widgets/common/app_action_sheet.dart';
+import '../utils/app_haptics.dart';
 
 enum _ChatRoomMenuAction { info, search, files, leave, delete }
 
@@ -3216,6 +3218,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     final localId = message.localId;
     showAppActionSheet(
       context,
+      // 말풍선을 길게 눌러 여는 메뉴 — 열리는 순간 impact 한 번
+      haptic: AppHapticKind.impact,
       title: failed ? '보내지 못한 메시지입니다' : '보내는 중입니다',
       actions: [
         if (failed && localId != null)
@@ -3269,6 +3273,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     // 항목이 늘어도 시트가 화면을 넘치지 않는다(높이 85%에서 멈추고 안에서 스크롤).
     showAppActionSheet(
       context,
+      // 말풍선·사진을 길게 눌러 여는 메뉴 — 열리는 순간 impact 한 번
+      haptic: AppHapticKind.impact,
       // 이모지 빠른 선택 — 24px 글자를 40×40 칸에
       header: message.type == MessageType.system
           ? null
@@ -3462,7 +3468,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         children: message.reactions.map((reaction) {
           return GestureDetector(
             onTap: () => _toggleReaction(message, reaction.emoji),
-            onLongPress: () => _showReactionUsers(reaction),
+            // 길게 누르면 반응한 사람 창 — 열리는 순간 impact 한 번
+            onLongPress: () {
+              AppHaptics.impact();
+              _showReactionUsers(reaction);
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.space2,
@@ -3817,7 +3827,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                       builder: (context, chatProvider, child) {
                         if (chatProvider.isLoading &&
                             chatProvider.messages.isEmpty) {
-                          return const Center(child: CircularProgressIndicator());
+                          // 첫 불러오기 — 말풍선 모양 뼈대(왼쪽 동그라미+줄, 오른쪽 줄)
+                          return const ChatMessagesSkeleton();
                         }
 
                         if (chatProvider.messages.isEmpty) {
