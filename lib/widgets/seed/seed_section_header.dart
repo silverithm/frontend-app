@@ -115,16 +115,20 @@ class SeedCountPill extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minWidth: 26, minHeight: 24),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppSemanticColors.brandWeak,
         borderRadius: BorderRadius.circular(AppBorderRadius.full),
       ),
-      child: Text(
-        '$count',
-        style: AppTypography.titleSmall.copyWith(
-          color: AppSemanticColors.brandWeakForeground,
-          fontFeatures: const [FontFeature.tabularFigures()],
+      // `alignment:`로 두면 Wrap 안에서 줄 폭을 다 차지한다 — 내용 크기만큼만 잡는다
+      child: Center(
+        widthFactor: 1,
+        heightFactor: 1,
+        child: Text(
+          '$count',
+          style: AppTypography.titleSmall.copyWith(
+            color: AppSemanticColors.brandWeakForeground,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
         ),
       ),
     );

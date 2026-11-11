@@ -95,36 +95,42 @@ class NoticeCard extends StatelessWidget {
           // Footer — 이름이 길어도 줄 밖으로 넘치지 않게 줄임표
           Row(
             children: [
-              const Icon(
-                Icons.person_outline,
-                size: 16,
-                color: AppSemanticColors.textTertiary,
-              ),
-              const SizedBox(width: AppSpacing.space1),
-              Flexible(
-                child: Text(
-                  notice.authorName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textTertiary,
-                  ),
+              // 왼쪽 묶음(작성자·조회수)이 남는 폭을 다 갖고, 꺾쇠는 오른쪽 끝에 붙는다
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.person_outline,
+                      size: 16,
+                      color: AppSemanticColors.textTertiary,
+                    ),
+                    const SizedBox(width: AppSpacing.space1),
+                    Flexible(
+                      child: Text(
+                        notice.authorName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.space4),
+                    const Icon(
+                      Icons.visibility_outlined,
+                      size: 16,
+                      color: AppSemanticColors.textTertiary,
+                    ),
+                    const SizedBox(width: AppSpacing.space1),
+                    Text(
+                      '${notice.viewCount}',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textTertiary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.space4),
-              const Icon(
-                Icons.visibility_outlined,
-                size: 16,
-                color: AppSemanticColors.textTertiary,
-              ),
-              const SizedBox(width: AppSpacing.space1),
-              Text(
-                '${notice.viewCount}',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppSemanticColors.textTertiary,
-                ),
-              ),
-              const Spacer(),
               const Icon(
                 Icons.chevron_right_rounded,
                 size: 22,

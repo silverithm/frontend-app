@@ -3167,9 +3167,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   void _showAddVacationDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AdminVacationAddDialog(selectedDate: _selectedDate),
+    // B안: 가운데 창 대신 아래 시트(같은 위젯·같은 반환값)
+    final result = await AdminVacationAddDialog.showAsSheet(
+      context,
+      selectedDate: _selectedDate,
     );
 
     if (result == true) {

@@ -171,8 +171,9 @@ class _SeedButtonState extends State<SeedButton> {
 
   _SeedButtonColors get _colors {
     final disabled = widget.isDisabled;
+    // 회색 화면 바탕(#F2F4F6) 위에서도 단추 모양이 보이게 한 단계 짙은 회색
     const disabledFill = _SeedButtonColors(
-      background: AppSemanticColors.surfaceDisabled,
+      background: AppSemanticColors.fillStrong,
       border: null,
       foreground: AppSemanticColors.textDisabled,
     );
@@ -299,8 +300,9 @@ class _SeedButtonState extends State<SeedButton> {
             ? Border.all(color: colors.border!, width: 1)
             : null,
       ),
-      alignment: Alignment.center,
-      child: content,
+      // 가로는 주어진 폭을 채우고, 세로는 내용 높이만큼만 — `alignment:`로 두면 세로 제약이
+      // 느슨한 자리(Scaffold.bottomNavigationBar 등)에서 단추가 화면 가득 늘어난다.
+      child: Align(heightFactor: 1, child: content),
     );
 
     return Semantics(

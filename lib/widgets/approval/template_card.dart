@@ -133,14 +133,15 @@ class TemplateCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.space2),
-        ] else
-          const Spacer(),
-        // 좁은 폰·큰 글자에서는 파일 이름과 날짜가 자리를 나눠 갖고 말줄임한다
-        Flexible(
+        ],
+        // 좁은 폰·큰 글자에서는 파일 이름과 날짜가 자리를 나눠 갖고 말줄임한다.
+        // 날짜는 늘 오른쪽 끝에 붙는다(Spacer+Flexible이면 가운데쯤에 뜬다).
+        Expanded(
           child: Text(
             '생성: ${dateFormat.format(template.createdAt)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
             style: AppTypography.bodySmall.copyWith(
               color: AppSemanticColors.textTertiary,
             ),
