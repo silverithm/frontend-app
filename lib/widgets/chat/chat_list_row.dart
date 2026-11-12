@@ -7,9 +7,9 @@ import '../common/app_pressable.dart';
 
 /// 채팅 화면들(방 목록·직원·참가자·새 방 참가자 고르기)의 한 줄 감싸개 — B안.
 ///
-/// 흰 카드 안 줄로 쓴다. 누르면 크기는 줄지 않고 줄 바탕이 옅은 회색(모서리 14)으로 바뀐다
+/// 흰 카드 안 줄로 쓴다. 누르면 크기는 줄지 않고 줄 바탕이 옅은 회색(모서리 12)으로 바뀐다
 /// ([SeedListCell]과 같은 눌림). 길게 누르기는 AppPressable 기본 impact 햅틱.
-/// 높이는 [AppSpacing.listRowMinHeight](60) 이상, 좌우 12·위아래 10 — 카드 안쪽 여백 8과 더해
+/// 높이는 [AppSpacing.listRowMinHeight](52) 이상, 좌우 12·위아래 10 — 카드 안쪽 여백 8과 더해
 /// 글자 시작이 카드 가장자리에서 20이 된다. 높이를 못 박지 않아 글자를 키워도 넘치지 않는다.
 class ChatListRow extends StatefulWidget {
   const ChatListRow({
@@ -75,7 +75,7 @@ class _ChatListRowState extends State<ChatListRow> {
   }
 }
 
-/// 흰 카드(모서리 20)의 한 조각 — 긴 목록을 `ListView.builder`로 그리면서도 한 장의 카드로 보이게 한다.
+/// 흰 카드(모서리 16)의 한 조각 — 긴 목록을 `ListView.builder`로 그리면서도 한 장의 카드로 보이게 한다.
 ///
 /// 묶음 첫 줄([isFirst])은 위 모서리와 위 여백 8, 끝 줄([isLast])은 아래 모서리·아래 여백 8과
 /// 다음 묶음과의 간격([AppSpacing.cardGap])을 둔다. 줄 사이 구분선은 긋지 않는다.

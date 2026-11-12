@@ -321,7 +321,7 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // SeedListSection(단일 셀) — 회색 바탕 위 테두리 없는 흰 카드(모서리 20)
+    // SeedListSection(단일 셀) — 회색 바탕 위 테두리 없는 흰 카드(모서리 16)
     return SeedListSection(
       children: [
         SeedListCell(
@@ -385,7 +385,7 @@ class _MenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // SeedListCell — 옅은 틸 둥근 아이콘 44 + 제목 16/w600·설명 14 + 꺾쇠, 줄 높이 60 이상
+    // SeedListCell — 옅은 틸 둥근 아이콘 40 + 제목 16/w600·설명 12 + 꺾쇠, 줄 높이 52 이상
     return SeedListCell(
       leadingIcon: icon,
       title: label,

@@ -11,6 +11,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
 import '../utils/app_haptics.dart';
+import '../utils/korean_keep_all.dart';
 import '../utils/permissions.dart';
 import '../widgets/approval/signature_confirm_sheet.dart';
 import '../widgets/approval/approval_status_badge.dart';
@@ -620,7 +621,8 @@ class _AdminApprovalManagementScreenState
                   const SizedBox(width: AppSpacing.space3),
                   Expanded(
                     child: Text(
-                      '지금 내가 처리할 결재 $count건이 있습니다',
+                      // 글자를 키워도 "있습니/다"처럼 낱말 가운데서 끊기지 않게
+                      keepAll('지금 내가 처리할 결재 $count건이 있습니다'),
                       style: AppTypography.titleSmall.copyWith(
                         color: AppSemanticColors.brandWeakForeground,
                       ),
@@ -646,9 +648,9 @@ class _AdminApprovalManagementScreenState
     return AppCard(
       margin: const EdgeInsets.fromLTRB(
         AppSpacing.screenGutter,
-        AppSpacing.space3,
+        AppSpacing.space2,
         AppSpacing.screenGutter,
-        AppSpacing.space3,
+        AppSpacing.space1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,7 +681,7 @@ class _AdminApprovalManagementScreenState
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.space4),
+          const SizedBox(height: AppSpacing.space2_5),
 
           // 검색 필드
           SeedTextField(
@@ -731,7 +733,7 @@ class _AdminApprovalManagementScreenState
         AppSpacing.screenGutter,
         0,
         AppSpacing.screenGutter,
-        AppSpacing.space3,
+        AppSpacing.space1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -813,7 +815,7 @@ class _AdminApprovalManagementScreenState
     final isPending = request.status == ApprovalStatus.pending;
     final isSelected = _selectedRequests.contains(request.id);
 
-    // B안 카드 — 회색 바탕 위 테두리 없는 흰 카드(모서리 20·여백 20).
+    // B안 카드 — 회색 바탕 위 테두리 없는 흰 카드(모서리 16·여백 16).
     // 고른 카드만 옅은 틸 바탕 + 틸 테두리로 표시한다. 길게 누르기가 필요해 InkWell을 그대로 쓴다.
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),

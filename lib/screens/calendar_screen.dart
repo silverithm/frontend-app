@@ -456,13 +456,14 @@ class _CalendarScreenState extends State<CalendarScreen>
   Widget _buildScheduleCalendarWidget(ScheduleProvider provider) {
     return Column(
       children: [
-        // 월 네비게이션 — B안: 머리띠 없이 카드 맨 위에 달 이름과 회색 동그라미 꺾쇠
+        // 월 네비게이션 — B안: 머리띠 없이 카드 맨 위에 달 이름과 회색 동그라미 꺾쇠.
+        // 꺾쇠 단추가 48이라 위아래 여백은 얇게 둔다(휴무 달력과 같은 값).
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.space3,
+            AppSpacing.space2,
             AppSpacing.space3,
-            AppSpacing.space3,
-            AppSpacing.space1,
+            0,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1264,6 +1265,11 @@ class _CalendarScreenState extends State<CalendarScreen>
           Consumer<VacationProvider>(
             builder: (context, vacationProvider, _) {
               final month = DateTime(_currentDate.year, _currentDate.month);
+              // 알릴 것이 없으면 띠도 여백도 두지 않는다 — 빈 여백 8이 달력을 밀어내던 것
+              if (!vacationProvider.isNextMonthOnly &&
+                  vacationProvider.deadlineForTargetMonth(month) == null) {
+                return const SizedBox.shrink();
+              }
               return Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.space4,
@@ -1795,7 +1801,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     AppSpacing.space4,
   );
 
-  /// 일정 등록·구분 관리 시트의 머리 — B안: 연한 틸 머리띠·아래 선 없이 손잡이 + 제목 21 + 닫기
+  /// 일정 등록·구분 관리 시트의 머리 — B안: 연한 틸 머리띠·아래 선 없이 손잡이 + 제목 18 + 닫기
   Widget _buildSheetHeader({
     required String title,
     required VoidCallback onClose,
@@ -1849,7 +1855,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   /// 시트 안 고르기 칸(일정 구분·날짜·시간) — 위 SeedTextField와 같은 B안 입력칸:
-  /// 회색으로 채우고 테두리 없음, 모서리 14, 누르고 있으면 틸 2px.
+  /// 회색으로 채우고 테두리 없음, 모서리 12, 누르고 있으면 틸 2px.
   InputDecoration _sheetFieldDecoration(String label, {Widget? suffixIcon}) {
     const none = OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
@@ -1950,7 +1956,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         .catchError((_) {});
 
     // AppBottomSheet.show로 바꾸지 않고 유지: 제목이 내용과 함께 내려가지 않게 머리를 따로
-    // 둔다. 모양은 B안 시트와 같다(모서리 24·흰 바탕·_buildSheetHeader의 손잡이+제목 21).
+    // 둔다. 모양은 B안 시트와 같다(모서리 24·흰 바탕·_buildSheetHeader의 손잡이+제목 18).
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2643,7 +2649,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     bool isSaving = false;
 
     // AppBottomSheet.show로 바꾸지 않고 유지: 제목이 내용과 함께 내려가지 않게 머리를 따로
-    // 둔다. 모양은 B안 시트와 같다(모서리 24·흰 바탕·_buildSheetHeader의 손잡이+제목 21).
+    // 둔다. 모양은 B안 시트와 같다(모서리 24·흰 바탕·_buildSheetHeader의 손잡이+제목 18).
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

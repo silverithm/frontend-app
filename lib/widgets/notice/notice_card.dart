@@ -25,7 +25,7 @@ class NoticeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // B안: 회색 바탕 위 흰 카드, 테두리 없음, 모서리 20·안쪽 여백 20, 카드끼리는 간격 12.
+    // B안: 회색 바탕 위 흰 카드, 테두리 없음, 모서리 16·안쪽 여백 16, 카드끼리는 간격 10.
     // 고정 공지도 같은 카드다 — 노란 바탕·굵은 테두리 대신 '고정' 꼬리표 하나로 알린다(웹 공지 목록과 같다)
     return AppCard(
       margin: const EdgeInsets.symmetric(

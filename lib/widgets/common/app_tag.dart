@@ -57,24 +57,25 @@ class AppTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = colorsOf(tone);
-    // B안(시안 .pill): 테두리 없는 옅은 알약, 높이 26 이상, 좌우 10, 12/w600
+    // B안(시안 .pill): 테두리 없는 옅은 알약, 높이 22 이상, 좌우 8, 12/w600
+    // (1.20.2: 26·10에서 줄였다 — 꼬리표가 제목 줄보다 커 보여 줄 높이를 밀어 올렸다)
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.background,
         borderRadius: BorderRadius.circular(AppBorderRadius.full),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 26),
+        constraints: const BoxConstraints(minHeight: 22),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space2_5,
+            horizontal: AppSpacing.space2,
             vertical: AppSpacing.space0_5,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 14, color: colors.foreground),
+                Icon(icon, size: 12, color: colors.foreground),
                 const SizedBox(width: 3),
               ],
               // Flexible로 감싸지 않는다 — 꼬리표는 폭 제한 없는 Row 안에도 놓인다

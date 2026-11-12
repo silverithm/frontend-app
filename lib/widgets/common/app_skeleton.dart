@@ -508,7 +508,7 @@ class AppSkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // B안: 테두리 없는 흰 카드(모서리 20) 안의 뼈는 한 단계 옅은 색(시안 --sk-in)
+    // B안: 테두리 없는 흰 카드(모서리 16) 안의 뼈는 한 단계 옅은 색(시안 --sk-in)
     final card = Container(
       margin: margin,
       padding: padding,

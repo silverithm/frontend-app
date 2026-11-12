@@ -7,7 +7,7 @@ import '../common/app_pressable.dart';
 
 /// 카드·구역 머리 — B안(2026-11-12, 시안 .card-h).
 ///
-/// 제목 18/w700 + (숫자 알약) + 부제 14 회색, 오른쪽에 틸 글자 링크("전체보기 ›").
+/// 제목 16/w700 + (숫자 알약) + 부제 12 회색, 오른쪽에 틸 글자 링크("전체보기 ›").
 /// 회색 머리띠·아래 선 없이 카드 안 맨 위에 둔다. 링크는 높이 48 터치.
 class SeedSectionHeader extends StatelessWidget {
   final String title;

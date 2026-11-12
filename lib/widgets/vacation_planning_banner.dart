@@ -113,7 +113,7 @@ class VacationPlanningBanner extends StatelessWidget {
     required String title,
     required String description,
   }) {
-    // B안 안내 상자(SeedCallout과 같은 치수): 테두리 없이 옅은 상태색 바탕, 모서리 14, 아이콘 20
+    // B안 안내 상자(SeedCallout과 같은 치수): 테두리 없이 옅은 상태색 바탕, 모서리 12, 아이콘 20
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(

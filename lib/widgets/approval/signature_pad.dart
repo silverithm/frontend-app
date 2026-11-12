@@ -83,7 +83,7 @@ class _SignaturePadState extends State<SignaturePad> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // B안: 쓸 자리를 알리는 회색 채움 칸 + 아주 옅은 테두리(모서리 14).
+        // B안: 쓸 자리를 알리는 회색 채움 칸 + 아주 옅은 테두리(모서리 12).
         // 바탕은 RepaintBoundary 밖에서 칠하므로 내보내는 서명 그림은 그대로 투명 배경이다.
         Container(
           height: widget.height,
@@ -132,7 +132,7 @@ class _SignaturePadState extends State<SignaturePad> {
           ),
         ),
         const SizedBox(height: AppSpacing.space1),
-        // 칸이 회색이라 지우기는 글자 단추(작은 40)로 — 터치 영역은 48
+        // 칸이 회색이라 지우기는 글자 단추(작은 36)로 — 터치 영역은 48
         SeedButton(
           label: '지우기',
           variant: SeedButtonVariant.brandGhost,

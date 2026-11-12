@@ -587,7 +587,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
 }
 
 /// 결재 신청 첫 불러오기 뼈대 — 결재 현황 카드(제목 + 숫자 네 칸) + 묶음 제목 + 결재 카드 세 장.
-/// 실제 목록과 같은 바깥 여백(좌우 20/16·카드 사이 12)이라 내용이 떠도 덜 튄다.
+/// 실제 목록과 같은 바깥 여백(좌우 20/16·카드 사이 10)이라 내용이 떠도 덜 튄다.
 class _ApprovalListSkeleton extends StatelessWidget {
   const _ApprovalListSkeleton();
 

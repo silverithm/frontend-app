@@ -47,22 +47,24 @@ class AppTypography {
 
   // Text styles
   //
-  // 글자 역할 표 — 1.20.1(2026-11-12)부터 이 값이 기준. 같은 역할은 화면이 달라도 같은 토큰 하나를 쓰고
+  // 글자 역할 표 — 1.20.2(2026-11-12)부터 이 값이 기준. 같은 역할은 화면이 달라도 같은 토큰 하나를 쓰고
   // 굵기를 덮어쓰지 않는다. 굵기는 w400(본문)·w600(제목·강조)·w700(화면·구역 제목, 큰 숫자) 세 단계.
-  // 크기는 12·14·16·18·20·24 여섯 단계(웹 text-xs…2xl과 같은 값). 쓰는 분이 50~60대가 많아 본문은 16을
-  // 지키고, B안 첫 판(1.20.0)에서 생긴 사이 크기 13·15·17·19·21만 한 칸씩 내렸다.
+  // 크기는 12·14·16·18·20·24 여섯 단계(웹 text-xs…2xl과 같은 값).
+  // 1.20.0·1.20.1은 본문 16·메타 14로 한 단계씩 키웠는데, 줄 높이·여백까지 함께 커져 한 화면에 들어오는
+  // 양이 1.19보다 눈에 띄게 줄었다("이전 버전이 한 화면에 더 잘 들어맞는다"). 그래서 본문 14·메타 12·
+  // 카드 제목 16으로 1.19의 크기에 되돌렸다. 목록 한 줄의 제목(16)과 긴 글 본문(16)은 그대로 둔다.
   //   탭 첫 화면 상단 바 제목       appBarTitleLarge 20/w700 (왼쪽 정렬)
   //   안쪽 화면 상단 바 제목        appBarTitle 18/w600 (가운데) — 탭 첫 화면 20, 안쪽 18로 한 칸 차이
-  //   시트·대화상자·상세 제목        heading5 20/w700
-  //   카드·구역 제목                heading6 18/w700
+  //   시트·대화상자·상세 제목        heading5 18/w700
+  //   카드·구역 제목                heading6 16/w700
   //   목록 한 줄의 제목             titleMedium 16/w600
   //   작은 행 제목·폼 라벨          titleSmall 14/w600
-  //   본문                          bodyMedium 16/w400 (긴 글은 bodyLarge 16, 줄 간격 1.6)
-  //   부제·메타(날짜·작성자)        bodySmall 14/w400 + textSecondary·textTertiary
+  //   본문                          bodyMedium 14/w400 (긴 글은 bodyLarge 16, 줄 간격 1.6)
+  //   부제·메타(날짜·작성자)        bodySmall 12/w400 + textSecondary·textTertiary
   //   작은 강조·꼬리표(상태 알약)    labelStrong 12/w600 — AppTag
   //   배지 숫자·하단 탭 글자         labelSmall 12 — 12보다 작은 글자는 없다
-  //   큰 숫자 요약                  heading4 24/w700 고정폭 숫자
-  //   단추                          buttonLarge 16 / buttonMedium 16 / buttonSmall 14 (w600)
+  //   큰 숫자 요약                  heading4 20/w700 고정폭 숫자
+  //   단추                          buttonLarge 16 / buttonMedium 14 / buttonSmall 12 (w600)
   static const TextStyle heading1 = TextStyle(
     fontFamily: fontFamilySans,
     fontSize: fontSize5xl,
@@ -90,7 +92,7 @@ class AppTypography {
   /// 큰 숫자 요약(건수·합계) — 숫자 폭이 같아 세어 올라가도 흔들리지 않는다.
   static const TextStyle heading4 = TextStyle(
     fontFamily: fontFamilySans,
-    fontSize: fontSize3xl,
+    fontSize: fontSize2xl,
     fontWeight: fontWeightBold,
     height: lineHeightTight,
     letterSpacing: letterSpacingNormal,
@@ -100,7 +102,7 @@ class AppTypography {
   /// 시트·대화상자·상세 화면 제목
   static const TextStyle heading5 = TextStyle(
     fontFamily: fontFamilySans,
-    fontSize: fontSize2xl,
+    fontSize: fontSizeXl,
     fontWeight: fontWeightBold,
     height: lineHeightSnug,
     letterSpacing: -0.2,
@@ -109,9 +111,9 @@ class AppTypography {
   /// 카드·구역 제목("공지사항"·"전자결재")
   static const TextStyle heading6 = TextStyle(
     fontFamily: fontFamilySans,
-    fontSize: fontSizeXl,
+    fontSize: fontSizeLg,
     fontWeight: fontWeightBold,
-    height: 1.35,
+    height: lineHeightSnug,
     letterSpacing: -0.2,
   );
 
@@ -138,7 +140,7 @@ class AppTypography {
     fontFamily: fontFamilySans,
     fontSize: fontSizeLg,
     fontWeight: fontWeightSemibold,
-    height: 1.45,
+    height: lineHeightSnug,
     letterSpacing: letterSpacingNormal,
   );
 
@@ -172,7 +174,7 @@ class AppTypography {
 
   static const TextStyle bodyMedium = TextStyle(
     fontFamily: fontFamilySans,
-    fontSize: fontSizeLg,
+    fontSize: fontSizeBase,
     fontWeight: fontWeightNormal,
     height: lineHeightNormal,
     letterSpacing: letterSpacingNormal,
@@ -180,7 +182,7 @@ class AppTypography {
 
   static const TextStyle bodySmall = TextStyle(
     fontFamily: fontFamilySans,
-    fontSize: fontSizeBase,
+    fontSize: fontSizeSm,
     fontWeight: fontWeightNormal,
     height: lineHeightNormal,
     letterSpacing: letterSpacingNormal,
@@ -221,7 +223,7 @@ class AppTypography {
 
   static const TextStyle buttonMedium = TextStyle(
     fontFamily: fontFamilySans,
-    fontSize: fontSizeLg,
+    fontSize: fontSizeBase,
     fontWeight: fontWeightSemibold,
     height: lineHeightTight,
     letterSpacing: letterSpacingNormal,
@@ -229,7 +231,7 @@ class AppTypography {
 
   static const TextStyle buttonSmall = TextStyle(
     fontFamily: fontFamilySans,
-    fontSize: fontSizeBase,
+    fontSize: fontSizeSm,
     fontWeight: fontWeightSemibold,
     height: lineHeightTight,
     letterSpacing: letterSpacingNormal,

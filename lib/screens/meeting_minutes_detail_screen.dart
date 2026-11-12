@@ -157,7 +157,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                   children: [
                     // 서명 필요 배너 — 아래로 스크롤하면 하단 서명 버튼을 놓치기 쉬워
                     // 진입 즉시 눈에 띄게 알려준다.
-                    // B안 안내 상자(옅은 틸 바탕·모서리 14·테두리 없음)
+                    // B안 안내 상자(옅은 틸 바탕·모서리 12·테두리 없음)
                     if (canSign) ...[
                       const SeedCallout(
                         variant: SeedCalloutVariant.brand,
@@ -202,7 +202,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // 카드·구역 제목(B안 18/w700)
+                              // 카드·구역 제목(B안 16/w700)
                               Semantics(
                                 header: true,
                                 child: Text(
@@ -301,7 +301,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                   AppSpacing.screenGutter,
                   AppSpacing.space3,
                 ),
-                // 화면 맨 아래 주 단추 — 큰 것(54), 가로 꽉 채움
+                // 화면 맨 아래 주 단추 — 큰 것(52), 가로 꽉 채움
                 child: SizedBox(
                   width: double.infinity,
                   child: SeedButton(
@@ -318,7 +318,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
     );
   }
 
-  // B안 카드 — 테두리 없는 흰 상자, 모서리 20, 안쪽 20
+  // B안 카드 — 테두리 없는 흰 상자, 모서리 16, 안쪽 16
   Widget _card({required Widget child}) {
     return SizedBox(
       width: double.infinity,

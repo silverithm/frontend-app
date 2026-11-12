@@ -182,7 +182,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
           : Column(
               children: [
                 if (_unassignedElders(provider).isNotEmpty)
-                  // B안 안내 상자(옅은 노랑·모서리 14·테두리 없음)
+                  // B안 안내 상자(옅은 노랑·모서리 12·테두리 없음)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.screenGutter,
@@ -232,7 +232,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
   }
 
   Widget _buildEmpty() {
-    // B안 빈 화면 — 옅은 틸 원 아이콘 + 19 제목 + 14 설명
+    // B안 빈 화면 — 옅은 틸 원 아이콘 + 16 제목 + 12 설명
     return const AppEmptyState(
       icon: Icons.directions_bus_outlined,
       title: '등록된 노선이 없습니다',
@@ -243,7 +243,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
   Widget _buildRouteCard(DispatchProvider provider, DispatchRoute route) {
     final seniors = provider.seniorsOfRoute(route.id);
 
-    // B안 카드 — 테두리 없는 흰 상자, 모서리 20, 안쪽 20, 카드끼리 간격 12
+    // B안 카드 — 테두리 없는 흰 상자, 모서리 16, 안쪽 16, 카드끼리 간격 10
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       padding: const EdgeInsets.fromLTRB(
@@ -388,7 +388,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
       child: Row(
         children: [
           // 역할 꼬리표 — 예전엔 28×24로 높이를 못 박아 글자를 키우면 잘렸다.
-          // 높이는 꼬리표가 정하고(최소 26), 칸 폭만 글자 배율을 따라 맞춰 이름 시작점을 줄마다 같게 둔다.
+          // 높이는 꼬리표가 정하고(최소 22), 칸 폭만 글자 배율을 따라 맞춰 이름 시작점을 줄마다 같게 둔다.
           SizedBox(
             width: MediaQuery.textScalerOf(context).scale(36),
             child: Align(
@@ -524,7 +524,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     final nameController = TextEditingController(text: route?.name ?? '');
     var type = route?.type ?? RouteType.toWork;
 
-    // B안: 가운데 창 대신 아래에서 올라오는 시트(손잡이·제목 21·큰 단추 취소 1 : 저장 1.7)
+    // B안: 가운데 창 대신 아래에서 올라오는 시트(손잡이·제목 18·큰 단추 취소 1 : 저장 1.7)
     final saved = await showAppSheet<bool>(
       context,
       builder: (sheetContext) => StatefulBuilder(

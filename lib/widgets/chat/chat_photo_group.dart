@@ -60,7 +60,7 @@ class ChatPhotoGroup extends StatelessWidget {
     final cell = (maxWidth - _gap * (columns - 1)) / columns;
     final rows = (count / columns).ceil();
 
-    // B안: 말풍선·사진 모서리 20
+    // B안: 말풍선·사진 모서리 16
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppBorderRadius.card),
       child: SizedBox(

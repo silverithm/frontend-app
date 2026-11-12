@@ -129,7 +129,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // B안 시트 모양(AppSheetFrame과 같은 값): 좌우 20, 제목 20/w700, 설명 16 회색, 아래 20 + 안전 영역.
+    // B안 시트 모양(AppSheetFrame과 같은 값): 좌우 20, 제목 18/w700, 설명 14 회색, 아래 20 + 안전 영역.
     // 손잡이는 AppBottomSheet가 그린다.
     final media = MediaQuery.of(context);
     final bottomInset = media.viewInsets.bottom > media.padding.bottom
@@ -286,7 +286,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
   }
 
   /// 서명 방식 세그먼트 토글 항목 — Material+InkWell로 눌림 피드백(잉크 스플래시)을 준다.
-  /// B안: 고른 쪽 틸·안 고른 쪽 회색 채움, 모서리 14, 높이 48 이상.
+  /// B안: 고른 쪽 틸·안 고른 쪽 회색 채움, 모서리 12, 높이 48 이상.
   Widget _buildModeButton(String text, bool selected, VoidCallback onTap) {
     return Material(
       color: selected

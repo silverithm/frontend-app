@@ -6,8 +6,8 @@ import '../../theme/app_motion.dart';
 import '../../theme/app_typography.dart';
 
 /// 입력칸 — B안(2026-11-12, 시안 .field).
-/// 회색(#F2F4F6)으로 채운 칸, 테두리 없음, 모서리 14, 글자 16. 누르고 있으면(포커스) 틸 2px 테두리,
-/// 틀리면 빨강 2px + 아래 14 안내. 라벨은 14/w600 검정. 높이 보통 48·큰 54.
+/// 회색(#F2F4F6)으로 채운 칸, 테두리 없음, 모서리 12, 글자 14. 누르고 있으면(포커스) 틸 2px 테두리,
+/// 틀리면 빨강 2px + 아래 12 안내. 라벨은 14/w600 검정. 높이 보통 44·큰 52.
 enum SeedTextFieldSize { medium, large }
 
 class SeedTextField extends StatefulWidget {
@@ -123,15 +123,15 @@ class _SeedTextFieldState extends State<SeedTextField> {
 
   bool get _isMultiline => (widget.maxLines ?? 1) > 1;
 
-  // 여러 줄이면 위아래 13(시안 .field), 한 줄이면 높이 48·54 안에서 가운데
+  // 여러 줄이면 위아래 11, 한 줄이면 높이 44·52 안에서 가운데
   EdgeInsets get _padding => EdgeInsets.symmetric(
         horizontal: AppSpacing.space4,
-        vertical: _isMultiline ? 13 : 0,
+        vertical: _isMultiline ? 11 : 0,
       );
 
   double get _radius => AppBorderRadius.control;
 
-  // 입력값은 본문 16(w400) — 라벨 titleSmall 14/w600과 굵기로 구분된다
+  // 입력값은 본문 14(w400) — 라벨 titleSmall 14/w600과 굵기로 구분된다
   TextStyle get _inputStyle => AppTypography.bodyMedium;
 
   // 테두리는 늘 2px 자리를 차지하고(평소엔 투명) 색만 바뀐다 — 포커스 때 글자가 밀리지 않게
@@ -196,7 +196,7 @@ class _SeedTextFieldState extends State<SeedTextField> {
                 : AppSemanticColors.fillDefault,
             borderRadius: BorderRadius.circular(_radius),
           ),
-          // 테두리는 위에 겹쳐 그린다(자리를 차지하지 않아 높이 48 안에 48 아이콘 칸이 들어간다)
+          // 테두리는 위에 겹쳐 그린다(자리를 차지하지 않는다). 뒤 아이콘 단추가 있는 칸은 48 터치 칸 때문에 높이가 48이 된다
           foregroundDecoration: BoxDecoration(
             borderRadius: BorderRadius.circular(_radius),
             border: Border.all(color: _strokeColor(hasError), width: _strokeWidth(hasError)),

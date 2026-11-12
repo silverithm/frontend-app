@@ -45,9 +45,9 @@ class AppSegmentedTabs extends StatefulWidget implements PreferredSizeWidget {
     required this.tabs,
     this.padding = const EdgeInsets.fromLTRB(
       AppSpacing.space4,
-      AppSpacing.space3,
-      AppSpacing.space4,
       AppSpacing.space2,
+      AppSpacing.space4,
+      AppSpacing.space1,
     ),
     this.backgroundColor,
     this.onTap,
@@ -66,7 +66,7 @@ class AppSegmentedTabs extends StatefulWidget implements PreferredSizeWidget {
   final ValueChanged<int>? onTap;
 
   /// 한 칸의 최소 높이.
-  static const double segmentMinHeight = 42;
+  static const double segmentMinHeight = 36;
 
   /// 회색 띠 안쪽 여백.
   static const double trackPadding = AppSpacing.space1;
@@ -74,8 +74,8 @@ class AppSegmentedTabs extends StatefulWidget implements PreferredSizeWidget {
   /// 기본 글자 크기·기본 여백일 때의 전체 높이 — `PreferredSize`가 필요한 자리에서 쓴다.
   static const double defaultHeight = segmentMinHeight +
       trackPadding * 2 +
-      AppSpacing.space3 +
-      AppSpacing.space2;
+      AppSpacing.space2 +
+      AppSpacing.space1;
 
   @override
   Size get preferredSize => const Size.fromHeight(defaultHeight);

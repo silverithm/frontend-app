@@ -8,7 +8,7 @@ import 'app_input.dart';
 import 'app_sheet_frame.dart';
 
 /// 확인·알림·입력 창 — B안(2026-11-12): 가운데 대화상자 대신 아래에서 올라오는 시트(엄지 닿는 곳)
-/// + 큰 단추(54). 돌려주는 값은 예전과 같다 — 확인 true, 취소 false, 바깥을 눌러 닫으면 null.
+/// + 큰 단추(52). 돌려주는 값은 예전과 같다 — 확인 true, 취소 false, 바깥을 눌러 닫으면 null.
 class AppDialog {
   /// 확인 창. 되돌릴 수 없는 행위(삭제·탈퇴)만 [confirmVariant]에
   /// [SeedButtonVariant.critical]을 넘긴다 — 반려·거절·로그아웃은 파괴적 행위가 아니다.
@@ -168,7 +168,7 @@ class AppDialog {
 }
 
 class AppBottomSheet {
-  /// B안(2026-11-12, 시안 .sheet): 손잡이 40×5 + (제목 20/w700, 왼쪽) + 내용, 위 모서리 24.
+  /// B안(2026-11-12, 시안 .sheet): 손잡이 40×5 + (제목 18/w700, 왼쪽) + 내용, 위 모서리 24.
   /// 예전의 연한 틸 제목 띠·아래 선은 없앴다. 뒤 어둠은 테마(rgba(11,15,20,.45)).
   static Future<T?> show<T>(
     BuildContext context, {

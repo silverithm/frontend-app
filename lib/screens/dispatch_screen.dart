@@ -198,7 +198,7 @@ class _DispatchScreenState extends State<DispatchScreen>
   }
 
   Widget _buildSetupGuide() {
-    // B안 빈 화면 — 옅은 틸 원 아이콘 + 19 제목 + 14 설명 + 단추
+    // B안 빈 화면 — 옅은 틸 원 아이콘 + 16 제목 + 12 설명 + 단추
     return AppEmptyState(
       icon: Icons.directions_bus_outlined,
       title: '배차 설정이 필요합니다',

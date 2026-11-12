@@ -132,7 +132,7 @@ class _AppInputState extends State<AppInput> {
             contentPadding: widget.contentPadding ??
                 const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space4,
-                  vertical: 13,
+                  vertical: 11,
                 ),
             // B안: 회색으로 채운 칸, 평소엔 테두리 없음(시안 .field)
             filled: true,

@@ -49,7 +49,7 @@ void main() {
     expect(await dismissed, isNull);
   });
 
-  testWidgets('아래에서 올라오는 시트이고, 단추는 큰 54 · 취소는 회색', (tester) async {
+  testWidgets('아래에서 올라오는 시트이고, 단추는 큰 52 · 취소는 회색', (tester) async {
     final context = await pumpHost(tester);
     AppDialog.showConfirm(context, title: '이 결재를 승인할까요?', message: '보수교육 참석 출장 신청서 · 조은비', confirmText: '승인');
     await tester.pumpAndSettle();
@@ -57,7 +57,7 @@ void main() {
     expect(find.byType(BottomSheet), findsOneWidget);
     expect(tester.getBottomLeft(find.byType(BottomSheet)).dy, 640);
     final title = tester.widget<Text>(find.text('이 결재를 승인할까요?'));
-    expect(title.style!.fontSize, 20);
+    expect(title.style!.fontSize, 18);
     final confirm = find.widgetWithText(SeedButton, '승인');
     expect(tester.widget<SeedButton>(confirm).size, SeedButtonSize.large);
     expect(tester.widget<SeedButton>(find.widgetWithText(SeedButton, '취소')).variant,

@@ -11,7 +11,7 @@ import 'seed/seed_button.dart';
 /// 접속 시 오늘 일정 알림 (하루 1회).
 ///
 /// B안(2026-11-12): 가운데 창 대신 아래에서 올라오는 시트 — `showAppSheet`로 띄운다
-/// (손잡이 → 제목 20/w700 → 설명 → 일정 줄 → 단추 줄 닫기 1 : 일정 보기 1.7).
+/// (손잡이 → 제목 18/w700 → 설명 → 일정 줄 → 단추 줄 닫기 1 : 일정 보기 1.7).
 class TodayScheduleDialog extends StatelessWidget {
   final List<Schedule> schedules;
   final VoidCallback? onViewSchedule;
@@ -54,7 +54,7 @@ class TodayScheduleDialog extends StatelessWidget {
         const SizedBox(height: AppSpacing.space4),
         ...visible.map(
           (schedule) => ConstrainedBox(
-            // 줄 사이는 선 없이 줄 높이(44 이상)로 나눈다
+            // 줄 사이는 선 없이 줄 높이(40 이상)로 나눈다
             constraints: const BoxConstraints(minHeight: AppSpacing.iconCircle),
             child: Row(
               children: [

@@ -211,7 +211,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
       ),
     );
 
-    // 아래 시트(B안) — 손잡이 + 제목 21 + 칸들 + 단추 줄(취소 1 : 등록 1.7)
+    // 아래 시트(B안) — 손잡이 + 제목 18 + 칸들 + 단추 줄(취소 1 : 등록 1.7)
     if (widget.asSheet) {
       return GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -276,7 +276,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                     const SizedBox(height: AppSpacing.space6),
                     ..._buildFields(),
                     const SizedBox(height: AppSpacing.space6),
-                    // 버튼 — 시트와 같은 단추 줄(취소 1 : 등록 1.7, 높이 54)
+                    // 버튼 — 시트와 같은 단추 줄(취소 1 : 등록 1.7, 높이 52)
                     actions,
                   ],
                 ),
@@ -364,7 +364,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
             ),
       const SizedBox(height: AppSpacing.space4),
 
-      // 날짜 선택 — 회색 채운 칸 하나(테두리 없음), 높이 54 이상
+      // 날짜 선택 — 회색 채운 칸 하나(테두리 없음), 높이 52 이상
       _buildLabel('휴무 날짜'),
       Material(
         color: AppSemanticColors.fillDefault,

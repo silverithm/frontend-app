@@ -410,7 +410,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
     );
   }
 
-  /// B안 카드 — 흰 바탕, 테두리 없음, 모서리 20.
+  /// B안 카드 — 흰 바탕, 테두리 없음, 모서리 16.
   static final BoxDecoration _cardDecoration = BoxDecoration(
     color: AppSemanticColors.surfaceCard,
     borderRadius: BorderRadius.circular(AppBorderRadius.card),

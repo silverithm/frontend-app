@@ -244,8 +244,8 @@ class _HapticsSettingCard extends StatelessWidget {
   }
 }
 
-/// 설정 스위치 한 줄 — B안 목록 줄(SeedListCell)과 같은 치수: 줄 높이 60 이상,
-/// 제목 16/w600, 설명 14 회색, 누름 모서리 14. [SeedListSection] 카드 안(여백 8)에서
+/// 설정 스위치 한 줄 — B안 목록 줄(SeedListCell)과 같은 치수: 줄 높이 52 이상,
+/// 제목 16/w600, 설명 12 회색, 누름 모서리 12. [SeedListSection] 카드 안(여백 8)에서
 /// 좌우 12를 써 글자 시작이 카드 가장자리에서 20이 된다.
 class _SettingSwitchTile extends StatelessWidget {
   final bool value;

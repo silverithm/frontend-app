@@ -4,8 +4,8 @@ import '../../theme/app_spacing.dart';
 import '../../utils/app_haptics.dart';
 import 'app_pressable.dart';
 
-/// 카드 — B안(2026-11-12): 회색 바탕 위 흰 상자, 테두리·그림자 없음, 모서리 20, 안쪽 여백 20.
-/// 카드끼리는 선 대신 간격(AppSpacing.cardGap 12)으로 나눈다.
+/// 카드 — B안(2026-11-12): 회색 바탕 위 흰 상자, 테두리·그림자 없음, 모서리 16, 안쪽 여백 16.
+/// 카드끼리는 선 대신 간격(AppSpacing.cardGap 10)으로 나눈다.
 /// [onTap]이 있으면 눌렀을 때 살짝 줄었다가(0.98) 돌아오고 tap 햅틱이 울린다.
 class AppCard extends StatelessWidget {
   final Widget child;

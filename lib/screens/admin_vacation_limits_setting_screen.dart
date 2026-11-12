@@ -444,7 +444,7 @@ class _AdminVacationLimitsSettingScreenState
         ? AppSemanticColors.statusErrorText
         : AppSemanticColors.textPrimary;
 
-    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 카드 사이 간격 12
+    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 16, 카드 사이 간격 10
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       decoration: BoxDecoration(
@@ -617,8 +617,8 @@ class _VacationLimitsSkeleton extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.screenGutter,
-          // 월 머리 줄(위 8 + 단추 48) + 역할 칩 줄(위아래 4 + 칩 44) 만큼 비워 둔다
-          AppSpacing.space2 + 48 + AppSpacing.space1 * 2 + 44 +
+          // 월 머리 줄(위 8 + 단추 48) + 역할 칩 줄(위아래 4 + 칩 36) 만큼 비워 둔다
+          AppSpacing.space2 + 48 + AppSpacing.space1 * 2 + 36 +
               AppSpacing.space2,
           AppSpacing.screenGutter,
           AppSpacing.space6,

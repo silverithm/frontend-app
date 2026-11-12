@@ -1031,7 +1031,7 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
     );
   }
 
-  /// 첨부 한 줄 — 회색 채움 칸 안에 옅은 틸 둥근 아이콘 44 + 파일 이름 16 + 크기 14 + 뒤 단추.
+  /// 첨부 한 줄 — 회색 채움 칸 안에 옅은 틸 둥근 아이콘 40 + 파일 이름 14 + 크기 12 + 뒤 단추.
   /// [muted]는 임시저장에 붙어 있던 첨부(회색 아이콘).
   Widget _buildFileRow({
     required IconData icon,

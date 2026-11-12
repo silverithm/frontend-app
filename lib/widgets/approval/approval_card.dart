@@ -25,7 +25,7 @@ class ApprovalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // B안: 회색 바탕 위 테두리 없는 흰 카드(모서리 20·여백 20). 고른 카드만 옅은 틸 바탕 + 틸 테두리.
+    // B안: 회색 바탕 위 테두리 없는 흰 카드(모서리 16·여백 16). 고른 카드만 옅은 틸 바탕 + 틸 테두리.
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       backgroundColor: isSelected

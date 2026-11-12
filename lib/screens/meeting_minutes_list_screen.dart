@@ -108,7 +108,7 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
                             final signed = item['signedCount'] ?? 0;
                             final total = item['attendeeCount'] ?? 0;
 
-                            // B안: 회색 바탕 위 흰 카드(테두리 없음, 모서리 20, 안쪽 20)
+                            // B안: 회색 바탕 위 흰 카드(테두리 없음, 모서리 16, 안쪽 16)
                             return AppListEntranceItem(
                               index: index,
                               child: AppCard(

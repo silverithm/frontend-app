@@ -250,7 +250,7 @@ class _ApprovalTemplatePreviewScreenState
                           children: [
                             Row(
                               children: [
-                                // B안 목록 줄 아이콘 — 옅은 틸 둥근 바탕 44
+                                // B안 목록 줄 아이콘 — 옅은 틸 둥근 바탕 40
                                 Container(
                                   width: AppSpacing.iconCircle,
                                   height: AppSpacing.iconCircle,
@@ -353,7 +353,7 @@ class _ApprovalTemplatePreviewScreenState
               ),
             ),
             if (widget.showUseButton)
-              // 아래 주 단추 줄 — B안: 위 선 없이 흰 띠 + 큰 단추(54) 꽉 채움
+              // 아래 주 단추 줄 — B안: 위 선 없이 흰 띠 + 큰 단추(52) 꽉 채움
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.fromLTRB(

@@ -400,7 +400,8 @@ class _HomeScreenState extends State<HomeScreen> {
               AnnotatedRegion<SystemUiOverlayStyle>(
                 value: SystemUiOverlayStyle.light,
                 // B안(2026-11-12): 다른 탭 첫 화면과 같은 높이 56 틸 바, 아래 선 없음.
-                // 인사말은 제목 자리(왼쪽 20/w700), 하루 문구는 바 아래 회색 바탕 위로 내렸다.
+                // 인사말은 제목 자리(왼쪽 20/w700). 하루 문구는 그 아래 한 줄(12, 옅은 흰색) —
+                // 1.20.0에서 바 아래 본문으로 내렸더니 카드가 한 줄씩 밀려, 1.20.2에 바 안으로 되돌렸다.
                 child: DecoratedBox(
                 decoration: const BoxDecoration(
                   color: AppSemanticColors.headerBackground,
@@ -419,12 +420,35 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            '${user.name}님, 안녕하세요',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.appBarTitleLarge.copyWith(
-                              color: AppSemanticColors.headerForeground,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.space1_5,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${user.name}님, 안녕하세요',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.appBarTitleLarge
+                                      .copyWith(
+                                        color:
+                                            AppSemanticColors.headerForeground,
+                                      ),
+                                ),
+                                const SizedBox(height: AppSpacing.space0_5),
+                                Text(
+                                  getDailyGreeting(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: AppSemanticColors
+                                        .headerForegroundMuted,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -436,20 +460,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space5,
-                  AppSpacing.space4,
-                  AppSpacing.space5,
-                  AppSpacing.space1,
-                ),
-                child: Text(
-                  getDailyGreeting(),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
               ),
               if (_isLoading && !_hasLoadedOnce)
                 // 첫 불러오기 — 아래 카드 네 칸과 같은 자리·여백의 뼈대
@@ -469,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.space4,
-                    AppSpacing.space2,
+                    AppSpacing.space3,
                     AppSpacing.space4,
                     AppSpacing.space4,
                   ),
@@ -526,7 +536,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       ),
-                      const SizedBox(height: AppSpacing.space3),
+                      const SizedBox(height: AppSpacing.cardGap),
 
                       AppListEntranceItem(
                         index: 1,
@@ -580,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       ),
-                      const SizedBox(height: AppSpacing.space3),
+                      const SizedBox(height: AppSpacing.cardGap),
 
                       AppListEntranceItem(
                         index: 2,
@@ -589,7 +599,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           user.chatUserId,
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.space3),
+                      const SizedBox(height: AppSpacing.cardGap),
 
                       // 오늘 — 오늘의 일정과 휴무자 요약
                       AppListEntranceItem(
@@ -734,7 +744,7 @@ class _HomeCardsSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.space4,
-        AppSpacing.space2,
+        AppSpacing.space3,
         AppSpacing.space4,
         AppSpacing.space4,
       ),
@@ -745,13 +755,13 @@ class _HomeCardsSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var i = 0; i < _rows.length; i++) ...[
-              if (i > 0) const SizedBox(height: AppSpacing.space3),
+              if (i > 0) const SizedBox(height: AppSpacing.cardGap),
               Container(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.cardPadding,
                   AppSpacing.cardPadding,
                   AppSpacing.cardPadding,
-                  AppSpacing.space4,
+                  AppSpacing.space2,
                 ),
                 decoration: BoxDecoration(
                   color: AppSemanticColors.surfaceCard,
@@ -769,11 +779,11 @@ class _HomeCardsSkeleton extends StatelessWidget {
                       widthFactor: 0.52,
                       height: AppSpacing.space3_5,
                     ),
-                    const SizedBox(height: AppSpacing.space3),
+                    const SizedBox(height: AppSpacing.space1),
                     for (var r = 0; r < _rows[i]; r++)
                       const Padding(
                         padding: EdgeInsets.symmetric(
-                          vertical: AppSpacing.space4,
+                          vertical: AppSpacing.space3_5,
                         ),
                         child: AppSkeletonLine(
                           widthFactor: 0.92,
@@ -791,7 +801,8 @@ class _HomeCardsSkeleton extends StatelessWidget {
   }
 }
 
-/// 홈 칸 하나 — B안(2026-11-12): 회색 바탕 위 테두리 없는 흰 카드(모서리 20, 안쪽 여백 20).
+/// 홈 칸 하나 — B안(2026-11-12): 회색 바탕 위 테두리 없는 흰 카드(모서리 16, 안쪽 여백 16).
+/// 1.20.2: 제목줄과 첫 줄 사이·카드 아래 여백을 줄여 한 화면에 네 칸이 더 들어오게 했다.
 /// 예전의 연한 틸 머리띠·아래 선을 없애고 카드 안 맨 위에 제목 글자만 둔다.
 /// 카드 안에는 또 다른 테두리 상자를 두지 않는다(카드 중첩 금지).
 class _SectionCard extends StatelessWidget {
@@ -808,14 +819,14 @@ class _SectionCard extends StatelessWidget {
         AppSpacing.cardPadding,
         AppSpacing.cardPadding,
         AppSpacing.cardPadding,
-        AppSpacing.space4,
+        AppSpacing.space2,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           header,
-          const SizedBox(height: AppSpacing.space3),
+          const SizedBox(height: AppSpacing.space1),
           child,
         ],
       ),
@@ -835,7 +846,7 @@ class _NoticePreviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 선 없는 목록 줄 — 테두리·구분선 대신 줄 높이(60 이상)로 줄을 나눈다.
+    // 선 없는 목록 줄 — 테두리·구분선 대신 줄 높이(48 이상)로 줄을 나눈다.
     return Material(
       color: AppColors.transparent,
       child: InkWell(
@@ -843,7 +854,7 @@ class _NoticePreviewTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppBorderRadius.control),
         child: ConstrainedBox(
           constraints: const BoxConstraints(
-            minHeight: AppSpacing.listRowMinHeight,
+            minHeight: AppSpacing.minTouchTarget,
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
@@ -923,7 +934,7 @@ class _ApprovalPreviewTile extends StatelessWidget {
             minHeight: AppSpacing.listRowMinHeight,
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2_5),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
             child: Row(
               children: [
                 AppTag(label: statusLabel, tone: statusTone),

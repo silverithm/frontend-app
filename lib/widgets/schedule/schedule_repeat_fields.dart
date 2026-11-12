@@ -114,7 +114,7 @@ class ScheduleRepeatFields extends StatelessWidget {
         );
         if (picked != null) onChanged(value.copyWith(until: picked));
       },
-      // B안 입력칸 — 회색으로 채우고 테두리 없음, 모서리 14 (일정 등록 시트의 다른 칸과 같다)
+      // B안 입력칸 — 회색으로 채우고 테두리 없음, 모서리 12 (일정 등록 시트의 다른 칸과 같다)
       borderRadius: BorderRadius.circular(AppBorderRadius.control),
       child: InputDecorator(
         decoration: const InputDecoration(

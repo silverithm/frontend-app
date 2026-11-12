@@ -7,7 +7,7 @@ import '../common/app_tag.dart';
 class NoticeStatusBadge extends StatelessWidget {
   final NoticeStatus status;
 
-  /// 예전 작은 배지 자리 표시. B안 꼬리표는 크기가 하나라 모습은 같다(글자는 13 아래로 줄이지 않는다).
+  /// 예전 작은 배지 자리 표시. B안 꼬리표는 크기가 하나라 모습은 같다(글자는 12 아래로 줄이지 않는다).
   final bool small;
 
   const NoticeStatusBadge({

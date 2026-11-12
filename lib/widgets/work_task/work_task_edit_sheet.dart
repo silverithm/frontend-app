@@ -28,7 +28,7 @@ class WorkTaskEditSheet {
   }) async {
     final isNew = task == null;
     final readOnly = !isNew && !task.canEdit;
-    // B안 시트 틀(AppSheetFrame) — 손잡이·제목 21·좌우 20, 키보드가 올라오면 함께 올라가고
+    // B안 시트 틀(AppSheetFrame) — 손잡이·제목 18·좌우 20, 키보드가 올라오면 함께 올라가고
     // 내용이 길면 시트 안에서 스크롤한다.
     final changed = await showAppSheet<bool>(
       context,
@@ -342,7 +342,7 @@ class _WorkTaskFormState extends State<_WorkTaskForm> {
     );
   }
 
-  /// B안 시트 단추 — 큰 단추(54), 취소 1 : 등록·저장 1.7. 읽기 전용이면 '닫기' 하나가 꽉 찬다.
+  /// B안 시트 단추 — 큰 단추(52), 취소 1 : 등록·저장 1.7. 읽기 전용이면 '닫기' 하나가 꽉 찬다.
   /// '지우기'는 주 단추와 떨어뜨려 아래 줄에 둔다(누르면 한 번 더 묻는다).
   Widget _buildActions(WorkTask? task) {
     final close = SeedButton(

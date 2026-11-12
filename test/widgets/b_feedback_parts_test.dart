@@ -38,7 +38,7 @@ void main() {
         ),
       ),
     ));
-    expect(tester.widget<Text>(find.text('아직 공지가 없어요')).style!.fontSize, 18);
+    expect(tester.widget<Text>(find.text('아직 공지가 없어요')).style!.fontSize, 16);
     expect(tester.widget<Icon>(find.byIcon(Icons.inbox_outlined)).color,
         AppSemanticColors.brandDefault);
     expect(tester.widget<SeedButton>(find.byType(SeedButton)).variant,

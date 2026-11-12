@@ -173,7 +173,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 시트 제목(B안 20/w700)
+              // 시트 제목(B안 18/w700)
               Semantics(
                 header: true,
                 child: Text(
@@ -641,7 +641,7 @@ class _ElderRef {
   }
 }
 
-/// 등원/하원 전환 — B안 나눔 조절과 같은 모양(회색 띠 위 흰 칸, 모서리 14·10, 글자 16/w600).
+/// 등원/하원 전환 — B안 나눔 조절과 같은 모양(회색 띠 위 흰 칸, 모서리 12·8, 글자 16/w600).
 /// 다른 칸을 누르면 selection 햅틱.
 class _DirectionToggle extends StatelessWidget {
   final String value;
@@ -795,7 +795,7 @@ class _RouteBlock extends StatelessWidget {
     final showRouteNameHint = vehicleName != dispatch.routeName;
     final capacity = dispatch.driver?.vehicleCapacity ?? 0;
 
-    // B안 카드 — 테두리 없는 흰 상자, 모서리 20, 카드끼리 간격 12.
+    // B안 카드 — 테두리 없는 흰 상자, 모서리 16, 카드끼리 간격 10.
     // 배차표는 스크롤 없이 많이 보이는 게 목적이라 위아래 여백만 16으로 조금 줄인다.
     // 운행 없는 차는 흰 카드 대신 화면 바탕보다 한 단계 짙은 회색으로 가라앉힌다.
     return Container(
@@ -1073,7 +1073,7 @@ class _ElderRow extends StatelessWidget {
 
     final interactive = onTap != null;
 
-    // 어르신 한 줄 — 글자 16, 누를 자리 48 이상(B안)
+    // 어르신 한 줄 — 글자 14, 누를 자리 48 이상(B안)
     return InkWell(
       onTap: interactive ? () => onTap!(senior) : null,
       borderRadius: BorderRadius.circular(AppBorderRadius.control),

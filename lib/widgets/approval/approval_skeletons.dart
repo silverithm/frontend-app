@@ -62,7 +62,7 @@ class ApprovalDocumentSkeleton extends StatelessWidget {
 }
 
 /// 결재 상세 화면 첫 불러오기 뼈대 — 상태 카드(제목 + 상태 알약 + 이름표 두 줄) + 공문 카드.
-/// 결재 상세와 같은 바깥 여백(좌우 20·위 12)·카드 사이 12라 문서가 떠도 덜 튄다.
+/// 결재 상세와 같은 바깥 여백·카드 사이 간격(10)이라 문서가 떠도 덜 튄다.
 class ApprovalDetailSkeleton extends StatelessWidget {
   const ApprovalDetailSkeleton({super.key});
 

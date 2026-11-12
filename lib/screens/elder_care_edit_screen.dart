@@ -339,7 +339,7 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
   }
 
   Widget _card(String title, List<Widget> children) {
-    // B안: 머리 없이 흰 카드 안 맨 위에 구역 제목(18/w700), 테두리 없음, 카드끼리는 간격 12
+    // B안: 머리 없이 흰 카드 안 맨 위에 구역 제목(16/w700), 테두리 없음, 카드끼리는 간격 10
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       child: AppCard(
@@ -459,7 +459,7 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
           style: AppTypography.bodyMedium.copyWith(
             color: AppSemanticColors.textPrimary,
           ),
-          // SeedTextField와 같은 모양(B안) — 회색으로 채운 칸, 테두리 없음, 모서리 14,
+          // SeedTextField와 같은 모양(B안) — 회색으로 채운 칸, 테두리 없음, 모서리 12,
           // 누르고 있으면 틸 2px. 같은 카드 안에서 입력칸과 드롭다운이 다른 부품처럼 보이면 안 된다.
           decoration: InputDecoration(
             filled: true,

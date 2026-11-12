@@ -10,8 +10,8 @@ import 'chat_room_avatar_stack.dart';
 /// 채팅 목록의 방 한 줄 — B안: 흰 카드 안 줄([ChatCardSlice] 안에 둔다), 높이 68(위아래 10 + 아바타 48),
 /// 구분선 없음.
 ///
-/// 제목 titleMedium(16/w600, 읽음 여부로 굵기를 바꾸지 않는다) · 미리보기 bodyMedium 16 ·
-/// 시간·인원 bodySmall 14. 시간은 제목 줄 오른쪽, 안 읽은 수는 미리보기 줄 오른쪽 —
+/// 제목 titleMedium(16/w600, 읽음 여부로 굵기를 바꾸지 않는다) · 미리보기 bodyMedium 14 ·
+/// 시간·인원 bodySmall 12. 시간은 제목 줄 오른쪽, 안 읽은 수는 미리보기 줄 오른쪽 —
 /// 높이를 못 박지 않아 글자를 크게 해도 넘치지 않는다. 고정 핀은 제목 앞이 아니라 시간 옆에 둬서
 /// 제목이 모든 줄에서 같은 x에서 시작한다.
 class ChatRoomListTile extends StatelessWidget {

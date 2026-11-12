@@ -118,7 +118,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     }
   }
 
-  /// 삭제 확인 — B안: 가운데 창 대신 아래 시트(경고 아이콘 + 제목 21 + 큰 단추 취소 1 : 삭제 1.7)
+  /// 삭제 확인 — B안: 가운데 창 대신 아래 시트(경고 아이콘 + 제목 18 + 큰 단추 취소 1 : 삭제 1.7)
   void _showDeleteDialog(VacationRequest request) {
     bool isDeleting = false;
 
@@ -192,7 +192,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
           children: [
             if (request.status == VacationStatus.approved) ...[
               const SizedBox(height: AppSpacing.space4),
-              // B안 안내 상자: 테두리 없이 옅은 노랑, 모서리 14
+              // B안 안내 상자: 테두리 없이 옅은 노랑, 모서리 12
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space4,
@@ -240,7 +240,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
 
   @override
   Widget build(BuildContext context) {
-    // B안: 회색 바탕 위 흰 카드, 안쪽 화면 공통 상단 바(가운데 17, 꺾쇠 뒤로)
+    // B안: 회색 바탕 위 흰 카드, 안쪽 화면 공통 상단 바(가운데 18, 꺾쇠 뒤로)
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: widget.showAppBar ? const CareVAppBar(title: '내 휴무') : null,
@@ -401,7 +401,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                     .toList();
 
                 // B안: 한 표면을 구분선으로 나누던 것을 회색 바탕 위 흰 카드 여러 장으로 —
-                // 신청 현황 카드 하나 + 상태(대기·승인·거절)마다 카드 하나, 카드 사이는 간격 12.
+                // 신청 현황 카드 하나 + 상태(대기·승인·거절)마다 카드 하나, 카드 사이는 간격 10.
                 return SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.space4,
@@ -490,7 +490,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     );
   }
 
-  /// B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 안쪽 20
+  /// B안 카드 — 흰 바탕, 테두리 없음, 모서리 16, 안쪽 16
   Widget _buildCard({
     required List<Widget> children,
     EdgeInsetsGeometry margin = EdgeInsets.zero,
@@ -531,7 +531,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     );
   }
 
-  // 카드 맨 위 제목 — 공용 SeedSectionHeader(18/w700) 앞에 상태 색 아이콘만 붙인다
+  // 카드 맨 위 제목 — 공용 SeedSectionHeader(16/w700) 앞에 상태 색 아이콘만 붙인다
   // (SeedSectionHeader는 아이콘/컬러 파라미터를 지원하지 않으므로).
   Widget _buildSectionHeader(
     String title,

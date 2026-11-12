@@ -293,7 +293,7 @@ class _AdminVacationManagementScreenState
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.space4),
+                  const SizedBox(height: AppSpacing.space2_5),
 
                   // 검색 필드
                   SeedTextField(
@@ -695,7 +695,7 @@ class _AdminVacationManagementScreenState
     final requestId = request['id'].toString();
     final isSelected = _selectedRequests.contains(requestId);
 
-    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 카드 사이 간격 12.
+    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 16, 카드 사이 간격 10.
     // 일괄 선택으로 고른 카드만 옅은 틸 바탕 + 틸 2px 둘레(고름 표시).
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
@@ -807,7 +807,7 @@ class _AdminVacationManagementScreenState
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 종사자 관리 카드와 같은 옅은 틸 원 44 — 상태는 오른쪽 꼬리표 하나로만 말한다
+        // 종사자 관리 카드와 같은 옅은 틸 원 40 — 상태는 오른쪽 꼬리표 하나로만 말한다
         const CircleAvatar(
           radius: AppSpacing.iconCircle / 2,
           backgroundColor: AppSemanticColors.brandWeak,

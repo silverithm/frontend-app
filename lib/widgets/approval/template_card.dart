@@ -26,7 +26,7 @@ class TemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // B안: 회색 바탕 위 테두리 없는 흰 카드(모서리 20·여백 20)
+    // B안: 회색 바탕 위 테두리 없는 흰 카드(모서리 16·여백 16)
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       onTap: onTap,
@@ -49,7 +49,7 @@ class TemplateCard extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
-        // B안 목록 줄 아이콘 — 옅은 틸 둥근 바탕 44(비활성은 회색)
+        // B안 목록 줄 아이콘 — 옅은 틸 둥근 바탕 40(비활성은 회색)
         Container(
           width: AppSpacing.iconCircle,
           height: AppSpacing.iconCircle,
@@ -210,7 +210,7 @@ class TemplateSelectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // B안: 테두리 없는 흰 카드, 옅은 틸 둥근 아이콘 44 + 제목 16. 고른 양식만 옅은 틸 바탕 + 틸 테두리.
+    // B안: 테두리 없는 흰 카드, 옅은 틸 둥근 아이콘 40 + 제목 16. 고른 양식만 옅은 틸 바탕 + 틸 테두리.
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       backgroundColor: isSelected

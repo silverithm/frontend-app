@@ -102,7 +102,7 @@ class AppTheme {
         const Icon(Icons.chevron_left_rounded, size: 30),
   );
 
-  /// 카드 — 흰 바탕, 테두리·그림자 없음, 모서리 20.
+  /// 카드 — 흰 바탕, 테두리·그림자 없음, 모서리 16.
   static const CardThemeData _cardTheme = CardThemeData(
     color: AppSemanticColors.surfaceCard,
     surfaceTintColor: AppColors.transparent,
@@ -116,7 +116,7 @@ class AppTheme {
     borderRadius: BorderRadius.all(Radius.circular(AppBorderRadius.control)),
   );
 
-  /// 주 단추 — 틸, 높이 48 이상, 모서리 14, 16/w600.
+  /// 주 단추 — 틸, 높이 44 이상, 모서리 12, 14/w600.
   static ButtonStyle get _primaryButtonStyle => ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith((s) {
           if (s.contains(WidgetState.disabled)) {
@@ -183,7 +183,7 @@ class AppTheme {
         ),
       );
 
-  /// 아이콘 단추 — 48 터치, 눌림 자국은 모서리 14 네모(시안 .ibtn).
+  /// 아이콘 단추 — 48 터치, 눌림 자국은 모서리 12 네모(시안 .ibtn).
   static IconButtonThemeData get _iconButtonTheme => IconButtonThemeData(
         style: IconButton.styleFrom(
           shape: _controlShape,
@@ -210,7 +210,7 @@ class AppTheme {
     ),
     contentPadding: EdgeInsets.symmetric(
       horizontal: AppSpacing.space4,
-      vertical: 13,
+      vertical: 11,
     ),
     hintStyle: TextStyle(color: AppSemanticColors.textTertiary),
     labelStyle: TextStyle(color: AppSemanticColors.textSecondary),
@@ -300,7 +300,7 @@ class AppTheme {
         AppTypography.bodyMedium.copyWith(color: AppSemanticColors.textSecondary),
   );
 
-  /// 알림 띠 — 짙은 회색 반투명, 흰 글자, 모서리 14(시안 .toast).
+  /// 알림 띠 — 짙은 회색 반투명, 흰 글자, 모서리 12(시안 .toast).
   static final SnackBarThemeData _snackBarTheme = SnackBarThemeData(
     backgroundColor: AppSemanticColors.toastBackground,
     contentTextStyle:
@@ -378,7 +378,7 @@ class AppTheme {
     dividerColor: AppSemanticColors.borderHairline,
   );
 
-  /// 목록 줄 — 제목 16/w600, 부제 14 ink2.
+  /// 목록 줄 — 제목 16/w600, 부제 12 ink2.
   static final ListTileThemeData _listTileTheme = ListTileThemeData(
     titleTextStyle:
         AppTypography.titleMedium.copyWith(color: AppSemanticColors.textPrimary),

@@ -146,7 +146,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
   Widget _dateButton(String key, {String placeholder = '날짜 선택'}) {
     final value = widget.values[key]?.toString();
     final hasValue = value != null && value.isNotEmpty;
-    // B안 입력칸 — 테두리 없이 회색 채움, 모서리 14, 높이 48 이상
+    // B안 입력칸 — 테두리 없이 회색 채움, 모서리 12, 높이 48 이상
     return Material(
       color: AppSemanticColors.fillDefault,
       borderRadius: BorderRadius.circular(AppBorderRadius.control),
@@ -512,7 +512,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
 
   @override
   Widget build(BuildContext context) {
-    // B안: 테두리 표 대신 테두리 없는 흰 카드 하나(모서리 20). 칸 구분은 회색 채움 입력칸과 여백으로.
+    // B안: 테두리 표 대신 테두리 없는 흰 카드 하나(모서리 16). 칸 구분은 회색 채움 입력칸과 여백으로.
     if (widget.fields.isEmpty) {
       return Container(
         width: double.infinity,
@@ -562,22 +562,22 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
                 rows[i][0]['type']?.toString() == 'section')
               _sectionRow(rows[i][0], isFirst: i == 0)
             else if (rows[i].length == 2)
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 양식에 정해둔 비율대로 나눈다 — 예전엔 무조건 반씩 나눠서
-                    // 1/3+2/3으로 만든 양식이 앱에서는 반반으로 보였다
-                    Expanded(
-                      flex: fieldWidthSpan(rows[i][0]['width']),
-                      child: _fieldCell(rows[i][0]),
-                    ),
-                    Expanded(
-                      flex: fieldWidthSpan(rows[i][1]['width']),
-                      child: _fieldCell(rows[i][1], bordered: true),
-                    ),
-                  ],
-                ),
+              // 칸 사이 세로선이 없어진 뒤로는 두 칸 높이를 맞출 까닭이 없다 — 위에 맞춰 나란히 둔다.
+              // (IntrinsicHeight로 맞추면 글자를 키웠을 때 고르기 칸의 어림 높이가 실제보다 0.7 작아 넘쳤다)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 양식에 정해둔 비율대로 나눈다 — 예전엔 무조건 반씩 나눠서
+                  // 1/3+2/3으로 만든 양식이 앱에서는 반반으로 보였다
+                  Expanded(
+                    flex: fieldWidthSpan(rows[i][0]['width']),
+                    child: _fieldCell(rows[i][0]),
+                  ),
+                  Expanded(
+                    flex: fieldWidthSpan(rows[i][1]['width']),
+                    child: _fieldCell(rows[i][1], bordered: true),
+                  ),
+                ],
               )
             else
               _fieldCell(rows[i][0]),
@@ -697,7 +697,7 @@ class _ImageFieldControlState extends State<_ImageFieldControl> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // B안: 테두리 상자 대신 회색 채움 칸(모서리 14)
+        // B안: 테두리 상자 대신 회색 채움 칸(모서리 12)
         Material(
           color: AppSemanticColors.fillDefault,
           borderRadius: BorderRadius.circular(AppBorderRadius.control),

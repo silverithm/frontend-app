@@ -190,7 +190,7 @@ class _AdminNoticeManagementScreenState
   }
 
   Widget _buildSearchBar() {
-    // 회색 바탕 위 흰 입력칸(모서리 14, 테두리 없음) — 상단 바 안이든 화면 안이든 같은 모습
+    // 회색 바탕 위 흰 입력칸(모서리 12, 테두리 없음) — 상단 바 안이든 화면 안이든 같은 모습
     final textColor = AppSemanticColors.textPrimary;
     final hintColor = AppSemanticColors.textTertiary;
     const fillColor = AppSemanticColors.surfaceCard;
@@ -271,7 +271,7 @@ class _AdminNoticeManagementScreenState
       // 직원 공지 목록(NoticeCard)과 같은 흰 카드·같은 꼬리표 — 예전엔 이 화면만 테마 기본의
       // 청록 회색 카드에, 모든 카드에 '게시됨'이 붙어 정작 다른 '임시저장'이 묻혔고 고정 핀만 갈색이었다.
       // 꼬리표 줄·제목·날짜 세 줄이던 것을 제목 + 날짜 두 줄로 줄이고, 꼬리표는 있을 때만 날짜 줄에 붙인다.
-      // B안: 테두리 없는 흰 카드(모서리 20), 카드 사이 간격 12
+      // B안: 테두리 없는 흰 카드(모서리 16), 카드 사이 간격 10
       child: Card(
         margin: const EdgeInsets.symmetric(
           horizontal: AppSpacing.screenGutter,
@@ -392,7 +392,7 @@ class _AdminNoticeManagementScreenState
   }
 
   Widget _buildEmptyState() {
-    // AppEmptyState와 같은 모습(옅은 틸 원 56 + 19 제목 + 14 설명). 작성 단추는 틸 채움으로 남긴다 —
+    // AppEmptyState와 같은 모습(옅은 틸 원 56 + 16 제목 + 12 설명). 작성 단추는 틸 채움으로 남긴다 —
     // AppEmptyState의 단추는 회색이라 회색 바탕 위에서 묻힌다.
     return Center(
       child: Column(

@@ -592,7 +592,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         size: AppSpacing.space5,
         color: AppSemanticColors.textTertiary,
       ),
-      // 칸 안 고르기 단추가 이미 48 높이라 위아래는 조금만 — 전체 56 안팎(SeedTextField 큰 칸 54와 비슷)
+      // 칸 안 고르기 단추가 이미 48 높이라 위아래는 조금만 — 전체 56 안팎(SeedTextField 큰 칸 52와 비슷)
       contentPadding: const EdgeInsets.fromLTRB(
         AppSpacing.space4,
         AppSpacing.space1,
@@ -853,7 +853,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             if (_userType == 'employee' &&
                                 _hasEmployeeCompanyContext) ...[
-                              // 회사 연결 방식 — 카드 안이라 상자 없이 소제목(14/w600)·안내(14)·고르기 칸만
+                              // 회사 연결 방식 — 카드 안이라 상자 없이 소제목(14/w600)·안내(12)·고르기 칸만
                               Padding(
                                 padding: const EdgeInsets.only(
                                   top: AppSpacing.space2,
@@ -1522,7 +1522,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String description,
     IconData icon,
   ) {
-    // 단계 한 줄 — 옅은 틸 둥근 번호(44) + 역할 꼬리표·제목 + 설명(예전 순서 그대로). 높이를 못 박지 않아 글자가 커져도 다 보인다.
+    // 단계 한 줄 — 옅은 틸 둥근 번호(40) + 역할 꼬리표·제목 + 설명(예전 순서 그대로). 높이를 못 박지 않아 글자가 커져도 다 보인다.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

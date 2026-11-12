@@ -85,7 +85,7 @@ class UpdateDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.space6),
-              // B안: 테두리 단추 대신 회색 채움 단추, 큰 단추 54.
+              // B안: 테두리 단추 대신 회색 채움 단추, 큰 단추 52.
               // 강제 업데이트면 '업데이트' 하나가 가로를 꽉 채운다.
               SizedBox(
                 width: double.infinity,

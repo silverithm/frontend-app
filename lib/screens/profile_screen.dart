@@ -648,7 +648,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           children: [
             const SizedBox(height: AppSpacing.space4),
-            // 주의사항 — 테두리 없이 옅은 빨강 바탕, 모서리 14
+            // 주의사항 — 테두리 없이 옅은 빨강 바탕, 모서리 12
             Container(
               padding: const EdgeInsets.all(AppSpacing.space4),
               decoration: BoxDecoration(
@@ -750,7 +750,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           AppSpacing.screenGutter,
                           0,
                         ),
-                        // B안: 테두리 없는 흰 카드(모서리 20·여백 20)
+                        // B안: 테두리 없는 흰 카드(모서리 16·여백 16)
                         child: AppCard(
                           child: Column(
                             children: [
@@ -1100,7 +1100,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                   ),
 
-                  // B안: 카드끼리는 선 대신 간격 12
+                  // B안: 카드끼리는 선 대신 간격 10
                   const SizedBox(height: AppSpacing.cardGap),
 
                   if (AdminUtils.canAccessAdminPages(user) &&
@@ -1118,7 +1118,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             children: [
                               Row(
                                 children: [
-                                  // 목록 줄 아이콘과 같은 둥근 44
+                                  // 목록 줄 아이콘과 같은 둥근 40
                                   Container(
                                     width: AppSpacing.iconCircle,
                                     height: AppSpacing.iconCircle,
@@ -1162,7 +1162,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ],
                               ),
                               const SizedBox(height: AppSpacing.space4),
-                              // 코드 칸 — 테두리 없는 회색 채움(입력칸과 같은 바탕·모서리 14)
+                              // 코드 칸 — 테두리 없는 회색 채움(입력칸과 같은 바탕·모서리 12)
                               Container(
                                 padding: const EdgeInsets.fromLTRB(
                                   AppSpacing.space4,
@@ -1420,7 +1420,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  /// 설정 한 줄 — B안 목록 줄: 옅은 틸 둥근 아이콘 44 + 제목 16/w600·설명 14 + 꺾쇠.
+  /// 설정 한 줄 — B안 목록 줄: 옅은 틸 둥근 아이콘 40 + 제목 16/w600·설명 12 + 꺾쇠.
   /// (예전의 회색 네모 아이콘·회색 네모 꺾쇠 상자는 없앴다)
   Widget _buildSettingTile({
     required IconData icon,
@@ -1916,8 +1916,8 @@ class _EditBadge extends StatelessWidget {
   }
 }
 
-/// 시트 안의 작은 안내 상자 — B안: 테두리 없이 옅은 상태색 바탕, 모서리 14, 아이콘 20
-/// (SeedCallout과 같은 치수. 글자는 본래 크기 14를 그대로 둔다).
+/// 시트 안의 작은 안내 상자 — B안: 테두리 없이 옅은 상태색 바탕, 모서리 12, 아이콘 20
+/// (SeedCallout과 같은 치수. 글자는 본래 크기 12를 그대로 둔다).
 class _SheetNote extends StatelessWidget {
   const _SheetNote({
     required this.background,

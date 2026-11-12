@@ -234,7 +234,7 @@ class _DayCell extends StatelessWidget {
         (summary?.substituteCount ?? 0) > 0 ||
         (summary?.noServiceCount ?? 0) > 0;
 
-    // B안: 칸 테두리 없이 회색 바탕 위 흰 칸(모서리 10). 휴일은 한 단계 짙은 회색,
+    // B안: 칸 테두리 없이 회색 바탕 위 흰 칸(모서리 8). 휴일은 한 단계 짙은 회색,
     // 오늘은 틸 2px 테두리(겹쳐 그려 자리를 차지하지 않는다).
     final background = isHoliday
         ? AppSemanticColors.fillStrong

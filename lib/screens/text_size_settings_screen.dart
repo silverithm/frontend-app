@@ -102,7 +102,7 @@ class _SizeOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(AppBorderRadius.control);
-    // 목록 줄(SeedListCell)과 같은 치수 — 줄 높이 60 이상, 좌우 12, 누름 모서리 14.
+    // 목록 줄(SeedListCell)과 같은 치수 — 줄 높이 52 이상, 좌우 12, 누름 모서리 12.
     // 고른 줄은 테두리 대신 옅은 틸 바탕 + 틸 글자·체크로 드러낸다.
     return Semantics(
       selected: selected,

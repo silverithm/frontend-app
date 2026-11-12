@@ -109,7 +109,7 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.space2),
-                  // 시트 안 상세 제목(B안 heading5 20/w700)
+                  // 시트 안 상세 제목(B안 heading5 18/w700)
                   Text(
                     message.title,
                     style: AppTypography.heading5.copyWith(

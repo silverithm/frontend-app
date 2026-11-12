@@ -5,7 +5,7 @@ import '../common/app_skeleton.dart';
 import 'chat_sender_header.dart';
 
 /// 채팅방 첫 불러오기 뼈대 — 남의 말풍선(왼쪽 아바타 32 + 이름 줄 + 말풍선)과 내 말풍선(오른쪽)을
-/// 번갈아 둔다. 메시지 목록과 같은 바깥 여백 16·아바타 자리·말풍선 모서리 20.
+/// 번갈아 둔다. 메시지 목록과 같은 바깥 여백 16·아바타 자리·말풍선 모서리 16.
 class ChatMessagesSkeleton extends StatelessWidget {
   const ChatMessagesSkeleton({super.key});
 

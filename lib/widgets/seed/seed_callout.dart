@@ -66,7 +66,7 @@ class SeedCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = _colors;
-    // B안(시안 .soft-line·.banner): 옅은 바탕 + 모서리 14, 아이콘 20
+    // B안(시안 .soft-line·.banner): 옅은 바탕 + 모서리 12, 아이콘 20
     return Container(
       constraints: const BoxConstraints(minHeight: 52),
       padding: const EdgeInsets.symmetric(

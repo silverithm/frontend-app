@@ -7,7 +7,8 @@ import '../../utils/app_haptics.dart';
 import '../common/app_pressable.dart';
 
 /// 거르기 칩 — B안(2026-11-12, 시안 .chip).
-/// 테두리 없는 알약, 높이 44(작은 36)·좌우 16, 글자 14/w600. 고르면 틸 바탕 + 흰 글자.
+/// 테두리 없는 알약, 높이 36(작은 32)·좌우 14, 글자 14/w600. 고르면 틸 바탕 + 흰 글자.
+/// (1.20.2: 44·36이던 높이를 새 모습 이전 값으로 — 거르기 줄이 목록 자리를 덜 먹게)
 /// 고르기 전 바탕은 흰 카드 안이면 회색(기본), 회색 화면 바탕 위면 흰색([onCanvas]).
 /// 누르면 selection 햅틱, 터치는 48 이상. 고른 것·안 고른 것 굵기가 같아 폭이 흔들리지 않는다.
 enum SeedChipSize { small, medium }
@@ -41,13 +42,13 @@ class SeedChip extends StatefulWidget {
 class _SeedChipState extends State<SeedChip> {
   bool _pressed = false;
 
-  double get _height => widget.size == SeedChipSize.small ? 36 : 44;
+  double get _height => widget.size == SeedChipSize.small ? 32 : 36;
 
   double get _paddingX => widget.size == SeedChipSize.small
       ? AppSpacing.space3
-      : AppSpacing.space4;
+      : AppSpacing.space3_5;
 
-  double get _iconSize => widget.size == SeedChipSize.small ? 16 : 18;
+  double get _iconSize => widget.size == SeedChipSize.small ? 14 : 16;
 
   @override
   Widget build(BuildContext context) {

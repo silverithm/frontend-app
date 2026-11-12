@@ -156,7 +156,7 @@ class _AssigneeListState extends State<_AssigneeList> {
               AppSpacing.space5,
               AppSpacing.space5,
             ),
-            // 시트 맨 아래 주 단추 — 큰 것(54), 가로 꽉 채움
+            // 시트 맨 아래 주 단추 — 큰 것(52), 가로 꽉 채움
             child: SizedBox(
               width: double.infinity,
               child: SeedButton(

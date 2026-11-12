@@ -8,7 +8,7 @@ import '../../utils/app_haptics.dart';
 import '../common/app_pressable.dart';
 
 /// 앱 공통 단추 — B안(2026-11-12, 시안 .btn).
-/// 큰 54·보통 48·작은 40·아주 작은 32, 모서리 14(작은 12·아주 작은 알약), 글자 16·16·14·14 w600.
+/// 큰 52·보통 44·작은 36·아주 작은 32, 모서리 12(작은 12·아주 작은 알약), 글자 16·14·14·12 w600.
 /// 누르면 0.97로 줄었다 스프링으로 돌아오고 색이 짙어진다(AppPressable). 터치 영역은 늘 48 이상.
 enum SeedButtonVariant {
   /// High emphasis — 브랜드 배경 + 흰 텍스트
@@ -74,14 +74,14 @@ class _SeedButtonState extends State<SeedButton> {
   bool get _isInteractive =>
       !widget.isDisabled && !widget.isLoading && widget.onPressed != null;
 
-  // B안(2026-11-12, 시안 .btn): 큰 54 / 보통 48 / 작은 40 / 아주 작은 32.
+  // B안(시안 .btn)에서 한 칸 낮춘 값(1.20.2): 큰 52 / 보통 44 / 작은 36 / 아주 작은 32.
   // 보이는 높이가 48보다 작아도 터치 영역은 48(AppPressable 최소 터치).
   double get _height {
     switch (widget.size) {
       case SeedButtonSize.xsmall:
         return AppSpacing.space8;
       case SeedButtonSize.small:
-        return AppSpacing.space10;
+        return AppSpacing.buttonHeightSmall;
       case SeedButtonSize.medium:
         return AppSpacing.buttonHeight;
       case SeedButtonSize.large:
@@ -122,18 +122,18 @@ class _SeedButtonState extends State<SeedButton> {
         return AppBorderRadius.xl; // 12
       case SeedButtonSize.medium:
       case SeedButtonSize.large:
-        return AppBorderRadius.control; // 14
+        return AppBorderRadius.control; // 12
     }
   }
 
   TextStyle get _textStyle {
     switch (widget.size) {
       case SeedButtonSize.xsmall:
-        return AppTypography.buttonSmall; // 14
+        return AppTypography.buttonSmall; // 12
       case SeedButtonSize.small:
         return AppTypography.titleSmall; // 14
       case SeedButtonSize.medium:
-        return AppTypography.buttonMedium; // 16
+        return AppTypography.buttonMedium; // 14
       case SeedButtonSize.large:
         return AppTypography.buttonLarge; // 16
     }

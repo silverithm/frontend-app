@@ -24,7 +24,7 @@ void main() {
         ),
       );
 
-  testWidgets('SeedTextField: 채운 칸·테두리 투명·높이 48, 포커스면 틸', (tester) async {
+  testWidgets('SeedTextField: 채운 칸·테두리 투명·높이 44, 포커스면 틸', (tester) async {
     await tester.pumpWidget(host(const Column(children: [
       SeedTextField(label: '반려 사유', placeholder: '예: 해당 주 근무 인원 부족'),
     ])));
@@ -36,7 +36,7 @@ void main() {
         of: find.byType(SeedTextField),
         matching: find.byType(AnimatedContainer),
       )).height,
-      48,
+      44,
     );
     final label = tester.widget<Text>(find.text('반려 사유'));
     expect(label.style!.fontSize, 14);
@@ -49,7 +49,7 @@ void main() {
     expect(focused.top.width, 2);
   });
 
-  testWidgets('틀리면 빨강 테두리 + 14 안내, 뒤 아이콘은 48 칸', (tester) async {
+  testWidgets('틀리면 빨강 테두리 + 12 안내, 뒤 아이콘은 48 칸', (tester) async {
     await tester.pumpWidget(host(Column(children: [
       SeedTextField(
         label: '비밀번호',
@@ -62,7 +62,7 @@ void main() {
     ])));
     final border = (box(tester).foregroundDecoration as BoxDecoration).border as Border;
     expect(border.top.color, AppSemanticColors.statusErrorText);
-    expect(tester.widget<Text>(find.text('8자 이상 입력해주세요')).style!.fontSize, 14);
+    expect(tester.widget<Text>(find.text('8자 이상 입력해주세요')).style!.fontSize, 12);
     final eye = find.ancestor(
       of: find.byIcon(Icons.visibility_off_outlined),
       matching: find.byType(SizedBox),

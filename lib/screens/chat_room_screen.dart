@@ -1822,7 +1822,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   }
 
   /// 일정 등록 시트의 고르기 칸(구분·날짜·시간) — SeedTextField와 같은 B안 입력칸:
-  /// 회색 채움·테두리 없음·모서리 14, 누르고 있으면 틸 2px.
+  /// 회색 채움·테두리 없음·모서리 12, 누르고 있으면 틸 2px.
   InputDecoration _sheetFieldDecoration(String label, {IconData? suffixIcon}) {
     const radius = BorderRadius.all(Radius.circular(AppBorderRadius.control));
     const none = OutlineInputBorder(
@@ -2071,7 +2071,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
   Widget _buildNoticeBanner(ChatRoom room, bool isAdmin) {
     if (!room.hasNotice) return const SizedBox.shrink();
 
-    // B안: 연한 틸 머리띠·아래 선 대신 대화 위에 떠 있는 흰 카드(모서리 14, 아주 옅은 그림자).
+    // B안: 연한 틸 머리띠·아래 선 대신 대화 위에 떠 있는 흰 카드(모서리 12, 아주 옅은 그림자).
     // 접힘·펼침 모두 앞 아이콘(확성기)은 고정, 뒤 꺾쇠만 바뀐다 — 같은 띠의 아이콘 뜻이 뒤집히지 않게.
     Widget card({required Widget child}) => Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -2710,7 +2710,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                                     ),
                                   )
                                 : null,
-                            // 사진이 아니면 B안 줄 아이콘(옅은 틸 둥근 바탕 44).
+                            // 사진이 아니면 B안 줄 아이콘(옅은 틸 둥근 바탕 40).
                             // 파일함에서도 동영상은 한눈에 알아보게 한다
                             leadingIcon: showThumb
                                 ? null
@@ -4214,7 +4214,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
     // 꼬리 모서리(작은 모서리)는 같은 사람 묶음의 첫 말풍선에만 둔다. 모든 말풍선에
     // 같은 꼬리를 달면 도장 찍은 듯 반복돼 거칠어 보인다.
-    // B안: 큰 모서리 20(한 줄 말풍선은 거의 알약), 꼬리만 작게.
+    // B안: 큰 모서리 16(한 줄 말풍선은 거의 알약), 꼬리만 작게.
     const big = Radius.circular(AppBorderRadius.card);
     const small = Radius.circular(AppBorderRadius.base);
     final BorderRadius bubbleRadius = isMediaBubble
@@ -4744,7 +4744,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         // 여러 줄로 늘어나도 첨부·전송 버튼은 입력 상자 **아래**에 붙어 있다(카톡·Slack과 같다)
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 첨부 버튼 (사진/파일) — 전송 버튼·한 줄 입력칸과 같은 44 지름
+          // 첨부 버튼 (사진/파일) — 전송 버튼·한 줄 입력칸과 같은 40 지름
           Tooltip(
             message: '파일 첨부',
             child: Semantics(
@@ -4803,9 +4803,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   disabledBorder: InputBorder.none,
                   filled: false,
                   isDense: true,
-                  // 한 줄일 때 높이 44 = 첨부·전송 단추 지름
+                  // 한 줄일 때 높이 = 첨부·전송 단추 지름(40): 글자 한 줄(14 × 1.5 = 21) + 위아래 9.5
                   contentPadding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.space2_5,
+                    vertical: (AppSpacing.iconCircle -
+                            AppTypography.fontSizeBase *
+                                AppTypography.lineHeightNormal) /
+                        2,
                   ),
                 ),
                 maxLines: 4,

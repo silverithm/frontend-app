@@ -172,13 +172,14 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 월 네비게이션 — B안: 머리띠 없이 카드 맨 위에 달 이름과 회색 동그라미 꺾쇠
+              // 월 네비게이션 — B안: 머리띠 없이 카드 맨 위에 달 이름과 회색 동그라미 꺾쇠.
+              // 꺾쇠 단추가 48이라 위아래 여백은 얇게 둔다(달력이 한 화면에 들어오게).
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.space3,
+                  AppSpacing.space2,
                   AppSpacing.space3,
-                  AppSpacing.space3,
-                  AppSpacing.space1,
+                  0,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -225,13 +226,13 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                 ),
               ),
 
-              // 직종 거르기 칩 — B안 SeedChip(44), 옆으로 밀어 본다
+              // 직종 거르기 칩 — B안 SeedChip(36), 옆으로 밀어 본다
               if (widget.onRoleFiltersChanged != null)
                 Container(
                   // 칩이 적어도 가운데로 몰리지 않고 왼쪽부터 놓인다
                   alignment: Alignment.centerLeft,
                   padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.space2,
+                    vertical: AppSpacing.space1,
                   ),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -298,7 +299,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                   AppSpacing.space4,
                   AppSpacing.space1,
                   AppSpacing.space4,
-                  AppSpacing.space2,
+                  AppSpacing.space1,
                 ),
                 child: Row(
                   children: [
@@ -321,10 +322,10 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       onTap: _toggleExpanded,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
-                        constraints: const BoxConstraints(minHeight: 36),
+                        constraints: const BoxConstraints(minHeight: 32),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.space3_5,
-                          vertical: AppSpacing.space1_5,
+                          horizontal: AppSpacing.space3,
+                          vertical: AppSpacing.space1,
                         ),
                         decoration: BoxDecoration(
                           color: _isExpanded

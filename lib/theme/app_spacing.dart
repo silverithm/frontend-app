@@ -26,9 +26,9 @@ class AppSpacing {
   /// 화면 좌우 여백
   static const double screenGutter = space4; // 16
   /// 카드 안쪽 여백
-  static const double cardPadding = space5; // 20
+  static const double cardPadding = space4; // 16
   /// 카드와 카드 사이
-  static const double cardGap = space3; // 12
+  static const double cardGap = space2_5; // 10
   /// 손가락이 닿는 최소 크기
   static const double minTouchTarget = space12; // 48
   /// 상단 바 높이(B안: 틸 바 유지, 높이 56)
@@ -36,12 +36,14 @@ class AppSpacing {
   /// 하단 탭 높이(안전 영역 제외)
   static const double bottomTabHeight = space16; // 64
   /// 목록 한 줄 최소 높이
-  static const double listRowMinHeight = 60;
+  static const double listRowMinHeight = 52;
   /// 둥근 아이콘(옅은 틸 바탕) 지름
-  static const double iconCircle = 44;
-  /// 단추 높이 — 큰 단추 54, 보통 48
-  static const double buttonHeightLarge = 54;
-  static const double buttonHeight = space12; // 48
+  static const double iconCircle = 40;
+  /// 단추 높이 — 큰 단추 52, 보통 44 (1.20.2: 54·48에서 한 칸 낮췄다. 터치 영역은 AppPressable이 48을 지킨다)
+  static const double buttonHeightLarge = 52;
+  static const double buttonHeight = 44;
+  /// 작은 단추 높이
+  static const double buttonHeightSmall = 36;
 }
 
 class AppBorderRadius {
@@ -57,11 +59,11 @@ class AppBorderRadius {
 
   // ── 역할 모서리 (B안 2026-11-12) ──
   /// 나눔 조절 안 칸·작은 안쪽 상자
-  static const double inner = 10;
+  static const double inner = 8;
   /// 단추·입력칸·눌린 줄·아이콘 단추
-  static const double control = 14;
+  static const double control = 12;
   /// 카드(회색 바탕 위 흰 상자)
-  static const double card = 20;
+  static const double card = 16;
   /// 아래에서 올라오는 시트·대화상자
   static const double sheet = xl3; // 24
 }

@@ -267,7 +267,7 @@ class _ChatMemberListState extends State<ChatMemberList> {
   }
 
   /// 사람 한 줄 — B안: 흰 카드 안 줄, 높이 60(위아래 10 + 아바타 40), 구분선 없음.
-  /// 이름 titleMedium 16 + 직종 bodySmall 14를 한 줄에(둘 다 길면 말줄임).
+  /// 이름 titleMedium 16 + 직종 bodySmall 12를 한 줄에(둘 다 길면 말줄임).
   /// 접속 중이면 아바타에 초록 점만 단다(점이 없으면 오프라인 — "오프라인" 문구를 줄마다 반복하지 않는다).
   Widget _buildMemberTile({
     required String id,

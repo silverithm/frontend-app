@@ -284,7 +284,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       user.id.toString(),
     );
 
-    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 카드 사이는 간격 12
+    // B안 카드 — 흰 바탕, 테두리 없음, 모서리 16, 카드 사이는 간격 10
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       child: Material(
@@ -338,7 +338,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             const SizedBox(height: AppSpacing.space1),
             Row(
               children: [
-                // 아바타(44) + 간격(12) 만큼 들여 이름과 줄을 맞춘다
+                // 아바타(40) + 간격(12) 만큼 들여 이름과 줄을 맞춘다
                 const SizedBox(width: AppSpacing.iconCircle + AppSpacing.space3),
                 Icon(
                   Icons.work_outline,
@@ -686,7 +686,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
       builder: (context, adminProvider, child) {
         final isProcessing = adminProvider.isLoading;
 
-        // B안 카드 — 흰 바탕, 테두리 없음, 모서리 20, 카드 사이는 간격 12
+        // B안 카드 — 흰 바탕, 테두리 없음, 모서리 16, 카드 사이는 간격 10
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
           child: Material(

@@ -253,9 +253,8 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                             horizontal: AppSpacing.space3,
                             vertical: AppSpacing.space2,
                           ),
-                          child: Wrap(
-                            spacing: AppSpacing.space2,
-                            runSpacing: AppSpacing.space2,
+                          // 작은 단추 둘을 한 줄에 — Wrap에서는 단추가 폭을 다 차지해 두 줄로 쌓였다
+                          child: Row(
                             children: [
                               SeedButton(
                                 label: '전체 선택',
@@ -276,6 +275,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                                   });
                                 },
                               ),
+                              const SizedBox(width: AppSpacing.space2),
                               SeedButton(
                                 label: '선택 해제',
                                 variant: SeedButtonVariant.neutralWeak,
@@ -331,7 +331,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
                               });
                             }
 
-                            // 사람 한 줄 — 채팅 탭 직원 목록과 같은 규칙(높이 60 이상, 이름 titleMedium + 메타 bodySmall)
+                            // 사람 한 줄 — 채팅 탭 직원 목록과 같은 규칙(높이 52 이상, 이름 titleMedium + 메타 bodySmall)
                             return ChatListRow(
                               onTap: isCurrentUser ? null : toggle,
                               child: Row(

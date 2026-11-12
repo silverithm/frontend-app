@@ -144,7 +144,7 @@ class _DispatchElderAttendanceTileState extends State<DispatchElderAttendanceTil
         if (isAbsent) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
-            // B안 입력칸 — 회색으로 채운 칸, 테두리 없음, 모서리 14, 누르고 있으면 틸 2px
+            // B안 입력칸 — 회색으로 채운 칸, 테두리 없음, 모서리 12, 누르고 있으면 틸 2px
             child: TextField(
               controller: _reasonController,
               style: AppTypography.bodyMedium.copyWith(

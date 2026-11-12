@@ -24,7 +24,7 @@ void main() {
         ),
       );
 
-  testWidgets('AppCard — 흰 바탕, 테두리 없음, 모서리 20, 여백 20', (tester) async {
+  testWidgets('AppCard — 흰 바탕, 테두리 없음, 모서리 16, 여백 16', (tester) async {
     await tester.pumpWidget(host(const AppCard(child: Text('내용'))));
     final box = tester.widget<DecoratedBox>(find
         .ancestor(of: find.text('내용'), matching: find.byType(DecoratedBox))
@@ -34,7 +34,7 @@ void main() {
     expect(deco.border, isNull);
     expect(deco.borderRadius, BorderRadius.circular(AppBorderRadius.card));
     expect(tester.getTopLeft(find.text('내용')) - tester.getTopLeft(find.byType(AppCard)),
-        const Offset(20, 20));
+        const Offset(16, 16));
   });
 
   testWidgets('누를 수 있는 카드는 tap 햅틱과 함께 전달', (tester) async {
@@ -49,7 +49,7 @@ void main() {
     expect(heard, [AppHapticKind.tap]);
   });
 
-  testWidgets('목록 줄 — 높이 60 이상, 둥근 틸 아이콘 44, 눌리면 옅은 회색', (tester) async {
+  testWidgets('목록 줄 — 높이 52 이상, 둥근 틸 아이콘 40, 눌리면 옅은 회색', (tester) async {
     await tester.pumpWidget(host(SeedListSection(
       title: '내 업무',
       children: [
@@ -68,13 +68,13 @@ void main() {
         .first);
     expect((circle.decoration as BoxDecoration).color, AppSemanticColors.brandWeak);
     expect((circle.decoration as BoxDecoration).shape, BoxShape.circle);
-    expect(tester.getSize(find.byWidget(circle)), const Size(44, 44));
+    expect(tester.getSize(find.byWidget(circle)), const Size(40, 40));
 
-    // 카드 여백 20에 글자 시작이 맞는다(섹션 8 + 줄 12)
+    // 아이콘 원은 카드 가장자리에서 20 들어온다(섹션 8 + 줄 12) — 눌림 면이 카드 모서리에 붙지 않게
     final card = find.ancestor(of: row, matching: find.byType(Container)).first;
     expect(tester.getTopLeft(find.byIcon(Icons.checklist)).dx -
             tester.getTopLeft(card).dx,
-        closeTo(20 + (44 - 22) / 2, 0.5));
+        closeTo(20 + (40 - 22) / 2, 0.5));
 
     final gesture = await tester.startGesture(tester.getCenter(row));
     await tester.pump(const Duration(milliseconds: 200));
@@ -87,7 +87,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('구역 머리 — 18 제목, 숫자 알약, 링크 48 터치', (tester) async {
+  testWidgets('구역 머리 — 16 제목, 숫자 알약, 링크 48 터치', (tester) async {
     var opened = 0;
     await tester.pumpWidget(host(AppCard(
       child: SeedSectionHeader(
@@ -98,7 +98,7 @@ void main() {
         onAction: () => opened++,
       ),
     )));
-    expect(tester.widget<Text>(find.text('전자결재')).style!.fontSize, 18);
+    expect(tester.widget<Text>(find.text('전자결재')).style!.fontSize, 16);
     expect(find.text('0'), findsOneWidget);
     final link = find.ancestor(of: find.text('전체보기'), matching: find.byType(GestureDetector)).first;
     expect(tester.getSize(link).height, greaterThanOrEqualTo(48));

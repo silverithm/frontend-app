@@ -103,7 +103,7 @@ void main() {
 
   for (final force in [false, true]) {
     for (final scale in [1.0, 1.6]) {
-      testWidgets('업데이트 창 — 강제 $force, 글자 $scale배, 단추 큰 54·테두리 없음', (tester) async {
+      testWidgets('업데이트 창 — 강제 $force, 글자 $scale배, 단추 큰 52·테두리 없음', (tester) async {
         final context = await pumpHost(tester, textScale: scale);
         showDialog<void>(
           context: context,
@@ -128,7 +128,7 @@ void main() {
           of: find.text('업데이트').last,
           matching: find.byType(SeedButton),
         ));
-        expect(update.height, greaterThanOrEqualTo(54));
+        expect(update.height, greaterThanOrEqualTo(52));
         if (!force) {
           final later = tester.widget<SeedButton>(find.ancestor(
             of: find.text('나중에'),
@@ -152,7 +152,7 @@ void main() {
   }
 
   for (final scale in [1.0, 1.6]) {
-    testWidgets('글자 크기 — 흰 카드 하나에 네 줄(60 이상), 고르면 옅은 틸 바탕, 글자 $scale배', (tester) async {
+    testWidgets('글자 크기 — 흰 카드 하나에 네 줄(52 이상), 고르면 옅은 틸 바탕, 글자 $scale배', (tester) async {
       setPhone(tester);
       final provider = AppProvider();
       await tester.pumpWidget(ChangeNotifierProvider<AppProvider>.value(
@@ -169,7 +169,7 @@ void main() {
           of: find.text(size.label),
           matching: find.byType(InkWell),
         );
-        expect(tester.getSize(row).height, greaterThanOrEqualTo(60));
+        expect(tester.getSize(row).height, greaterThanOrEqualTo(52));
       }
 
       Color? rowColor(String label) => tester

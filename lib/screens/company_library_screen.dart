@@ -284,7 +284,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
                   const SizedBox(height: AppSpacing.space1_5),
                   DropdownButtonFormField<String>(
                     initialValue: category,
-                    // B안 입력칸: 회색 채움·테두리 없음·모서리 14, 누르고 있으면 틸 2px(SeedTextField와 같다)
+                    // B안 입력칸: 회색 채움·테두리 없음·모서리 12, 누르고 있으면 틸 2px(SeedTextField와 같다)
                     decoration: InputDecoration(
                       isCollapsed: true,
                       filled: true,
@@ -461,7 +461,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
   }
 
   Widget _buildCategoryChips() {
-    // B안: 회색 바탕 위 흰 칩(SeedChip 44, 테두리 없음)
+    // B안: 회색 바탕 위 흰 칩(SeedChip 36, 테두리 없음)
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(
@@ -504,7 +504,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
     final fileSize = (item['fileSize'] as num?)?.toInt() ?? 0;
     final description = item['description']?.toString() ?? '';
 
-    // B안: 테두리 없는 흰 카드, 옅은 틸 둥근 아이콘(44). 카드 사이는 간격 12.
+    // B안: 테두리 없는 흰 카드, 옅은 틸 둥근 아이콘(40). 카드 사이는 간격 10.
     // 카드 전체가 '열기' — 열기·삭제 단추 줄을 없애 카드 높이를 줄였다(삭제는 ⋮ 메뉴)
     return AppCard(
       margin: const EdgeInsets.fromLTRB(

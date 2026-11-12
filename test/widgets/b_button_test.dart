@@ -28,9 +28,9 @@ void main() {
       .decoration! as BoxDecoration;
 
   for (final (size, height) in [
-    (SeedButtonSize.large, 54.0),
-    (SeedButtonSize.medium, 48.0),
-    (SeedButtonSize.small, 40.0),
+    (SeedButtonSize.large, 52.0),
+    (SeedButtonSize.medium, 44.0),
+    (SeedButtonSize.small, 36.0),
   ]) {
     testWidgets('${size.name}: 보이는 높이 $height, 터치는 48 이상', (tester) async {
       await tester.pumpWidget(host(SeedButton(label: '승인', size: size, onPressed: () {})));
@@ -46,7 +46,7 @@ void main() {
   testWidgets('주 단추는 틸, 누르면 짙은 틸', (tester) async {
     await tester.pumpWidget(host(SeedButton(label: '신청하기', onPressed: () {})));
     expect(surfaceOf(tester).color, AppSemanticColors.brandDefault);
-    expect(surfaceOf(tester).borderRadius, BorderRadius.circular(14));
+    expect(surfaceOf(tester).borderRadius, BorderRadius.circular(12));
     final g = await tester.startGesture(tester.getCenter(find.text('신청하기')));
     await tester.pump(const Duration(milliseconds: 250));
     expect(surfaceOf(tester).color, AppSemanticColors.brandPressed);

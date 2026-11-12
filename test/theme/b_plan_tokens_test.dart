@@ -83,17 +83,18 @@ void main() {
     });
   });
 
-  test('글자 단계 — 본문 16, 보조 14, 목록 제목 16/w600, 카드 제목 18, 시트 제목 20, 큰 숫자 24 고정폭', () {
-    expect(AppTypography.bodyMedium.fontSize, 16);
-    expect(AppTypography.bodySmall.fontSize, 14);
+  // 1.20.2: 한 화면에 들어오는 양을 1.19 수준으로 되돌리려고 본문·보조·제목을 한 단계씩 내렸다.
+  test('글자 단계 — 본문 14, 보조 12, 목록 제목 16/w600, 카드 제목 16, 시트 제목 18, 큰 숫자 20 고정폭', () {
+    expect(AppTypography.bodyMedium.fontSize, 14);
+    expect(AppTypography.bodySmall.fontSize, 12);
     expect(AppTypography.titleMedium.fontSize, 16);
     expect(AppTypography.titleMedium.fontWeight, FontWeight.w600);
-    expect(AppTypography.heading6.fontSize, 18);
-    expect(AppTypography.heading5.fontSize, 20);
+    expect(AppTypography.heading6.fontSize, 16);
+    expect(AppTypography.heading5.fontSize, 18);
     expect(AppTypography.appBarTitle.fontSize, 18);
     expect(AppTypography.appBarTitleLarge.fontSize, 20);
     expect(AppTypography.appBarTitleLarge.fontWeight, FontWeight.w700);
-    expect(AppTypography.heading4.fontSize, 24);
+    expect(AppTypography.heading4.fontSize, 20);
     expect(AppTypography.heading4.fontFeatures, contains(const FontFeature.tabularFigures()));
     // 12보다 작은 글자는 없다
     for (final style in [
@@ -108,11 +109,11 @@ void main() {
     }
   });
 
-  test('모서리·높이 — 카드 20, 단추 14·54, 시트 24, 하단 탭 64', () {
-    expect(AppBorderRadius.card, 20);
-    expect(AppBorderRadius.control, 14);
+  test('모서리·높이 — 카드 16, 단추 12·52, 시트 24, 하단 탭 64', () {
+    expect(AppBorderRadius.card, 16);
+    expect(AppBorderRadius.control, 12);
     expect(AppBorderRadius.sheet, 24);
-    expect(AppSpacing.buttonHeightLarge, 54);
+    expect(AppSpacing.buttonHeightLarge, 52);
     expect(AppSpacing.bottomTabHeight, 64);
     expect(AppSpacing.toolbarHeight, 56);
     expect(AppSpacing.minTouchTarget, 48);

@@ -56,7 +56,7 @@ class _AdminCompanySettingsScreenState
           );
         }
 
-        // B안: 옅은 회색 바탕 위 테두리 없는 흰 카드를 간격(12)으로 나눈다. 구독·결제 문구는 그대로.
+        // B안: 옅은 회색 바탕 위 테두리 없는 흰 카드를 간격(10)으로 나눈다. 구독·결제 문구는 그대로.
         return Scaffold(
           backgroundColor: AppSemanticColors.backgroundCanvas,
           appBar: const CareVAppBar(title: '회사 정보', centerTitle: true),
@@ -227,7 +227,7 @@ class _AdminCompanySettingsScreenState
   }) {
     return Row(
       children: [
-        // 옅은 틸 둥근 아이콘 44(B안 목록 줄과 같은 모양) — 글자 없는 칸이라 크기를 정해 둔다
+        // 옅은 틸 둥근 아이콘 40(B안 목록 줄과 같은 모양) — 글자 없는 칸이라 크기를 정해 둔다
         Container(
           width: AppSpacing.iconCircle,
           height: AppSpacing.iconCircle,

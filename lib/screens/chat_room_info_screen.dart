@@ -463,7 +463,7 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
                         final showRemoveAction =
                             isRoomAdmin && !isCurrentUser;
 
-                        // 사람 한 줄 — 채팅 탭 직원 목록과 같은 규칙(흰 카드 안 줄, 높이 60 이상,
+                        // 사람 한 줄 — 채팅 탭 직원 목록과 같은 규칙(흰 카드 안 줄, 높이 52 이상,
                         // 이름 titleMedium + 메타 bodySmall, 구분선 없음)
                         return ChatCardSlice(
                           isFirst: index == 0,

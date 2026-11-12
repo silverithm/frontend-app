@@ -9,8 +9,8 @@ import '../common/app_pressable.dart';
 
 /// 목록 한 줄 — B안(2026-11-12, 시안 .row/.mrow).
 ///
-/// 옅은 틸 바탕 둥근 아이콘(44) + 제목 16/w600 + 부제 14 + 꺾쇠, 줄 높이 60 이상.
-/// 누르면 줄 바탕이 옅은 회색(모서리 14)으로 바뀐다(크기는 줄지 않는다 — 줄 전체가 움직이면 어지럽다).
+/// 옅은 틸 바탕 둥근 아이콘(40) + 제목 16/w600 + 부제 12 + 꺾쇠, 줄 높이 52 이상.
+/// 누르면 줄 바탕이 옅은 회색(모서리 12)으로 바뀐다(크기는 줄지 않는다 — 줄 전체가 움직이면 어지럽다).
 /// 흰 카드([SeedListSection]) 안에서 카드 여백 20에 글자 시작이 맞도록 좌우 12를 쓴다.
 class SeedListCell extends StatefulWidget {
   /// 옅은 틸 둥근 바탕에 아이콘을 넣어주는 간편 leading. 커스텀이 필요하면 [leading] 사용.
@@ -152,7 +152,7 @@ class _SeedListCellState extends State<SeedListCell> {
   }
 }
 
-/// 목록 묶음 — B안: 묶음 제목(14/w600 회색, 막대 없음) + 흰 카드(모서리 20, 테두리·구분선 없음).
+/// 목록 묶음 — B안: 묶음 제목(14/w600 회색, 막대 없음) + 흰 카드(모서리 16, 테두리·구분선 없음).
 /// 줄 사이는 선 대신 줄 자체의 여백으로 나눈다(시안 .sec-h + .menu-card).
 class SeedListSection extends StatelessWidget {
   final String? title;

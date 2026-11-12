@@ -306,7 +306,7 @@ class _AdminApprovalTemplateScreenState
                   ),
                 )
               else
-                // 파일 고르기 — 테두리 상자 대신 회색 채운 칸(높이 54 이상)
+                // 파일 고르기 — 테두리 상자 대신 회색 채운 칸(높이 52 이상)
                 Material(
                   color: AppSemanticColors.fillDefault,
                   borderRadius: BorderRadius.circular(AppBorderRadius.control),

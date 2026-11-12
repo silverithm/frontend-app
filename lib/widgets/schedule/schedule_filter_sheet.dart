@@ -169,7 +169,7 @@ class _ScheduleFilterSheetState extends State<ScheduleFilterSheet> {
               ],
             ),
           ),
-          // 아래 단추 줄 — B안: 위 선 없이 흰 띠, 보조 단추는 회색 채움, 큰 단추(54)
+          // 아래 단추 줄 — B안: 위 선 없이 흰 띠, 보조 단추는 회색 채움, 큰 단추(52)
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.space5,

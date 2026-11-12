@@ -26,7 +26,7 @@ class DispatchRouteCard extends StatelessWidget {
     final style = DispatchStatusStyle.of(dispatch.status);
     final driver = dispatch.driver;
 
-    // B안 카드 — 테두리 없는 흰 상자, 모서리 20, 안쪽 20, 카드끼리 간격 12
+    // B안 카드 — 테두리 없는 흰 상자, 모서리 16, 안쪽 16, 카드끼리 간격 10
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       padding: const EdgeInsets.all(AppSpacing.cardPadding),

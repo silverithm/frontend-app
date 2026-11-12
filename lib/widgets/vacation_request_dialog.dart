@@ -82,7 +82,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog> {
     '휴무, 연차 사용의 최종 승인은 센터 운영 전반을 고려하여 이루어집니다.',
   ];
 
-  /// B안 안내 상자: 테두리 없이 옅은 빨강 바탕, 모서리 14. 줄은 낱말 단위로만 바꾼다(keepAll).
+  /// B안 안내 상자: 테두리 없이 옅은 빨강 바탕, 모서리 12. 줄은 낱말 단위로만 바꾼다(keepAll).
   Widget _buildNoticeBox() {
     return Container(
       width: double.infinity,
@@ -406,7 +406,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog> {
     }
   }
 
-  /// 휴무 종류 하나를 고르는 칩 — B안 거르기 칩(SeedChip, 높이 44·글자 14, 고르면 틸 + 흰 글자).
+  /// 휴무 종류 하나를 고르는 칩 — B안 거르기 칩(SeedChip, 높이 36·글자 14, 고르면 틸 + 흰 글자).
   /// 흰 시트 안이라 고르기 전 바탕은 회색이다. (쓰지 않던 테두리 칸 단추 _buildOptionButton은 뺐다)
   Widget _buildKindOption(VacationKind kind) {
     return SeedChip(
@@ -434,7 +434,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // B안 시트(시안 390-05c): 손잡이 → 제목 21 + 닫기 → 날짜 칸 → 안내 → 종류 칩 → 사유 → 큰 신청 단추.
+    // B안 시트(시안 390-05c): 손잡이 → 제목 18 + 닫기 → 날짜 칸 → 안내 → 종류 칩 → 사유 → 큰 신청 단추.
     // 예전 대화상자의 테두리 상자(날짜·종류·사유)는 걷고 간격으로 나눈다.
     return AppSheetFrame(
       // 제출 버튼 — "다음 달만 받기"가 켜져 있고 이 날짜가 밖이면 아예 누르지 못하게 한다

@@ -98,7 +98,7 @@ class WorkTaskRow extends StatelessWidget {
   /// 알림을 눌러 들어온 업무 — 잠깐 연한 틸로 표시한다
   final bool isHighlighted;
 
-  /// 줄 안쪽 좌우 여백. 기본 0 — 홈 카드처럼 카드 여백(20)에 글자를 바로 맞추는 자리.
+  /// 줄 안쪽 좌우 여백. 기본 0 — 홈 카드처럼 카드 여백(16)에 글자를 바로 맞추는 자리.
   /// 업무 목록처럼 카드 여백을 8로 줄이고 줄이 12를 가지면(SeedListSection 문법)
   /// 눌림·강조 바탕이 카드 안에서 둥글게 떠 보인다.
   final double horizontalPadding;
@@ -140,7 +140,7 @@ class WorkTaskRow extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: radius,
-          // B안 목록 줄 — 높이 60 이상
+          // B안 목록 줄 — 높이 52 이상
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               minHeight: AppSpacing.listRowMinHeight,
@@ -148,7 +148,7 @@ class WorkTaskRow extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: horizontalPadding,
-                vertical: AppSpacing.space3,
+                vertical: AppSpacing.space2_5,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -194,7 +194,7 @@ class WorkTaskRow extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.space2_5),
+                  const SizedBox(height: AppSpacing.space1_5),
                   Row(
                     children: [
                       // 담당자 칸 너비를 고정해 줄마다 게이지 시작점이 같다

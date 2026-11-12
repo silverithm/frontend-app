@@ -287,7 +287,7 @@ class _PlazaScreenState extends State<PlazaScreen>
 
 // ─── 공통: 거르기 칩 줄 · 목록 여백 · FAB 접힘 ───
 
-/// 탭마다 맨 위에 놓이는 거르기 칩 줄 — B안: 회색 바탕 위 흰 칩(44), 높이를 못 박지 않아
+/// 탭마다 맨 위에 놓이는 거르기 칩 줄 — B안: 회색 바탕 위 흰 칩(36), 높이를 못 박지 않아
 /// 글자를 키워도 칩이 잘리지 않는다.
 class _PlazaFilterChips extends StatelessWidget {
   final List<Map<String, String>> options;
@@ -328,7 +328,7 @@ class _PlazaFilterChips extends StatelessWidget {
   }
 }
 
-/// 카드 목록 여백 — 좌우 16, 카드 사이 12. FAB가 있는 탭은 마지막 카드가 가려지지 않게 아래를 더 띄운다.
+/// 카드 목록 여백 — 좌우 16, 카드 사이 10. FAB가 있는 탭은 마지막 카드가 가려지지 않게 아래를 더 띄운다.
 EdgeInsets _plazaListPadding({bool hasFab = false}) => EdgeInsets.fromLTRB(
       AppSpacing.screenGutter,
       AppSpacing.space2,
@@ -349,8 +349,8 @@ class _PlazaCardListSkeleton extends StatelessWidget {
     return Column(
       children: [
         if (withChipRow)
-          // _PlazaFilterChips와 같은 높이(위아래 4 + 칩 44)
-          const SizedBox(height: AppSpacing.space1 * 2 + 44),
+          // _PlazaFilterChips와 같은 높이(위아래 4 + 칩 36)
+          const SizedBox(height: AppSpacing.space1 * 2 + 36),
         Expanded(
           child: AppSkeleton(
             baseColor: AppSemanticColors.skeletonBaseOnCard,
@@ -697,7 +697,7 @@ class _NewsTabState extends State<_NewsTab> {
                               );
                             }
                             final item = items[index];
-                            // B안: 테두리 없는 흰 카드(모서리 20·여백 20)
+                            // B안: 테두리 없는 흰 카드(모서리 16·여백 16)
                             return AppListEntranceItem(
                               index: index,
                               child: AppCard(
@@ -899,7 +899,7 @@ class _BoardTabState extends State<_BoardTab> {
   }
 }
 
-/// 게시판 글 카드 한 장 — B안: 테두리 없는 흰 카드(모서리 20·여백 20).
+/// 게시판 글 카드 한 장 — B안: 테두리 없는 흰 카드(모서리 16·여백 16).
 /// 게시판 탭 목록에서 쓴다(따로 떼어 둔 것은 큰 글자에서 아랫줄이 넘치지 않는지 확인하려고 — 모양은 그대로).
 class PlazaBoardPostCard extends StatelessWidget {
   final Map<String, dynamic> post;
@@ -1363,7 +1363,7 @@ class _LibraryTabState extends State<_LibraryTab> {
     );
   }
 
-  /// 자료 한 건 — B안: 테두리 없는 흰 카드, 옅은 틸 둥근 아이콘(44) + 글 + 단추.
+  /// 자료 한 건 — B안: 테두리 없는 흰 카드, 옅은 틸 둥근 아이콘(40) + 글 + 단추.
   /// 카드 본문을 눌러도 내려받게 — 오른쪽 아이콘만 살아 있으면 죽은 카드처럼 느껴진다
   Widget _buildItemCard(Map<String, dynamic> item) {
     final description = (item['description'] ?? '').toString().trim();

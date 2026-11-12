@@ -25,7 +25,7 @@ void main() {
       ))
       .decoration! as BoxDecoration;
 
-  testWidgets('칩: 고르기 전 회색·고르면 틸, 테두리 없음, 높이 44·터치 48, selection 햅틱',
+  testWidgets('칩: 고르기 전 회색·고르면 틸, 테두리 없음, 높이 36·터치 48, selection 햅틱',
       (tester) async {
     final heard = <AppHapticKind>[];
     AppHaptics.debugPerformOverride = (k) async => heard.add(k);
@@ -40,7 +40,7 @@ void main() {
         of: find.byType(SeedChip),
         matching: find.byType(AnimatedContainer),
       )).height,
-      44,
+      36,
     );
     expect(tester.getSize(find.byType(SeedChip)).height, greaterThanOrEqualTo(48));
     await tester.tap(find.text('대기'));
@@ -63,14 +63,14 @@ void main() {
     expect(tester.widget<Text>(find.text('반려')).style!.fontWeight, off);
   });
 
-  testWidgets('꼬리표: 테두리 없는 알약 12/w600, 높이 26 이상, 폭 제한 없는 Row 안에서도 된다',
+  testWidgets('꼬리표: 테두리 없는 알약 12/w600, 높이 22 이상, 폭 제한 없는 Row 안에서도 된다',
       (tester) async {
     await tester.pumpWidget(host(const AppTag(label: '승인', tone: AppTagTone.success)));
     expect(tester.takeException(), isNull);
     final text = tester.widget<Text>(find.text('승인'));
     expect(text.style!.fontSize, 12);
     expect(text.style!.color, AppSemanticColors.statusSuccessText);
-    expect(tester.getSize(find.byType(AppTag)).height, greaterThanOrEqualTo(26));
+    expect(tester.getSize(find.byType(AppTag)).height, greaterThanOrEqualTo(22));
   });
 
   testWidgets('글자 1.6배에서도 넘치지 않는다', (tester) async {

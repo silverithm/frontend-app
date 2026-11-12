@@ -180,9 +180,11 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
         AppSpacing.screenGutter,
         AppSpacing.space2,
         AppSpacing.screenGutter,
-        AppSpacing.space3,
+        AppSpacing.space2_5,
       ),
       child: Column(
+        // 층 칩이 적어도 가운데로 몰리지 않고 왼쪽부터 놓인다
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SeedTextField(
             // 라벨은 앱바 제목이 이미 맥락을 주므로 화면에는 감추고 접근성용으로만 남긴다.
@@ -201,7 +203,7 @@ class _ElderCareListScreenState extends State<ElderCareListScreen> {
                 : null,
           ),
           if (floors.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.space3),
+            const SizedBox(height: AppSpacing.space2),
             // 층이 많거나 글자를 크게 키워도 넘치지 않게 가로로 밀어 본다
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -266,7 +268,7 @@ class _ElderRow extends StatelessWidget {
       if (profile != null) profile.careGradeLabel,
     ];
 
-    // B안: 회색 바탕 위 흰 카드(테두리 없음, 모서리 20, 안쪽 20). 누르면 살짝 줄었다 돌아온다.
+    // B안: 회색 바탕 위 흰 카드(테두리 없음, 모서리 16, 안쪽 16). 누르면 살짝 줄었다 돌아온다.
     return AppCard(
       onTap: () => onTap(elder),
       child: Row(
@@ -309,7 +311,7 @@ class _ElderRow extends StatelessWidget {
                   ),
                 ),
                 if (profile != null && profile.riskTags.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.space2_5),
+                  const SizedBox(height: AppSpacing.space2),
                   Wrap(
                     spacing: AppSpacing.space1_5,
                     runSpacing: AppSpacing.space1_5,

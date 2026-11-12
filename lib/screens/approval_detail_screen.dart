@@ -345,7 +345,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 상태 카드 — B안: 테두리 없는 흰 카드, 제목 21 + 상태 알약, 아래는 이름표·값 두 줄 칸
+            // 상태 카드 — B안: 테두리 없는 흰 카드, 제목 18 + 상태 알약, 아래는 이름표·값 두 줄 칸
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,7 +652,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
               const SizedBox(height: AppSpacing.cardGap),
             ],
 
-            // 처리 정보 카드 — 제목 19 + 상태 알약(색 뜻 그대로)
+            // 처리 정보 카드 — 제목 16 + 상태 알약(색 뜻 그대로)
             if (_approval.processedAt != null) ...[
               AppCard(
                 child: Column(
