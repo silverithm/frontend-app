@@ -35,13 +35,13 @@ class SeedAvatar extends StatelessWidget {
     }
   }
 
-  // B안(시안 .av): 옅은 틸 바탕 위 진한 틸 첫 글자 w700 — 32→13 / 40→15 / 56→20
+  // B안(시안 .av): 옅은 틸 바탕 위 진한 틸 첫 글자 w700 — 32→12 / 40→16 / 56→20
   double get _fontSize {
     switch (size) {
       case SeedAvatarSize.small:
-        return AppTypography.fontSize13;
+        return AppTypography.fontSizeSm;
       case SeedAvatarSize.medium:
-        return AppTypography.fontSizeMd;
+        return AppTypography.fontSizeLg;
       case SeedAvatarSize.large:
         return AppTypography.fontSize2xl;
     }

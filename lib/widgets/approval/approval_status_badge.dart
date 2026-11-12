@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/approval.dart';
 import '../common/app_tag.dart';
 
-/// 결재 상태 알약 — B안: 테두리 없는 옅은 알약([AppTag]), 13/w600.
+/// 결재 상태 알약 — B안: 테두리 없는 옅은 알약([AppTag]), 12/w600.
 /// 색의 뜻은 그대로: 임시저장 회색 · 진행중 노랑 · 승인됨 초록 · 반려됨 빨강.
 class ApprovalStatusBadge extends StatelessWidget {
   final ApprovalStatus status;

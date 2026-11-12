@@ -175,7 +175,7 @@ class _HwpEditorScreenState extends State<HwpEditorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundTertiary,
-      // 공통 상단 바(가운데 17/w600·뒤로 꺾쇠) — 긴 파일 이름은 한 줄로 줄인다
+      // 공통 상단 바(가운데 18/w600·뒤로 꺾쇠) — 긴 파일 이름은 한 줄로 줄인다
       appBar: CareVAppBar(
         title: widget.fileName,
         actions: [

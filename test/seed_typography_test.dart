@@ -32,9 +32,9 @@ void main() {
     expect(title.color, isNot(body.color));
   });
 
-  // B안(2026-11-12): 꼬리표는 13/w600 알약(labelStrong)
-  test('AppTag.labelStyle 은 13 / w600', () {
-    expect(AppTag.labelStyle.fontSize, 13);
+  // B안(2026-11-12): 꼬리표는 12/w600 알약(labelStrong)
+  test('AppTag.labelStyle 은 12 / w600', () {
+    expect(AppTag.labelStyle.fontSize, 12);
     expect(AppTag.labelStyle.fontWeight, FontWeight.w600);
   });
 }

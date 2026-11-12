@@ -4,7 +4,7 @@ import 'package:frontend_app/theme/app_colors.dart';
 import 'package:frontend_app/theme/app_theme.dart';
 import 'package:frontend_app/widgets/common/carev_app_bar.dart';
 
-/// B안 상단 바 — 탭 첫 화면은 왼쪽 20/w700, 안쪽 화면은 꺾쇠 + 가운데 17/w600, 높이 56.
+/// B안 상단 바 — 탭 첫 화면은 왼쪽 20/w700, 안쪽 화면은 꺾쇠 + 가운데 18/w600, 높이 56.
 void main() {
   Widget app(Widget home) => MaterialApp(
         theme: AppTheme.withAppChrome(ThemeData(platform: TargetPlatform.android)),
@@ -25,7 +25,7 @@ void main() {
     expect(tester.getSize(find.byType(AppBar)).height, 56);
   });
 
-  testWidgets('안쪽 화면: 꺾쇠 뒤로 + 가운데 17/w600 + 작은 부제', (tester) async {
+  testWidgets('안쪽 화면: 꺾쇠 뒤로 + 가운데 18/w600 + 작은 부제', (tester) async {
     await tester.pumpWidget(app(Builder(
       builder: (context) => Scaffold(
         body: TextButton(
@@ -42,7 +42,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final text = tester.widget<Text>(find.text('요양보호사 1팀'));
-    expect(text.style!.fontSize, 17);
+    expect(text.style!.fontSize, 18);
     expect(text.style!.fontWeight, FontWeight.w600);
     expect(find.text('6명'), findsOneWidget);
     final width = tester.getSize(find.byType(AppBar)).width;

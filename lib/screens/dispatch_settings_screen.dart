@@ -344,10 +344,10 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     );
   }
 
-  // B안 꼬리표 — 테두리 없는 옅은 알약(13/w600)
+  // B안 꼬리표 — 테두리 없는 옅은 알약(12/w600)
   Widget _typeChip(String type) => AppTag(label: type);
 
-  // 카드 안 소제목(B안 15/w600)
+  // 카드 안 소제목(B안 14/w600)
   Widget _sectionLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(

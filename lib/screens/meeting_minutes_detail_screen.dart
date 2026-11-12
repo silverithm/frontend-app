@@ -202,7 +202,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // 카드·구역 제목(B안 19/w700)
+                              // 카드·구역 제목(B안 18/w700)
                               Semantics(
                                 header: true,
                                 child: Text(

@@ -7,7 +7,7 @@ import '../../theme/app_typography.dart';
 
 /// 입력칸 — B안(2026-11-12, 시안 .field).
 /// 회색(#F2F4F6)으로 채운 칸, 테두리 없음, 모서리 14, 글자 16. 누르고 있으면(포커스) 틸 2px 테두리,
-/// 틀리면 빨강 2px + 아래 14 안내. 라벨은 15/w600 검정. 높이 보통 48·큰 54.
+/// 틀리면 빨강 2px + 아래 14 안내. 라벨은 14/w600 검정. 높이 보통 48·큰 54.
 enum SeedTextFieldSize { medium, large }
 
 class SeedTextField extends StatefulWidget {
@@ -131,7 +131,7 @@ class _SeedTextFieldState extends State<SeedTextField> {
 
   double get _radius => AppBorderRadius.control;
 
-  // 입력값은 본문 16(w400) — 라벨 titleSmall 15/w600과 굵기로 구분된다
+  // 입력값은 본문 16(w400) — 라벨 titleSmall 14/w600과 굵기로 구분된다
   TextStyle get _inputStyle => AppTypography.bodyMedium;
 
   // 테두리는 늘 2px 자리를 차지하고(평소엔 투명) 색만 바뀐다 — 포커스 때 글자가 밀리지 않게

@@ -254,7 +254,7 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
     );
   }
 
-  /// 카드 안 맨 위 제목(B안 카드·구역 제목 19/w700). 줄 목록 카드(안쪽 여백 8)에서는
+  /// 카드 안 맨 위 제목(B안 카드·구역 제목 18/w700). 줄 목록 카드(안쪽 여백 8)에서는
   /// 줄 글자와 같은 자리(20)에서 시작하도록 좌우 12를 더한다.
   Widget _cardTitle(String text) {
     return Padding(

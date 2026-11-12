@@ -92,7 +92,7 @@ class _AppInputState extends State<AppInput> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.label != null) ...[
-          // B안: 라벨 15/w600 검정, 칸과 8 띄움(시안 .sh-label)
+          // B안: 라벨 14/w600 검정, 칸과 8 띄움(시안 .sh-label)
           Text(
             widget.label!,
             style: AppTypography.titleSmall.copyWith(

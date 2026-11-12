@@ -11,7 +11,7 @@ import '../../theme/app_typography.dart';
 /// 배차관리 화면은 별도 작업 중이라 이 위젯을 쓰지 않는다.
 ///
 /// B안(2026-11-12) 두 가지 모양:
-/// - 안쪽 화면(기본): 꺾쇠(‹) 뒤로 + 가운데 제목 17/w600, 필요하면 [subtitle] 13.
+/// - 안쪽 화면(기본): 꺾쇠(‹) 뒤로 + 가운데 제목 18/w600, 필요하면 [subtitle] 12.
 /// - 탭 첫 화면([isRoot]): 뒤로 없이 왼쪽 제목 20/w700(홈은 인사말이 이 자리).
 class CareVAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CareVAppBar({

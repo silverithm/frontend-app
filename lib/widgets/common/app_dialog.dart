@@ -168,7 +168,7 @@ class AppDialog {
 }
 
 class AppBottomSheet {
-  /// B안(2026-11-12, 시안 .sheet): 손잡이 40×5 + (제목 21/w700, 왼쪽) + 내용, 위 모서리 24.
+  /// B안(2026-11-12, 시안 .sheet): 손잡이 40×5 + (제목 20/w700, 왼쪽) + 내용, 위 모서리 24.
   /// 예전의 연한 틸 제목 띠·아래 선은 없앴다. 뒤 어둠은 테마(rgba(11,15,20,.45)).
   static Future<T?> show<T>(
     BuildContext context, {

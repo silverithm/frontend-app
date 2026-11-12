@@ -3715,7 +3715,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 _roomName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                // 안쪽 화면 상단 바 제목과 같은 appBarTitle(17/w600) — 채팅 목록 ↔ 방 ↔ 정보를 오갈 때
+                // 안쪽 화면 상단 바 제목과 같은 appBarTitle(18/w600) — 채팅 목록 ↔ 방 ↔ 정보를 오갈 때
                 // 제목 글자가 변하지 않게. 아래 인원 줄과 붙도록 줄간격은 1.2.
                 style: AppTypography.appBarTitle.copyWith(
                   color: AppSemanticColors.headerForeground,

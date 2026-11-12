@@ -339,7 +339,7 @@ class _ElderCareEditScreenState extends State<ElderCareEditScreen> {
   }
 
   Widget _card(String title, List<Widget> children) {
-    // B안: 머리 없이 흰 카드 안 맨 위에 구역 제목(19/w700), 테두리 없음, 카드끼리는 간격 12
+    // B안: 머리 없이 흰 카드 안 맨 위에 구역 제목(18/w700), 테두리 없음, 카드끼리는 간격 12
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       child: AppCard(

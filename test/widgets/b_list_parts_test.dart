@@ -7,7 +7,7 @@ import 'package:frontend_app/widgets/common/app_card.dart';
 import 'package:frontend_app/widgets/seed/seed_list_cell.dart';
 import 'package:frontend_app/widgets/seed/seed_section_header.dart';
 
-/// B안 카드·목록 줄·구역 머리 — 테두리 없는 흰 카드, 60 이상 줄, 둥근 틸 아이콘, 19 제목 + 링크.
+/// B안 카드·목록 줄·구역 머리 — 테두리 없는 흰 카드, 60 이상 줄, 둥근 틸 아이콘, 18 제목 + 링크.
 void main() {
   Widget host(Widget child, {double textScale = 1.0}) => MaterialApp(
         builder: (context, c) => MediaQuery(
@@ -87,7 +87,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('구역 머리 — 19 제목, 숫자 알약, 링크 48 터치', (tester) async {
+  testWidgets('구역 머리 — 18 제목, 숫자 알약, 링크 48 터치', (tester) async {
     var opened = 0;
     await tester.pumpWidget(host(AppCard(
       child: SeedSectionHeader(
@@ -98,7 +98,7 @@ void main() {
         onAction: () => opened++,
       ),
     )));
-    expect(tester.widget<Text>(find.text('전자결재')).style!.fontSize, 19);
+    expect(tester.widget<Text>(find.text('전자결재')).style!.fontSize, 18);
     expect(find.text('0'), findsOneWidget);
     final link = find.ancestor(of: find.text('전체보기'), matching: find.byType(GestureDetector)).first;
     expect(tester.getSize(link).height, greaterThanOrEqualTo(48));

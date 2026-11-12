@@ -523,7 +523,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// 보조 링크 — 회색 상자 단추 대신 글자만. 주 행동(로그인)만 채움으로 남긴다.
-  /// 틸 링크는 titleSmall(15/w600), 맨 아래 회색 링크는 [style]로 bodySmall(14)을 준다.
+  /// 틸 링크는 titleSmall(14/w600), 맨 아래 회색 링크는 [style]로 bodySmall(14)을 준다.
   Widget _buildTextLink({
     required String label,
     required VoidCallback onPressed,

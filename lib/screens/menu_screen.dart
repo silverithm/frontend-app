@@ -337,7 +337,7 @@ class _ProfileCard extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // B안: 손으로 그린 알약 대신 공통 꼬리표(옅은 틸, 13/w600)
+              // B안: 손으로 그린 알약 대신 공통 꼬리표(옅은 틸, 12/w600)
               AppTag(label: roleLabel, tone: AppTagTone.accent),
               const SizedBox(width: AppSpacing.space2),
               // SeedListCell 기본 꺾쇠와 같은 모양
@@ -363,7 +363,7 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // SeedListSection — 묶음 제목(15/w600 회색) + 흰 카드 하나에 줄 여러 개, 선 없이 줄 여백으로 나눔
+    // SeedListSection — 묶음 제목(14/w600 회색) + 흰 카드 하나에 줄 여러 개, 선 없이 줄 여백으로 나눔
     return SeedListSection(title: title, children: items);
   }
 }

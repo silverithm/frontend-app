@@ -173,7 +173,7 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 시트 제목(B안 21/w700)
+              // 시트 제목(B안 20/w700)
               Semantics(
                 header: true,
                 child: Text(
@@ -743,7 +743,7 @@ class _StatChip extends StatelessWidget {
     }
 
     // 알약 상자 대신 글자만 — 요약은 숫자가 읽히면 되고, 색은 결석(빨강)·미배정(노랑)처럼 손볼 것에만 남긴다
-    // 글자 15/w600(예전 13), 누르는 칸은 높이 44 이상
+    // 글자 14/w600(예전 13), 누르는 칸은 높이 44 이상
     final chip = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 44),
       child: Align(
@@ -964,7 +964,7 @@ class _DriverChip extends StatelessWidget {
         ? '대체 · ${dispatch.driverRole ?? ''} ${driver.driverName}'
         : '${dispatch.driverRole ?? '운전자'} ${driver.driverName}';
 
-    // B안 알약 — 테두리 없는 옅은 바탕(대체 운행은 경고 노랑), 글자 15/w600
+    // B안 알약 — 테두리 없는 옅은 바탕(대체 운행은 경고 노랑), 글자 14/w600
     final chip = Container(
       constraints: const BoxConstraints(minHeight: 36),
       padding: const EdgeInsets.symmetric(

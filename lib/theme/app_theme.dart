@@ -50,7 +50,7 @@ class AppTheme {
   }
 
   /// 상단 바 — B안(2026-11-12): 틸 바탕은 남기고 높이 56, 아래 선은 없앴다(회색 바탕과 맞닿아
-  /// 선이 없어도 구분된다). 안쪽 화면 제목은 가운데 17/w600, 탭 첫 화면은 CareVAppBar(isRoot)로
+  /// 선이 없어도 구분된다). 안쪽 화면 제목은 가운데 18/w600, 탭 첫 화면은 CareVAppBar(isRoot)로
   /// 왼쪽 20/w700. 스크롤해도 색·그림자가 바뀌지 않는다.
   static AppBarTheme get headerTheme {
     return AppBarTheme(
@@ -166,7 +166,7 @@ class AppTheme {
         ),
       );
 
-  /// 글자 단추("전체보기"·"취소") — 틸 15/w600, 터치 48.
+  /// 글자 단추("전체보기"·"취소") — 틸 14/w600, 터치 48.
   static TextButtonThemeData get _textButtonTheme => TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppSemanticColors.textLink,
@@ -247,7 +247,7 @@ class AppTheme {
         ),
       );
 
-  /// FAB — 알약 모양 틸, 글자 17/w600, 높이 56.
+  /// FAB — 알약 모양 틸, 글자 16/w600, 높이 56.
   static const FloatingActionButtonThemeData _fabTheme =
       FloatingActionButtonThemeData(
     backgroundColor: AppSemanticColors.brandDefault,
@@ -368,7 +368,7 @@ class AppTheme {
     type: BottomNavigationBarType.fixed,
   );
 
-  /// 상단 바 밖의 탭바 — 틸 밑줄, 글자 15/w600. 상단 바 안 탭바는 화면이 흰 글자로 따로 정한다.
+  /// 상단 바 밖의 탭바 — 틸 밑줄, 글자 14/w600. 상단 바 안 탭바는 화면이 흰 글자로 따로 정한다.
   static const TabBarThemeData _tabBarTheme = TabBarThemeData(
     labelColor: AppSemanticColors.textPrimary,
     unselectedLabelColor: AppSemanticColors.textSecondary,

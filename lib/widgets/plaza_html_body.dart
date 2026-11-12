@@ -70,7 +70,7 @@ class PlazaHtmlBody extends StatelessWidget {
           margin: Margins.only(top: 12, bottom: 8),
         ),
         'h3': Style(
-          fontSize: FontSize(AppTypography.fontSize17),
+          fontSize: FontSize(AppTypography.fontSizeLg),
           fontWeight: AppTypography.fontWeightSemibold,
           margin: Margins.only(top: 10, bottom: 6),
         ),

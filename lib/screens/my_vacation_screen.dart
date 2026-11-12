@@ -531,7 +531,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     );
   }
 
-  // 카드 맨 위 제목 — 공용 SeedSectionHeader(19/w700) 앞에 상태 색 아이콘만 붙인다
+  // 카드 맨 위 제목 — 공용 SeedSectionHeader(18/w700) 앞에 상태 색 아이콘만 붙인다
   // (SeedSectionHeader는 아이콘/컬러 파라미터를 지원하지 않으므로).
   Widget _buildSectionHeader(
     String title,

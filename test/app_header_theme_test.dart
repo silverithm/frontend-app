@@ -5,7 +5,7 @@ import 'package:frontend_app/theme/app_theme.dart';
 
 /// 화면마다 색을 지정하지 않아도 상단 바가 틸 바탕으로 그려지는지.
 /// 예전엔 테마가 연결돼 있지 않아 화면마다 흰색·진한 틸을 제각각 덮어썼다.
-/// B안(2026-11-12): 틸은 남기고 아래 선은 없앴다, 높이 56, 안쪽 화면 제목 17/w600.
+/// B안(2026-11-12): 틸은 남기고 아래 선은 없앴다, 높이 56, 안쪽 화면 제목 16/w600.
 void main() {
   testWidgets('색을 지정하지 않은 AppBar는 앱 공통 상단 바 색을 쓴다', (tester) async {
     await tester.pumpWidget(
@@ -31,7 +31,7 @@ void main() {
           .first,
     );
     expect(title.style.color, AppSemanticColors.headerForeground);
-    expect(title.style.fontSize, 17);
+    expect(title.style.fontSize, 18);
     expect(title.style.fontWeight, FontWeight.w600);
   });
 

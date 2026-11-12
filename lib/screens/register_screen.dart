@@ -553,7 +553,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  /// 칸 위 이름표 — SeedTextField의 라벨(15/w600 검정)과 같은 모습.
+  /// 칸 위 이름표 — SeedTextField의 라벨(14/w600 검정)과 같은 모습.
   Widget _buildFieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.space2),
@@ -853,7 +853,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             if (_userType == 'employee' &&
                                 _hasEmployeeCompanyContext) ...[
-                              // 회사 연결 방식 — 카드 안이라 상자 없이 소제목(15/w600)·안내(14)·고르기 칸만
+                              // 회사 연결 방식 — 카드 안이라 상자 없이 소제목(14/w600)·안내(14)·고르기 칸만
                               Padding(
                                 padding: const EdgeInsets.only(
                                   top: AppSpacing.space2,

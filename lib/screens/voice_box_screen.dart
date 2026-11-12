@@ -109,7 +109,7 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.space2),
-                  // 시트 안 상세 제목(B안 heading5 21/w700)
+                  // 시트 안 상세 제목(B안 heading5 20/w700)
                   Text(
                     message.title,
                     style: AppTypography.heading5.copyWith(
@@ -197,7 +197,7 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
               ),
               const SizedBox(height: AppSpacing.space6),
 
-              // 묶음 제목 — SeedListSection 제목과 같은 모양(15/w600 회색)
+              // 묶음 제목 — SeedListSection 제목과 같은 모양(14/w600 회색)
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space1,

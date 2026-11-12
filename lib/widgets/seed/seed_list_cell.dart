@@ -152,7 +152,7 @@ class _SeedListCellState extends State<SeedListCell> {
   }
 }
 
-/// 목록 묶음 — B안: 묶음 제목(15/w600 회색, 막대 없음) + 흰 카드(모서리 20, 테두리·구분선 없음).
+/// 목록 묶음 — B안: 묶음 제목(14/w600 회색, 막대 없음) + 흰 카드(모서리 20, 테두리·구분선 없음).
 /// 줄 사이는 선 대신 줄 자체의 여백으로 나눈다(시안 .sec-h + .menu-card).
 class SeedListSection extends StatelessWidget {
   final String? title;

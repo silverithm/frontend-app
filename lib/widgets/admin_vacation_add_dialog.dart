@@ -288,7 +288,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
     );
   }
 
-  /// 칸 위 이름표 — SeedTextField 라벨과 같은 15/w600.
+  /// 칸 위 이름표 — SeedTextField 라벨과 같은 14/w600.
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.space2),

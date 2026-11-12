@@ -41,7 +41,7 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // B안(시안 .empty-card): 옅은 틸 둥근 바탕 56 + 틸 아이콘, 제목 19/w700, 설명 14 회색
+            // B안(시안 .empty-card): 옅은 틸 둥근 바탕 56 + 틸 아이콘, 제목 18/w700, 설명 14 회색
             Container(
               width: AppSpacing.space14,
               height: AppSpacing.space14,

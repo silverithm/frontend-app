@@ -63,12 +63,12 @@ void main() {
     expect(tester.widget<Text>(find.text('반려')).style!.fontWeight, off);
   });
 
-  testWidgets('꼬리표: 테두리 없는 알약 13/w600, 높이 26 이상, 폭 제한 없는 Row 안에서도 된다',
+  testWidgets('꼬리표: 테두리 없는 알약 12/w600, 높이 26 이상, 폭 제한 없는 Row 안에서도 된다',
       (tester) async {
     await tester.pumpWidget(host(const AppTag(label: '승인', tone: AppTagTone.success)));
     expect(tester.takeException(), isNull);
     final text = tester.widget<Text>(find.text('승인'));
-    expect(text.style!.fontSize, 13);
+    expect(text.style!.fontSize, 12);
     expect(text.style!.color, AppSemanticColors.statusSuccessText);
     expect(tester.getSize(find.byType(AppTag)).height, greaterThanOrEqualTo(26));
   });

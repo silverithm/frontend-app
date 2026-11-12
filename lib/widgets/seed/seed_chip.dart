@@ -7,7 +7,7 @@ import '../../utils/app_haptics.dart';
 import '../common/app_pressable.dart';
 
 /// 거르기 칩 — B안(2026-11-12, 시안 .chip).
-/// 테두리 없는 알약, 높이 44(작은 36)·좌우 16, 글자 15/w600. 고르면 틸 바탕 + 흰 글자.
+/// 테두리 없는 알약, 높이 44(작은 36)·좌우 16, 글자 14/w600. 고르면 틸 바탕 + 흰 글자.
 /// 고르기 전 바탕은 흰 카드 안이면 회색(기본), 회색 화면 바탕 위면 흰색([onCanvas]).
 /// 누르면 selection 햅틱, 터치는 48 이상. 고른 것·안 고른 것 굵기가 같아 폭이 흔들리지 않는다.
 enum SeedChipSize { small, medium }

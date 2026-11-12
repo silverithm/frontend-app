@@ -21,7 +21,7 @@ class AppTag extends StatelessWidget {
     this.icon,
   });
 
-  /// 꼬리표(상태 알약)의 글자 — labelStrong 13/w600(B안). 화면에서 따로 굵기를 얹지 않고 이걸 쓴다.
+  /// 꼬리표(상태 알약)의 글자 — labelStrong 12/w600(B안). 화면에서 따로 굵기를 얹지 않고 이걸 쓴다.
   static const TextStyle labelStyle = AppTypography.labelStrong;
 
   static ({Color background, Color foreground}) colorsOf(AppTagTone tone) {
@@ -57,7 +57,7 @@ class AppTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = colorsOf(tone);
-    // B안(시안 .pill): 테두리 없는 옅은 알약, 높이 26 이상, 좌우 10, 13/w600
+    // B안(시안 .pill): 테두리 없는 옅은 알약, 높이 26 이상, 좌우 10, 12/w600
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.background,

@@ -8,7 +8,7 @@ import '../../utils/app_haptics.dart';
 import '../common/app_pressable.dart';
 
 /// 앱 공통 단추 — B안(2026-11-12, 시안 .btn).
-/// 큰 54·보통 48·작은 40·아주 작은 32, 모서리 14(작은 12·아주 작은 알약), 글자 17·16·15·14 w600.
+/// 큰 54·보통 48·작은 40·아주 작은 32, 모서리 14(작은 12·아주 작은 알약), 글자 16·16·14·14 w600.
 /// 누르면 0.97로 줄었다 스프링으로 돌아오고 색이 짙어진다(AppPressable). 터치 영역은 늘 48 이상.
 enum SeedButtonVariant {
   /// High emphasis — 브랜드 배경 + 흰 텍스트
@@ -131,11 +131,11 @@ class _SeedButtonState extends State<SeedButton> {
       case SeedButtonSize.xsmall:
         return AppTypography.buttonSmall; // 14
       case SeedButtonSize.small:
-        return AppTypography.titleSmall; // 15
+        return AppTypography.titleSmall; // 14
       case SeedButtonSize.medium:
         return AppTypography.buttonMedium; // 16
       case SeedButtonSize.large:
-        return AppTypography.buttonLarge; // 17
+        return AppTypography.buttonLarge; // 16
     }
   }
 

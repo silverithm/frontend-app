@@ -23,7 +23,7 @@ class AppSnackBar {
     final hapticKind = haptic ? hapticFor(type) : null;
     if (hapticKind != null) AppHaptics.play(hapticKind);
 
-    // B안(2026-11-12, 시안 .toast): 짙은 반투명 띠 + 흰 글자 15, 모서리 14, 테두리 없음.
+    // B안(2026-11-12, 시안 .toast): 짙은 반투명 띠 + 흰 글자 14, 모서리 14, 테두리 없음.
     // 뜻(성공·실패·주의·안내)은 앞 아이콘 색으로 — 짙은 바탕 위에서 보이는 밝은 점 색.
     messenger.showSnackBar(
       SnackBar(

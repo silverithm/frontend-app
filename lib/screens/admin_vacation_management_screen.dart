@@ -476,7 +476,7 @@ class _AdminVacationManagementScreenState
 
   /// 접힌 필터 한 개 — "직무 · 전체 ▾" 같은 요약 칩. 누르면 시트가 열린다.
   Widget _buildFilterSummaryChip({required String label, required VoidCallback onTap}) {
-    // 흰 카드 안 회색 알약(SeedChip 작은 것과 같은 높이 36·글자 15/w600)
+    // 흰 카드 안 회색 알약(SeedChip 작은 것과 같은 높이 36·글자 14/w600)
     return Material(
       color: AppSemanticColors.fillDefault,
       borderRadius: BorderRadius.circular(AppBorderRadius.full),

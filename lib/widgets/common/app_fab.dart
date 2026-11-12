@@ -9,7 +9,7 @@ import 'app_pressable.dart';
 
 /// 알약 FAB — B안(2026-11-12, 시안 .fab).
 ///
-/// 틸 알약 높이 56, 아이콘 24 + 글자 17/w600, 부드러운 그림자(AppShadows.floating).
+/// 틸 알약 높이 56, 아이콘 24 + 글자 16/w600, 부드러운 그림자(AppShadows.floating).
 /// [collapsed]를 true로 주면(목록을 아래로 스크롤할 때) 글자가 접혀 동그란 단추만 남는다.
 /// 누르면 impact 햅틱(PLAN 햅틱 표), 0.97 스프링, 짙은 틸. 접혀도 화면 낭독기는 [label]을 읽는다.
 class AppFab extends StatefulWidget {

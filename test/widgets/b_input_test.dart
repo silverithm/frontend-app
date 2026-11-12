@@ -4,7 +4,7 @@ import 'package:frontend_app/theme/app_colors.dart';
 import 'package:frontend_app/widgets/common/app_input.dart';
 import 'package:frontend_app/widgets/seed/seed_text_field.dart';
 
-/// B안 입력칸 — 회색으로 채운 칸, 평소 테두리 없음, 포커스 틸 2px, 높이 48, 라벨 15/w600.
+/// B안 입력칸 — 회색으로 채운 칸, 평소 테두리 없음, 포커스 틸 2px, 높이 48, 라벨 14/w600.
 void main() {
   Widget host(Widget child, {double textScale = 1.0}) => MaterialApp(
         builder: (context, c) => MediaQuery(
@@ -39,7 +39,7 @@ void main() {
       48,
     );
     final label = tester.widget<Text>(find.text('반려 사유'));
-    expect(label.style!.fontSize, 15);
+    expect(label.style!.fontSize, 14);
     expect(label.style!.color, AppSemanticColors.textPrimary);
 
     await tester.tap(find.byType(TextField));
@@ -76,7 +76,7 @@ void main() {
     expect(field.decoration!.filled, isTrue);
     expect(field.decoration!.fillColor, AppSemanticColors.fillDefault);
     expect(field.decoration!.enabledBorder!.borderSide, BorderSide.none);
-    expect(tester.widget<Text>(find.text('비밀번호')).style!.fontSize, 15);
+    expect(tester.widget<Text>(find.text('비밀번호')).style!.fontSize, 14);
   });
 
   testWidgets('글자 1.6배에서도 넘치지 않는다', (tester) async {

@@ -406,7 +406,7 @@ class _VacationRequestDialogState extends State<VacationRequestDialog> {
     }
   }
 
-  /// 휴무 종류 하나를 고르는 칩 — B안 거르기 칩(SeedChip, 높이 44·글자 15, 고르면 틸 + 흰 글자).
+  /// 휴무 종류 하나를 고르는 칩 — B안 거르기 칩(SeedChip, 높이 44·글자 14, 고르면 틸 + 흰 글자).
   /// 흰 시트 안이라 고르기 전 바탕은 회색이다. (쓰지 않던 테두리 칸 단추 _buildOptionButton은 뺐다)
   Widget _buildKindOption(VacationKind kind) {
     return SeedChip(

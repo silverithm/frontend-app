@@ -129,7 +129,7 @@ class _SignatureConfirmSheetState extends State<_SignatureConfirmSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // B안 시트 모양(AppSheetFrame과 같은 값): 좌우 20, 제목 21/w700, 설명 16 회색, 아래 20 + 안전 영역.
+    // B안 시트 모양(AppSheetFrame과 같은 값): 좌우 20, 제목 20/w700, 설명 16 회색, 아래 20 + 안전 영역.
     // 손잡이는 AppBottomSheet가 그린다.
     final media = MediaQuery.of(context);
     final bottomInset = media.viewInsets.bottom > media.padding.bottom

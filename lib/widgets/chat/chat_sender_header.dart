@@ -73,7 +73,7 @@ class ChatSenderHeader extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           children: [
-            // B안: 이름은 작은 행 제목(15/w600 검정) — 말풍선 묶음의 머리가 한눈에 보이게
+            // B안: 이름은 작은 행 제목(14/w600 검정) — 말풍선 묶음의 머리가 한눈에 보이게
             TextSpan(
               text: senderName,
               style: AppTypography.titleSmall.copyWith(

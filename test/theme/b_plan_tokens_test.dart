@@ -55,14 +55,42 @@ void main() {
     expect(AppSemanticColors.borderHairline, const Color(0xFFE4E7EB));
   });
 
-  test('글자 단계 — 본문 16, 보조 14, 목록 제목 16/w600, 카드 제목 19, 시트 제목 21, 큰 숫자 24 고정폭', () {
+  test('글자 크기는 여섯 단계(12·14·16·18·20·24)뿐 — 13·15·17·19·21 같은 사이 크기를 두지 않는다', () {
+    const ladder = <double>[12, 14, 16, 18, 20, 24];
+    final styles = <String, TextStyle>{
+      'heading4': AppTypography.heading4,
+      'heading5': AppTypography.heading5,
+      'heading6': AppTypography.heading6,
+      'appBarTitle': AppTypography.appBarTitle,
+      'appBarTitleLarge': AppTypography.appBarTitleLarge,
+      'titleMedium': AppTypography.titleMedium,
+      'titleSmall': AppTypography.titleSmall,
+      'labelStrong': AppTypography.labelStrong,
+      'bodyLarge': AppTypography.bodyLarge,
+      'bodyMedium': AppTypography.bodyMedium,
+      'bodySmall': AppTypography.bodySmall,
+      'labelLarge': AppTypography.labelLarge,
+      'labelMedium': AppTypography.labelMedium,
+      'labelSmall': AppTypography.labelSmall,
+      'buttonLarge': AppTypography.buttonLarge,
+      'buttonMedium': AppTypography.buttonMedium,
+      'buttonSmall': AppTypography.buttonSmall,
+      'caption': AppTypography.caption,
+      'overline': AppTypography.overline,
+    };
+    styles.forEach((name, style) {
+      expect(ladder, contains(style.fontSize), reason: '$name ${style.fontSize}');
+    });
+  });
+
+  test('글자 단계 — 본문 16, 보조 14, 목록 제목 16/w600, 카드 제목 18, 시트 제목 20, 큰 숫자 24 고정폭', () {
     expect(AppTypography.bodyMedium.fontSize, 16);
     expect(AppTypography.bodySmall.fontSize, 14);
     expect(AppTypography.titleMedium.fontSize, 16);
     expect(AppTypography.titleMedium.fontWeight, FontWeight.w600);
-    expect(AppTypography.heading6.fontSize, 19);
-    expect(AppTypography.heading5.fontSize, 21);
-    expect(AppTypography.appBarTitle.fontSize, 17);
+    expect(AppTypography.heading6.fontSize, 18);
+    expect(AppTypography.heading5.fontSize, 20);
+    expect(AppTypography.appBarTitle.fontSize, 18);
     expect(AppTypography.appBarTitleLarge.fontSize, 20);
     expect(AppTypography.appBarTitleLarge.fontWeight, FontWeight.w700);
     expect(AppTypography.heading4.fontSize, 24);
