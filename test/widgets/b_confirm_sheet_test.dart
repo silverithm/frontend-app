@@ -57,7 +57,7 @@ void main() {
     expect(find.byType(BottomSheet), findsOneWidget);
     expect(tester.getBottomLeft(find.byType(BottomSheet)).dy, 640);
     final title = tester.widget<Text>(find.text('이 결재를 승인할까요?'));
-    expect(title.style!.fontSize, 18);
+    expect(title.style!.fontSize, 17);
     final confirm = find.widgetWithText(SeedButton, '승인');
     expect(tester.widget<SeedButton>(confirm).size, SeedButtonSize.large);
     expect(tester.widget<SeedButton>(find.widgetWithText(SeedButton, '취소')).variant,

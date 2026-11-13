@@ -56,23 +56,20 @@ class AppBottomTabBar extends StatelessWidget {
         top: false,
         child: SizedBox(
           height: AppSpacing.bottomTabHeight,
-          // 탭 글자는 1.3배까지만 키운다 — 다섯 칸(72)에 '전자결재'가 들어가야 한다
-          child: MediaQuery.withClampedTextScaling(
-            maxScaleFactor: 1.3,
-            child: Row(
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  Expanded(
-                    child: _AppBottomTab(
-                      item: items[i],
-                      selected: i == currentIndex,
-                      index: i,
-                      count: items.length,
-                      onTap: () => onTap(i),
-                    ),
+          // 글자 배율은 앱 전체에서 1.3배로 잘린다(theme/text_scale.dart) — 탭 바만 따로 다루지 않는다
+          child: Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  child: _AppBottomTab(
+                    item: items[i],
+                    selected: i == currentIndex,
+                    index: i,
+                    count: items.length,
+                    onTap: () => onTap(i),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
@@ -97,8 +94,9 @@ class _AppBottomTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        selected ? AppSemanticColors.brandDefault : AppSemanticColors.iconSubtle;
+    final color = selected
+        ? AppSemanticColors.brandDefault
+        : AppSemanticColors.iconSubtle;
     final badge = item.badgeCount;
     final badgeText = badge > 99 ? '99+' : '$badge';
 

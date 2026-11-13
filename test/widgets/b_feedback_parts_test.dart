@@ -25,7 +25,7 @@ void main() {
     expect(tester.widget<Icon>(find.byIcon(Icons.error_rounded)).color, AppColors.rejDot);
   });
 
-  testWidgets('빈 화면 — 옅은 틸 원 56 + 제목 18 + 회색 보조 단추', (tester) async {
+  testWidgets('빈 화면 — 옅은 틸 원 56 + 제목 17 + 회색 보조 단추', (tester) async {
     var tapped = 0;
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
@@ -38,7 +38,7 @@ void main() {
         ),
       ),
     ));
-    expect(tester.widget<Text>(find.text('아직 공지가 없어요')).style!.fontSize, 16);
+    expect(tester.widget<Text>(find.text('아직 공지가 없어요')).style!.fontSize, 17);
     expect(tester.widget<Icon>(find.byIcon(Icons.inbox_outlined)).color,
         AppSemanticColors.brandDefault);
     expect(tester.widget<SeedButton>(find.byType(SeedButton)).variant,

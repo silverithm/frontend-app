@@ -31,7 +31,7 @@ void main() {
           .first,
     );
     expect(title.style.color, AppSemanticColors.headerForeground);
-    expect(title.style.fontSize, 18);
+    expect(title.style.fontSize, 17);
     expect(title.style.fontWeight, FontWeight.w600);
   });
 

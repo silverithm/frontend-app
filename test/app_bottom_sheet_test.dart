@@ -24,11 +24,11 @@ Future<void> _open(WidgetTester tester, {String? title}) async {
 }
 
 void main() {
-  // B안(2026-11-12, 1.20.2에서 제목 18): 제목 띠·아래 선 없이 제목 18/w700, 손잡이 40×5, 위 모서리 24.
+  // B안(2026-11-12): 제목 띠·아래 선 없이 제목 17/w700(글자 단계 '제목', 2026-11-14), 손잡이 40×5, 위 모서리 24.
   testWidgets('title을 주면 띠 없이 큰 제목, 손잡이 40×5', (tester) async {
     await _open(tester, title: '대화 검색');
     final title = tester.widget<Text>(find.text('대화 검색'));
-    expect(title.style!.fontSize, 18);
+    expect(title.style!.fontSize, 17);
     expect(title.style!.fontWeight, FontWeight.w700);
     // 제목 둘레에 색 띠(바탕색 있는 Container)가 없다
     final tinted = find.ancestor(

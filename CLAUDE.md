@@ -173,32 +173,29 @@ lib/
 
 ### 1. 타이포그래피 매핑
 
-> 예전 크기 표(본문 14·보조 12·캡션 11)는 B안(2026-11-12)에서 없앴다 — 아래 역할 표만 본다.
+**글자 단계 (2026-11-14부터 이 표가 기준 — 그 전 표들을 대신한다):** 화면 글자는 22·17·15·13·11 다섯 크기와 달력 칸 전용 10만 쓴다. 사이 크기(12·14·16·18·20·24…)와 소수 크기는 없다. 같은 역할은 화면이 달라도 같은 토큰을 쓰고 굵기를 `copyWith`로 덮어쓰지 않는다. 굵기는 w400·w600·w700 세 단계. 정의는 `lib/theme/app_typography.dart` 머리 주석.
 
-**역할 표 (B안, 2026-11-12부터 이 표가 기준 — 그 전 10-27 표를 대신한다):** 같은 역할은 화면이 달라도 같은 토큰을 쓰고 굵기를 `copyWith`로 덮어쓰지 않는다. 굵기는 w400·w600·w700 세 단계만. 12보다 작은 글자는 없다.
+| 단계 | 역할 | 토큰 |
+|------|------|------|
+| 22 큰 제목 | 탭 첫 화면 상단 바 제목(홈 인사말 포함)·큰 숫자 요약 | `appBarTitleLarge` w700 · `heading4` w700 고정폭 숫자 |
+| 17 제목 | 안쪽 화면 상단 바 제목 · 시트·대화상자·상세 제목 · 카드·구역 제목 | `appBarTitle` w600 · `heading5` w700 · `heading6` w700 |
+| 15 본문 | 목록 한 줄의 제목(공지·결재·채팅방·어르신 등) · 본문 · 단추 | `titleMedium` w600 · `bodyMedium` w400(긴 글 `bodyLarge`, 줄간격 1.6) · `buttonMedium` |
+| 13 보조 | 제목 아래 둘째 줄·날짜·작성자 · 폼 라벨·묶음 제목·칩·나눔 탭·'전체보기' | `bodySmall` w400 + `textSecondary`/`textTertiary` · `titleSmall` w600 |
+| 11 작은 글씨 | 상태 알약(꼬리표)·배지 숫자·하단 탭 글자 | `labelStrong` w600 (`AppTag`) · `labelSmall` |
+| 10 달력 칸 | 달력 칸 안의 이름·건수만 | `calendarCell` |
 
-| 역할 | 토큰 |
-|------|------|
-| 탭 첫 화면 상단 바 제목(왼쪽, 홈 인사말 포함) | `appBarTitleLarge` 20/w700 |
-| 안쪽 화면 상단 바 제목(가운데) | `appBarTitle` 17/w600 |
-| 시트·대화상자·상세 제목 | `heading5` 21/w700 |
-| 카드·구역 제목 | `heading6` 19/w700 |
-| 카드·목록 한 줄의 제목 (공지·결재·알림·채팅방·게시글·어르신 등) | `titleMedium` 16/w600 |
-| 작은 행 제목·폼 라벨·카드 안 소제목 | `titleSmall` 15/w600 |
-| 본문 | `bodyMedium` 16/w400 |
-| 부제·메타 (날짜·작성자·시간) | `bodySmall` 14 + `textSecondary`/`textTertiary` |
-| 꼬리표(상태 알약)·작은 강조 | `labelStrong` 13/w600 (`AppTag`) |
-| 배지 숫자·하단 탭 글자 | `labelSmall` 12 |
-| 큰 숫자 요약 | `heading4` 24/w700 고정폭 숫자 |
+**정보 위계 (크로박스 가이드라인과 같은 원칙):** 한 항목 안에서 제목(15·`textPrimary`·w600) → 보조(13·`textSecondary`) → 약함(13 또는 11·`textTertiary`) 세 단으로, 크기·색·굵기를 함께 낮춘다. 줄간격은 본문 1.5, 긴 글 1.6, 제목 1.25~1.4.
 
-**바탕·카드 (B안):** 화면 바탕 `AppSemanticColors.backgroundCanvas`(#F2F4F6) 위에 흰 카드 `surfaceCard`, 테두리·회색 머리띠·구분선 없이 간격(`AppSpacing.cardGap` 12)으로 나눈다. 카드 모서리 `AppBorderRadius.card`(20)·안쪽 여백 `AppSpacing.cardPadding`(20), 단추·입력칸 `AppBorderRadius.control`(14), 시트 `AppBorderRadius.sheet`(24). 입력칸·보조 단추 바탕은 `fillDefault`, 옅은 틸 바탕은 `brandWeak` + 글자 `brandWeakForeground`.
+**기기 글자 크기:** 화면마다 따로 다루지 않는다(`MediaQuery.withClampedTextScaling`·`TextScaler.noScaling`을 화면에 두지 않는다). `main.dart` builder에서 앱 전체에 한 번 적용하고 1.3배에서 자른다(`theme/text_scale.dart`). 예외는 종이 공문 미리보기(`official_document_view.dart`)뿐 — 종이 한 장을 줄여 보여주는 그림이라 글자 배율을 받지 않는다.
+
+**바탕·카드:** 화면 바탕 `AppSemanticColors.backgroundCanvas`(#F2F4F6) 위에 흰 카드 `surfaceCard`(모서리 `AppBorderRadius.card` 16·안쪽 여백 `AppSpacing.cardPadding` 16·카드 간격 `AppSpacing.cardGap` 10), 1px 테두리(`AppLines.cardBorder`)와 카드 안 줄 사이 1px 선(`AppRowDivider`). 채팅 대화·직원 목록처럼 한 종류가 죽 이어지는 목록은 카드 없이 화면 끝까지 채운다(`ChatCardSlice(fullBleed: true)`). 입력칸·보조 단추 바탕은 `fillDefault`, 옅은 틸 바탕은 `brandWeak` + 글자 `brandWeakForeground`.
 
 한글이 여러 줄로 넘어가는 표시용 글(말풍선·공지 본문 등)은 `utils/korean_keep_all.dart`의 `keepAll()`을 거쳐 낱말 중간에서 끊기지 않게 한다(복사·검색·전송에는 원문).
 
 **사용 예시:**
 ```dart
-// 화면 제목
-Text('프로필', style: AppTypography.heading4)
+// 시트·상세 제목
+Text('프로필', style: AppTypography.heading5)
 
 // 본문 텍스트 (색상 지정)
 Text('설명', style: AppTypography.bodyMedium.copyWith(

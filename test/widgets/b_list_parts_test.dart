@@ -89,7 +89,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('구역 머리 — 16 제목, 숫자 알약, 링크 48 터치', (tester) async {
+  testWidgets('구역 머리 — 17 제목, 숫자 알약, 링크 48 터치', (tester) async {
     var opened = 0;
     await tester.pumpWidget(host(AppCard(
       child: SeedSectionHeader(
@@ -100,7 +100,7 @@ void main() {
         onAction: () => opened++,
       ),
     )));
-    expect(tester.widget<Text>(find.text('전자결재')).style!.fontSize, 16);
+    expect(tester.widget<Text>(find.text('전자결재')).style!.fontSize, 17);
     expect(find.text('0'), findsOneWidget);
     final link = find.ancestor(of: find.text('전체보기'), matching: find.byType(GestureDetector)).first;
     expect(tester.getSize(link).height, greaterThanOrEqualTo(48));

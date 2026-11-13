@@ -55,8 +55,8 @@ void main() {
     expect(AppSemanticColors.borderHairline, const Color(0xFFE4E7EB));
   });
 
-  test('글자 크기는 여섯 단계(12·14·16·18·20·24)뿐 — 13·15·17·19·21 같은 사이 크기를 두지 않는다', () {
-    const ladder = <double>[12, 14, 16, 18, 20, 24];
+  test('글자 크기는 22·17·15·13·11 다섯 단계(+ 달력 칸 10)뿐 — 사이 크기를 두지 않는다', () {
+    const ladder = <double>[22, 17, 15, 13, 11];
     final styles = <String, TextStyle>{
       'heading4': AppTypography.heading4,
       'heading5': AppTypography.heading5,
@@ -77,26 +77,44 @@ void main() {
       'buttonSmall': AppTypography.buttonSmall,
       'caption': AppTypography.caption,
       'overline': AppTypography.overline,
+      'heading1': AppTypography.heading1,
+      'heading2': AppTypography.heading2,
+      'heading3': AppTypography.heading3,
     };
     styles.forEach((name, style) {
       expect(ladder, contains(style.fontSize), reason: '$name ${style.fontSize}');
     });
+    // 달력 칸만 10
+    expect(AppTypography.calendarCell.fontSize, 10);
+    // 크기 상수도 같은 단계만
+    for (final size in [
+      AppTypography.fontSizeXs,
+      AppTypography.fontSizeSm,
+      AppTypography.fontSizeBase,
+      AppTypography.fontSizeLg,
+      AppTypography.fontSizeXl,
+    ]) {
+      expect(ladder, contains(size));
+    }
   });
 
-  // 1.20.2: 한 화면에 들어오는 양을 1.19 수준으로 되돌리려고 본문·보조·제목을 한 단계씩 내렸다.
-  test('글자 단계 — 본문 14, 보조 12, 목록 제목 16/w600, 카드 제목 16, 시트 제목 18, 큰 숫자 20 고정폭', () {
-    expect(AppTypography.bodyMedium.fontSize, 14);
-    expect(AppTypography.bodySmall.fontSize, 12);
-    expect(AppTypography.titleMedium.fontSize, 16);
+  // 글자 단계(2026-11-14): 큰 제목 22 / 제목 17 / 본문 15 / 보조 13 / 작은 글씨 11
+  test('글자 단계 — 본문 15, 보조 13, 목록 제목 15/w600, 카드·시트 제목 17, 큰 제목·큰 숫자 22 고정폭', () {
+    expect(AppTypography.bodyMedium.fontSize, 15);
+    expect(AppTypography.bodySmall.fontSize, 13);
+    expect(AppTypography.titleMedium.fontSize, 15);
     expect(AppTypography.titleMedium.fontWeight, FontWeight.w600);
-    expect(AppTypography.heading6.fontSize, 16);
-    expect(AppTypography.heading5.fontSize, 18);
-    expect(AppTypography.appBarTitle.fontSize, 18);
-    expect(AppTypography.appBarTitleLarge.fontSize, 20);
+    expect(AppTypography.titleSmall.fontSize, 13);
+    expect(AppTypography.heading6.fontSize, 17);
+    expect(AppTypography.heading5.fontSize, 17);
+    expect(AppTypography.appBarTitle.fontSize, 17);
+    expect(AppTypography.appBarTitleLarge.fontSize, 22);
     expect(AppTypography.appBarTitleLarge.fontWeight, FontWeight.w700);
-    expect(AppTypography.heading4.fontSize, 20);
+    expect(AppTypography.heading4.fontSize, 22);
+    expect(AppTypography.labelStrong.fontSize, 11);
+    expect(AppTypography.labelSmall.fontSize, 11);
     expect(AppTypography.heading4.fontFeatures, contains(const FontFeature.tabularFigures()));
-    // 12보다 작은 글자는 없다
+    // 11보다 작은 글자는 달력 칸(10)뿐이다
     for (final style in [
       AppTypography.labelSmall,
       AppTypography.caption,
@@ -105,7 +123,7 @@ void main() {
       AppTypography.labelStrong,
       AppTypography.buttonSmall,
     ]) {
-      expect(style.fontSize, greaterThanOrEqualTo(12));
+      expect(style.fontSize, greaterThanOrEqualTo(11));
     }
   });
 

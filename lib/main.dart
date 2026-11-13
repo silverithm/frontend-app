@@ -37,6 +37,10 @@ import 'screens/main_screen.dart';
 import 'utils/admin_utils.dart';
 import 'widgets/update_dialog.dart';
 
+/// 앱 글자 단계로 맞춘 머티리얼 글자 표(theme/app_theme.dart) — 빌드 때마다 새로 만들지 않게 한 번만.
+final TextTheme _appTextTheme = AppTheme.lightTheme.textTheme
+    .apply(fontFamily: AppTypography.fontFamilySans);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -131,15 +135,17 @@ class MyApp extends StatelessWidget {
                     .copyWith(textScaler: TextScaler.linear(scale)),
                 child: Theme(
                   // 상단 바·구분선 색도 여기서 앱 전체에 입힌다(theme/app_theme.dart)
+                  // 머티리얼 기본 글자(14·16·22…) 대신 앱 글자 단계(22·17·15·13·11)를 입힌다 —
+                  // 대화상자·입력칸·스낵바처럼 우리가 크기를 안 정한 부품도 같은 단계를 쓴다.
                   data: AppTheme.withAppChrome(theme.copyWith(
-                    textTheme: theme.textTheme
-                        .apply(fontFamily: AppTypography.fontFamilySans),
+                    textTheme: _appTextTheme,
                     primaryTextTheme: theme.primaryTextTheme
                         .apply(fontFamily: AppTypography.fontFamilySans),
                   )),
+                  // 크기를 안 정한 글자도 본문 15로 시작한다(머티리얼 기본은 14)
                   child: DefaultTextStyle.merge(
-                    style: const TextStyle(
-                      fontFamily: AppTypography.fontFamilySans,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.textPrimary,
                     ),
                     child: child ?? const SizedBox.shrink(),
                   ),

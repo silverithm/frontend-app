@@ -555,7 +555,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       Icons.cancel,
                     ),
 
-
                     // 연차/반차 구분
                     _buildDurationLegendItem(
                       '연차',
@@ -571,7 +570,6 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                       AppSemanticColors.statusWarningText,
                       '반',
                     ),
-
 
                     // 필수 휴무만 표시
                     _buildTypeLegendItem(
@@ -671,7 +669,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           left: 2,
                           child: Text(
                             date.day.toString(),
-                            style: AppTypography.labelStrong.copyWith(
+                            style: AppTypography.titleSmall.copyWith(
                               height: 1.2,
                               color: !_isSameMonth(date)
                                   ? AppSemanticColors.textDisabled
@@ -755,7 +753,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                                   fit: BoxFit.scaleDown,
                                   child: Text(
                                     '$currentCount/$limit',
-                                    style: AppTypography.labelSmall.copyWith(
+                                    style: AppTypography.calendarCell.copyWith(
                                       color: isSelected
                                           ? AppSemanticColors.textInverse
                                           : isAvailable
@@ -777,7 +775,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                           left: 2,
                           child: Text(
                             date.day.toString(),
-                            style: AppTypography.labelStrong.copyWith(
+                            style: AppTypography.titleSmall.copyWith(
                               height: 1.2,
                               color: !_isSameMonth(date)
                                   ? AppSemanticColors.textDisabled
@@ -858,7 +856,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                                   fit: BoxFit.scaleDown,
                                   child: Text(
                                     '$currentCount/$limit',
-                                    style: AppTypography.labelSmall.copyWith(
+                                    style: AppTypography.calendarCell.copyWith(
                                       color: isSelected
                                           ? AppSemanticColors.textInverse
                                           : isAvailable
@@ -928,7 +926,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                             fit: BoxFit.scaleDown,
                             child: Text(
                               vacation.userName,
-                              style: AppTypography.labelSmall.copyWith(
+                              style: AppTypography.calendarCell.copyWith(
                                 color: AppSemanticColors.textInverse,
                               ),
                               maxLines: 1,
@@ -1044,13 +1042,13 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
                               ),
                             ],
                           ),
-                          // 점 안의 '+N' — 글자 토큰(12)을 점 크기에 맞춰 줄여 그린다(예전 4px)
+                          // 점 안의 '+N' — 달력 칸 글자(10)를 점 크기에 맞춰 줄여 그린다(예전 4px)
                           child: Center(
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
                                 '+${totalVacations - 2}',
-                                style: AppTypography.labelSmall.copyWith(
+                                style: AppTypography.calendarCell.copyWith(
                                   color: AppSemanticColors.textInverse,
                                 ),
                               ),
@@ -1177,7 +1175,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
           fit: BoxFit.scaleDown,
           child: Text(
             text,
-            style: AppTypography.labelSmall.copyWith(color: textColor),
+            style: AppTypography.calendarCell.copyWith(color: textColor),
           ),
         ),
       );
@@ -1281,7 +1279,7 @@ class _VacationCalendarWidgetState extends State<VacationCalendarWidget>
             fit: BoxFit.scaleDown,
             child: Text(
               durationText,
-              style: AppTypography.labelSmall.copyWith(color: textColor),
+              style: AppTypography.calendarCell.copyWith(color: textColor),
             ),
           ),
         ),

@@ -38,27 +38,24 @@ enum AppTextSize {
 
 /// 화면이 견디는 최소·최대 배율.
 ///
-/// 아래쪽 0.85는 더 줄이면 요양 현장에서 읽기 힘들어지는 선이다. 위쪽 1.6은 여러 기기
-/// (아이폰 SE 375pt 폭 포함) 캡처로 채팅·메뉴·설정 화면이 깨지지 않는 것을 확인한 선이다.
+/// 아래쪽 0.85는 더 줄이면 요양 현장에서 읽기 힘들어지는 선이다. 위쪽 1.3은 앱 전체의 상한이다
+/// (2026-11-14) — 기기 설정이든 앱 설정이든, 둘을 곱한 값이든 이보다 커지지 않는다.
+/// 화면마다 따로 배율을 자르지 않고 여기 한 곳에서만 자른다(main.dart builder).
 const double minTextScale = 0.85;
-const double maxTextScale = 1.6;
-
-/// 기기 설정을 따르는 한도.
-///
-/// 기기 배율을 이보다 크게 그대로 받으면 앱에서 고를 여지가 사라진다. 예전에는 둘을 곱한 뒤
-/// 한 번만 잘랐는데, 제보하신 분 기기(배율 약 1.8)에서는 작게·보통·크게·아주 크게가 전부
-/// 상한 하나로 같아져 설정을 눌러도 아무것도 바뀌지 않았다.
-const double maxSystemTextScale = 1.3;
+const double maxTextScale = 1.3;
 
 /// 실제로 적용할 글자 배율.
 ///
-/// [systemScale]은 기기 설정에서 온 값, [size]는 앱에서 고른 값이다.
-/// 기기 설정은 [maxSystemTextScale]까지만 따르고, 그 위에 앱에서 고른 크기를 곱한 뒤
-/// 화면이 견디는 범위로 자른다. 그래서 기기에서 아무리 크게 해 두어도 네 가지 선택이 서로
-/// 다른 크기를 낸다.
+/// [systemScale]은 기기 설정에서 온 값, [size]는 앱에서 고른 값이다. 기기 값을 범위 안으로 자르고
+/// 앱 값을 곱한 뒤 다시 [minTextScale]~[maxTextScale]로 자른다. 기기에서 이미 1.3배 이상으로 키워 두었다면
+/// '크게'·'아주 크게'는 상한에 닿아 '보통'과 같아지고, '작게'만 줄어든다.
 double effectiveTextScale(double systemScale, AppTextSize size) {
-  if (systemScale.isNaN || systemScale <= 0) return size.factor;
-  final base = math.min(math.max(systemScale, minTextScale), maxSystemTextScale);
+  if (systemScale.isNaN || systemScale <= 0) {
+    return math.min(math.max(size.factor, minTextScale), maxTextScale);
+  }
+  // 기기 몫을 먼저 상한까지만 받는다 — 곱한 뒤에만 자르면 기기 배율이 1.45를 넘는 순간
+  // '작게'까지 상한에 닿아 앱 설정이 아무것도 바꾸지 못한다(제보자 기기 약 1.8).
+  final base = math.min(math.max(systemScale, minTextScale), maxTextScale);
   final raw = base * size.factor;
   return math.min(math.max(raw, minTextScale), maxTextScale);
 }

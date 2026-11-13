@@ -3315,7 +3315,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                         // 이모지는 글꼴 크기를 직접 지정하는 예외(글자 역할 표 밖)
                         child: Text(
                           emoji,
-                          style: TextStyle(fontSize: AppTypography.fontSize3xl),
+                          style: TextStyle(fontSize: AppTypography.fontSizeXl),
                         ),
                       ),
                     ),
@@ -3523,7 +3523,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
               children: [
                 Text(
                   reaction.emoji,
-                  style: const TextStyle(fontSize: AppTypography.fontSize3xl),
+                  style: const TextStyle(fontSize: AppTypography.fontSizeXl),
                 ),
                 const SizedBox(width: AppSpacing.space2),
                 Text('${reaction.count}명', style: AppTypography.heading5),
@@ -4803,7 +4803,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                   disabledBorder: InputBorder.none,
                   filled: false,
                   isDense: true,
-                  // 한 줄일 때 높이 = 첨부·전송 단추 지름(40): 글자 한 줄(14 × 1.5 = 21) + 위아래 9.5
+                  // 한 줄일 때 높이 = 첨부·전송 단추 지름(40): 글자 한 줄(15 × 1.5 = 22.5) + 위아래 8.75
                   contentPadding: const EdgeInsets.symmetric(
                     vertical: (AppSpacing.iconCircle -
                             AppTypography.fontSizeBase *

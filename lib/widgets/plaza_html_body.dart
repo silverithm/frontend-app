@@ -37,7 +37,8 @@ class PlazaHtmlBody extends StatelessWidget {
           margin: Margins.zero,
           padding: HtmlPaddings.zero,
           fontFamily: AppTypography.fontFamilySans,
-          fontSize: FontSize(AppTypography.fontSizeLg),
+          // 긴 글 본문 15 — h1 22 / h2·h3 17(글자 단계, theme/app_typography.dart)
+          fontSize: FontSize(AppTypography.fontSizeBase),
           color: AppSemanticColors.textPrimary,
           lineHeight: const LineHeight(1.6),
         ),
@@ -60,12 +61,12 @@ class PlazaHtmlBody extends StatelessWidget {
         'ol': Style(margin: Margins.only(bottom: 10, left: 4)),
         'li': Style(margin: Margins.only(bottom: 4)),
         'h1': Style(
-          fontSize: FontSize(AppTypography.fontSize2xl),
+          fontSize: FontSize(AppTypography.fontSizeXl),
           fontWeight: AppTypography.fontWeightBold,
           margin: Margins.only(top: 12, bottom: 8),
         ),
         'h2': Style(
-          fontSize: FontSize(AppTypography.fontSizeXl),
+          fontSize: FontSize(AppTypography.fontSizeLg),
           fontWeight: AppTypography.fontWeightBold,
           margin: Margins.only(top: 12, bottom: 8),
         ),

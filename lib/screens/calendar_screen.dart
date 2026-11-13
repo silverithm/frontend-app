@@ -3202,7 +3202,8 @@ class _CalendarScreenState extends State<CalendarScreen>
 }
 
 /// 근무조정·월간일정 나눔 조절을 상단 바 아래에 고정해 두는 머리.
-/// 글자를 키우면 칸이 높아지므로 높이를 글자 배율에 맞춰 잡는다(앱 최대 1.6배에서도 잘리지 않게).
+/// 글자를 키우면 칸이 높아지므로 높이를 글자 배율에 맞춰 잡는다(앱 최대 1.3배에서도 잘리지 않게).
+/// 머리 높이와 실제 그린 높이가 조금이라도 다르면 SliverGeometry 오류가 나므로 높이를 그 값으로 못 박는다.
 class _SegmentedTabsHeader extends SliverPersistentHeaderDelegate {
   _SegmentedTabsHeader({required this.controller, required this.textScaler});
 
@@ -3239,14 +3240,17 @@ class _SegmentedTabsHeader extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return AppSegmentedTabs(
-      controller: controller,
-      padding: _padding,
-      // 웹 관리자 화면과 같은 이름 — 근무조정(휴무)·월간일정(일정)
-      tabs: const [
-        AppSegmentedTab('근무조정'),
-        AppSegmentedTab('월간일정'),
-      ],
+    return SizedBox(
+      height: _extent,
+      child: AppSegmentedTabs(
+        controller: controller,
+        padding: _padding,
+        // 웹 관리자 화면과 같은 이름 — 근무조정(휴무)·월간일정(일정)
+        tabs: const [
+          AppSegmentedTab('근무조정'),
+          AppSegmentedTab('월간일정'),
+        ],
+      ),
     );
   }
 

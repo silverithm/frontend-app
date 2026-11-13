@@ -24,8 +24,9 @@ void main() {
   });
 
   group('화면이 견디는 범위로 자른다', () {
-    test('기기에서 아주 크게 해둬도 기기 몫은 한도까지만 따른다 — 여기서 화면이 깨졌다', () {
-      expect(effectiveTextScale(2.0, AppTextSize.normal), maxSystemTextScale);
+    test('기기에서 아주 크게 해둬도 앱 전체 상한 1.3배에서 멈춘다 — 여기서 화면이 깨졌다', () {
+      expect(maxTextScale, 1.3);
+      expect(effectiveTextScale(2.0, AppTextSize.normal), maxTextScale);
       expect(effectiveTextScale(3.5, AppTextSize.extraLarge), maxTextScale);
     });
 
@@ -38,8 +39,16 @@ void main() {
       for (final systemScale in [0.1, 0.5, 0.85, 1.0, 1.3, 2.0, 5.0]) {
         for (final size in AppTextSize.values) {
           final scale = effectiveTextScale(systemScale, size);
-          expect(scale, greaterThanOrEqualTo(minTextScale), reason: '$systemScale $size');
-          expect(scale, lessThanOrEqualTo(maxTextScale), reason: '$systemScale $size');
+          expect(
+            scale,
+            greaterThanOrEqualTo(minTextScale),
+            reason: '$systemScale $size',
+          );
+          expect(
+            scale,
+            lessThanOrEqualTo(maxTextScale),
+            reason: '$systemScale $size',
+          );
         }
       }
     });
@@ -61,16 +70,15 @@ void main() {
       expect(effectiveTextScale(1.3, AppTextSize.extraLarge), maxTextScale);
     });
 
-    // 제보자 화면을 역산하면 기기 배율이 1.8쯤이었다. 예전 규칙(곱한 뒤 한 번만 자름)에서는
-    // 1.56을 넘는 순간 네 가지가 전부 상한 하나로 같아져, 설정을 눌러도 아무것도 바뀌지 않았다.
-    test('기기에서 아주 크게 해둔 분에게도 네 가지가 서로 다른 크기를 낸다', () {
-      for (final systemScale in [1.0, 1.3, 1.56, 1.8, 2.0, 3.0]) {
-        final scales =
-            AppTextSize.values.map((s) => effectiveTextScale(systemScale, s)).toList();
-        for (var i = 1; i < scales.length; i++) {
-          expect(scales[i], greaterThan(scales[i - 1]),
-              reason: '기기 $systemScale에서 ${AppTextSize.values[i]}');
-        }
+    // 제보자 기기 배율은 1.8쯤이었다. 상한 1.3에서는 '보통' 이상이 모두 상한에 닿지만,
+    // '작게'는 여전히 줄어들어 앱에서 고른 것이 아무 효과 없는 일은 없다.
+    test('기기에서 아주 크게 해둔 분도 작게를 고르면 줄어든다', () {
+      for (final systemScale in [1.3, 1.56, 1.8, 2.0, 3.0]) {
+        expect(
+          effectiveTextScale(systemScale, AppTextSize.small),
+          lessThan(effectiveTextScale(systemScale, AppTextSize.normal)),
+          reason: '기기 $systemScale',
+        );
       }
     });
   });
@@ -90,7 +98,17 @@ void main() {
   });
 
   test('이상한 기기 값이 와도 앱이 멈추지 않는다', () {
-    expect(effectiveTextScale(0, AppTextSize.normal), AppTextSize.normal.factor);
-    expect(effectiveTextScale(double.nan, AppTextSize.large), AppTextSize.large.factor);
+    expect(
+      effectiveTextScale(0, AppTextSize.normal),
+      AppTextSize.normal.factor,
+    );
+    expect(
+      effectiveTextScale(double.nan, AppTextSize.large),
+      AppTextSize.large.factor,
+    );
+    expect(
+      effectiveTextScale(double.nan, AppTextSize.extraLarge),
+      maxTextScale,
+    );
   });
 }
