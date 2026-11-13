@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+/// 글자 역할 규칙(2026-11-13 정리) — 크기는 12·14·16·18·20 다섯 가지만 쓴다.
+///  - 화면 제목: 탭 첫 화면 20 굵게([appBarTitleLarge]) / 안쪽 화면 18([appBarTitle])
+///  - 카드·묶음 제목: 16 굵게([heading6])
+///  - 줄 제목(사람 이름·문서 제목·방 이름): 16 중간([titleMedium])
+///  - 제목 아래 둘째 줄(내용 미리보기·요청자·나이 등 읽어야 하는 정보): 14([bodyMedium])
+///  - 꼬리 정보(시각·인원·건수)와 메뉴 설명: 12([bodySmall]), 배지: 12 중간([labelStrong])
 class AppTypography {
   /// 앱 전체 서체 (pubspec.yaml에 실어 둔 Pretendard).
   ///

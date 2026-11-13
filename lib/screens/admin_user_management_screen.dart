@@ -6,6 +6,7 @@ import '../models/user.dart';
 import '../utils/admin_utils.dart';
 import '../utils/permissions.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
@@ -289,7 +290,10 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
       padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       child: Material(
       color: AppSemanticColors.surfaceCard,
-      borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        side: AppLines.cardSide,
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
       onTap: () => _showMemberDetail(user),
@@ -691,7 +695,10 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
           padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
           child: Material(
           color: AppSemanticColors.surfaceCard,
-          borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.card),
+            side: AppLines.cardSide,
+          ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: () => _showPendingUserDetail(user),
@@ -724,7 +731,7 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
                           ),
                           Text(
                             user.email,
-                            style: AppTypography.bodySmall.copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               color: AppSemanticColors.textSecondary,
                             ),
                           ),

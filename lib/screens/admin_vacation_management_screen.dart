@@ -7,6 +7,7 @@ import '../services/in_app_review_service.dart';
 import '../utils/role_utils.dart';
 import '../utils/app_haptics.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_card.dart' show AppCard, AppStatusType;
@@ -707,7 +708,7 @@ class _AdminVacationManagementScreenState
         borderRadius: BorderRadius.circular(AppBorderRadius.card),
         side: isSelected
             ? const BorderSide(color: AppSemanticColors.brandDefault, width: 2)
-            : BorderSide.none,
+            : AppLines.cardSide,
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -842,7 +843,7 @@ class _AdminVacationManagementScreenState
               const SizedBox(height: AppSpacing.space0_5),
               Text(
                 '${_getRoleDisplayName(request['role'] ?? '')} • 휴무일: ${request['date'] ?? ''}',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.bodyMedium.copyWith(
                   color: AppSemanticColors.textSecondary,
                 ),
                 overflow: TextOverflow.ellipsis,

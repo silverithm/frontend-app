@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_lines.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../seed/seed_chip.dart';
@@ -520,6 +521,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
         decoration: BoxDecoration(
           color: AppSemanticColors.surfaceCard,
           borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          border: AppLines.cardBorder,
         ),
         child: Center(
           child: Text(
@@ -543,6 +545,7 @@ class _DocumentFormFieldsState extends State<DocumentFormFields> {
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceCard,
         borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        border: AppLines.cardBorder,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -31,8 +31,7 @@ class ApprovalCard extends StatelessWidget {
       backgroundColor: isSelected
           ? AppSemanticColors.surfaceSelected
           : AppSemanticColors.surfaceCard,
-      hasBorder: isSelected,
-      borderColor: AppSemanticColors.borderFocus,
+      borderColor: isSelected ? AppSemanticColors.borderFocus : null,
       onTap: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

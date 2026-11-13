@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../services/api_service.dart';
@@ -436,6 +437,7 @@ class _CreateRoomSkeleton extends StatelessWidget {
     final cardDecoration = BoxDecoration(
       color: AppSemanticColors.surfaceCard,
       borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      border: AppLines.cardBorder,
     );
     return AppSkeleton(
       // 흰 카드 안의 뼈는 한 단계 옅은 색

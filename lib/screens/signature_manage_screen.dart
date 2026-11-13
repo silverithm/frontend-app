@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/signature_pad.dart';
@@ -255,6 +256,7 @@ class _SignatureSkeleton extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceCard,
         borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        border: AppLines.cardBorder,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -6,6 +6,7 @@ import '../models/work_task.dart';
 import '../providers/auth_provider.dart';
 import '../providers/work_task_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_empty_state.dart';
@@ -227,10 +228,13 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceCard,
               borderRadius: BorderRadius.circular(AppBorderRadius.card),
+              border: AppLines.cardBorder,
             ),
             child: Column(
               children: [
-                for (final (index, task) in tasks.indexed)
+                for (final (index, task) in tasks.indexed) ...[
+                  if (index > 0)
+                    const AppRowDivider(indent: AppSpacing.space3),
                   _maybeEntrance(
                     entrance ? index : null,
                     WorkTaskRow(
@@ -244,6 +248,7 @@ class _WorkTaskListScreenState extends State<WorkTaskListScreen> {
                       },
                     ),
                   ),
+                ],
               ],
             ),
           ),
@@ -285,6 +290,7 @@ class _WorkTaskListSkeleton extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceCard,
               borderRadius: BorderRadius.circular(AppBorderRadius.card),
+              border: AppLines.cardBorder,
             ),
             child: Column(
               children: [

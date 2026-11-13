@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_lines.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/app_haptics.dart';
 import 'app_pressable.dart';
 
-/// 카드 — B안(2026-11-12): 회색 바탕 위 흰 상자, 테두리·그림자 없음, 모서리 16, 안쪽 여백 16.
+/// 카드 — 회색 바탕 위 흰 상자, 1px 테두리(2026-11-13 되살림), 그림자 없음, 모서리 16, 안쪽 여백 16.
 /// 카드끼리는 선 대신 간격(AppSpacing.cardGap 10)으로 나눈다.
 /// [onTap]이 있으면 눌렀을 때 살짝 줄었다가(0.98) 돌아오고 tap 햅틱이 울린다.
 class AppCard extends StatelessWidget {
@@ -19,8 +20,9 @@ class AppCard extends StatelessWidget {
   final double? borderRadius;
   final double? elevation;
 
-  /// B안 기본은 테두리 없음. 흰 바탕 위에 카드를 겹쳐 놓는 드문 자리에서만 true.
-  final bool hasBorder;
+  /// 테두리를 그릴지. 정하지 않으면 흰 카드(또는 [borderColor]를 준 카드)에만 그린다 —
+  /// 상태 색 바탕 카드는 바탕색만으로 구분되므로 테두리를 두르지 않는다.
+  final bool? hasBorder;
 
   /// 화면 낭독기가 읽을 이름(누를 수 있는 카드일 때).
   final String? semanticLabel;
@@ -35,7 +37,7 @@ class AppCard extends StatelessWidget {
     this.borderColor,
     this.borderRadius,
     this.elevation,
-    this.hasBorder = false,
+    this.hasBorder,
     this.semanticLabel,
   });
 
@@ -43,12 +45,19 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(borderRadius ?? AppBorderRadius.card);
     final shadowElevation = elevation ?? 0;
+    final bordered =
+        hasBorder ??
+        (borderColor != null ||
+            backgroundColor == null ||
+            backgroundColor == AppSemanticColors.surfaceCard);
     Widget card = DecoratedBox(
       decoration: BoxDecoration(
         color: backgroundColor ?? AppSemanticColors.surfaceCard,
         borderRadius: radius,
-        border: hasBorder
-            ? Border.all(color: borderColor ?? AppSemanticColors.borderHairline)
+        border: bordered
+            ? (borderColor == null
+                  ? AppLines.cardBorder
+                  : Border.all(color: borderColor!))
             : null,
         boxShadow: shadowElevation > 0
             ? [

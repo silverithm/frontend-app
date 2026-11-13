@@ -15,6 +15,7 @@ import '../providers/schedule_provider.dart';
 import '../providers/vacation_provider.dart';
 import '../providers/work_task_provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
@@ -516,9 +517,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             else
                               Column(
                                 children: [
-                                  // B안: 줄 사이 선 없이 줄 높이로만 나눈다
+                                  // 줄 사이는 1px 선으로 나눈다
                                   for (final entry
                                       in recentNotices.asMap().entries) ...[
+                                    if (entry.key > 0)
+                                      const AppRowDivider(),
                                     _NoticePreviewTile(
                                       notice: entry.value,
                                       onTap: () => Navigator.of(context).push(
@@ -572,6 +575,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   for (final entry
                                       in recentApprovals.asMap().entries) ...[
+                                    if (entry.key > 0)
+                                      const AppRowDivider(),
                                     _ApprovalPreviewTile(
                                       approval: entry.value,
                                       // 미리보기에서 바로 그 문서의 공문 상세로
@@ -657,8 +662,10 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           : Column(
               children: [
-                // B안: 줄 사이 선 없이 줄 여백으로만 나눈다
+                // 줄 사이는 1px 선으로 나눈다
                 for (final entry in inProgress.take(3).toList().asMap().entries) ...[
+                  if (entry.key > 0)
+                    const AppRowDivider(),
                   WorkTaskRow(
                     task: entry.value,
                     today: today,
@@ -766,6 +773,7 @@ class _HomeCardsSkeleton extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppSemanticColors.surfaceCard,
                   borderRadius: BorderRadius.circular(AppBorderRadius.card),
+                  border: AppLines.cardBorder,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -801,7 +809,7 @@ class _HomeCardsSkeleton extends StatelessWidget {
   }
 }
 
-/// 홈 칸 하나 — B안(2026-11-12): 회색 바탕 위 테두리 없는 흰 카드(모서리 16, 안쪽 여백 16).
+/// 홈 칸 하나 — 회색 바탕 위 흰 카드(1px 테두리, 모서리 16, 안쪽 여백 16).
 /// 1.20.2: 제목줄과 첫 줄 사이·카드 아래 여백을 줄여 한 화면에 네 칸이 더 들어오게 했다.
 /// 예전의 연한 틸 머리띠·아래 선을 없애고 카드 안 맨 위에 제목 글자만 둔다.
 /// 카드 안에는 또 다른 테두리 상자를 두지 않는다(카드 중첩 금지).

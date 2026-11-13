@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_lines.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_spacing.dart';
 
@@ -515,6 +516,7 @@ class AppSkeletonCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceCard,
         borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        border: AppLines.cardBorder,
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -143,6 +143,7 @@ class _ChatMemberListState extends State<ChatMemberList> {
     if (_isLoading && _members.isEmpty) {
       // 첫 불러오기 — 나 카드 한 줄 + 직원 카드 줄 모양 뼈대(아바타 40)
       return const ChatListSkeleton(
+        fullBleed: true,
         groups: [1, 6],
         avatarSize: 40,
         groupLabel: true,
@@ -189,15 +190,11 @@ class _ChatMemberListState extends State<ChatMemberList> {
         return AppRefreshIndicator(
           onRefresh: _refresh,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenGutter,
-              AppSpacing.space2,
-              AppSpacing.screenGutter,
-              AppSpacing.space6,
-            ),
+            padding: const EdgeInsets.only(bottom: AppSpacing.space6),
             children: [
               // 나 — 흰 카드 한 장(예전 회색 띠 대신)
               ChatCardSlice(
+                fullBleed: true,
                 isFirst: true,
                 isLast: true,
                 child: AppListEntranceItem(
@@ -207,9 +204,9 @@ class _ChatMemberListState extends State<ChatMemberList> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space1,
+                  AppSpacing.space4,
                   AppSpacing.space2,
-                  AppSpacing.space1,
+                  AppSpacing.space4,
                   AppSpacing.space2,
                 ),
                 child: Text(
@@ -224,6 +221,9 @@ class _ChatMemberListState extends State<ChatMemberList> {
                 ChatCardSlice(
                   isFirst: i == 0,
                   isLast: i == others.length - 1,
+                  gapAfter: false,
+                  dividerIndent: 72,
+                  fullBleed: true,
                   child: AppListEntranceItem(
                     index: i + 1,
                     child: Builder(

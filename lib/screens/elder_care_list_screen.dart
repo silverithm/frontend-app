@@ -306,7 +306,7 @@ class _ElderRow extends StatelessWidget {
                 const SizedBox(height: AppSpacing.space0_5),
                 Text(
                   profile == null ? '케어 정보 미등록' : subtitleParts.join(' · '),
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.bodyMedium.copyWith(
                     color: AppSemanticColors.textSecondary,
                   ),
                 ),

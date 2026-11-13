@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_lines.dart';
 import '../../theme/app_spacing.dart';
 import '../common/app_skeleton.dart';
 
@@ -16,7 +17,11 @@ class ChatListSkeleton extends StatelessWidget {
     this.groups = const [6],
     this.avatarSize = 48,
     this.groupLabel = false,
+    this.fullBleed = false,
   });
+
+  /// 대화·직원 탭처럼 카드 없이 화면 끝까지 채우는 목록의 뼈대면 true.
+  final bool fullBleed;
 
   final List<int> groups;
   final double avatarSize;
@@ -32,33 +37,43 @@ class ChatListSkeleton extends StatelessWidget {
       baseColor: AppSemanticColors.skeletonBaseOnCard,
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenGutter,
-          AppSpacing.space2,
-          AppSpacing.screenGutter,
-          AppSpacing.space6,
-        ),
+        padding: fullBleed
+            ? const EdgeInsets.only(bottom: AppSpacing.space6)
+            : const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                AppSpacing.space2,
+                AppSpacing.screenGutter,
+                AppSpacing.space6,
+              ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var g = 0; g < groups.length; g++) ...[
               // 안내 줄 자리(위아래 8 + 글자 한 줄)는 비워 둔다 — 회색 바탕 위라 카드 안 뼈 색이 안 보인다
               if (g > 0 && groupLabel)
-                const SizedBox(height: AppSpacing.space2 * 2 + AppSpacing.space5),
-              Container(
-                margin: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-                padding: const EdgeInsets.all(AppSpacing.space2),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceCard,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.card),
+                const SizedBox(
+                  height: AppSpacing.space2 * 2 + AppSpacing.space5,
                 ),
+              Container(
+                margin: EdgeInsets.only(
+                  bottom: fullBleed ? 0 : AppSpacing.cardGap,
+                ),
+                padding: fullBleed
+                    ? const EdgeInsets.symmetric(horizontal: AppSpacing.space1)
+                    : const EdgeInsets.all(AppSpacing.space2),
+                decoration: fullBleed
+                    ? const BoxDecoration(color: AppSemanticColors.surfaceCard)
+                    : BoxDecoration(
+                        color: AppSemanticColors.surfaceCard,
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.card,
+                        ),
+                        border: AppLines.cardBorder,
+                      ),
                 child: Column(
                   children: [
                     for (var i = 0; i < groups[g]; i++)
-                      ChatSkeletonRow(
-                        avatarSize: avatarSize,
-                        index: row++,
-                      ),
+                      ChatSkeletonRow(avatarSize: avatarSize, index: row++),
                   ],
                 ),
               ),
@@ -79,7 +94,14 @@ class ChatSkeletonRow extends StatelessWidget {
   final int index;
 
   static const List<double> _titleWidths = [0.5, 0.38, 0.62, 0.44, 0.56, 0.34];
-  static const List<double> _subtitleWidths = [0.78, 0.6, 0.7, 0.52, 0.66, 0.74];
+  static const List<double> _subtitleWidths = [
+    0.78,
+    0.6,
+    0.7,
+    0.52,
+    0.66,
+    0.74,
+  ];
 
   @override
   Widget build(BuildContext context) {

@@ -4,6 +4,7 @@ import '../providers/vacation_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/vacation_request.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_count_up.dart';
@@ -293,6 +294,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                               borderRadius: BorderRadius.circular(
                                 AppBorderRadius.card,
                               ),
+                              border: AppLines.cardBorder,
                             ),
                             child: CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(
@@ -327,6 +329,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                             borderRadius: BorderRadius.circular(
                               AppBorderRadius.card,
                             ),
+                            border: AppLines.cardBorder,
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -501,6 +504,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceCard,
         borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        border: AppLines.cardBorder,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,9 +577,16 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       // 등장 시차 — 끝(delay + 0.3)이 1을 넘지 않게 묶는다(신청이 8건을 넘으면 Interval이 깨졌다)
       final delay = ((baseDelayIndex + i) * 0.1).clamp(0.0, 0.7).toDouble();
 
-      children.add(
-        SizedBox(height: i == 0 ? AppSpacing.space4 : AppSpacing.space6),
-      );
+      if (i > 0) {
+        // 신청 사이는 선으로 나눈다
+        children.addAll(const [
+          SizedBox(height: AppSpacing.space3),
+          AppRowDivider(),
+          SizedBox(height: AppSpacing.space3),
+        ]);
+      } else {
+        children.add(const SizedBox(height: AppSpacing.space4));
+      }
       children.add(
         AnimatedBuilder(
           animation: _animationController,

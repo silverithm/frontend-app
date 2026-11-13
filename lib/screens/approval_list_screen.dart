@@ -5,6 +5,7 @@ import '../providers/approval_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/approval.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_tag.dart';
@@ -179,6 +180,7 @@ class _ApprovalListScreenState extends State<ApprovalListScreen>
                                 borderRadius: BorderRadius.circular(
                                   AppBorderRadius.card,
                                 ),
+                                border: AppLines.cardBorder,
                               ),
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -596,6 +598,7 @@ class _ApprovalListSkeleton extends StatelessWidget {
     final cardDecoration = BoxDecoration(
       color: AppSemanticColors.surfaceCard,
       borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      border: AppLines.cardBorder,
     );
     return AppSkeleton(
       // 흰 카드 안의 뼈는 한 단계 옅은 색

@@ -978,7 +978,8 @@ class PlazaBoardPostCard extends StatelessWidget {
               htmlToPreviewText(post['preview'].toString(), maxLength: 60),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTypography.bodySmall.copyWith(
+              // 제목 아래 내용 미리보기는 14(채팅·공지와 같은 규칙)
+              style: AppTypography.bodyMedium.copyWith(
                 color: AppSemanticColors.textSecondary,
               ),
             ),

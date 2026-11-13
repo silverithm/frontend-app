@@ -7,6 +7,7 @@ import '../providers/approval_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/approval.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
@@ -830,7 +831,7 @@ class _AdminApprovalManagementScreenState
                   color: AppSemanticColors.brandDefault,
                   width: 1.5,
                 )
-              : BorderSide.none,
+              : AppLines.cardSide,
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -930,14 +931,14 @@ class _AdminApprovalManagementScreenState
                           const SizedBox(height: AppSpacing.space1_5),
                           Text(
                             '요청자: ${request.requesterName}',
-                            style: AppTypography.bodySmall.copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               color: AppSemanticColors.textSecondary,
                             ),
                           ),
                           const SizedBox(height: AppSpacing.space0_5),
                           Text(
                             '요청일: ${_formatDate(request.createdAt)}',
-                            style: AppTypography.bodySmall.copyWith(
+                            style: AppTypography.bodyMedium.copyWith(
                               color: AppSemanticColors.textTertiary,
                             ),
                           ),

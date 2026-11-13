@@ -1268,8 +1268,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       // 약관 동의 섹션 — 흰 카드. 동의하지 않고 누르면 카드 둘레가 옅은 빨강으로 바뀐다
                       AppCard(
-                        hasBorder: _agreementErrorMessage != null,
-                        borderColor: AppSemanticColors.statusErrorBorder,
+                        borderColor: _agreementErrorMessage != null
+                            ? AppSemanticColors.statusErrorBorder
+                            : null,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

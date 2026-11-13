@@ -151,7 +151,8 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     final isAdmin = AdminUtils.canAccessAdminPages(authProvider.currentUser);
 
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundCanvas,
+      // 대화·직원 목록은 카드 없이 화면 끝까지 채운다 — 바탕도 흰색
+      backgroundColor: AppSemanticColors.surfaceCard,
       appBar: CareVAppBar(
         // 탭 첫 화면 — 왼쪽 큰 제목(B안)
         title: '채팅',
@@ -185,12 +186,15 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
     );
   }
 
+  /// 꽉 찬 목록에서 줄 선이 시작하는 자리 — 줄 여백 16 + 얼굴 묶음 + 간격
+  static const double _fullBleedDividerIndent = 76;
+
   Widget _buildRoomsTab(bool isAdmin) {
     return Consumer<ChatProvider>(
       builder: (context, chatProvider, child) {
         if (chatProvider.isLoading && chatProvider.chatRooms.isEmpty) {
           // 첫 불러오기 — 방 목록과 같은 흰 카드 안 줄 모양 뼈대
-          return const ChatListSkeleton();
+          return const ChatListSkeleton(fullBleed: true);
         }
 
         if (chatProvider.errorMessage.isNotEmpty &&
@@ -207,12 +211,7 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
           // 방 줄이 처음 한 번만 차례로 떠오른다(흰 카드는 그대로, 카드 안 줄만)
           child: AppListEntrance(
           child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenGutter,
-              AppSpacing.space2,
-              AppSpacing.screenGutter,
-              AppSpacing.space6,
-            ),
+            padding: const EdgeInsets.only(bottom: AppSpacing.space6),
             itemCount: chatProvider.chatRooms.length,
             itemBuilder: (context, index) {
               final rooms = chatProvider.chatRooms;
@@ -227,6 +226,9 @@ class _ChatRoomListScreenState extends State<ChatRoomListScreen>
               return ChatCardSlice(
                 isFirst: isGroupStart,
                 isLast: isGroupEnd,
+                gapAfter: isGroupEnd && index + 1 < rooms.length,
+                dividerIndent: _fullBleedDividerIndent,
+                fullBleed: true,
                 child: AppListEntranceItem(
                   index: index,
                   child: _buildChatRoomTile(room, isAdmin),

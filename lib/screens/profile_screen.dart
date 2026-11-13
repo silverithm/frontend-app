@@ -17,6 +17,7 @@ import '../utils/admin_utils.dart';
 import '../utils/role_utils.dart';
 import 'admin_company_settings_screen.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/index.dart';
@@ -725,6 +726,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         borderRadius: BorderRadius.circular(
                           AppBorderRadius.card,
                         ),
+                        border: AppLines.cardBorder,
                       ),
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(

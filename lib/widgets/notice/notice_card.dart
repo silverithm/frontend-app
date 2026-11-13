@@ -84,7 +84,7 @@ class NoticeCard extends StatelessWidget {
             containsHtmlTags(notice.content)
                 ? stripHtmlToPlainText(notice.content)
                 : notice.content,
-            style: AppTypography.bodySmall.copyWith(
+            style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textSecondary,
             ),
             maxLines: 2,

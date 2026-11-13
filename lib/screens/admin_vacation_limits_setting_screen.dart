@@ -6,6 +6,7 @@ import '../models/position_option.dart';
 import '../models/vacation_limit.dart';
 import '../utils/role_utils.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_skeleton.dart';
@@ -450,6 +451,7 @@ class _AdminVacationLimitsSettingScreenState
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceCard,
         borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        border: AppLines.cardBorder,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),

@@ -25,6 +25,7 @@ import '../widgets/admin_vacation_add_dialog.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
@@ -434,6 +435,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 decoration: BoxDecoration(
                   color: AppSemanticColors.surfaceCard,
                   borderRadius: BorderRadius.circular(AppBorderRadius.card),
+                  border: AppLines.cardBorder,
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: _buildScheduleCalendarWidget(scheduleProvider),
@@ -717,6 +719,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         decoration: BoxDecoration(
           color: AppSemanticColors.surfaceCard,
           borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          border: AppLines.cardBorder,
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -1303,6 +1306,7 @@ class _CalendarScreenState extends State<CalendarScreen>
             decoration: BoxDecoration(
               color: AppSemanticColors.surfaceCard,
               borderRadius: BorderRadius.circular(AppBorderRadius.card),
+              border: AppLines.cardBorder,
             ),
             clipBehavior: Clip.antiAlias,
             child: VacationCalendarWidget(
@@ -1358,6 +1362,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 decoration: BoxDecoration(
                   color: AppSemanticColors.surfaceCard,
                   borderRadius: BorderRadius.circular(AppBorderRadius.card),
+                  border: AppLines.cardBorder,
                 ),
                 child: Padding(
                   // 닫기 단추가 카드 끝에 붙도록 오른쪽은 12 — 목록은 안쪽에서 8을 더해 20을 맞춘다
@@ -1567,6 +1572,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                   decoration: BoxDecoration(
                     color: AppSemanticColors.surfaceCard,
                     borderRadius: BorderRadius.circular(AppBorderRadius.card),
+                    border: AppLines.cardBorder,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(

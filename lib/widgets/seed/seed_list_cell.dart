@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_lines.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_typography.dart';
@@ -152,8 +153,8 @@ class _SeedListCellState extends State<SeedListCell> {
   }
 }
 
-/// 목록 묶음 — B안: 묶음 제목(14/w600 회색, 막대 없음) + 흰 카드(모서리 16, 테두리·구분선 없음).
-/// 줄 사이는 선 대신 줄 자체의 여백으로 나눈다(시안 .sec-h + .menu-card).
+/// 목록 묶음 — 묶음 제목(14/w600 회색, 막대 없음) + 흰 카드(모서리 16, 1px 테두리).
+/// 줄 사이에는 글자 시작에 맞춘 1px 선을 긋는다(2026-11-13 선 되살림).
 class SeedListSection extends StatelessWidget {
   final String? title;
   final List<Widget> children;
@@ -184,14 +185,16 @@ class SeedListSection extends StatelessWidget {
             ),
           ),
         Container(
-          padding: const EdgeInsets.all(AppSpacing.space2),
+          // Container는 테두리 두께만큼 안쪽 여백을 더한다 — 1을 빼 글자 시작(카드 가장자리에서 20)을 지킨다
+          padding: const EdgeInsets.all(AppSpacing.space2 - 1),
           decoration: BoxDecoration(
             color: AppSemanticColors.surfaceCard,
             borderRadius: BorderRadius.circular(AppBorderRadius.card),
+            border: AppLines.cardBorder,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
+            children: AppLines.between(children, indent: AppSpacing.space3),
           ),
         ),
       ],

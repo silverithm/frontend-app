@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/dispatch.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_lines.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import 'dispatch_status_style.dart';
@@ -33,6 +34,7 @@ class DispatchRouteCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppSemanticColors.surfaceCard,
         borderRadius: BorderRadius.circular(AppBorderRadius.card),
+        border: AppLines.cardBorder,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

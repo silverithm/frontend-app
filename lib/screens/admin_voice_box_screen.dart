@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/voice_message.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_lines.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_dialog.dart';
@@ -471,6 +472,7 @@ class _AdminVoiceBoxListSkeleton extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppSemanticColors.surfaceCard,
           borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          border: AppLines.cardBorder,
         ),
         child: const Column(
           children: [

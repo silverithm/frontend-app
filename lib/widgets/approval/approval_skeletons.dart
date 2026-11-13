@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_lines.dart';
 import '../../theme/app_spacing.dart';
 import '../common/app_skeleton.dart';
 
@@ -71,6 +72,7 @@ class ApprovalDetailSkeleton extends StatelessWidget {
     final cardDecoration = BoxDecoration(
       color: AppSemanticColors.surfaceCard,
       borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      border: AppLines.cardBorder,
     );
     return AppSkeleton(
       baseColor: AppSemanticColors.skeletonBaseOnCard,

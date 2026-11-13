@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend_app/theme/app_colors.dart';
+import 'package:frontend_app/theme/app_lines.dart';
 import 'package:frontend_app/theme/app_spacing.dart';
 import 'package:frontend_app/utils/app_haptics.dart';
+import 'package:frontend_app/widgets/chat/chat_list_row.dart';
 import 'package:frontend_app/widgets/common/app_card.dart';
 import 'package:frontend_app/widgets/seed/seed_list_cell.dart';
 import 'package:frontend_app/widgets/seed/seed_section_header.dart';
@@ -24,14 +26,14 @@ void main() {
         ),
       );
 
-  testWidgets('AppCard — 흰 바탕, 테두리 없음, 모서리 16, 여백 16', (tester) async {
+  testWidgets('AppCard — 흰 바탕, 1px 테두리, 모서리 16, 여백 16', (tester) async {
     await tester.pumpWidget(host(const AppCard(child: Text('내용'))));
     final box = tester.widget<DecoratedBox>(find
         .ancestor(of: find.text('내용'), matching: find.byType(DecoratedBox))
         .first);
     final deco = box.decoration as BoxDecoration;
     expect(deco.color, AppSemanticColors.surfaceCard);
-    expect(deco.border, isNull);
+    expect(deco.border, AppLines.cardBorder);
     expect(deco.borderRadius, BorderRadius.circular(AppBorderRadius.card));
     expect(tester.getTopLeft(find.text('내용')) - tester.getTopLeft(find.byType(AppCard)),
         const Offset(16, 16));
@@ -134,5 +136,29 @@ void main() {
       textScale: 1.6,
     ));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('목록 묶음 — 줄 사이에 1px 선, 카드 둘레 테두리', (tester) async {
+    await tester.pumpWidget(host(const SeedListSection(children: [
+      SeedListCell(title: '하나'),
+      SeedListCell(title: '둘'),
+      SeedListCell(title: '셋'),
+    ])));
+    expect(find.byType(AppRowDivider), findsNWidgets(2));
+    final card = tester.widget<Container>(find
+        .ancestor(of: find.text('하나'), matching: find.byType(Container))
+        .last);
+    expect((card.decoration as BoxDecoration).border, AppLines.cardBorder);
+  });
+
+  testWidgets('채팅 카드 조각 — 꽉 찬 목록은 둘째 줄부터 선, 묶음 끝에만 회색 띠', (tester) async {
+    await tester.pumpWidget(host(const Column(children: [
+      ChatCardSlice(isFirst: true, isLast: false, fullBleed: true, child: Text('가')),
+      ChatCardSlice(isFirst: false, isLast: true, fullBleed: true, gapAfter: false, child: Text('나')),
+    ])));
+    expect(find.byType(AppRowDivider), findsOneWidget);
+    // 화면 끝에서 끝까지 — 좌우 바깥 여백이 없다
+    expect(tester.getSize(find.byType(ChatCardSlice).first).width,
+        tester.getSize(find.byType(Column).first).width);
   });
 }
