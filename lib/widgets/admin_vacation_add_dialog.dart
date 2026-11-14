@@ -9,7 +9,7 @@ import '../models/vacation_kind.dart';
 import 'common/app_sheet_frame.dart';
 import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
-import 'seed/seed_chip.dart';
+import 'common/app_choice_grid.dart';
 import 'seed/seed_text_field.dart';
 
 /// 관리자가 직원 휴무를 대신 등록하는 창. 등록하면 `true`로 닫힌다.
@@ -419,16 +419,12 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
       // 휴무 종류 — 웹 관리자와 같은 6가지. 유형(일반·필수·대체)과
       // 기간(연차·반차)이 한 목록에 들어 있어 고르는 순간 둘 다 정해진다.
       _buildLabel('휴무 종류'),
-      Wrap(
-        spacing: AppSpacing.space2,
-        runSpacing: AppSpacing.space2,
-        children: VacationKind.values.map((kind) {
-          return SeedChip(
-            label: kind.label,
-            selected: _selectedKind == kind,
-            onTap: () => setState(() => _selectedKind = kind),
-          );
-        }).toList(),
+      // 같은 폭 칸 3개씩(크로박스 고르기 칸) — 줄 끝이 들쭉날쭉하지 않게
+      AppChoiceGrid<VacationKind>(
+        values: VacationKind.values,
+        selected: _selectedKind,
+        labelOf: (kind) => kind.label,
+        onSelected: (kind) => setState(() => _selectedKind = kind),
       ),
       const SizedBox(height: AppSpacing.space2),
       Text(

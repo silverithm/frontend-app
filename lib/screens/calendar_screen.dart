@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/vacation_provider.dart';
@@ -15,6 +16,8 @@ import '../utils/korean_keep_all.dart';
 import '../utils/permissions.dart';
 import '../utils/schedule_filter.dart';
 import '../utils/schedule_repeat.dart';
+import '../utils/korean_holidays.dart';
+import '../widgets/calendar/month_chip_grid.dart';
 import '../widgets/schedule/schedule_filter_bar.dart';
 import '../widgets/schedule/schedule_filter_sheet.dart';
 import '../widgets/schedule/schedule_repeat_fields.dart';
@@ -32,7 +35,6 @@ import '../theme/app_theme.dart';
 import '../widgets/common/app_action_sheet.dart';
 import '../widgets/common/app_count_up.dart';
 import '../widgets/common/app_dialog.dart';
-import '../widgets/common/app_fab.dart';
 import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/seed/seed_button.dart';
@@ -64,7 +66,8 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen>
     with TickerProviderStateMixin {
   DateTime _currentDate = DateTime.now();
-  DateTime? _selectedDate;
+  // 화면을 열면 오늘을 골라 둔다 — 아래 '그날' 칸이 늘 차 있게(크로박스)
+  DateTime? _selectedDate = _todayDate();
   List<String> _roleFilters = [];
   late AnimationController _fabAnimationController;
   late AnimationController _filterAnimationController;
@@ -72,7 +75,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   // 일정 달력용 상태
   DateTime _scheduleCurrentDate = DateTime.now();
-  DateTime? _scheduleSelectedDate;
+  DateTime? _scheduleSelectedDate = _todayDate();
   // 할 일이 있는 일정 항목 중 체크리스트를 펼쳐 둔 것들 (별도 상세 화면이 없어 항목 확장으로 대신한다)
   final Set<int> _expandedTaskScheduleIds = {};
 
@@ -88,6 +91,20 @@ class _CalendarScreenState extends State<CalendarScreen>
   final GlobalKey _highlightedScheduleKey = GlobalKey();
   late final ScheduleProvider _scheduleProvider;
 
+  // 크로박스식 그날 시트 — 0 = 닫힘(꽉 찬 달력), [_kSheetSplit] = 반쯤
+  static const double _kSheetSplit = 0.55;
+  static const List<double> _kSheetSnaps = [_kSheetSplit];
+  final DraggableScrollableController _vacationSheet =
+      DraggableScrollableController();
+  final DraggableScrollableController _scheduleSheet =
+      DraggableScrollableController();
+  bool _vacationSheetOpen = false;
+  bool _scheduleSheetOpen = false;
+
+  // 펼치기 — 칸마다 '+n'으로 접던 이름·제목을 전부 보여 준다(주마다 칸이 길어진다)
+  bool _vacationExpanded = false;
+  bool _scheduleExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +112,12 @@ class _CalendarScreenState extends State<CalendarScreen>
     _highlightedScheduleId = widget.highlightedScheduleId;
     _scheduleProvider = context.read<ScheduleProvider>();
     _scheduleProvider.addListener(_handleFocusRequest);
+    _vacationSheet.addListener(
+      () => _syncSheet(_vacationSheet, vacation: true),
+    );
+    _scheduleSheet.addListener(
+      () => _syncSheet(_scheduleSheet, vacation: false),
+    );
 
     // 알림으로 들어왔으면 일정 달력을 그 날짜에 펴 둔다
     final target = widget.initialScheduleDate;
@@ -102,11 +125,17 @@ class _CalendarScreenState extends State<CalendarScreen>
       _scheduleCurrentDate = DateTime(target.year, target.month);
       _scheduleSelectedDate = DateTime(target.year, target.month, target.day);
       _tabController.index = 1; // 0=휴무 달력, 1=일정 달력
+      // 그날 시트를 열어 둔다 — 날짜만 고르고 시트가 닫혀 있으면 무엇을 짚었는지 안 보인다
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _openSheet(_scheduleSheet),
+      );
     } else if (widget.highlightedScheduleId != null) {
       // 알림함에서 왔다 — 일정 탭을 먼저 펴 두고, 날짜는 일정을 받아 맞춘다
       _tabController.index = 1;
       final id = widget.highlightedScheduleId!;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _focusScheduleById(id));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _focusScheduleById(id),
+      );
     }
     // 강조할 일정에 할 일이 있다면 체크리스트를 펼쳐서 바로 보이게 한다
     final highlightId = _highlightedScheduleId;
@@ -146,13 +175,20 @@ class _CalendarScreenState extends State<CalendarScreen>
     });
 
     _tabController.addListener(() {
-      setState(() {});
+      setState(() {
+        // 탭을 바꾸면 안 보이는 탭의 시트는 사라졌다가 닫힌 채로 다시 생긴다 — 열림 표시도 내린다
+        // (남겨 두면 다시 왔을 때 펼치기가 먹지 않았다)
+        _vacationSheetOpen = false;
+        _scheduleSheetOpen = false;
+      });
     });
   }
 
   @override
   void dispose() {
     _scheduleProvider.removeListener(_handleFocusRequest);
+    _vacationSheet.dispose();
+    _scheduleSheet.dispose();
     _tabController.dispose();
     _fabAnimationController.dispose();
     _filterAnimationController.dispose();
@@ -184,7 +220,8 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   /// 월간일정 탭의 그 날짜를 펴고 그 일정을 강조한 뒤 카드가 보이도록 내린다.
   void _focusOn(DateTime day, int scheduleId) {
-    final monthChanged = _scheduleCurrentDate.year != day.year ||
+    final monthChanged =
+        _scheduleCurrentDate.year != day.year ||
         _scheduleCurrentDate.month != day.month;
     setState(() {
       _tabController.index = 1; // 0=휴무 달력, 1=일정 달력
@@ -198,7 +235,9 @@ class _CalendarScreenState extends State<CalendarScreen>
           context.read<AuthProvider>().currentUser?.company?.id ?? '1';
       _scheduleProvider.loadCalendarData(day, companyId: companyId);
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 그날 시트를 연 뒤 그 일정 카드까지 내린다
+      await _openSheet(_scheduleSheet);
       final target = _highlightedScheduleKey.currentContext;
       if (target == null) return;
       Scrollable.ensureVisible(
@@ -207,6 +246,171 @@ class _CalendarScreenState extends State<CalendarScreen>
         alignment: 0.2,
       );
     });
+  }
+
+  /// 시트가 열리고 닫히는 것을 따라간다(고른 칸 테두리·추가 단추 자리에 쓴다).
+  void _syncSheet(DraggableScrollableController c, {required bool vacation}) {
+    if (!c.isAttached) return;
+    final open = c.size > 0.02;
+    if (open == (vacation ? _vacationSheetOpen : _scheduleSheetOpen)) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      // 레이아웃 도중 크기가 바뀐 경우 — 프레임이 끝난 뒤 반영한다
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _syncSheet(c, vacation: vacation);
+      });
+      return;
+    }
+    setState(() {
+      if (vacation) {
+        _vacationSheetOpen = open;
+      } else {
+        _scheduleSheetOpen = open;
+      }
+    });
+  }
+
+  /// 그날 시트를 반쯤 올린다. 이미 그 이상 올라와 있으면 그대로 둔다.
+  /// 탭을 막 바꾼 참이면 시트가 아직 붙지 않았을 수 있어 몇 프레임 기다렸다 연다
+  /// (알림·홈 '오늘' 칸에서 일정을 짚어 들어올 때).
+  Future<void> _openSheet(
+    DraggableScrollableController c, {
+    int retries = 5,
+  }) async {
+    if (!c.isAttached) {
+      if (retries <= 0 || !mounted) return;
+      await WidgetsBinding.instance.endOfFrame;
+      if (mounted) await _openSheet(c, retries: retries - 1);
+      return;
+    }
+    if (c.size >= _kSheetSplit - 0.01) return;
+    await c.animateTo(
+      _kSheetSplit,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  /// 시트를 내려 꽉 찬 달력으로 돌아간다.
+  void _closeSheet(DraggableScrollableController c) {
+    if (!c.isAttached || c.size < 0.01) return;
+    c.animateTo(
+      0,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  static DateTime _todayDate() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  static bool _sameMonth(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month;
+
+  /// 달을 옮기면 이번 달은 오늘, 다른 달은 1일을 고른다 — 추가 단추의 날짜가 늘 보고 있는 달에 있게.
+  static DateTime _defaultSelectionFor(DateTime month) {
+    final today = _todayDate();
+    return _sameMonth(today, month)
+        ? today
+        : DateTime(month.year, month.month, 1);
+  }
+
+  void _loadVacationMonth(DateTime month) {
+    final companyId =
+        context.read<AuthProvider>().currentUser?.company?.id ?? '1';
+    context.read<VacationProvider>().loadCalendarData(
+      month,
+      companyId: companyId,
+    );
+    // Analytics 캘린더 조회 이벤트
+    AnalyticsService().logCalendarView(
+      viewType: 'month',
+      date: month.toIso8601String().split('T')[0],
+    );
+  }
+
+  void _moveVacationMonth(int delta) {
+    final next = DateTime(_currentDate.year, _currentDate.month + delta);
+    _closeSheet(_vacationSheet);
+    setState(() {
+      _currentDate = next;
+      _selectedDate = _defaultSelectionFor(next);
+    });
+    _loadVacationMonth(next);
+  }
+
+  void _vacationGoToday() {
+    final today = _todayDate();
+    final changed = !_sameMonth(_currentDate, today);
+    setState(() {
+      _currentDate = DateTime(today.year, today.month);
+      _selectedDate = today;
+    });
+    if (changed) _loadVacationMonth(today);
+  }
+
+  /// 날짜를 누르면 그날을 고르고 시트를 연다. 앞뒤 달 날짜는 그 달로 넘어가기만 한다.
+  void _onVacationDayTap(DateTime date) {
+    if (!_sameMonth(date, _currentDate)) {
+      setState(() {
+        _currentDate = DateTime(date.year, date.month);
+        _selectedDate = date;
+      });
+      _loadVacationMonth(date);
+      return;
+    }
+    setState(() => _selectedDate = date);
+    _openSheet(_vacationSheet);
+  }
+
+  void _loadScheduleMonth(DateTime month) {
+    final companyId =
+        context.read<AuthProvider>().currentUser?.company?.id ?? '1';
+    context.read<ScheduleProvider>().loadCalendarData(
+      month,
+      companyId: companyId.toString(),
+    );
+  }
+
+  void _moveScheduleMonth(int delta) {
+    final next = DateTime(
+      _scheduleCurrentDate.year,
+      _scheduleCurrentDate.month + delta,
+    );
+    _closeSheet(_scheduleSheet);
+    setState(() {
+      _scheduleCurrentDate = next;
+      _scheduleSelectedDate = _defaultSelectionFor(next);
+    });
+    _loadScheduleMonth(next);
+  }
+
+  void _scheduleGoToday() {
+    final today = _todayDate();
+    final changed = !_sameMonth(_scheduleCurrentDate, today);
+    setState(() {
+      _scheduleCurrentDate = DateTime(today.year, today.month);
+      _scheduleSelectedDate = today;
+    });
+    if (changed) _loadScheduleMonth(today);
+  }
+
+  void _onScheduleDayTap(DateTime date) {
+    if (!_sameMonth(date, _scheduleCurrentDate)) {
+      setState(() {
+        _scheduleCurrentDate = DateTime(date.year, date.month);
+        _scheduleSelectedDate = date;
+      });
+      _loadScheduleMonth(date);
+      return;
+    }
+    setState(() => _scheduleSelectedDate = date);
+    _openSheet(_scheduleSheet);
   }
 
   void _showVacationRequestDialog() {
@@ -247,54 +451,37 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  String _formatSelectedDate(DateTime date) {
-    final weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-    final weekday = weekdays[date.weekday % 7];
-    return '${date.month}월 ${date.day}일 ($weekday)';
-  }
-
   @override
   Widget build(BuildContext context) {
+    // 크로박스식(2026-11-14): 상단 바·나눔 탭 아래를 달력이 꽉 채운다. 예전 NestedScrollView는
+    // 달력이 한 화면 높이를 정확히 차지해야 해서 걷어냈다(제목·나눔 탭은 원래도 고정이었다).
     return Scaffold(
-      backgroundColor: AppSemanticColors.backgroundCanvas,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            // 앱바
-            SliverAppBar(
-              floating: false,
-              pinned: true,
-              elevation: 0,
-              // 탭 첫 화면 — 왼쪽 큰 제목(B안). 예전엔 제목 없이 탭바만 있었다.
-              // 알림에서 push로 열리면 테마의 꺾쇠 뒤로 단추가 저절로 붙는다.
-              title: Text('일정', style: AppTypography.appBarTitleLarge),
-              centerTitle: false,
-              titleSpacing: AppSpacing.space5,
-            ),
-            // 근무조정·월간일정 나눔 조절 — 상단 바 안 TabBar를 빼고 그 아래 회색 바탕 위에
-            // 둔다(B안). 달력을 내려도 늘 보이게 고정하되, 위아래 여백을 줄여 달력 자리를 아낀다.
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _SegmentedTabsHeader(
-                controller: _tabController,
-                textScaler: MediaQuery.textScalerOf(context),
-              ),
-            ),
-          ];
-        },
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            // 휴무 달력 탭
-            _buildVacationCalendar(),
-            // 일정 달력 탭
-            _buildScheduleCalendar(),
-          ],
-        ),
+      backgroundColor: AppSemanticColors.surfaceCard,
+      appBar: AppBar(
+        // 탭 첫 화면 — 왼쪽 큰 제목(B안). 알림에서 push로 열리면 테마의 꺾쇠 뒤로 단추가 저절로 붙는다.
+        title: Text('일정', style: AppTypography.appBarTitleLarge),
+        centerTitle: false,
+        titleSpacing: AppSpacing.space5,
       ),
-      floatingActionButton: _tabController.index == 0
-          ? _buildFab()
-          : _buildScheduleFab(),
+      body: Column(
+        children: [
+          // 근무조정·월간일정 나눔 조절 — 늘 보이게 위에 둔다
+          _SegmentedTabsHeader(
+            controller: _tabController,
+            textScaler: MediaQuery.textScalerOf(context),
+          ).build(context, 0, false),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              // 달력을 좌우로 쓸면 달이 바뀐다 — 탭은 위 나눔 조절로만 바꾼다
+              physics: const NeverScrollableScrollPhysics(),
+              children: [_buildVacationCalendar(), _buildScheduleCalendar()],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _buildAddPill(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -370,7 +557,9 @@ class _CalendarScreenState extends State<CalendarScreen>
     final all = provider.getSchedulesForDate(date);
     if (_scheduleFilterValues.isEmpty) return all;
     return all
-        .where((s) => s.id == _highlightedScheduleId || _matchesScheduleFilter(s))
+        .where(
+          (s) => s.id == _highlightedScheduleId || _matchesScheduleFilter(s),
+        )
         .toList();
   }
 
@@ -414,421 +603,138 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  /// 일정 달력 탭 빌드
+  /// 월간일정 탭 — 크로박스식 꽉 찬 달력. 칸마다 그날 일정 제목을 일정 색 칩으로(끝낸 일정은 흐리게),
+  /// 날짜를 누르면 아래에서 그날 시트가 올라온다.
   Widget _buildScheduleCalendar() {
     return Consumer<ScheduleProvider>(
-      builder: (context, scheduleProvider, child) {
-        print(
-          '[CalendarScreen] 일정 달력 빌드 - 로딩: ${scheduleProvider.isLoading}, 일정수: ${scheduleProvider.schedules.length}, 날짜별: ${scheduleProvider.schedulesByDate.keys.toList()}',
-        );
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              // 달력 카드 — B안: 회색 바탕 위 흰 카드, 테두리 없음
-              Container(
-                margin: const EdgeInsets.fromLTRB(
-                  AppSpacing.space4,
-                  AppSpacing.space2,
-                  AppSpacing.space4,
-                  0,
+      builder: (context, provider, child) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final bodyH = constraints.maxHeight;
+            final showSelection =
+                _scheduleSheetOpen ||
+                (_scheduleSelectedDate != null &&
+                    !_sameDay(_scheduleSelectedDate!, _todayDate()));
+            return Stack(
+              children: [
+                Column(
+                  // 필터 줄이 폭을 다 써서 '일정 필터'는 왼쪽, '완료 n/m'은 오른쪽 끝에 붙게
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    CalendarHeaderBar(
+                      month: _scheduleCurrentDate,
+                      onPrevious: () => _moveScheduleMonth(-1),
+                      onNext: () => _moveScheduleMonth(1),
+                      onToday: _scheduleGoToday,
+                      expanded: _scheduleExpanded,
+                      onToggleExpanded: () => setState(
+                        () => _scheduleExpanded = !_scheduleExpanded,
+                      ),
+                    ),
+                    _buildScheduleFilterBar(provider),
+                    Expanded(
+                      child: MonthChipGrid(
+                        month: _scheduleCurrentDate,
+                        selected: _scheduleSelectedDate,
+                        showSelection: showSelection,
+                        expanded: _scheduleExpanded,
+                        sheetOpen: _scheduleSheetOpen,
+                        bodyHeight: bodyH,
+                        sheet: _scheduleSheet,
+                        sheetSplit: _kSheetSplit,
+                        onTapDay: _onScheduleDayTap,
+                        onSwipeMonth: _moveScheduleMonth,
+                        holidayFor: (date) =>
+                            KoreanHolidays.getHolidayName(date) != null,
+                        // 필터를 걸었으면 걸린 일정만 칸에 적는다
+                        chipsFor: (date) => [
+                          for (final s in _visibleSchedulesForDate(
+                            provider,
+                            date,
+                          ))
+                            CalendarChipData(
+                              label: s.title,
+                              color: scheduleDisplayColor(
+                                s,
+                              ).withValues(alpha: 0.26),
+                              faded: s.isCompleted,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceCard,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.card),
-                  border: AppLines.cardBorder,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: _buildScheduleCalendarWidget(scheduleProvider),
-              ),
-
-              // 선택된 날짜 정보
-              if (_scheduleSelectedDate != null)
-                _buildScheduleDateDetail(scheduleProvider),
-
-              // 하단 여백
-              const SizedBox(height: AppSpacing.space20),
-            ],
-          ),
+                _buildScheduleDaySheet(provider),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  /// 일정 달력 위젯
-  Widget _buildScheduleCalendarWidget(ScheduleProvider provider) {
-    return Column(
+  /// 월간일정 그날 시트 — 머리 아래 '일정 3건 중 1건 완료' 진행 줄, 본문은 일정 한 건씩.
+  Widget _buildScheduleDaySheet(ScheduleProvider provider) {
+    final date = _scheduleSelectedDate ?? _todayDate();
+    final schedules = _visibleSchedulesForDate(provider, date);
+    final done = schedules.where((s) => s.isCompleted).length;
+    return CalendarDaySheet(
+      controller: _scheduleSheet,
+      snapSizes: _kSheetSnaps,
+      date: date,
+      onClose: () => _closeSheet(_scheduleSheet),
+      subtitle: schedules.isEmpty
+          ? null
+          : CalendarDayProgress(
+              done: done,
+              total: schedules.length,
+              text: '일정 ${schedules.length}건 중 $done건 완료',
+            ),
       children: [
-        // 월 네비게이션 — B안: 머리띠 없이 카드 맨 위에 달 이름과 회색 동그라미 꺾쇠.
-        // 꺾쇠 단추가 48이라 위아래 여백은 얇게 둔다(휴무 달력과 같은 값).
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.space3,
-            AppSpacing.space2,
-            AppSpacing.space3,
-            0,
+        if (schedules.isEmpty)
+          _buildEmptyDayLine(
+            _scheduleFilterValues.isEmpty
+                ? '이 날짜에는 등록된 일정이 없습니다.'
+                : '이 날짜에는 필터에 맞는 일정이 없습니다.',
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: schedules.map(_buildScheduleItem).toList(),
+            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                tooltip: '이전 달',
-                onPressed: () {
-                  setState(() {
-                    _scheduleCurrentDate = DateTime(
-                      _scheduleCurrentDate.year,
-                      _scheduleCurrentDate.month - 1,
-                    );
-                  });
-                  final authProvider = context.read<AuthProvider>();
-                  final companyId =
-                      authProvider.currentUser?.company?.id ?? '1';
-                  provider.loadCalendarData(
-                    _scheduleCurrentDate,
-                    companyId: companyId.toString(),
-                  );
-                },
-                icon: Icon(
-                  Icons.chevron_left,
-                  color: AppSemanticColors.textSecondary,
-                ),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppSemanticColors.fillDefault,
-                  shape: const CircleBorder(),
-                ),
-              ),
-              Flexible(
-                child: Text(
-                  '${_scheduleCurrentDate.year}년 ${_scheduleCurrentDate.month}월',
-                  style: AppTypography.heading6.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              IconButton(
-                tooltip: '다음 달',
-                onPressed: () {
-                  setState(() {
-                    _scheduleCurrentDate = DateTime(
-                      _scheduleCurrentDate.year,
-                      _scheduleCurrentDate.month + 1,
-                    );
-                  });
-                  final authProvider = context.read<AuthProvider>();
-                  final companyId =
-                      authProvider.currentUser?.company?.id ?? '1';
-                  provider.loadCalendarData(
-                    _scheduleCurrentDate,
-                    companyId: companyId.toString(),
-                  );
-                },
-                icon: Icon(
-                  Icons.chevron_right,
-                  color: AppSemanticColors.textSecondary,
-                ),
-                style: IconButton.styleFrom(
-                  backgroundColor: AppSemanticColors.fillDefault,
-                  shape: const CircleBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        _buildScheduleFilterBar(provider),
-
-        // 요일 줄 — B안: 회색 면·아래 선 없이 글자만. 좌우 여백을 달력 칸(8)과 맞춰 줄이 어긋나지 않게
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.space2,
-            AppSpacing.space2,
-            AppSpacing.space2,
-            AppSpacing.space1,
-          ),
-          child: Row(
-            children: ['일', '월', '화', '수', '목', '금', '토'].map((day) {
-              final isSunday = day == '일';
-              final isSaturday = day == '토';
-              return Expanded(
-                child: Center(
-                  child: Text(
-                    day,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: isSunday
-                          ? AppSemanticColors.statusErrorIcon
-                          : isSaturday
-                          ? AppSemanticColors.interactivePrimaryDefault
-                          : AppSemanticColors.textSecondary,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-
-        // 달력 그리드
-        _buildScheduleCalendarGrid(provider),
-
-        const SizedBox(height: AppSpacing.space4),
       ],
     );
   }
 
-  Widget _buildScheduleCalendarGrid(ScheduleProvider provider) {
-    final firstDayOfMonth = DateTime(
-      _scheduleCurrentDate.year,
-      _scheduleCurrentDate.month,
-      1,
-    );
-    final lastDayOfMonth = DateTime(
-      _scheduleCurrentDate.year,
-      _scheduleCurrentDate.month + 1,
-      0,
-    );
-    final firstWeekday = firstDayOfMonth.weekday % 7;
-
-    final days = <Widget>[];
-
-    // 이전 달 빈 칸
-    for (int i = 0; i < firstWeekday; i++) {
-      days.add(const SizedBox());
-    }
-
-    // 현재 달의 날짜들
-    for (int day = 1; day <= lastDayOfMonth.day; day++) {
-      final date = DateTime(
-        _scheduleCurrentDate.year,
-        _scheduleCurrentDate.month,
-        day,
-      );
-      final isSelected =
-          _scheduleSelectedDate != null &&
-          _scheduleSelectedDate!.year == date.year &&
-          _scheduleSelectedDate!.month == date.month &&
-          _scheduleSelectedDate!.day == date.day;
-      final isToday =
-          DateTime.now().year == date.year &&
-          DateTime.now().month == date.month &&
-          DateTime.now().day == date.day;
-      // 필터를 걸었으면 걸린 일정이 있는 날에만 점을 찍는다
-      final hasSchedule = _visibleSchedulesForDate(provider, date).isNotEmpty;
-
-      // 디버깅 (일정이 있는 날짜 확인)
-      if (day == 1 || hasSchedule) {
-        final dateKey =
-            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        print(
-          '[CalendarScreen] $day일 확인 - dateKey: $dateKey, hasSchedule: $hasSchedule',
-        );
-        if (day == 1) {
-          print(
-            '[CalendarScreen] 저장된 모든 키: ${provider.schedulesByDate.keys.toList()}',
-          );
-        }
-      }
-      final isSunday = date.weekday == 7;
-      final isSaturday = date.weekday == 6;
-
-      days.add(
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _scheduleSelectedDate = date;
-            });
-          },
-          // B안: 고른 날은 틸로 채운 동그라미, 오늘은 옅은 틸 동그라미(테두리 없음)
-          child: Container(
-            margin: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppSemanticColors.brandDefault
-                  : isToday
-                  ? AppSemanticColors.brandWeak
-                  : null,
-              shape: BoxShape.circle,
-            ),
-            // 칸은 정사각형이라 폭이 좁은 폰(360dp)에서 글자를 가장 크게 하면 날짜 숫자와 일정 점이
-            // 칸 높이를 넘었다. 넘칠 때만 칸에 맞춰 줄이고, 평소 크기에서는 그대로 둔다.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    day.toString(),
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: isSelected
-                          ? AppSemanticColors.textInverse
-                          : isSunday
-                          ? AppSemanticColors.statusErrorIcon
-                          : isSaturday
-                          ? AppSemanticColors.interactivePrimaryDefault
-                          : AppSemanticColors.textPrimary,
-                      fontWeight: isToday || isSelected
-                          ? AppTypography.fontWeightSemibold
-                          : AppTypography.fontWeightNormal,
-                    ),
-                  ),
-                  if (hasSchedule)
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppSemanticColors.textInverse
-                            : AppSemanticColors.statusSuccessIcon,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 7,
-      childAspectRatio: 1,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space2),
-      children: days,
-    );
-  }
-
-  /// 선택된 날짜의 일정 상세
-  Widget _buildScheduleDateDetail(ScheduleProvider provider) {
-    final schedules = _visibleSchedulesForDate(provider, _scheduleSelectedDate!);
-
-    // B안: 테두리 없는 흰 카드, 머리띠·아이콘 타일 없이 맨 위에 날짜 제목만
+  /// 그날에 아무것도 없을 때 — 시트 안 한 줄(아이콘 + 글).
+  Widget _buildEmptyDayLine(String message) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space4,
-        AppSpacing.cardGap,
-        AppSpacing.space4,
-        AppSpacing.space4,
+        AppSpacing.space5,
+        AppSpacing.space2,
+        AppSpacing.space5,
+        AppSpacing.space2,
       ),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppSemanticColors.surfaceCard,
-          borderRadius: BorderRadius.circular(AppBorderRadius.card),
-          border: AppLines.cardBorder,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.cardPadding,
-            AppSpacing.space3,
-            AppSpacing.space3,
-            AppSpacing.cardPadding,
+      child: Row(
+        children: [
+          Icon(
+            Icons.event_available,
+            color: AppSemanticColors.textTertiary,
+            size: 24,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _formatSelectedDate(_scheduleSelectedDate!),
-                      style: AppTypography.heading6.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: '날짜 선택 해제',
-                    onPressed: () {
-                      setState(() {
-                        _scheduleSelectedDate = null;
-                      });
-                    },
-                    icon: Container(
-                      padding: const EdgeInsets.all(AppSpacing.space2),
-                      decoration: const BoxDecoration(
-                        color: AppSemanticColors.fillDefault,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        size: 18,
-                        color: AppSemanticColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
+          const SizedBox(width: AppSpacing.space3),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textTertiary,
               ),
-              const SizedBox(height: AppSpacing.space2),
-
-              if (schedules.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    0,
-                    AppSpacing.space2,
-                    AppSpacing.space2,
-                    0,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.event_available,
-                        color: AppSemanticColors.textTertiary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: AppSpacing.space3),
-                      Expanded(
-                        child: Text(
-                          _scheduleFilterValues.isEmpty
-                              ? '이 날짜에는 등록된 일정이 없습니다.'
-                              : '이 날짜에는 필터에 맞는 일정이 없습니다.',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Padding(
-                  // 닫기 단추가 카드 끝에 붙도록 카드 오른쪽 여백을 12로 줄였다 — 목록은 20을 맞춘다
-                  padding: const EdgeInsets.only(right: AppSpacing.space2),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.space3,
-                          vertical: AppSpacing.space1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppSemanticColors.statusSuccessBackground,
-                          borderRadius: BorderRadius.circular(
-                            AppBorderRadius.full,
-                          ),
-                        ),
-                        child: Text(
-                          '일정 ${schedules.length}건',
-                          style: AppTypography.titleSmall.copyWith(
-                            color: AppSemanticColors.statusSuccessText,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space3),
-                      ...schedules.map(
-                        (schedule) => _buildScheduleItem(schedule),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -849,11 +755,15 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     if (!mounted) return;
     if (ok) {
-      AppSnackBar.showSuccess(context,
-          message: schedule.isCompleted ? '수행완료를 해제했습니다' : '수행완료로 표시했습니다');
+      AppSnackBar.showSuccess(
+        context,
+        message: schedule.isCompleted ? '수행완료를 해제했습니다' : '수행완료로 표시했습니다',
+      );
     } else {
-      AppSnackBar.showError(context,
-          message: scheduleProvider.error ?? '수행완료 상태를 바꾸지 못했습니다');
+      AppSnackBar.showError(
+        context,
+        message: scheduleProvider.error ?? '수행완료 상태를 바꾸지 못했습니다',
+      );
     }
   }
 
@@ -864,7 +774,10 @@ class _CalendarScreenState extends State<CalendarScreen>
    * 막지 않고 서버 거절 사유를 그대로 보여준다. 실패하면 서버 반영 전이라 상태가
    * 이미 원래대로이므로 스낵바만 띄운다.
    */
-  Future<void> _toggleTaskCompletion(Schedule schedule, ScheduleTask task) async {
+  Future<void> _toggleTaskCompletion(
+    Schedule schedule,
+    ScheduleTask task,
+  ) async {
     final scheduleProvider = context.read<ScheduleProvider>();
     final ok = await scheduleProvider.toggleTaskCompletion(
       scheduleId: schedule.id,
@@ -874,11 +787,15 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     if (!mounted) return;
     if (ok) {
-      AppSnackBar.showSuccess(context,
-          message: task.isCompleted ? '할 일 완료를 해제했습니다' : '할 일을 완료했습니다');
+      AppSnackBar.showSuccess(
+        context,
+        message: task.isCompleted ? '할 일 완료를 해제했습니다' : '할 일을 완료했습니다',
+      );
     } else {
-      AppSnackBar.showError(context,
-          message: scheduleProvider.error ?? '할 일 완료 상태를 바꾸지 못했습니다');
+      AppSnackBar.showError(
+        context,
+        message: scheduleProvider.error ?? '할 일 완료 상태를 바꾸지 못했습니다',
+      );
     }
   }
 
@@ -894,9 +811,12 @@ class _CalendarScreenState extends State<CalendarScreen>
     // 모두 체크하면 자동으로 완료된다 (웹 월간일정·서버 규칙과 동일)
     final taskItems = schedule.tasks;
     final hasTasks = taskItems.isNotEmpty || schedule.taskTotal > 0;
-    final taskDoneCount =
-        taskItems.isNotEmpty ? taskItems.where((t) => t.isCompleted).length : schedule.taskCompleted;
-    final taskTotalCount = taskItems.isNotEmpty ? taskItems.length : schedule.taskTotal;
+    final taskDoneCount = taskItems.isNotEmpty
+        ? taskItems.where((t) => t.isCompleted).length
+        : schedule.taskCompleted;
+    final taskTotalCount = taskItems.isNotEmpty
+        ? taskItems.length
+        : schedule.taskTotal;
     final isTaskListExpanded = _expandedTaskScheduleIds.contains(schedule.id);
     // 알림이나 홈 '오늘' 칸에서 눌러 들어온 그 일정이면 테두리를 강조해 눈에 띄게 한다
     final isHighlighted = _highlightedScheduleId == schedule.id;
@@ -905,7 +825,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       onLongPress: isMySchedule
           ? () => _showDeleteScheduleDialog(schedule)
           : null,
-      // B안: 흰 카드 안의 일정 한 건은 테두리 없는 회색 칸. 짚어 온 일정만 일정 색 테두리 2로 강조한다
+      // 흰 시트 안의 일정 한 건은 테두리 없는 회색 칸. 짚어 온 일정만 일정 색 테두리 2로 강조한다
       child: Container(
         key: isHighlighted ? _highlightedScheduleKey : null,
         margin: const EdgeInsets.only(bottom: AppSpacing.space2),
@@ -962,8 +882,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                           ),
                           tooltip: schedule.isCompleted ? '수행완료 해제' : '수행완료',
                           visualDensity: VisualDensity.compact,
-                          constraints:
-                              const BoxConstraints(minWidth: 44, minHeight: 44),
+                          constraints: const BoxConstraints(
+                            minWidth: 44,
+                            minHeight: 44,
+                          ),
                           padding: EdgeInsets.zero,
                         ),
                 ),
@@ -1042,7 +964,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                       if (schedule.authorName != null &&
                           schedule.authorName!.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(top: AppSpacing.space1),
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.space1,
+                          ),
                           child: Text(
                             '등록: ${schedule.authorName}',
                             style: AppTypography.bodySmall.copyWith(
@@ -1054,7 +978,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                       if (schedule.managerName != null &&
                           schedule.managerName!.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(top: AppSpacing.space1),
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.space1,
+                          ),
                           child: Text(
                             '담당: ${schedule.managerName}',
                             style: AppTypography.bodySmall.copyWith(
@@ -1065,11 +991,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                       // 할 일 진행도 — 누르면 아래에 체크리스트를 펼친다/접는다
                       if (hasTasks)
                         Padding(
-                          padding:
-                              const EdgeInsets.only(top: AppSpacing.space1_5),
+                          padding: const EdgeInsets.only(
+                            top: AppSpacing.space1_5,
+                          ),
                           child: InkWell(
-                            borderRadius:
-                                BorderRadius.circular(AppBorderRadius.full),
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.full,
+                            ),
                             onTap: () {
                               setState(() {
                                 if (isTaskListExpanded) {
@@ -1258,373 +1186,157 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   /// 휴무 달력 탭 빌드
+  /// 근무조정 탭 — 크로박스식 꽉 찬 달력(칸마다 휴무자 이름 칩) + 아래에서 올라오는 그날 시트.
   Widget _buildVacationCalendar() {
-    return SingleChildScrollView(
-      // 떠 있는 + 버튼이 달력 마지막 줄을 가리지 않도록 아래 여백을 둔다(D9)
-      padding: const EdgeInsets.only(bottom: 96),
-      child: Column(
-        children: [
-          // 근무조정 컨텍스트 — 다음 달만 받기 제한 · 이번 달 마감일 (행사는 날짜별 배지·신청 시 안내로 대체)
-          Consumer<VacationProvider>(
-            builder: (context, vacationProvider, _) {
-              final month = DateTime(_currentDate.year, _currentDate.month);
-              // 알릴 것이 없으면 띠도 여백도 두지 않는다 — 빈 여백 8이 달력을 밀어내던 것
-              if (!vacationProvider.isNextMonthOnly &&
-                  vacationProvider.deadlineForTargetMonth(month) == null) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space4,
-                  AppSpacing.space2,
-                  AppSpacing.space4,
-                  0,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bodyH = constraints.maxHeight;
+        final showSelection =
+            _vacationSheetOpen ||
+            (_selectedDate != null && !_sameDay(_selectedDate!, _todayDate()));
+        return Stack(
+          children: [
+            Column(
+              children: [
+                // 근무조정 컨텍스트 — 다음 달만 받기 제한 · 이번 달 마감일 (행사는 날짜별 표시·신청 시 안내로 대체)
+                Consumer<VacationProvider>(
+                  builder: (context, vacationProvider, _) {
+                    final month = DateTime(
+                      _currentDate.year,
+                      _currentDate.month,
+                    );
+                    // 알릴 것이 없으면 띠도 여백도 두지 않는다
+                    if (!vacationProvider.isNextMonthOnly &&
+                        vacationProvider.deadlineForTargetMonth(month) ==
+                            null) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.space4,
+                        AppSpacing.space2,
+                        AppSpacing.space4,
+                        0,
+                      ),
+                      child: VacationPlanningBanner(
+                        nextMonthOnly: vacationProvider.isNextMonthOnly,
+                        allowedMonth: vacationProvider.isNextMonthOnly
+                            ? vacationProvider.nextMonthOnlyMonth
+                            : null,
+                        // 보고 있는 달 휴무의 '신청 마감일' (그 전 달에 위치)
+                        deadline: vacationProvider.deadlineForTargetMonth(
+                          month,
+                        ),
+                        deadlineTargetMonth: month,
+                        deadlinePassed: vacationProvider
+                            .isDeadlinePassedForTargetMonth(month),
+                      ),
+                    );
+                  },
                 ),
-                child: VacationPlanningBanner(
-                  nextMonthOnly: vacationProvider.isNextMonthOnly,
-                  allowedMonth: vacationProvider.isNextMonthOnly
-                      ? vacationProvider.nextMonthOnlyMonth
-                      : null,
-                  // 보고 있는 달 휴무의 '신청 마감일' (그 전 달에 위치)
-                  deadline: vacationProvider.deadlineForTargetMonth(month),
-                  deadlineTargetMonth: month,
-                  deadlinePassed: vacationProvider
-                      .isDeadlinePassedForTargetMonth(month),
+                Expanded(
+                  child: VacationCalendarWidget(
+                    currentDate: _currentDate,
+                    selectedDate: _selectedDate,
+                    showSelection: showSelection,
+                    expanded: _vacationExpanded,
+                    sheetOpen: _vacationSheetOpen,
+                    bodyHeight: bodyH,
+                    sheet: _vacationSheet,
+                    sheetSplit: _kSheetSplit,
+                    onMoveMonth: _moveVacationMonth,
+                    onToday: _vacationGoToday,
+                    onToggleExpanded: () =>
+                        setState(() => _vacationExpanded = !_vacationExpanded),
+                    onDayTap: _onVacationDayTap,
+                    roleFilters: _roleFilters,
+                    onRoleFiltersChanged: (newRoles) {
+                      setState(() {
+                        _roleFilters = newRoles;
+                      });
+                      final vacationProvider = context.read<VacationProvider>();
+                      vacationProvider.setRoleFilters(newRoles);
+                      final authProvider = context.read<AuthProvider>();
+                      final companyId =
+                          authProvider.currentUser?.company?.id ?? '1';
+                      vacationProvider.loadCalendarData(
+                        _currentDate,
+                        companyId: companyId,
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
-          ),
+              ],
+            ),
+            Consumer<VacationProvider>(
+              builder: (context, vacationProvider, _) =>
+                  _buildVacationDaySheet(vacationProvider),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-          // 달력 카드 — B안: 회색 바탕 위 흰 카드, 테두리 없음
-          Container(
-            margin: const EdgeInsets.fromLTRB(
+  /// 근무조정 그날 시트 — 머리 아래 '휴무 3명 · 승인 1 · 대기 2', 본문은 한 사람씩 줄.
+  /// 아래에 색 안내, 관리하는 사람에게는 이번 달 요약.
+  Widget _buildVacationDaySheet(VacationProvider vacationProvider) {
+    final date = _selectedDate ?? _todayDate();
+    final vacations = vacationProvider.getVacationsForDate(date);
+    final approved = vacations
+        .where((v) => v.status == VacationStatus.approved)
+        .length;
+    final pending = vacations
+        .where((v) => v.status == VacationStatus.pending)
+        .length;
+    final canManage = PermissionUtils.hasAny(
+      context.read<AuthProvider>().currentUser,
+      const [AppPermission.scheduleManage, AppPermission.workManage],
+    );
+    return CalendarDaySheet(
+      controller: _vacationSheet,
+      snapSizes: _kSheetSnaps,
+      date: date,
+      onClose: () => _closeSheet(_vacationSheet),
+      subtitle: vacations.isEmpty
+          ? null
+          : Text(
+              [
+                '휴무 ${vacations.length}명',
+                if (approved > 0) '승인 $approved',
+                if (pending > 0) '대기 $pending',
+              ].join(' · '),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+      children: [
+        if (vacations.isEmpty)
+          _buildEmptyDayLine('이 날짜에는 휴무 신청이 없습니다.')
+        else
+          ...AppLines.between([
+            for (final v in vacations) _buildVacationDayRow(v),
+          ], indent: AppSpacing.space5),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.space5,
+            AppSpacing.space4,
+            AppSpacing.space5,
+            0,
+          ),
+          child: VacationCalendarLegend(),
+        ),
+        if (canManage)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
               AppSpacing.space4,
-              AppSpacing.space2,
+              AppSpacing.space5,
               AppSpacing.space4,
               0,
             ),
-            decoration: BoxDecoration(
-              color: AppSemanticColors.surfaceCard,
-              borderRadius: BorderRadius.circular(AppBorderRadius.card),
-              border: AppLines.cardBorder,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: VacationCalendarWidget(
-              currentDate: _currentDate,
-              onDateChanged: (date) {
-                setState(() {
-                  _currentDate = date;
-                });
-                final vacationProvider = context.read<VacationProvider>();
-                final authProvider = context.read<AuthProvider>();
-                final companyId = authProvider.currentUser?.company?.id ?? '1';
-                vacationProvider.loadCalendarData(date, companyId: companyId);
-
-                // Analytics 캘린더 조회 이벤트
-                AnalyticsService().logCalendarView(
-                  viewType: 'month',
-                  date: date.toIso8601String().split('T')[0],
-                );
-              },
-              onDateSelected: (date) {
-                setState(() {
-                  _selectedDate = date;
-                });
-              },
-              roleFilters: _roleFilters,
-              onRoleFiltersChanged: (newRoles) {
-                setState(() {
-                  _roleFilters = newRoles;
-                });
-                final vacationProvider = context.read<VacationProvider>();
-                vacationProvider.setRoleFilters(newRoles);
-                final authProvider = context.read<AuthProvider>();
-                final companyId = authProvider.currentUser?.company?.id ?? '1';
-                vacationProvider.loadCalendarData(
-                  _currentDate,
-                  companyId: companyId,
-                );
-              },
-            ),
+            child: _buildMonthSummary(vacationProvider),
           ),
-
-          // 선택된 날짜 정보 — B안: 테두리 없는 흰 카드, 머리띠·아이콘 타일 없이 맨 위에 날짜 제목만
-          if (_selectedDate != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.space4,
-                AppSpacing.cardGap,
-                AppSpacing.space4,
-                0,
-              ),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.surfaceCard,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.card),
-                  border: AppLines.cardBorder,
-                ),
-                child: Padding(
-                  // 닫기 단추가 카드 끝에 붙도록 오른쪽은 12 — 목록은 안쪽에서 8을 더해 20을 맞춘다
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.cardPadding,
-                    AppSpacing.space3,
-                    AppSpacing.space3,
-                    AppSpacing.cardPadding,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _formatSelectedDate(_selectedDate!),
-                              style: AppTypography.heading6.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: '날짜 선택 해제',
-                            onPressed: () {
-                              setState(() {
-                                _selectedDate = null;
-                              });
-                            },
-                            icon: Container(
-                              padding: const EdgeInsets.all(AppSpacing.space2),
-                              decoration: const BoxDecoration(
-                                color: AppSemanticColors.fillDefault,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                size: 18,
-                                color: AppSemanticColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.space2),
-
-                      Consumer<VacationProvider>(
-                        builder: (context, vacationProvider, child) {
-                          final vacations = vacationProvider
-                              .getVacationsForDate(_selectedDate!);
-
-                          if (vacations.isEmpty) {
-                            return Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                0,
-                                AppSpacing.space2,
-                                AppSpacing.space2,
-                                0,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.event_available,
-                                    color: AppSemanticColors.textTertiary,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: AppSpacing.space3),
-                                  Expanded(
-                                    child: Text(
-                                      '이 날짜에는 휴무 신청이 없습니다.',
-                                      style: AppTypography.bodyMedium.copyWith(
-                                        color: AppSemanticColors.textTertiary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-
-                          return Padding(
-                            padding: const EdgeInsets.only(
-                              right: AppSpacing.space2,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.space3,
-                                    vertical: AppSpacing.space1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppSemanticColors.brandWeak,
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.full,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '휴무자 ${vacations.length}명',
-                                    style: AppTypography.titleSmall.copyWith(
-                                      color:
-                                          AppSemanticColors.brandWeakForeground,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.space3),
-                                // 휴무자 한 사람 — 흰 카드 안이라 테두리 없는 회색 칸
-                                ...vacations.map(
-                                  (vacation) => Container(
-                                    margin: const EdgeInsets.only(
-                                      bottom: AppSpacing.space2,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.space3,
-                                      vertical: AppSpacing.space3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppSemanticColors.fillDefault,
-                                      borderRadius: BorderRadius.circular(
-                                        AppBorderRadius.control,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(
-                                            AppSpacing.space2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: _getStatusTextColor(
-                                              vacation.status,
-                                            ).withValues(alpha: 0.1),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            _getStatusIcon(vacation.status),
-                                            size: 16,
-                                            color: _getStatusTextColor(
-                                              vacation.status,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppSpacing.space3),
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  vacation.displayName,
-                                                  style: AppTypography.bodyLarge
-                                                      .copyWith(
-                                                        color: AppSemanticColors
-                                                            .textPrimary,
-                                                        fontWeight: AppTypography
-                                                            .fontWeightSemibold,
-                                                      ),
-                                                ),
-                                              ),
-                                              // 필수 휴무는 별 그림 대신 글자 꼬리표 — 분류라 회색
-                                              if (vacation.type ==
-                                                  VacationType.mandatory) ...[
-                                                const SizedBox(
-                                                  width: AppSpacing.space2,
-                                                ),
-                                                const AppTag(label: '필수'),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppSpacing.space2),
-                                        // 상태는 옅은 꼬리표 — 진한 바탕 알약은 웹·다른 화면과 달랐다
-                                        AppTag(
-                                          label: vacation.statusText,
-                                          tone: _statusTone(vacation.status),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          // 하단 통계 섹션 (일정/휴무를 관리하는 사람만)
-          if (PermissionUtils.hasAny(
-            context.read<AuthProvider>().currentUser,
-            const [AppPermission.scheduleManage, AppPermission.workManage],
-          ))
-            Consumer<VacationProvider>(
-              builder: (context, vacationProvider, child) {
-                // B안: 다른 카드와 같은 폭·모서리의 흰 카드, 테두리 없음
-                return Container(
-                  margin: const EdgeInsets.fromLTRB(
-                    AppSpacing.space4,
-                    AppSpacing.cardGap,
-                    AppSpacing.space4,
-                    AppSpacing.space4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppSemanticColors.surfaceCard,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.card),
-                    border: AppLines.cardBorder,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space3,
-                      vertical: AppSpacing.space4,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: _buildStatItem(
-                            '${_currentDate.month}월 총 휴무',
-                            _getMonthlyTotal(vacationProvider),
-                            AppSemanticColors.interactivePrimaryDefault,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Expanded(
-                          child: _buildStatItem(
-                            '승인 대기',
-                            _getMonthlyPending(vacationProvider),
-                            AppSemanticColors.statusWarningIcon,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Expanded(
-                          child: _buildStatItem(
-                            '승인됨',
-                            _getMonthlyApproved(vacationProvider),
-                            AppSemanticColors.statusSuccessIcon,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space3),
-                        Expanded(
-                          child: _buildStatItem(
-                            '거절됨',
-                            _getMonthlyRejected(vacationProvider),
-                            AppSemanticColors.statusErrorIcon,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-
-          // 하단 여백
-          const SizedBox(height: AppSpacing.space20 + AppSpacing.space6),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1661,13 +1373,128 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
-  /// 이번 달 휴무 수 한 칸 — B안 큰 숫자 요약(heading4, 고정폭 숫자) + 아래 이름.
-  /// 예전엔 숫자를 32×32 칸에 넣어 글자를 키우거나 세 자리가 되면 넘쳤다 — 이제 칸 높이를 못 박지 않는다.
-  /// 숫자는 세어 올라간다(처음엔 0부터, 달을 바꾸면 앞 값부터) — 글자는 그대로 숫자 하나.
+  /// 고른 날의 휴무자 한 줄 — 상태 아이콘 동그라미 + 이름(15/600) + 필수 꼬리표 + 상태 꼬리표.
+  Widget _buildVacationDayRow(VacationRequest vacation) {
+    final color = _getStatusTextColor(vacation.status);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space5,
+        vertical: AppSpacing.space3,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _getStatusIcon(vacation.status),
+              size: 20,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space3),
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    vacation.displayName,
+                    style: AppTypography.titleMedium.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                ),
+                // 필수 휴무는 별 그림 대신 글자 꼬리표 — 분류라 회색
+                if (vacation.type == VacationType.mandatory) ...[
+                  const SizedBox(width: AppSpacing.space2),
+                  const AppTag(label: '필수'),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space2),
+          AppTag(
+            label: vacation.statusText,
+            tone: _statusTone(vacation.status),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 이번 달 요약 — 시트 아래 회색 칸 하나에 네 숫자(총 휴무·승인 대기·승인됨·거절됨).
+  Widget _buildMonthSummary(VacationProvider vacationProvider) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space3,
+        AppSpacing.space3,
+        AppSpacing.space3,
+        AppSpacing.space4,
+      ),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.fillDefault,
+        borderRadius: BorderRadius.circular(AppBorderRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: AppSpacing.space1),
+            child: Text(
+              '${_currentDate.month}월 요약',
+              style: AppTypography.titleSmall.copyWith(
+                color: AppSemanticColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space3),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  '${_currentDate.month}월 총 휴무',
+                  _getMonthlyTotal(vacationProvider),
+                  AppSemanticColors.interactivePrimaryDefault,
+                ),
+              ),
+              Expanded(
+                child: _buildStatItem(
+                  '승인 대기',
+                  _getMonthlyPending(vacationProvider),
+                  AppSemanticColors.statusWarningIcon,
+                ),
+              ),
+              Expanded(
+                child: _buildStatItem(
+                  '승인됨',
+                  _getMonthlyApproved(vacationProvider),
+                  AppSemanticColors.statusSuccessIcon,
+                ),
+              ),
+              Expanded(
+                child: _buildStatItem(
+                  '거절됨',
+                  _getMonthlyRejected(vacationProvider),
+                  AppSemanticColors.statusErrorIcon,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 이번 달 휴무 수 한 칸 — 큰 숫자 요약(heading4, 고정폭 숫자) + 아래 이름. 숫자는 세어 올라간다.
   Widget _buildStatItem(String label, int value, Color color) {
     return Column(
       children: [
-        // AppCountUp의 Text는 maxLines를 DefaultTextStyle에서 받는다 — 예전 Text(maxLines: 1)와 같게
+        // AppCountUp의 Text는 maxLines를 DefaultTextStyle에서 받는다
         DefaultTextStyle.merge(
           maxLines: 1,
           child: AppCountUp(
@@ -1758,43 +1585,25 @@ class _CalendarScreenState extends State<CalendarScreen>
     return rejected;
   }
 
-  Widget _buildFab() {
-    final authProvider = context.read<AuthProvider>();
-    // 일정을 만들 수 있는 사람(관리자 또는 '일정 관리' 위임자)에게만 관리자용 FAB
+  /// 떠 있는 추가 단추 — 크로박스처럼 가운데 알약, 고른 날짜를 따라 '11월 14일에 휴무 추가'.
+  /// 관리자(일정 관리)는 예전처럼 관리자 기능(휴무 추가·휴무 제한 설정)을 먼저 연다.
+  Widget _buildAddPill() {
+    final vacationTab = _tabController.index == 0;
+    final date =
+        (vacationTab ? _selectedDate : _scheduleSelectedDate) ?? _todayDate();
     final isAdmin = PermissionUtils.has(
-      authProvider.currentUser,
+      context.read<AuthProvider>().currentUser,
       AppPermission.scheduleManage,
     );
-
-    // B안 알약 FAB — 글자는 그 자리에 이미 있던 말을 쓴다(관리자 메뉴의 첫 항목·휴무 추가 단추·일정 등록 시트 제목)
-    if (isAdmin) {
-      return ScaleTransition(
-        scale: _fabAnimationController,
-        child: AppFab(
-          icon: Icons.add,
-          label: '휴무 추가',
-          onPressed: _showAdminActionDialog,
-        ),
-      );
-    }
-
     return ScaleTransition(
       scale: _fabAnimationController,
-      child: AppFab(
-        icon: Icons.add,
-        label: '휴무 추가',
-        onPressed: _showVacationRequestDialog,
-      ),
-    );
-  }
-
-  Widget _buildScheduleFab() {
-    return ScaleTransition(
-      scale: _fabAnimationController,
-      child: AppFab(
-        icon: Icons.add,
-        label: '일정 등록',
-        onPressed: _showAddScheduleDialog,
+      child: CalendarAddPill(
+        label: vacationTab
+            ? '${date.month}월 ${date.day}일에 휴무 추가'
+            : '${date.month}월 ${date.day}일에 일정 등록',
+        onTap: vacationTab
+            ? (isAdmin ? _showAdminActionDialog : _showVacationRequestDialog)
+            : _showAddScheduleDialog,
       ),
     );
   }
@@ -1838,10 +1647,7 @@ class _CalendarScreenState extends State<CalendarScreen>
               IconButton(
                 tooltip: '닫기',
                 onPressed: onClose,
-                icon: Icon(
-                  Icons.close,
-                  color: AppSemanticColors.textSecondary,
-                ),
+                icon: Icon(Icons.close, color: AppSemanticColors.textSecondary),
               ),
             ],
           ),
@@ -2058,7 +1864,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                                                 width: 10,
                                                 height: 10,
                                                 decoration: BoxDecoration(
-                                                  color: colorFromHex(base.color) ??
+                                                  color:
+                                                      colorFromHex(
+                                                        base.color,
+                                                      ) ??
                                                       AppSemanticColors
                                                           .interactivePrimaryDefault,
                                                   shape: BoxShape.circle,
@@ -2081,7 +1890,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                               width: 10,
                                               height: 10,
                                               decoration: BoxDecoration(
-                                                color: colorFromHex(label.color) ??
+                                                color:
+                                                    colorFromHex(label.color) ??
                                                     AppSemanticColors
                                                         .interactivePrimaryDefault,
                                                 shape: BoxShape.circle,
@@ -2097,9 +1907,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   ],
                                   onChanged: (value) {
                                     setModalState(() {
-                                      final wasLabel = selectedCategory.startsWith(
-                                        'label:',
-                                      );
+                                      final wasLabel = selectedCategory
+                                          .startsWith('label:');
                                       selectedCategory = value ?? 'MEETING';
                                       if (value != null &&
                                           value.startsWith('label:')) {
@@ -2132,10 +1941,13 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     onLabelsChanged: (labels) {
                                       customLabels = labels;
                                       // 고른 구분이 삭제됐으면 기본값으로 되돌린다
-                                      if (selectedCategory.startsWith('label:') &&
+                                      if (selectedCategory.startsWith(
+                                            'label:',
+                                          ) &&
                                           !labels.any(
                                             (l) =>
-                                                'label:${l.id}' == selectedCategory,
+                                                'label:${l.id}' ==
+                                                selectedCategory,
                                           )) {
                                         selectedCategory = 'MEETING';
                                       }
@@ -2144,10 +1956,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     onBaseCategoriesChanged: (categories) {
                                       baseCategories = categories;
                                       // 고른 기본 구분이 숨겨졌으면 첫 보이는 구분으로
-                                      if (!selectedCategory.startsWith('label:')) {
+                                      if (!selectedCategory.startsWith(
+                                        'label:',
+                                      )) {
                                         final current = categories
                                             .where(
-                                              (c) => c.category == selectedCategory,
+                                              (c) =>
+                                                  c.category ==
+                                                  selectedCategory,
                                             )
                                             .toList();
                                         if (current.isNotEmpty &&
@@ -2194,7 +2010,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     });
                                   },
                                 ),
-                                for (final option in ScheduleColorPalette.values)
+                                for (final option
+                                    in ScheduleColorPalette.values)
                                   _buildScheduleColorSwatch(
                                     color: option.color,
                                     isSelected: selectedColorHex == option.hex,
@@ -2409,7 +2226,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   const SizedBox(height: AppSpacing.space2),
                                   // B안: 테두리 상자 대신 회색으로 채운 칸
                                   Container(
-                                    constraints: const BoxConstraints(maxHeight: 150),
+                                    constraints: const BoxConstraints(
+                                      maxHeight: 150,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppSemanticColors.fillDefault,
                                       borderRadius: BorderRadius.circular(
@@ -2422,14 +2241,17 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       itemCount: members.length,
                                       itemBuilder: (context, index) {
                                         final member = members[index];
-                                        final isSelected = selectedParticipantIds
-                                            .contains(member.id.toString());
+                                        final isSelected =
+                                            selectedParticipantIds.contains(
+                                              member.id.toString(),
+                                            );
                                         return CheckboxListTile(
                                           dense: true,
                                           visualDensity: VisualDensity.compact,
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: AppSpacing.space2,
-                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: AppSpacing.space2,
+                                              ),
                                           title: Text(
                                             member.name,
                                             style: AppTypography.bodyMedium,
@@ -2438,9 +2260,11 @@ class _CalendarScreenState extends State<CalendarScreen>
                                             member.role == 'caregiver'
                                                 ? '요양보호사'
                                                 : '사무직',
-                                            style: AppTypography.bodySmall.copyWith(
-                                              color: AppSemanticColors.textTertiary,
-                                            ),
+                                            style: AppTypography.bodySmall
+                                                .copyWith(
+                                                  color: AppSemanticColors
+                                                      .textTertiary,
+                                                ),
                                           ),
                                           value: isSelected,
                                           onChanged: (checked) {
@@ -2508,8 +2332,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                               size: SeedButtonSize.large,
                               onPressed: () async {
                                 if (titleController.text.trim().isEmpty) {
-                                  AppSnackBar.showWarning(context,
-                                      message: '제목을 입력해주세요');
+                                  AppSnackBar.showWarning(
+                                    context,
+                                    message: '제목을 입력해주세요',
+                                  );
                                   return;
                                 }
                                 if (repeat.isRepeating &&
@@ -2517,16 +2343,20 @@ class _CalendarScreenState extends State<CalendarScreen>
                                         repeat.until!.isBefore(
                                           DateUtils.dateOnly(startDate),
                                         ))) {
-                                  AppSnackBar.showWarning(context,
-                                      message: '반복이 끝나는 날을 시작일 뒤로 골라주세요');
+                                  AppSnackBar.showWarning(
+                                    context,
+                                    message: '반복이 끝나는 날을 시작일 뒤로 골라주세요',
+                                  );
                                   return;
                                 }
 
-                                final authProvider = context.read<AuthProvider>();
+                                final authProvider = context
+                                    .read<AuthProvider>();
                                 final scheduleProvider = context
                                     .read<ScheduleProvider>();
                                 final companyId =
-                                    authProvider.currentUser?.company?.id ?? '1';
+                                    authProvider.currentUser?.company?.id ??
+                                    '1';
 
                                 final startDateStr =
                                     '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
@@ -2535,12 +2365,12 @@ class _CalendarScreenState extends State<CalendarScreen>
 
                                 // 커스텀 구분은 category 대신 labelId로 보낸다
                                 // (서버 category는 OTHER로 채움 — 웹과 같은 계약)
-                                final isCustomLabel = selectedCategory.startsWith(
-                                  'label:',
-                                );
+                                final isCustomLabel = selectedCategory
+                                    .startsWith('label:');
                                 final scheduleData = <String, dynamic>{
                                   'title': titleController.text.trim(),
-                                  'content': contentController.text.trim().isEmpty
+                                  'content':
+                                      contentController.text.trim().isEmpty
                                       ? null
                                       : contentController.text.trim(),
                                   'category': isCustomLabel
@@ -2551,7 +2381,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       selectedCategory.substring(6),
                                     ),
                                   'color': selectedColorHex,
-                                  'location': locationController.text.trim().isEmpty
+                                  'location':
+                                      locationController.text.trim().isEmpty
                                       ? null
                                       : locationController.text.trim(),
                                   'startDate': startDateStr,
@@ -2582,40 +2413,51 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   final screenContext = this.context;
                                   final result = await scheduleProvider
                                       .createRepeatedSchedules(
-                                    companyId: companyId.toString(),
-                                    scheduleData: scheduleData,
-                                    startDate: startDate,
-                                    endDate: endDate,
-                                    starts: starts,
-                                  );
+                                        companyId: companyId.toString(),
+                                        scheduleData: scheduleData,
+                                        startDate: startDate,
+                                        endDate: endDate,
+                                        starts: starts,
+                                      );
                                   if (!screenContext.mounted) return;
                                   if (result.created == result.total) {
-                                    AppSnackBar.showSuccess(screenContext,
-                                        message:
-                                            '반복 일정 ${result.total}건이 등록되었습니다');
+                                    AppSnackBar.showSuccess(
+                                      screenContext,
+                                      message:
+                                          '반복 일정 ${result.total}건이 등록되었습니다',
+                                    );
                                   } else if (result.created == 0) {
-                                    AppSnackBar.showError(screenContext,
-                                        message: '일정 등록에 실패했습니다');
+                                    AppSnackBar.showError(
+                                      screenContext,
+                                      message: '일정 등록에 실패했습니다',
+                                    );
                                   } else {
-                                    AppSnackBar.showError(screenContext,
-                                        message:
-                                            '${result.total}건 중 ${result.created}건만 등록했습니다. 나머지는 다시 등록해 주세요');
+                                    AppSnackBar.showError(
+                                      screenContext,
+                                      message:
+                                          '${result.total}건 중 ${result.created}건만 등록했습니다. 나머지는 다시 등록해 주세요',
+                                    );
                                   }
                                   return;
                                 }
 
-                                final success = await scheduleProvider.createSchedule(
-                                  companyId: companyId.toString(),
-                                  scheduleData: scheduleData,
-                                );
+                                final success = await scheduleProvider
+                                    .createSchedule(
+                                      companyId: companyId.toString(),
+                                      scheduleData: scheduleData,
+                                    );
 
                                 if (mounted) {
                                   if (success) {
-                                    AppSnackBar.showSuccess(context,
-                                        message: '일정이 등록되었습니다');
+                                    AppSnackBar.showSuccess(
+                                      context,
+                                      message: '일정이 등록되었습니다',
+                                    );
                                   } else {
-                                    AppSnackBar.showError(context,
-                                        message: '일정 등록에 실패했습니다');
+                                    AppSnackBar.showError(
+                                      context,
+                                      message: '일정 등록에 실패했습니다',
+                                    );
                                   }
                                 }
                               },
@@ -2643,7 +2485,7 @@ class _CalendarScreenState extends State<CalendarScreen>
     required String companyId,
     required void Function(List<ScheduleLabel>) onLabelsChanged,
     required void Function(List<ScheduleCategorySetting>)
-        onBaseCategoriesChanged,
+    onBaseCategoriesChanged,
   }) {
     final nameController = TextEditingController();
     String colorHex = ScheduleColorPalette.values.first.hex;
@@ -2790,10 +2632,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 await reload();
               } catch (_) {
                 if (sheetContext.mounted) {
-                  AppSnackBar.showError(
-                    context,
-                    message: '기본 구분 되돌리기에 실패했습니다',
-                  );
+                  AppSnackBar.showError(context, message: '기본 구분 되돌리기에 실패했습니다');
                 }
               }
               if (sheetContext.mounted) {
@@ -2872,7 +2711,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                         width: 14,
                                         height: 14,
                                         decoration: BoxDecoration(
-                                          color: colorFromHex(base.color) ??
+                                          color:
+                                              colorFromHex(base.color) ??
                                               AppSemanticColors
                                                   .interactivePrimaryDefault,
                                           shape: BoxShape.circle,
@@ -2884,13 +2724,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                                           base.hidden
                                               ? '${base.name} (숨김)'
                                               : base.name,
-                                          style: AppTypography.bodyMedium.copyWith(
-                                            color: AppSemanticColors.textPrimary,
-                                            fontWeight:
-                                                editingBase == base.category
+                                          style: AppTypography.bodyMedium
+                                              .copyWith(
+                                                color: AppSemanticColors
+                                                    .textPrimary,
+                                                fontWeight:
+                                                    editingBase == base.category
                                                     ? FontWeight.w600
                                                     : FontWeight.normal,
-                                          ),
+                                              ),
                                         ),
                                       ),
                                       if (base.customized)
@@ -2901,7 +2743,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                           icon: Icon(
                                             Icons.restart_alt,
                                             size: 20,
-                                            color: AppSemanticColors.textSecondary,
+                                            color:
+                                                AppSemanticColors.textSecondary,
                                           ),
                                           tooltip: '기본값으로 되돌리기',
                                         ),
@@ -2912,7 +2755,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                                 setSheetState(() {
                                                   editingId = null;
                                                   editingBase = base.category;
-                                                  nameController.text = base.name;
+                                                  nameController.text =
+                                                      base.name;
                                                   colorHex = base.color;
                                                 });
                                               },
@@ -2933,7 +2777,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                               ? Icons.visibility_outlined
                                               : Icons.visibility_off_outlined,
                                           size: 20,
-                                          color: AppSemanticColors.textSecondary,
+                                          color:
+                                              AppSemanticColors.textSecondary,
                                         ),
                                         tooltip: base.hidden ? '보이기' : '숨기기',
                                       ),
@@ -2954,9 +2799,12 @@ class _CalendarScreenState extends State<CalendarScreen>
                           if (isLoading)
                             Center(
                               child: Padding(
-                                padding: const EdgeInsets.all(AppSpacing.space4),
+                                padding: const EdgeInsets.all(
+                                  AppSpacing.space4,
+                                ),
                                 child: CircularProgressIndicator(
-                                  color: AppSemanticColors.interactivePrimaryDefault,
+                                  color: AppSemanticColors
+                                      .interactivePrimaryDefault,
                                 ),
                               ),
                             )
@@ -2984,7 +2832,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       width: 14,
                                       height: 14,
                                       decoration: BoxDecoration(
-                                        color: colorFromHex(label.color) ??
+                                        color:
+                                            colorFromHex(label.color) ??
                                             AppSemanticColors
                                                 .interactivePrimaryDefault,
                                         shape: BoxShape.circle,
@@ -2994,12 +2843,14 @@ class _CalendarScreenState extends State<CalendarScreen>
                                     Expanded(
                                       child: Text(
                                         label.name,
-                                        style: AppTypography.bodyMedium.copyWith(
-                                          color: AppSemanticColors.textPrimary,
-                                          fontWeight: editingId == label.id
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                        ),
+                                        style: AppTypography.bodyMedium
+                                            .copyWith(
+                                              color:
+                                                  AppSemanticColors.textPrimary,
+                                              fontWeight: editingId == label.id
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
+                                            ),
                                       ),
                                     ),
                                     IconButton(
@@ -3009,7 +2860,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                               setSheetState(() {
                                                 editingBase = null;
                                                 editingId = label.id;
-                                                nameController.text = label.name;
+                                                nameController.text =
+                                                    label.name;
                                                 colorHex = label.color;
                                               });
                                             },
@@ -3028,7 +2880,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                                       icon: Icon(
                                         Icons.delete_outline,
                                         size: 20,
-                                        color: AppSemanticColors.statusErrorIcon,
+                                        color:
+                                            AppSemanticColors.statusErrorIcon,
                                       ),
                                       tooltip: '삭제',
                                     ),
@@ -3088,7 +2941,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                               ],
                               Expanded(
                                 child: SeedButton(
-                                  label: (editingId == null && editingBase == null)
+                                  label:
+                                      (editingId == null && editingBase == null)
                                       ? '추가'
                                       : '수정 저장',
                                   variant: SeedButtonVariant.brandSolid,
@@ -3246,10 +3100,7 @@ class _SegmentedTabsHeader extends SliverPersistentHeaderDelegate {
         controller: controller,
         padding: _padding,
         // 웹 관리자 화면과 같은 이름 — 근무조정(휴무)·월간일정(일정)
-        tabs: const [
-          AppSegmentedTab('근무조정'),
-          AppSegmentedTab('월간일정'),
-        ],
+        tabs: const [AppSegmentedTab('근무조정'), AppSegmentedTab('월간일정')],
       ),
     );
   }
@@ -3267,5 +3118,7 @@ DateTime? scheduleStartDateOf(Map<String, dynamic> response) {
   final text = json['startDate']?.toString() ?? '';
   if (text.length < 10) return null;
   final parsed = DateTime.tryParse(text.substring(0, 10));
-  return parsed == null ? null : DateTime(parsed.year, parsed.month, parsed.day);
+  return parsed == null
+      ? null
+      : DateTime(parsed.year, parsed.month, parsed.day);
 }

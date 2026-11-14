@@ -17,7 +17,7 @@ import 'common/app_dialog.dart';
 import 'common/app_sheet_frame.dart';
 import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
-import 'seed/seed_chip.dart';
+import 'common/app_choice_grid.dart';
 import 'seed/seed_text_field.dart';
 import 'vacation_planning_banner.dart';
 
@@ -406,32 +406,6 @@ class _VacationRequestDialogState extends State<VacationRequestDialog> {
     }
   }
 
-  /// 휴무 종류 하나를 고르는 칩 — B안 거르기 칩(SeedChip, 높이 36·글자 14, 고르면 틸 + 흰 글자).
-  /// 흰 시트 안이라 고르기 전 바탕은 회색이다. (쓰지 않던 테두리 칸 단추 _buildOptionButton은 뺐다)
-  Widget _buildKindOption(VacationKind kind) {
-    return SeedChip(
-      label: kind.label,
-      selected: _selectedKind == kind,
-      onTap: () {
-        setState(() {
-          _selectedKind = kind;
-        });
-      },
-    );
-  }
-
-  Widget _buildDetailOption(VacationDetailType detail) {
-    return SeedChip(
-      label: detail.label,
-      selected: _detailType == detail,
-      onTap: () {
-        setState(() {
-          _detailType = detail;
-        });
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     // B안 시트(시안 390-05c): 손잡이 → 제목 18 + 닫기 → 날짜 칸 → 안내 → 종류 칩 → 사유 → 큰 신청 단추.
@@ -607,10 +581,12 @@ class _VacationRequestDialogState extends State<VacationRequestDialog> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space2_5),
-              Wrap(
-                spacing: AppSpacing.space2,
-                runSpacing: AppSpacing.space2,
-                children: VacationKind.values.map(_buildKindOption).toList(),
+              // 같은 폭 칸 3개씩(크로박스 고르기 칸) — 줄 끝이 들쭉날쭉하지 않게
+              AppChoiceGrid<VacationKind>(
+                values: VacationKind.values,
+                selected: _selectedKind,
+                labelOf: (kind) => kind.label,
+                onSelected: (kind) => setState(() => _selectedKind = kind),
               ),
               const SizedBox(height: AppSpacing.space2),
               Text(
@@ -632,12 +608,11 @@ class _VacationRequestDialogState extends State<VacationRequestDialog> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.space2_5),
-                Wrap(
-                  spacing: AppSpacing.space2,
-                  runSpacing: AppSpacing.space2,
-                  children: VacationDetailType.values
-                      .map(_buildDetailOption)
-                      .toList(),
+                AppChoiceGrid<VacationDetailType>(
+                  values: VacationDetailType.values,
+                  selected: _detailType,
+                  labelOf: (detail) => detail.label,
+                  onSelected: (detail) => setState(() => _detailType = detail),
                 ),
               ],
 

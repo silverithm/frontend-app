@@ -186,7 +186,9 @@ lib/
 
 **정보 위계 (크로박스 가이드라인과 같은 원칙):** 한 항목 안에서 제목(15·`textPrimary`·w600) → 보조(13·`textSecondary`) → 약함(13 또는 11·`textTertiary`) 세 단으로, 크기·색·굵기를 함께 낮춘다. 줄간격은 본문 1.5, 긴 글 1.6, 제목 1.25~1.4.
 
-**기기 글자 크기:** 화면마다 따로 다루지 않는다(`MediaQuery.withClampedTextScaling`·`TextScaler.noScaling`을 화면에 두지 않는다). `main.dart` builder에서 앱 전체에 한 번 적용하고 1.3배에서 자른다(`theme/text_scale.dart`). 예외는 종이 공문 미리보기(`official_document_view.dart`)뿐 — 종이 한 장을 줄여 보여주는 그림이라 글자 배율을 받지 않는다.
+**기기 글자 크기:** 화면마다 따로 다루지 않는다(`MediaQuery.withClampedTextScaling`·`TextScaler.noScaling`을 화면에 두지 않는다). `main.dart` builder에서 앱 전체에 한 번 적용하고 1.3배에서 자른다(`theme/text_scale.dart`). 예외는 둘 — 종이 공문 미리보기(`official_document_view.dart`, 종이 한 장을 줄여 보여주는 그림)와 꽉 찬 달력의 날짜 칸 안(`widgets/calendar/month_chip_grid.dart`, 칸 폭이 정해져 있어 키우면 이름이 '이...'로 잘린다 — 크로박스와 같은 규칙). 머리줄·시트 등 칸 밖은 앱 전체처럼 커진다.
+
+**달력(일정 탭 근무조정·월간일정, 2026-11-14 크로박스식):** `widgets/calendar/month_chip_grid.dart`를 같이 쓴다. 카드 없이 화면 폭을 다 쓰고 남은 높이를 주 수로 나눠 칸이 화면 아래까지 찬다(작은 폰에서 칸 최소 높이로도 안 들어가면 위아래로 넘긴다). 칸마다 날짜 + 그날 것(휴무자 이름·일정 제목)을 색 칩으로, 넘치면 `+n`, 머리줄 '펼치기'로 전부. 날짜를 누르면 `CalendarDaySheet`(DraggableScrollableSheet, 반쯤 0.55)가 올라오고 고른 줄이 시트 위로 밀려 올라간다. 추가는 가운데 `CalendarAddPill`('11월 14일에 휴무 추가'). 탭은 좌우로 쓸지 않는다(쓸면 달이 바뀐다). 크로박스 원본은 `~/orca/workspaces/timebox/chrobox`의 `lib/screens/calendar_screen.dart`.
 
 **바탕·카드:** 화면 바탕 `AppSemanticColors.backgroundCanvas`(#F2F4F6) 위에 흰 카드 `surfaceCard`(모서리 `AppBorderRadius.card` 16·안쪽 여백 `AppSpacing.cardPadding` 16·카드 간격 `AppSpacing.cardGap` 10), 1px 테두리(`AppLines.cardBorder`)와 카드 안 줄 사이 1px 선(`AppRowDivider`). 채팅 대화·직원 목록처럼 한 종류가 죽 이어지는 목록은 카드 없이 화면 끝까지 채운다(`ChatCardSlice(fullBleed: true)`). 입력칸·보조 단추 바탕은 `fillDefault`, 옅은 틸 바탕은 `brandWeak` + 글자 `brandWeakForeground`.
 

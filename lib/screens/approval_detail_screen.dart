@@ -12,6 +12,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../services/api_service.dart';
+import '../theme/app_lines.dart';
+import '../widgets/approval/approval_line_stepper.dart';
 import '../widgets/approval/approval_skeletons.dart';
 import '../widgets/approval/approval_status_badge.dart';
 import '../widgets/approval/official_document_view.dart';
@@ -382,16 +384,6 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                     '요청일시',
                     dateFormat.format(_approval.createdAt),
                   ),
-                  if (_approval.approvalLine.isNotEmpty &&
-                      _approval.status == ApprovalStatus.pending &&
-                      _approval.currentStep != null) ...[
-                    const SizedBox(height: AppSpacing.space2_5),
-                    _buildInfoRow(
-                      Icons.pending_actions,
-                      '결재 차례',
-                      '${_approval.currentStep!.approverName} (${_approval.approvalLine.where((s) => s.isApproved).length}/${_approval.approvalLine.length} 승인)',
-                    ),
-                  ],
                   // 열람 대상 — 직책·개인 단위로 문서를 볼 수 있게 지정된 사람들 (웹과 동일)
                   if (_approval.viewers.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.space2_5),
@@ -399,6 +391,18 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                       Icons.visibility_outlined,
                       '열람 대상',
                       _approval.viewers.map((v) => v.viewerName).join(', '),
+                    ),
+                  ],
+                  // 결재 단계 — 예전 '결재 차례 김관리 (1/2 승인)' 한 줄을 단계 동그라미로(크로박스 단계 표시)
+                  if (_approval.approvalLine.isNotEmpty &&
+                      _approval.status != ApprovalStatus.draft) ...[
+                    const SizedBox(height: AppSpacing.space4),
+                    const AppRowDivider(),
+                    const SizedBox(height: AppSpacing.space4),
+                    ApprovalLineStepper(
+                      requesterName: _approval.requesterName,
+                      requestedAt: _approval.createdAt,
+                      steps: _approval.approvalLine,
                     ),
                   ],
                 ],
