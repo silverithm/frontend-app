@@ -2,12 +2,16 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../models/approval.dart';
+import '../providers/auth_provider.dart';
+import '../services/blank_form_printer.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../utils/blank_form.dart';
 import '../widgets/approval/document_form_fields.dart';
 import '../widgets/common/app_card.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -43,6 +47,30 @@ class _ApprovalTemplatePreviewScreenState
     extends State<ApprovalTemplatePreviewScreen> {
   bool _isDownloading = false;
   double _downloadProgress = 0;
+  bool _isPrinting = false;
+
+  /// 손으로 채울 빈 서식을 인쇄한다(2026-11-15 "결재서식을 인쇄하여 체크리스트로 — 사용 전 양식").
+  /// 웹의 '빈 서식 인쇄'와 같은 공문 틀 — 폰 인쇄 창이 뜨고 프린터를 고르거나 PDF로 저장할 수 있다.
+  Future<void> _printBlankForm() async {
+    if (_isPrinting) return;
+    setState(() => _isPrinting = true);
+    try {
+      await BlankFormPrinter.print(
+        template: widget.template,
+        companyName:
+            context.read<AuthProvider>().currentUser?.company?.name ?? '',
+      );
+    } catch (_) {
+      if (mounted) {
+        AppSnackBar.showError(
+          context,
+          message: '인쇄를 준비하지 못했어요. 잠시 뒤 다시 해 주세요.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPrinting = false);
+    }
+  }
 
   bool get _isHwpFile {
     final t = widget.template;
@@ -227,6 +255,17 @@ class _ApprovalTemplatePreviewScreenState
                           color: AppSemanticColors.textTertiary,
                         ),
                       ),
+                      if (canPrintBlankForm(t)) ...[
+                        const SizedBox(height: AppSpacing.space3),
+                        // 종이에 손으로 채워 쓰는 빈 서식(체크리스트 등) — 웹과 같은 이름
+                        SeedButton(
+                          label: '빈 서식 인쇄',
+                          variant: SeedButtonVariant.neutralWeak,
+                          prefixIcon: Icons.print_outlined,
+                          isLoading: _isPrinting,
+                          onPressed: _printBlankForm,
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.space3),
                       DocumentFormFields(
                         fields: fields,

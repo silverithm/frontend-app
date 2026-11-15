@@ -20,6 +20,7 @@ import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/common/app_notice_toasts.dart';
 
 /// AI 글쓰기 도우미 — 웹(frontend-admin의 AiPostWriter.tsx)과 같은 기능.
 ///
@@ -192,7 +193,10 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
 
       final hashtagsRaw = response['hashtags'];
       final hashtags = hashtagsRaw is List
-          ? hashtagsRaw.map((e) => e?.toString() ?? '').where((e) => e.isNotEmpty).toList()
+          ? hashtagsRaw
+                .map((e) => e?.toString() ?? '')
+                .where((e) => e.isNotEmpty)
+                .toList()
           : <String>[];
 
       if (!mounted) return;
@@ -204,10 +208,7 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
         );
         _resultChannel = channel;
       });
-      AppSnackBar.showSuccess(
-        context,
-        message: '글이 완성됐어요. 확인하고 복사해서 올려주세요',
-      );
+      AppSnackBar.showSuccess(context, message: '글이 완성됐어요. 확인하고 복사해서 올려주세요');
     } catch (e) {
       final message = e
           .toString()
@@ -241,7 +242,10 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
     try {
       await Clipboard.setData(ClipboardData(text: text));
       if (!mounted) return;
-      AppSnackBar.showSuccess(context, message: '$label을(를) 복사했어요. 올릴 곳에 붙여넣으세요');
+      AppSnackBar.showSuccess(
+        context,
+        message: '$label을(를) 복사했어요. 올릴 곳에 붙여넣으세요',
+      );
     } catch (_) {
       if (!mounted) return;
       AppSnackBar.showError(context, message: '복사에 실패했습니다. 글을 길게 눌러 직접 복사해주세요');
@@ -255,137 +259,141 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: 'AI 글쓰기 도우미'),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.screenGutter),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SeedCallout(
-                variant: SeedCalloutVariant.info,
-                title: '사진만 올리면 글을 써드려요',
-                description:
-                    '오늘 찍은 식사·프로그램 사진을 올리면 밴드·블로그 글, 보호자 안내문, 기관 공지문, 인스타그램 글을 자동으로 작성해요. 완성된 글을 복사해서 붙여넣기만 하면 됩니다.',
-              ),
-              const SizedBox(height: AppSpacing.cardGap),
-
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '오늘의 사진 (${_images.length}/$_maxImages)',
-                      style: AppTypography.titleSmall.copyWith(
-                        color: AppSemanticColors.textPrimary,
+        child: AppNoticeHost(
+          noticeKey: 'ai-post-writer',
+          notices: const [
+            AppNotice.info(
+              title: '사진만 올리면 글을 써드려요',
+              description:
+                  '오늘 찍은 식사·프로그램 사진을 올리면 밴드·블로그 글, 보호자 안내문, 기관 공지문, 인스타그램 글을 자동으로 작성해요. 완성된 글을 복사해서 붙여넣기만 하면 됩니다.',
+            ),
+          ],
+          // 쓰는 법 안내는 위에 잠깐 뜨는 알림 카드로(2026-11-15) — 예전엔 맨 위 고정 상자
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.screenGutter),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '오늘의 사진 (${_images.length}/$_maxImages)',
+                        style: AppTypography.titleSmall.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.space1),
-                    Text(
-                      '식사, 프로그램, 만들기 활동 사진 등을 최대 $_maxImages장까지 올릴 수 있어요.',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppSemanticColors.textTertiary,
+                      const SizedBox(height: AppSpacing.space1),
+                      Text(
+                        '식사, 프로그램, 만들기 활동 사진 등을 최대 $_maxImages장까지 올릴 수 있어요.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.space3),
-
-                    if (_images.isNotEmpty) ...[
-                      _buildThumbnailStrip(),
                       const SizedBox(height: AppSpacing.space3),
-                    ],
 
-                    // 흰 카드 안 보조 단추 — 테두리 대신 회색 채움
-                    SizedBox(
-                      width: double.infinity,
-                      child: SeedButton(
-                        label: _images.isEmpty ? '사진 선택하기' : '사진 더 담기',
-                        variant: SeedButtonVariant.neutralWeak,
-                        prefixIcon: Icons.add_photo_alternate_outlined,
-                        isDisabled: _isGenerating || _images.length >= _maxImages,
-                        onPressed: _pickImages,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.cardGap),
-
-              AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '어디에 올릴 글인가요?',
-                      style: AppTypography.titleSmall.copyWith(
-                        color: AppSemanticColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.space2),
-                    // 다섯 종류라 한 줄에 다 안 들어간다 — 줄바꿈되는 칩 묶음으로
-                    Wrap(
-                      spacing: AppSpacing.space2,
-                      runSpacing: AppSpacing.space2,
-                      children: [
-                        for (final channel in _Channel.values)
-                          SeedChip(
-                            label: channel.label,
-                            selected: _channel == channel,
-                            isDisabled: _isGenerating,
-                            onTap: () => setState(() => _channel = channel),
-                          ),
+                      if (_images.isNotEmpty) ...[
+                        _buildThumbnailStrip(),
+                        const SizedBox(height: AppSpacing.space3),
                       ],
-                    ),
-                    const SizedBox(height: AppSpacing.space5),
 
-                    SeedTextField(
-                      label: '상황 설명 (선택)',
-                      placeholder:
-                          '예: 오늘 오전엔 원예 프로그램으로 다육이 화분을 만들었고, 점심은 잡채와 미역국이었어요.',
-                      helperText: '적어주시면 글이 훨씬 정확해져요. 비워두면 사진만 보고 작성합니다.',
-                      controller: _descriptionController,
-                      maxLines: 3,
-                      isDisabled: _isGenerating,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space5),
-
-              if (_errorMessage != null) ...[
-                SeedCallout(
-                  variant: SeedCalloutVariant.danger,
-                  title: _errorMessage!,
-                ),
-                const SizedBox(height: AppSpacing.space4),
-              ],
-
-              SizedBox(
-                width: double.infinity,
-                child: SeedButton(
-                  label: _isGenerating ? '글을 쓰고 있어요...' : '버튼 하나로 글 완성하기',
-                  size: SeedButtonSize.large,
-                  prefixIcon: Icons.auto_awesome_outlined,
-                  isLoading: _isGenerating,
-                  isDisabled: _isGenerating || _images.isEmpty,
-                  onPressed: _generate,
-                ),
-              ),
-
-              if (_isGenerating) ...[
-                const SizedBox(height: AppSpacing.space3),
-                Text(
-                  '사진을 살펴보고 글을 쓰는 중이에요. 사진 장수에 따라 10~40초쯤 걸립니다.',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textTertiary,
+                      // 흰 카드 안 보조 단추 — 테두리 대신 회색 채움
+                      SizedBox(
+                        width: double.infinity,
+                        child: SeedButton(
+                          label: _images.isEmpty ? '사진 선택하기' : '사진 더 담기',
+                          variant: SeedButtonVariant.neutralWeak,
+                          prefixIcon: Icons.add_photo_alternate_outlined,
+                          isDisabled:
+                              _isGenerating || _images.length >= _maxImages,
+                          onPressed: _pickImages,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+                const SizedBox(height: AppSpacing.cardGap),
 
-              if (_result != null) ...[
-                const SizedBox(height: AppSpacing.space6),
-                _buildResult(_result!),
-              ],
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '어디에 올릴 글인가요?',
+                        style: AppTypography.titleSmall.copyWith(
+                          color: AppSemanticColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.space2),
+                      // 다섯 종류라 한 줄에 다 안 들어간다 — 줄바꿈되는 칩 묶음으로
+                      Wrap(
+                        spacing: AppSpacing.space2,
+                        runSpacing: AppSpacing.space2,
+                        children: [
+                          for (final channel in _Channel.values)
+                            SeedChip(
+                              label: channel.label,
+                              selected: _channel == channel,
+                              isDisabled: _isGenerating,
+                              onTap: () => setState(() => _channel = channel),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.space5),
 
-              const SizedBox(height: AppSpacing.space8),
-            ],
+                      SeedTextField(
+                        label: '상황 설명 (선택)',
+                        placeholder:
+                            '예: 오늘 오전엔 원예 프로그램으로 다육이 화분을 만들었고, 점심은 잡채와 미역국이었어요.',
+                        helperText: '적어주시면 글이 훨씬 정확해져요. 비워두면 사진만 보고 작성합니다.',
+                        controller: _descriptionController,
+                        maxLines: 3,
+                        isDisabled: _isGenerating,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space5),
+
+                if (_errorMessage != null) ...[
+                  SeedCallout(
+                    variant: SeedCalloutVariant.danger,
+                    title: _errorMessage!,
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                ],
+
+                SizedBox(
+                  width: double.infinity,
+                  child: SeedButton(
+                    label: _isGenerating ? '글을 쓰고 있어요...' : '버튼 하나로 글 완성하기',
+                    size: SeedButtonSize.large,
+                    prefixIcon: Icons.auto_awesome_outlined,
+                    isLoading: _isGenerating,
+                    isDisabled: _isGenerating || _images.isEmpty,
+                    onPressed: _generate,
+                  ),
+                ),
+
+                if (_isGenerating) ...[
+                  const SizedBox(height: AppSpacing.space3),
+                  Text(
+                    '사진을 살펴보고 글을 쓰는 중이에요. 사진 장수에 따라 10~40초쯤 걸립니다.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textTertiary,
+                    ),
+                  ),
+                ],
+
+                if (_result != null) ...[
+                  const SizedBox(height: AppSpacing.space6),
+                  _buildResult(_result!),
+                ],
+
+                const SizedBox(height: AppSpacing.space8),
+              ],
+            ),
           ),
         ),
       ),
@@ -492,9 +500,7 @@ class _AiPostWriterScreenState extends State<AiPostWriterScreen> {
             Wrap(
               spacing: AppSpacing.space1_5,
               runSpacing: AppSpacing.space1_5,
-              children: [
-                for (final tag in result.hashtags) AppTag(label: tag),
-              ],
+              children: [for (final tag in result.hashtags) AppTag(label: tag)],
             ),
           ],
 

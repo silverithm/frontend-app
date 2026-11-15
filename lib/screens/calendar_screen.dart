@@ -1,7 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/vacation_provider.dart';
@@ -17,8 +16,9 @@ import '../utils/permissions.dart';
 import '../utils/schedule_filter.dart';
 import '../utils/schedule_repeat.dart';
 import '../utils/korean_holidays.dart';
+import '../widgets/calendar/calendar_top_bar.dart';
 import '../widgets/calendar/month_chip_grid.dart';
-import '../widgets/schedule/schedule_filter_bar.dart';
+import '../widgets/calendar/role_filter_sheet.dart';
 import '../widgets/schedule/schedule_filter_sheet.dart';
 import '../widgets/schedule/schedule_repeat_fields.dart';
 import '../widgets/vacation_calendar_widget.dart';
@@ -35,7 +35,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common/app_action_sheet.dart';
 import '../widgets/common/app_count_up.dart';
 import '../widgets/common/app_dialog.dart';
-import '../widgets/common/app_segmented_tabs.dart';
+import '../widgets/common/app_notice_toasts.dart';
 import '../widgets/common/app_sheet_frame.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
@@ -453,36 +453,162 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   @override
   Widget build(BuildContext context) {
-    // 크로박스식(2026-11-14): 상단 바·나눔 탭 아래를 달력이 꽉 채운다. 예전 NestedScrollView는
-    // 달력이 한 화면 높이를 정확히 차지해야 해서 걷어냈다(제목·나눔 탭은 원래도 고정이었다).
-    return Scaffold(
-      backgroundColor: AppSemanticColors.surfaceCard,
-      appBar: AppBar(
-        // 탭 첫 화면 — 왼쪽 큰 제목(B안). 알림에서 push로 열리면 테마의 꺾쇠 뒤로 단추가 저절로 붙는다.
-        title: Text('일정', style: AppTypography.appBarTitleLarge),
-        centerTitle: false,
-        titleSpacing: AppSpacing.space5,
-      ),
-      body: Column(
-        children: [
-          // 근무조정·월간일정 나눔 조절 — 늘 보이게 위에 둔다
-          _SegmentedTabsHeader(
-            controller: _tabController,
-            textScaler: MediaQuery.textScalerOf(context),
-          ).build(context, 0, false),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              // 달력을 좌우로 쓸면 달이 바뀐다 — 탭은 위 나눔 조절로만 바꾼다
-              physics: const NeverScrollableScrollPhysics(),
-              children: [_buildVacationCalendar(), _buildScheduleCalendar()],
+    // 2026-11-15: 상단 바 '일정' 제목·나눔 띠·직종 칩 줄·고정 안내 상자를 걷어내고 초록 띠 한 줄에 모았다.
+    // 초록 띠(다른 탭 상단 바와 같은 색) 한 줄 = 달 이름 · 근무|일정 · 필터 · 펼치기 · 오늘 → 바로 달력.
+    // 머리는 탭 밖에 두어 탭을 바꿔도 제자리에 있고(달력만 바뀐다), 달 이름·완료 수는 지금 탭 것을 보인다.
+    // 달 넘기기는 달력을 좌우로 쓸어서(‹ › 단추 없음).
+    // 알림에서 이 화면만 따로 열렸을 때는 상단 바가 붙이던 것과 같은 조건으로 뒤로 단추를 단다.
+    final canPop = ModalRoute.of(context)?.impliesAppBarDismissal ?? false;
+    final back = canPop
+        ? IconButton(
+            tooltip: '뒤로',
+            color: AppSemanticColors.headerForeground,
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 22),
+            onPressed: () => Navigator.of(context).maybePop(),
+          )
+        : null;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // 초록 띠 위 상태 표시줄 — 흰 아이콘(다른 탭 상단 바와 같다)
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: AppSemanticColors.surfaceCard,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ColoredBox(
+              color: AppSemanticColors.headerBackground,
+              child: SafeArea(bottom: false, child: _buildOneLineHeader(back)),
             ),
-          ),
-        ],
+            Expanded(
+              // 근무조정 안내('12월 휴무만 신청할 수 있어요' · '11월 휴무 신청이 10월 20일에 마감됐어요')는
+              // 달력 위에 알림 카드로 잠깐 뜬다 — 예전엔 고정 상자라 안내 둘이면 달력이 반으로 줄었다.
+              child: Consumer<VacationProvider>(
+                builder: (context, vacationProvider, tabs) {
+                  final month = DateTime(_currentDate.year, _currentDate.month);
+                  return AppNoticeHost(
+                    noticeKey: 'calendar-${month.year}-${month.month}',
+                    visible: _tabController.index == 0,
+                    notices: VacationPlanningBanner(
+                      nextMonthOnly: vacationProvider.isNextMonthOnly,
+                      allowedMonth: vacationProvider.isNextMonthOnly
+                          ? vacationProvider.nextMonthOnlyMonth
+                          : null,
+                      deadline: vacationProvider.deadlineForTargetMonth(month),
+                      deadlineTargetMonth: month,
+                      deadlinePassed: vacationProvider
+                          .isDeadlinePassedForTargetMonth(month),
+                    ).notices,
+                    child: tabs!,
+                  );
+                },
+                child: TabBarView(
+                  controller: _tabController,
+                  // 달력을 좌우로 쓸면 달이 바뀐다 — 탭은 머리의 근무|일정으로만 바꾼다
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildVacationCalendar(),
+                    _buildScheduleCalendar(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: _buildAddPill(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
-      floatingActionButton: _buildAddPill(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
+  }
+
+  /// 초록 띠 한 줄 머리 — 달 이름(아래 작은 줄: 연도·걸린 필터·완료 수) · 근무|일정 · 필터 · 펼치기 · 오늘.
+  Widget _buildOneLineHeader(Widget? back) {
+    final vacationTab = _tabController.index == 0;
+    if (vacationTab) {
+      final year = '${_currentDate.year}년';
+      return CalendarOneLineHeader(
+        month: _currentDate,
+        leading: back,
+        // 걸린 직종은 달 이름 아래 작은 줄에
+        subtitle: _roleFilters.isEmpty
+            ? year
+            : roleFilterButtonLabel(_roleFilters),
+        controller: _tabController,
+        filterActive: _roleFilters.isNotEmpty,
+        filterTooltip: '직종으로 보기',
+        onFilter: _openRoleFilter,
+        expanded: _vacationExpanded,
+        onToggleExpanded: () =>
+            setState(() => _vacationExpanded = !_vacationExpanded),
+        onToday: _vacationGoToday,
+        onPrevious: () => _moveVacationMonth(-1),
+        onNext: () => _moveVacationMonth(1),
+      );
+    }
+    return Consumer<ScheduleProvider>(
+      builder: (context, provider, _) {
+        final month = provider.schedules;
+        final filtered = _scheduleFilterValues.isNotEmpty;
+        final parts = [
+          if (_scheduleCurrentDate.year != DateTime.now().year)
+            '${_scheduleCurrentDate.year}년',
+          // 달 이름 아래는 짧게 — '일정 필터 · 김민지' → '김민지', '일정 필터 (2)' → '필터 2개'
+          if (filtered)
+            scheduleFilterButtonLabel(_scheduleFilterValues, month)
+                .replaceFirst('일정 필터 · ', '')
+                .replaceFirstMapped(
+                  RegExp(r'^일정 필터 \((\d+)\)$'),
+                  (m) => '필터 ${m[1]}개',
+                ),
+          if (month.isNotEmpty) _scheduleDoneNote(provider),
+        ];
+        return CalendarOneLineHeader(
+          month: _scheduleCurrentDate,
+          leading: back,
+          subtitle: parts.isEmpty
+              ? '${_scheduleCurrentDate.year}년'
+              : parts.join(' · '),
+          subtitleDone: month.isNotEmpty && !filtered,
+          controller: _tabController,
+          filterActive: filtered,
+          filterTooltip: '일정 필터',
+          onFilter: () => _openScheduleFilter(provider),
+          expanded: _scheduleExpanded,
+          onToggleExpanded: () =>
+              setState(() => _scheduleExpanded = !_scheduleExpanded),
+          onToday: _scheduleGoToday,
+          onPrevious: () => _moveScheduleMonth(-1),
+          onNext: () => _moveScheduleMonth(1),
+        );
+      },
+    );
+  }
+
+  /// 걸린 일정 중 수행완료 수 — '완료 5/17'
+  String _scheduleDoneNote(ScheduleProvider provider) {
+    final month = provider.schedules;
+    final visible = _scheduleFilterValues.isEmpty
+        ? month
+        : month.where(_matchesScheduleFilter).toList();
+    final done = visible.where((s) => s.isCompleted).length;
+    return '완료 $done/${visible.length}';
+  }
+
+  void _openRoleFilter() {
+    showRoleFilterSheet(
+      context,
+      roles: context.read<VacationProvider>().availableRoles,
+      selected: _roleFilters,
+      onChanged: _applyRoleFilters,
+    );
+  }
+
+  void _applyRoleFilters(List<String> newRoles) {
+    setState(() => _roleFilters = newRoles);
+    final vacationProvider = context.read<VacationProvider>();
+    vacationProvider.setRoleFilters(newRoles);
+    final companyId =
+        context.read<AuthProvider>().currentUser?.company?.id ?? '1';
+    vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
   }
 
   /// 사람마다 따로 남긴다 — 기관 공용 태블릿에서 앞사람이 고른 담당자 필터가 이어지지 않게.
@@ -584,25 +710,6 @@ class _CalendarScreenState extends State<CalendarScreen>
     );
   }
 
-  /// 달 이동 줄 아래 한 줄 — 일정 필터 단추와 이번 달 수행완료 수.
-  /// 필터를 걸면 완료 수도 걸린 일정만 센다: 한 사람을 고르면 곧 그 사람의 이번 달 수행률이다.
-  Widget _buildScheduleFilterBar(ScheduleProvider provider) {
-    final month = provider.schedules;
-    final visible = _scheduleFilterValues.isEmpty
-        ? month
-        : month.where(_matchesScheduleFilter).toList();
-    final done = visible.where((s) => s.isCompleted).length;
-    // 담당자를 고르면 칩이 길어져 넘치던 줄 — 자리가 모자라면 완료 수가 다음 줄로(위젯 설명 참고)
-    return ScheduleFilterBar(
-      label: scheduleFilterButtonLabel(_scheduleFilterValues, month),
-      filtered: _scheduleFilterValues.isNotEmpty,
-      onTap: () => _openScheduleFilter(provider),
-      done: done,
-      total: visible.length,
-      showProgress: month.isNotEmpty,
-    );
-  }
-
   /// 월간일정 탭 — 크로박스식 꽉 찬 달력. 칸마다 그날 일정 제목을 일정 색 칩으로(끝낸 일정은 흐리게),
   /// 날짜를 누르면 아래에서 그날 시트가 올라온다.
   Widget _buildScheduleCalendar() {
@@ -618,20 +725,8 @@ class _CalendarScreenState extends State<CalendarScreen>
             return Stack(
               children: [
                 Column(
-                  // 필터 줄이 폭을 다 써서 '일정 필터'는 왼쪽, '완료 n/m'은 오른쪽 끝에 붙게
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    CalendarHeaderBar(
-                      month: _scheduleCurrentDate,
-                      onPrevious: () => _moveScheduleMonth(-1),
-                      onNext: () => _moveScheduleMonth(1),
-                      onToday: _scheduleGoToday,
-                      expanded: _scheduleExpanded,
-                      onToggleExpanded: () => setState(
-                        () => _scheduleExpanded = !_scheduleExpanded,
-                      ),
-                    ),
-                    _buildScheduleFilterBar(provider),
                     Expanded(
                       child: MonthChipGrid(
                         month: _scheduleCurrentDate,
@@ -1198,42 +1293,6 @@ class _CalendarScreenState extends State<CalendarScreen>
           children: [
             Column(
               children: [
-                // 근무조정 컨텍스트 — 다음 달만 받기 제한 · 이번 달 마감일 (행사는 날짜별 표시·신청 시 안내로 대체)
-                Consumer<VacationProvider>(
-                  builder: (context, vacationProvider, _) {
-                    final month = DateTime(
-                      _currentDate.year,
-                      _currentDate.month,
-                    );
-                    // 알릴 것이 없으면 띠도 여백도 두지 않는다
-                    if (!vacationProvider.isNextMonthOnly &&
-                        vacationProvider.deadlineForTargetMonth(month) ==
-                            null) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.space4,
-                        AppSpacing.space2,
-                        AppSpacing.space4,
-                        0,
-                      ),
-                      child: VacationPlanningBanner(
-                        nextMonthOnly: vacationProvider.isNextMonthOnly,
-                        allowedMonth: vacationProvider.isNextMonthOnly
-                            ? vacationProvider.nextMonthOnlyMonth
-                            : null,
-                        // 보고 있는 달 휴무의 '신청 마감일' (그 전 달에 위치)
-                        deadline: vacationProvider.deadlineForTargetMonth(
-                          month,
-                        ),
-                        deadlineTargetMonth: month,
-                        deadlinePassed: vacationProvider
-                            .isDeadlinePassedForTargetMonth(month),
-                      ),
-                    );
-                  },
-                ),
                 Expanded(
                   child: VacationCalendarWidget(
                     currentDate: _currentDate,
@@ -1245,25 +1304,8 @@ class _CalendarScreenState extends State<CalendarScreen>
                     sheet: _vacationSheet,
                     sheetSplit: _kSheetSplit,
                     onMoveMonth: _moveVacationMonth,
-                    onToday: _vacationGoToday,
-                    onToggleExpanded: () =>
-                        setState(() => _vacationExpanded = !_vacationExpanded),
                     onDayTap: _onVacationDayTap,
                     roleFilters: _roleFilters,
-                    onRoleFiltersChanged: (newRoles) {
-                      setState(() {
-                        _roleFilters = newRoles;
-                      });
-                      final vacationProvider = context.read<VacationProvider>();
-                      vacationProvider.setRoleFilters(newRoles);
-                      final authProvider = context.read<AuthProvider>();
-                      final companyId =
-                          authProvider.currentUser?.company?.id ?? '1';
-                      vacationProvider.loadCalendarData(
-                        _currentDate,
-                        companyId: companyId,
-                      );
-                    },
                   ),
                 ),
               ],
@@ -3053,62 +3095,6 @@ class _CalendarScreenState extends State<CalendarScreen>
       vacationProvider.loadCalendarData(_currentDate, companyId: companyId);
     }
   }
-}
-
-/// 근무조정·월간일정 나눔 조절을 상단 바 아래에 고정해 두는 머리.
-/// 글자를 키우면 칸이 높아지므로 높이를 글자 배율에 맞춰 잡는다(앱 최대 1.3배에서도 잘리지 않게).
-/// 머리 높이와 실제 그린 높이가 조금이라도 다르면 SliverGeometry 오류가 나므로 높이를 그 값으로 못 박는다.
-class _SegmentedTabsHeader extends SliverPersistentHeaderDelegate {
-  _SegmentedTabsHeader({required this.controller, required this.textScaler});
-
-  final TabController controller;
-  final TextScaler textScaler;
-
-  // 기본(위 12·아래 8)보다 줄였다 — 2단계에서 제목 바가 생겨 달력 자리가 56px 줄었다.
-  static const EdgeInsets _padding = EdgeInsets.fromLTRB(
-    AppSpacing.space4,
-    AppSpacing.space2,
-    AppSpacing.space4,
-    AppSpacing.space1,
-  );
-
-  double get _extent {
-    const label = AppTypography.bodyMedium;
-    // 칸 글자 한 줄 높이 + 칸 안 위아래 여백(4+4)
-    final labelHeight =
-        textScaler.scale(label.fontSize!) * label.height! + AppSpacing.space2;
-    final segment = math.max(AppSegmentedTabs.segmentMinHeight, labelHeight);
-    return (segment + AppSegmentedTabs.trackPadding * 2 + _padding.vertical)
-        .ceilToDouble();
-  }
-
-  @override
-  double get minExtent => _extent;
-
-  @override
-  double get maxExtent => _extent;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return SizedBox(
-      height: _extent,
-      child: AppSegmentedTabs(
-        controller: controller,
-        padding: _padding,
-        // 웹 관리자 화면과 같은 이름 — 근무조정(휴무)·월간일정(일정)
-        tabs: const [AppSegmentedTab('근무조정'), AppSegmentedTab('월간일정')],
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SegmentedTabsHeader oldDelegate) =>
-      oldDelegate.controller != controller ||
-      oldDelegate.textScaler != textScaler;
 }
 
 /// 일정 상세 응답({schedule: {...}} 또는 일정 그대로)에서 시작일만 꺼낸다

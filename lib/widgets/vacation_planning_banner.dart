@@ -3,6 +3,7 @@ import '../models/vacation_planning.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import 'common/app_notice_toasts.dart';
 
 /// 근무조정 컨텍스트 배너 — "다음 달만 받기" 제한, 이번 달 마감일, 걸린 중요 행사를 한눈에 보여준다.
 /// 서버 에러 메시지에만 기대지 않고, 신청 전에 먼저 안내한다.
@@ -41,7 +42,8 @@ class VacationPlanningBanner extends StatelessWidget {
   /// 마감이 관장하는 달 이름. 지정이 없으면 마감일의 다음 달로 계산한다
   /// — 마감일은 정의상 대상 월의 전 달에 있다.
   String _targetMonthLabel() {
-    final target = deadlineTargetMonth ??
+    final target =
+        deadlineTargetMonth ??
         (deadline != null
             ? DateTime(deadline!.year, deadline!.month + 1, 1)
             : null);
@@ -49,70 +51,70 @@ class VacationPlanningBanner extends StatelessWidget {
     return '${target.month}월';
   }
 
+  /// 보일 안내들 — 고정 배너(신청 시트·내 휴무)와 달력 위에 잠깐 뜨는 안내가 같은 글을 쓴다.
+  List<AppNotice> get notices => [
+    if (nextMonthOnly && allowedMonth != null)
+      AppNotice(
+        icon: Icons.event_available_rounded,
+        background: AppSemanticColors.statusInfoBackground,
+        iconColor: AppSemanticColors.statusInfoIcon,
+        title: '${_formatMonth(allowedMonth!)} 휴무만 신청할 수 있어요',
+        description:
+            '기관 설정에 따라 바로 다음 달 휴무만 받고 있습니다. 다른 달 휴무가 필요하면 관리자에게 말씀해주세요.',
+      ),
+    if (deadline != null)
+      AppNotice(
+        icon: deadlinePassed
+            ? Icons.event_busy_rounded
+            : Icons.schedule_rounded,
+        background: deadlinePassed
+            ? AppSemanticColors.statusErrorBackground
+            : AppSemanticColors.statusWarningBackground,
+        iconColor: deadlinePassed
+            ? AppSemanticColors.statusErrorIcon
+            : AppSemanticColors.statusWarningIcon,
+        title: deadlinePassed
+            ? '${_targetMonthLabel()} 휴무 신청이 ${_formatDate(deadline!)}에 마감됐어요'
+            : '${_targetMonthLabel()} 휴무 신청 마감일: ${_formatDate(deadline!)}',
+        description: deadlinePassed
+            ? '마감을 놓친 휴무는 관리자에게 직접 문의해주세요.'
+            : '마감일까지 근무표에 반영할 휴무를 신청해주세요.',
+      ),
+    if (events.isNotEmpty)
+      AppNotice(
+        icon: Icons.push_pin_rounded,
+        background: AppColors.purple50,
+        iconColor: AppColors.purple600,
+        title: eventsHeading ?? '이 기간 중요 행사가 있어요',
+        description: events
+            .map(
+              (e) => e.description != null
+                  ? '· ${e.title} — ${e.description}'
+                  : '· ${e.title}',
+            )
+            .join('\n'),
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     if (!_hasContent) return const SizedBox.shrink();
-
+    final items = notices;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (nextMonthOnly && allowedMonth != null)
-          _buildNotice(
-            icon: Icons.event_available_rounded,
-            background: AppSemanticColors.statusInfoBackground,
-            iconColor: AppSemanticColors.statusInfoIcon,
-            title: '${_formatMonth(allowedMonth!)} 휴무만 신청할 수 있어요',
-            description:
-                '기관 설정에 따라 바로 다음 달 휴무만 받고 있습니다. 다른 달 휴무가 필요하면 관리자에게 말씀해주세요.',
-          ),
-        if (deadline != null) ...[
-          if (nextMonthOnly) const SizedBox(height: AppSpacing.space2),
-          _buildNotice(
-            icon: deadlinePassed
-                ? Icons.event_busy_rounded
-                : Icons.schedule_rounded,
-            background: deadlinePassed
-                ? AppSemanticColors.statusErrorBackground
-                : AppSemanticColors.statusWarningBackground,
-            iconColor: deadlinePassed
-                ? AppSemanticColors.statusErrorIcon
-                : AppSemanticColors.statusWarningIcon,
-            title: deadlinePassed
-                ? '${_targetMonthLabel()} 휴무 신청이 ${_formatDate(deadline!)}에 마감됐어요'
-                : '${_targetMonthLabel()} 휴무 신청 마감일: ${_formatDate(deadline!)}',
-            description: deadlinePassed
-                ? '마감을 놓친 휴무는 관리자에게 직접 문의해주세요.'
-                : '마감일까지 근무표에 반영할 휴무를 신청해주세요.',
-          ),
-        ],
-        if (events.isNotEmpty) ...[
-          if (nextMonthOnly || deadline != null)
-            const SizedBox(height: AppSpacing.space2),
-          _buildNotice(
-            icon: Icons.push_pin_rounded,
-            background: AppColors.purple50,
-            iconColor: AppColors.purple600,
-            title: eventsHeading ?? '이 기간 중요 행사가 있어요',
-            description: events
-                .map(
-                  (e) => e.description != null
-                      ? '· ${e.title} — ${e.description}'
-                      : '· ${e.title}',
-                )
-                .join('\n'),
-          ),
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.space2),
+          _buildNotice(items[i]),
         ],
       ],
     );
   }
 
-  Widget _buildNotice({
-    required IconData icon,
-    required Color background,
-    required Color iconColor,
-    required String title,
-    required String description,
-  }) {
+  Widget _buildNotice(AppNotice notice) {
+    final AppNotice(:icon, :background, :iconColor, :title, :description) =
+        notice;
+    final desc = description ?? '';
     // B안 안내 상자(SeedCallout과 같은 치수): 테두리 없이 옅은 상태색 바탕, 모서리 12, 아이콘 20
     return Container(
       width: double.infinity,
@@ -141,7 +143,7 @@ class VacationPlanningBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.space1),
                 Text(
-                  description,
+                  desc,
                   style: AppTypography.bodySmall.copyWith(
                     color: AppSemanticColors.textSecondary,
                     height: 1.4,

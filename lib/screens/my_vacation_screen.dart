@@ -17,6 +17,7 @@ import '../widgets/common/app_tag.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_section_header.dart';
 import '../widgets/vacation_planning_banner.dart';
+import '../widgets/common/app_notice_toasts.dart';
 
 class MyVacationScreen extends StatefulWidget {
   final bool showAppBar;
@@ -180,8 +181,7 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                   // 삭제 성공 후 데이터 새로고침
                   await _refreshData();
                   if (mounted) {
-                    AppSnackBar.showSuccess(context,
-                        message: '휴무 신청이 삭제되었습니다');
+                    AppSnackBar.showSuccess(context, message: '휴무 신청이 삭제되었습니다');
                   }
                 } else if (mounted) {
                   Navigator.pop(context);
@@ -245,50 +245,78 @@ class _MyVacationScreenState extends State<MyVacationScreen>
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: widget.showAppBar ? const CareVAppBar(title: '내 휴무') : null,
-      body: AppRefreshIndicator(
-        onRefresh: _refreshData,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // 다음 신청 시 참고할 마감일·"다음 달만 받기" 안내 — 신청 내역만 보고는 알 수 없던 컨텍스트
-            SliverToBoxAdapter(
-              child: Consumer<VacationProvider>(
-                builder: (context, vacationProvider, child) {
-                  // 이 화면 배너는 '다가오는 마감' 안내가 목적 —
-                  // 항상 다음 달 휴무분(마감일은 이번 달에 위치)을 보여준다
-                  final now = DateTime.now();
-                  final month = DateTime(now.year, now.month + 1);
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.space4,
-                      AppSpacing.space3,
-                      AppSpacing.space4,
-                      0,
-                    ),
-                    child: VacationPlanningBanner(
-                      nextMonthOnly: vacationProvider.isNextMonthOnly,
-                      allowedMonth: vacationProvider.isNextMonthOnly
-                          ? vacationProvider.nextMonthOnlyMonth
-                          : null,
-                      deadline: vacationProvider.deadlineForTargetMonth(month),
-                      deadlineTargetMonth: month,
-                      deadlinePassed: vacationProvider
-                          .isDeadlinePassedForTargetMonth(month),
-                    ),
-                  );
-                },
+      body: Consumer<VacationProvider>(
+        // 다음 신청 시 참고할 마감일·'다음 달만 받기' 안내 — 위에 잠깐 뜨는 알림 카드로(2026-11-15).
+        // 이 화면 안내는 '다가오는 마감'이 목적이라 늘 다음 달 휴무분(마감일은 이번 달에 위치)을 보인다.
+        builder: (context, vacationProvider, list) {
+          final now = DateTime.now();
+          final month = DateTime(now.year, now.month + 1);
+          return AppNoticeHost(
+            noticeKey: 'my-vacation-${month.year}-${month.month}',
+            notices: VacationPlanningBanner(
+              nextMonthOnly: vacationProvider.isNextMonthOnly,
+              allowedMonth: vacationProvider.isNextMonthOnly
+                  ? vacationProvider.nextMonthOnlyMonth
+                  : null,
+              deadline: vacationProvider.deadlineForTargetMonth(month),
+              deadlineTargetMonth: month,
+              deadlinePassed: vacationProvider.isDeadlinePassedForTargetMonth(
+                month,
               ),
-            ),
-            Consumer<VacationProvider>(
-              builder: (context, vacationProvider, child) {
-                if (vacationProvider.isLoading) {
-                  return SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(AppSpacing.space5),
+            ).notices,
+            child: list!,
+          );
+        },
+        child: AppRefreshIndicator(
+          onRefresh: _refreshData,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              Consumer<VacationProvider>(
+                builder: (context, vacationProvider, child) {
+                  if (vacationProvider.isLoading) {
+                    return SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(AppSpacing.space5),
+                              decoration: BoxDecoration(
+                                color: AppSemanticColors.surfaceCard,
+                                borderRadius: BorderRadius.circular(
+                                  AppBorderRadius.card,
+                                ),
+                                border: AppLines.cardBorder,
+                              ),
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppSemanticColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.space4),
+                            Text(
+                              '데이터를 불러오는 중...',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (vacationProvider.errorMessage.isNotEmpty) {
+                    return SliverFillRemaining(
+                      child: Center(
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          // B안: 테두리 없는 흰 카드, 경고 아이콘은 옅은 빨강 동그라미
+                          child: Container(
+                            margin: const EdgeInsets.all(AppSpacing.space8),
+                            padding: const EdgeInsets.all(AppSpacing.space6),
                             decoration: BoxDecoration(
                               color: AppSemanticColors.surfaceCard,
                               borderRadius: BorderRadius.circular(
@@ -296,198 +324,165 @@ class _MyVacationScreenState extends State<MyVacationScreen>
                               ),
                               border: AppLines.cardBorder,
                             ),
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppSemanticColors.textSecondary,
-                              ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(
+                                    AppSpacing.space4,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color:
+                                        AppSemanticColors.statusErrorBackground,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.error_outline,
+                                    size: 48,
+                                    color: AppSemanticColors.statusErrorIcon,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.space4),
+                                Text(
+                                  vacationProvider.errorMessage,
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    color: AppSemanticColors.statusErrorText,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.space5),
+                                SeedButton(
+                                  label: '다시 시도',
+                                  prefixIcon: Icons.refresh,
+                                  onPressed: _refreshData,
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.space4),
-                          Text(
-                            '데이터를 불러오는 중...',
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  );
-                }
+                    );
+                  }
 
-                if (vacationProvider.errorMessage.isNotEmpty) {
-                  return SliverFillRemaining(
-                    child: Center(
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        // B안: 테두리 없는 흰 카드, 경고 아이콘은 옅은 빨강 동그라미
-                        child: Container(
-                          margin: const EdgeInsets.all(AppSpacing.space8),
-                          padding: const EdgeInsets.all(AppSpacing.space6),
-                          decoration: BoxDecoration(
-                            color: AppSemanticColors.surfaceCard,
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.card,
+                  final requests = vacationProvider.vacationRequests;
+
+                  if (requests.isEmpty) {
+                    return SliverFillRemaining(
+                      child: Center(
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: SlideTransition(
+                            position: _slideAnimation,
+                            child: const AppEmptyState(
+                              icon: Icons.event_available,
+                              title: '아직 휴무 신청 내역이 없어요',
+                              description: '달력에서 날짜를 선택하여\n휴무를 신청해보세요',
+                              topSpacing: AppSpacing.space8,
                             ),
-                            border: AppLines.cardBorder,
                           ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                        ),
+                      ),
+                    );
+                  }
+
+                  // 상태별로 그룹화
+                  final pendingRequests = requests
+                      .where((r) => r.status == VacationStatus.pending)
+                      .toList();
+                  final approvedRequests = requests
+                      .where((r) => r.status == VacationStatus.approved)
+                      .toList();
+                  final rejectedRequests = requests
+                      .where((r) => r.status == VacationStatus.rejected)
+                      .toList();
+
+                  // B안: 한 표면을 구분선으로 나누던 것을 회색 바탕 위 흰 카드 여러 장으로 —
+                  // 신청 현황 카드 하나 + 상태(대기·승인·거절)마다 카드 하나, 카드 사이는 간격 10.
+                  return SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space4,
+                      AppSpacing.cardGap,
+                      AppSpacing.space4,
+                      AppSpacing.space20, // 바텀 패딩
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: _buildCard(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(
-                                  AppSpacing.space4,
-                                ),
-                                decoration: const BoxDecoration(
-                                  color:
-                                      AppSemanticColors.statusErrorBackground,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.error_outline,
-                                  size: 48,
-                                  color: AppSemanticColors.statusErrorIcon,
-                                ),
-                              ),
+                              const SeedSectionHeader(title: '신청 현황'),
                               const SizedBox(height: AppSpacing.space4),
-                              Text(
-                                vacationProvider.errorMessage,
-                                textAlign: TextAlign.center,
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppSemanticColors.statusErrorText,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.space5),
-                              SeedButton(
-                                label: '다시 시도',
-                                prefixIcon: Icons.refresh,
-                                onPressed: _refreshData,
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: _buildStatusCard(
+                                      '대기',
+                                      pendingRequests.length,
+                                      AppSemanticColors.statusWarningText,
+                                      Icons.schedule,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.space3),
+                                  Expanded(
+                                    child: _buildStatusCard(
+                                      '승인',
+                                      approvedRequests.length,
+                                      AppSemanticColors.statusSuccessText,
+                                      Icons.check_circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.space3),
+                                  Expanded(
+                                    child: _buildStatusCard(
+                                      '거절',
+                                      rejectedRequests.length,
+                                      AppSemanticColors.statusErrorText,
+                                      Icons.cancel,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    ),
-                  );
-                }
 
-                final requests = vacationProvider.vacationRequests;
-
-                if (requests.isEmpty) {
-                  return SliverFillRemaining(
-                    child: Center(
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: SlideTransition(
-                          position: _slideAnimation,
-                          child: const AppEmptyState(
-                            icon: Icons.event_available,
-                            title: '아직 휴무 신청 내역이 없어요',
-                            description: '달력에서 날짜를 선택하여\n휴무를 신청해보세요',
-                            topSpacing: AppSpacing.space8,
+                        if (pendingRequests.isNotEmpty)
+                          _buildRequestGroup(
+                            title: '대기 중',
+                            requests: pendingRequests,
+                            headerColor: AppSemanticColors.statusWarningIcon,
+                            headerIcon: Icons.schedule,
+                            baseDelayIndex: 0,
                           ),
-                        ),
-                      ),
+
+                        if (approvedRequests.isNotEmpty)
+                          _buildRequestGroup(
+                            title: '승인됨',
+                            requests: approvedRequests,
+                            headerColor: AppSemanticColors.statusSuccessIcon,
+                            headerIcon: Icons.check_circle,
+                            baseDelayIndex: pendingRequests.length,
+                          ),
+
+                        if (rejectedRequests.isNotEmpty)
+                          _buildRequestGroup(
+                            title: '거절됨',
+                            requests: rejectedRequests,
+                            headerColor: AppSemanticColors.statusErrorIcon,
+                            headerIcon: Icons.cancel,
+                            baseDelayIndex:
+                                pendingRequests.length +
+                                approvedRequests.length,
+                          ),
+                      ]),
                     ),
                   );
-                }
-
-                // 상태별로 그룹화
-                final pendingRequests = requests
-                    .where((r) => r.status == VacationStatus.pending)
-                    .toList();
-                final approvedRequests = requests
-                    .where((r) => r.status == VacationStatus.approved)
-                    .toList();
-                final rejectedRequests = requests
-                    .where((r) => r.status == VacationStatus.rejected)
-                    .toList();
-
-                // B안: 한 표면을 구분선으로 나누던 것을 회색 바탕 위 흰 카드 여러 장으로 —
-                // 신청 현황 카드 하나 + 상태(대기·승인·거절)마다 카드 하나, 카드 사이는 간격 10.
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.space4,
-                    AppSpacing.cardGap,
-                    AppSpacing.space4,
-                    AppSpacing.space20, // 바텀 패딩
-                  ),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: _buildCard(
-                          children: [
-                            const SeedSectionHeader(title: '신청 현황'),
-                            const SizedBox(height: AppSpacing.space4),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: _buildStatusCard(
-                                    '대기',
-                                    pendingRequests.length,
-                                    AppSemanticColors.statusWarningText,
-                                    Icons.schedule,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.space3),
-                                Expanded(
-                                  child: _buildStatusCard(
-                                    '승인',
-                                    approvedRequests.length,
-                                    AppSemanticColors.statusSuccessText,
-                                    Icons.check_circle,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.space3),
-                                Expanded(
-                                  child: _buildStatusCard(
-                                    '거절',
-                                    rejectedRequests.length,
-                                    AppSemanticColors.statusErrorText,
-                                    Icons.cancel,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      if (pendingRequests.isNotEmpty)
-                        _buildRequestGroup(
-                          title: '대기 중',
-                          requests: pendingRequests,
-                          headerColor: AppSemanticColors.statusWarningIcon,
-                          headerIcon: Icons.schedule,
-                          baseDelayIndex: 0,
-                        ),
-
-                      if (approvedRequests.isNotEmpty)
-                        _buildRequestGroup(
-                          title: '승인됨',
-                          requests: approvedRequests,
-                          headerColor: AppSemanticColors.statusSuccessIcon,
-                          headerIcon: Icons.check_circle,
-                          baseDelayIndex: pendingRequests.length,
-                        ),
-
-                      if (rejectedRequests.isNotEmpty)
-                        _buildRequestGroup(
-                          title: '거절됨',
-                          requests: rejectedRequests,
-                          headerColor: AppSemanticColors.statusErrorIcon,
-                          headerIcon: Icons.cancel,
-                          baseDelayIndex:
-                              pendingRequests.length + approvedRequests.length,
-                        ),
-                    ]),
-                  ),
-                );
-              },
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -521,16 +516,9 @@ class _MyVacationScreenState extends State<MyVacationScreen>
         // 큰 숫자는 0에서 세어 올라간다(글자는 그대로 count)
         AppCountUp(
           value: count,
-          style: AppTypography.heading4.copyWith(
-            color: color,
-          ),
+          style: AppTypography.heading4.copyWith(color: color),
         ),
-        Text(
-          label,
-          style: AppTypography.bodySmall.copyWith(
-            color: color,
-          ),
-        ),
+        Text(label, style: AppTypography.bodySmall.copyWith(color: color)),
       ],
     );
   }
@@ -629,168 +617,168 @@ class _MyVacationScreenState extends State<MyVacationScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          // B안 둥근 아이콘 — 바탕은 상태 색(옅게) 그대로
-                          Container(
-                            width: AppSpacing.iconCircle,
-                            height: AppSpacing.iconCircle,
-                            decoration: BoxDecoration(
-                              color: _getStatusColor(request.status),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.calendar_today,
-                              size: 20,
-                              color: _getStatusTextColor(request.status),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.space3),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _formatDate(request.date),
-                                  style: AppTypography.titleMedium.copyWith(
-                                    color: AppSemanticColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.space2),
-                                // 상태만 색(옅은 꼬리표), 연차·반차·필수 같은 분류는 회색 — 웹과 같은 규칙
-                                Wrap(
-                                  spacing: AppSpacing.space2,
-                                  runSpacing: AppSpacing.space1,
-                                  children: [
-                                    AppTag(
-                                      label: request.statusText,
-                                      tone: _statusTone(request.status),
-                                    ),
-                                    if (request.duration !=
-                                        VacationDuration.unused)
-                                      AppTag(label: request.durationText),
-                                    if (request.type == VacationType.mandatory)
-                                      const AppTag(label: '필수'),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (canDelete)
-                  Container(
-                    decoration: const BoxDecoration(
-                      color: AppSemanticColors.statusErrorBackground,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      onPressed: () => _showDeleteDialog(request),
-                      icon: Icon(
-                        Icons.delete_outlined,
-                        color: AppSemanticColors.statusErrorIcon,
-                      ),
-                      tooltip: request.status == VacationStatus.pending
-                          ? '신청 삭제'
-                          : '휴무 삭제',
-                    ),
-                  ),
-              ],
-            ),
-
-            if (request.reason != null && request.reason!.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.space4),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.space3),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.fillDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.note_outlined,
-                      size: 16,
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Expanded(
-                      child: Text(
-                        request.reason!,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            if (request.rejectionReason != null &&
-                request.rejectionReason!.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.space4),
-              // B안: 테두리 없이 옅은 빨강 칸
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.space3),
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.statusErrorBackground,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.control),
-                ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 16,
-                          color: AppSemanticColors.statusErrorIcon,
+                        // B안 둥근 아이콘 — 바탕은 상태 색(옅게) 그대로
+                        Container(
+                          width: AppSpacing.iconCircle,
+                          height: AppSpacing.iconCircle,
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(request.status),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.calendar_today,
+                            size: 20,
+                            color: _getStatusTextColor(request.status),
+                          ),
                         ),
-                        const SizedBox(width: AppSpacing.space2),
-                        Text(
-                          '거절 사유',
-                          style: AppTypography.titleSmall.copyWith(
-                            color: AppSemanticColors.statusErrorText,
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatDate(request.date),
+                                style: AppTypography.titleMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.space2),
+                              // 상태만 색(옅은 꼬리표), 연차·반차·필수 같은 분류는 회색 — 웹과 같은 규칙
+                              Wrap(
+                                spacing: AppSpacing.space2,
+                                runSpacing: AppSpacing.space1,
+                                children: [
+                                  AppTag(
+                                    label: request.statusText,
+                                    tone: _statusTone(request.status),
+                                  ),
+                                  if (request.duration !=
+                                      VacationDuration.unused)
+                                    AppTag(label: request.durationText),
+                                  if (request.type == VacationType.mandatory)
+                                    const AppTag(label: '필수'),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.space1),
-                    Text(
-                      request.rejectionReason!,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppSemanticColors.statusErrorText,
-                      ),
-                    ),
                   ],
                 ),
               ),
+              if (canDelete)
+                Container(
+                  decoration: const BoxDecoration(
+                    color: AppSemanticColors.statusErrorBackground,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: () => _showDeleteDialog(request),
+                    icon: Icon(
+                      Icons.delete_outlined,
+                      color: AppSemanticColors.statusErrorIcon,
+                    ),
+                    tooltip: request.status == VacationStatus.pending
+                        ? '신청 삭제'
+                        : '휴무 삭제',
+                  ),
+                ),
             ],
+          ),
 
-            const SizedBox(height: AppSpacing.space2),
-            Text(
-              '신청일 ${_formatDateTime(request.createdAt)}',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
+          if (request.reason != null && request.reason!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.space4),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.space3),
+              decoration: BoxDecoration(
+                color: AppSemanticColors.fillDefault,
+                borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.note_outlined,
+                    size: 16,
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                  const SizedBox(width: AppSpacing.space2),
+                  Expanded(
+                    child: Text(
+                      request.reason!,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
-      );
+
+          if (request.rejectionReason != null &&
+              request.rejectionReason!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.space4),
+            // B안: 테두리 없이 옅은 빨강 칸
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.space3),
+              decoration: BoxDecoration(
+                color: AppSemanticColors.statusErrorBackground,
+                borderRadius: BorderRadius.circular(AppBorderRadius.control),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 16,
+                        color: AppSemanticColors.statusErrorIcon,
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
+                      Text(
+                        '거절 사유',
+                        style: AppTypography.titleSmall.copyWith(
+                          color: AppSemanticColors.statusErrorText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.space1),
+                  Text(
+                    request.rejectionReason!,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppSemanticColors.statusErrorText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: AppSpacing.space2),
+          Text(
+            '신청일 ${_formatDateTime(request.createdAt)}',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppSemanticColors.textTertiary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   AppTagTone _statusTone(VacationStatus status) {

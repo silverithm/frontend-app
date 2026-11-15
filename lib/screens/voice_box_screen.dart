@@ -13,10 +13,10 @@ import '../widgets/common/app_refresh.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
-import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import 'voice_box_write_screen.dart';
 import '../widgets/common/app_tag.dart';
+import '../widgets/common/app_notice_toasts.dart';
 
 /// 고충·신고 / 건의함 — 직원용.
 /// 제출은 소속 기관 인증 사용자 누구나 가능하고, 열람·처리는 기관 관리자만 할 수 있다
@@ -89,78 +89,79 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                  Row(
-                    children: [
-                      _StatusBadge(status: message.status),
-                      const SizedBox(width: AppSpacing.space2),
-                      Text(
-                        message.type.label,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
+                Row(
+                  children: [
+                    _StatusBadge(status: message.status),
+                    const SizedBox(width: AppSpacing.space2),
+                    Text(
+                      message.type.label,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textTertiary,
                       ),
-                      if (message.isAnonymous) ...[
-                        const SizedBox(width: AppSpacing.space2),
-                        const Icon(
-                          Icons.visibility_off_outlined,
-                          size: 16,
-                          color: AppSemanticColors.textTertiary,
+                    ),
+                    if (message.isAnonymous) ...[
+                      const SizedBox(width: AppSpacing.space2),
+                      const Icon(
+                        Icons.visibility_off_outlined,
+                        size: 16,
+                        color: AppSemanticColors.textTertiary,
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.space2),
+                // 시트 안 상세 제목(B안 heading5 18/w700)
+                Text(
+                  message.title,
+                  style: AppTypography.heading5.copyWith(
+                    color: AppSemanticColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space3),
+                Text(
+                  message.content,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppSemanticColors.textSecondary,
+                  ),
+                ),
+                if (message.hasReply) ...[
+                  const SizedBox(height: AppSpacing.space5),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.space4),
+                    decoration: BoxDecoration(
+                      color: AppSemanticColors.fillDefault,
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '관리자 답변',
+                          style: AppTypography.titleSmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.space1_5),
+                        Text(
+                          message.adminReply!,
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppSemanticColors.textPrimary,
+                          ),
                         ),
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.space2),
-                  // 시트 안 상세 제목(B안 heading5 18/w700)
-                  Text(
-                    message.title,
-                    style: AppTypography.heading5.copyWith(
-                      color: AppSemanticColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.space3),
-                  Text(
-                    message.content,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                  ),
-                  if (message.hasReply) ...[
-                    const SizedBox(height: AppSpacing.space5),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(AppSpacing.space4),
-                      decoration: BoxDecoration(
-                        color: AppSemanticColors.fillDefault,
-                        borderRadius:
-                            BorderRadius.circular(AppBorderRadius.control),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '관리자 답변',
-                            style: AppTypography.titleSmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.space1_5),
-                          Text(
-                            message.adminReply!,
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: AppSpacing.space4),
                 ],
-              ),
+                const SizedBox(height: AppSpacing.space4),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 
   String _formatDate(DateTime? date) {
@@ -175,76 +176,81 @@ class _VoiceBoxScreenState extends State<VoiceBoxScreen> {
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: const CareVAppBar(title: '고충·신고 · 건의함'),
       body: SafeArea(
-        child: AppRefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            children: [
-              const SeedCallout(
-                variant: SeedCalloutVariant.info,
-                title: '고충·신고, 건의를 남겨보세요',
-                description:
-                    '작성한 글은 기관 관리자(대표·시설장·사무국장급)만 열람해요. 익명으로 제출하면 관리자 화면에는 작성자가 "익명"으로만 표시돼요.',
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              SizedBox(
-                width: double.infinity,
-                child: SeedButton(
-                  label: '새로 작성하기',
-                  prefixIcon: Icons.edit_outlined,
-                  size: SeedButtonSize.large,
-                  onPressed: _openWriteScreen,
+        // 쓰는 법 안내는 위에 잠깐 뜨는 알림 카드로(2026-11-15) — 예전엔 목록 위 고정 상자
+        child: AppNoticeHost(
+          noticeKey: 'voice-box',
+          notices: const [
+            AppNotice.info(
+              title: '고충·신고, 건의를 남겨보세요',
+              description:
+                  '작성한 글은 기관 관리자(대표·시설장·사무국장급)만 열람해요. 익명으로 제출하면 관리자 화면에는 작성자가 "익명"으로만 표시돼요.',
+            ),
+          ],
+          child: AppRefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: SeedButton(
+                    label: '새로 작성하기',
+                    prefixIcon: Icons.edit_outlined,
+                    size: SeedButtonSize.large,
+                    onPressed: _openWriteScreen,
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.space6),
+                const SizedBox(height: AppSpacing.space6),
 
-              // 묶음 제목 — SeedListSection 제목과 같은 모양(14/w600 회색)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space1,
-                ),
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    '내 제출 내역',
-                    style: AppTypography.titleSmall.copyWith(
-                      color: AppSemanticColors.textSecondary,
+                // 묶음 제목 — SeedListSection 제목과 같은 모양(14/w600 회색)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space1,
+                  ),
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      '내 제출 내역',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.space2),
+                const SizedBox(height: AppSpacing.space2),
 
-              // 처음 불러올 때(아직 보일 내역이 없을 때)만 뼈대 — 내역이 있는 채로 다시 불러올 때는 예전 스피너
-              if (_isLoading && _messages.isEmpty)
-                const _VoiceBoxListSkeleton()
-              else if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.only(top: AppSpacing.space8),
-                  child: AppLoading(),
-                )
-              else if (_errorMessage != null)
-                _buildErrorState(_errorMessage!)
-              else if (_messages.isEmpty)
-                _buildEmptyState()
-              else
-                SeedListSection(
-                  children: [
-                    for (final message in _messages)
-                      SeedListCell(
-                        leadingIcon: message.type == VoiceMessageType.grievance
-                            ? Icons.report_gmailerrorred_outlined
-                            : Icons.lightbulb_outline,
-                        title: message.title,
-                        description:
-                            '${message.type.label} · ${_formatDate(message.createdAt)}${message.hasReply ? ' · 답변 있음' : ''}',
-                        trailing: _StatusBadge(status: message.status),
-                        onTap: () => _showDetail(message),
-                      ),
-                  ],
-                ),
-              const SizedBox(height: AppSpacing.space8),
-            ],
+                // 처음 불러올 때(아직 보일 내역이 없을 때)만 뼈대 — 내역이 있는 채로 다시 불러올 때는 예전 스피너
+                if (_isLoading && _messages.isEmpty)
+                  const _VoiceBoxListSkeleton()
+                else if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: AppSpacing.space8),
+                    child: AppLoading(),
+                  )
+                else if (_errorMessage != null)
+                  _buildErrorState(_errorMessage!)
+                else if (_messages.isEmpty)
+                  _buildEmptyState()
+                else
+                  SeedListSection(
+                    children: [
+                      for (final message in _messages)
+                        SeedListCell(
+                          leadingIcon:
+                              message.type == VoiceMessageType.grievance
+                              ? Icons.report_gmailerrorred_outlined
+                              : Icons.lightbulb_outline,
+                          title: message.title,
+                          description:
+                              '${message.type.label} · ${_formatDate(message.createdAt)}${message.hasReply ? ' · 답변 있음' : ''}',
+                          trailing: _StatusBadge(status: message.status),
+                          onTap: () => _showDetail(message),
+                        ),
+                    ],
+                  ),
+                const SizedBox(height: AppSpacing.space8),
+              ],
+            ),
           ),
         ),
       ),

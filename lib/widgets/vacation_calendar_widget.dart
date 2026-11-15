@@ -9,16 +9,14 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/korean_holidays.dart';
-import '../utils/role_utils.dart';
 import 'calendar/month_chip_grid.dart';
-import 'seed/seed_chip.dart';
 
-/// 근무조정 달력 — 크로박스 홈 달력처럼 화면을 꽉 채운다(2026-11-14 시안).
+/// 근무조정 달력 — 크로박스 홈 달력처럼 화면을 꽉 채운다(2026-11-14).
 ///
-/// 머리줄(큰 달 이름 · ‹ › · 펼치기 · 오늘) → 직종 칩 → 꽉 찬 달력.
 /// 칸마다 휴무자 이름을 상태 색 칩으로(승인 연두 · 대기 노랑 · 거절 옅게), 넘치면 '+n'.
 /// 예전엔 점만 찍고 '휴무자 이름 표시 [보기]'를 눌러야 이름이 보였다.
-/// 고른 날·시트·펼치기는 화면(calendar_screen)이 들고 있고, 이 위젯은 그리기만 한다.
+/// 달 이름·근무|일정·필터·펼치기·오늘은 화면 맨 위 초록 띠 한 줄(CalendarOneLineHeader)에 있고(2026-11-15),
+/// 고른 날·시트·펼치기·직종은 화면(calendar_screen)이 들고 있다. 이 위젯은 달력만 그린다.
 class VacationCalendarWidget extends StatelessWidget {
   final DateTime currentDate;
   final DateTime? selectedDate;
@@ -28,14 +26,13 @@ class VacationCalendarWidget extends StatelessWidget {
   final double bodyHeight;
   final DraggableScrollableController sheet;
   final double sheetSplit;
+
+  /// 좌우로 쓸어 달을 넘길 때(-1 · +1)
   final ValueChanged<int> onMoveMonth;
-  final VoidCallback onToday;
-  final VoidCallback onToggleExpanded;
   final ValueChanged<DateTime> onDayTap;
 
-  /// 직종 다중 선택 (빈 목록 = 전체)
+  /// 직종 다중 선택 (빈 목록 = 전체) — 하나만 고르면 칸에 여유·초과 바탕과 '인원/한도'
   final List<String> roleFilters;
-  final Function(List<String>)? onRoleFiltersChanged;
 
   const VacationCalendarWidget({
     super.key,
@@ -48,11 +45,8 @@ class VacationCalendarWidget extends StatelessWidget {
     required this.sheet,
     required this.sheetSplit,
     required this.onMoveMonth,
-    required this.onToday,
-    required this.onToggleExpanded,
     required this.onDayTap,
     this.roleFilters = const [],
-    this.onRoleFiltersChanged,
   });
 
   // 직종별 한도(limit) 기반 색상·카운트는 한도가 정의되는 단일 선택일 때만 의미가 있다
@@ -66,38 +60,6 @@ class VacationCalendarWidget extends StatelessWidget {
     final vacationProvider = context.watch<VacationProvider>();
     return Column(
       children: [
-        CalendarHeaderBar(
-          month: currentDate,
-          onPrevious: () => onMoveMonth(-1),
-          onNext: () => onMoveMonth(1),
-          onToday: onToday,
-          expanded: expanded,
-          onToggleExpanded: onToggleExpanded,
-        ),
-
-        // 직종 거르기 칩 — 작은 칩(32), 옆으로 밀어 본다
-        if (onRoleFiltersChanged != null)
-          SizedBox(
-            height: 44,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space4,
-                vertical: AppSpacing.space1,
-              ),
-              child: Row(
-                children: [
-                  _roleChip(RoleUtils.allRole, '전체'),
-                  // 관리자 화면에서 만든 역할까지 그대로 노출
-                  for (final role in vacationProvider.availableRoles) ...[
-                    const SizedBox(width: AppSpacing.space1_5),
-                    _roleChip(role, RoleUtils.displayName(role)),
-                  ],
-                ],
-              ),
-            ),
-          ),
-
         Expanded(
           child: MonthChipGrid(
             month: currentDate,
@@ -142,29 +104,6 @@ class VacationCalendarWidget extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _roleChip(String role, String label) {
-    final normalized = RoleUtils.normalize(role);
-    final isSelected = normalized == RoleUtils.allRole
-        ? roleFilters.isEmpty
-        : roleFilters.contains(normalized);
-    return SeedChip(
-      label: label,
-      selected: isSelected,
-      size: SeedChipSize.small,
-      onTap: () {
-        final current = List<String>.from(roleFilters);
-        if (normalized == RoleUtils.allRole) {
-          current.clear();
-        } else if (current.contains(normalized)) {
-          current.remove(normalized);
-        } else {
-          current.add(normalized);
-        }
-        onRoleFiltersChanged?.call(current);
-      },
     );
   }
 

@@ -15,7 +15,7 @@ import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
-import '../widgets/seed/seed_callout.dart';
+import '../widgets/common/app_notice_toasts.dart';
 
 /// 회의록 상세 — 내용을 읽고, 내가 참석자면 서명한다.
 /// 서명은 결재 승인과 같은 방식: 등록 서명 자동 날인 또는 즉석 그리기.
@@ -25,10 +25,12 @@ class MeetingMinutesDetailScreen extends StatefulWidget {
   const MeetingMinutesDetailScreen({super.key, required this.minutesId});
 
   @override
-  State<MeetingMinutesDetailScreen> createState() => _MeetingMinutesDetailScreenState();
+  State<MeetingMinutesDetailScreen> createState() =>
+      _MeetingMinutesDetailScreenState();
 }
 
-class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen> {
+class _MeetingMinutesDetailScreenState
+    extends State<MeetingMinutesDetailScreen> {
   Map<String, dynamic>? _minutes;
   bool _isLoading = true;
   bool _isSigning = false;
@@ -42,8 +44,9 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
 
   Future<void> _load() async {
     try {
-      final minutes =
-          await ApiService().getMeetingMinutesDetail(minutesId: widget.minutesId);
+      final minutes = await ApiService().getMeetingMinutesDetail(
+        minutesId: widget.minutesId,
+      );
       if (!mounted) return;
       setState(() {
         _minutes = minutes;
@@ -59,7 +62,8 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
     }
   }
 
-  List<dynamic> get _attendees => _minutes?['attendees'] as List<dynamic>? ?? [];
+  List<dynamic> get _attendees =>
+      _minutes?['attendees'] as List<dynamic>? ?? [];
 
   /// 내 참석자 행. 결재선과 같은 규칙 — 직원이면 MEMBER/refId, 관리자 계정이면 ADMIN/refId.
   Map<String, dynamic>? get _myAttendee {
@@ -125,7 +129,8 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
   Widget build(BuildContext context) {
     final minutes = _minutes;
     final mine = _myAttendee;
-    final canSign = minutes != null &&
+    final canSign =
+        minutes != null &&
         minutes['status'] == 'REGISTERED' &&
         mine != null &&
         mine['signedAt'] == null;
@@ -134,7 +139,7 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
     final endAt = minutes?['meetingEndAt']?.toString();
     final when = startAt.length >= 16
         ? '${startAt.substring(0, 10)} ${startAt.substring(11, 16)}'
-            '${endAt != null && endAt.length >= 16 ? ' ~ ${endAt.substring(11, 16)}' : ''}'
+              '${endAt != null && endAt.length >= 16 ? ' ~ ${endAt.substring(11, 16)}' : ''}'
         : startAt;
 
     return Scaffold(
@@ -143,155 +148,162 @@ class _MeetingMinutesDetailScreenState extends State<MeetingMinutesDetailScreen>
       body: _isLoading
           ? const _MeetingMinutesDetailSkeleton()
           : _error != null
-              ? AppEmptyState(
-                  icon: Icons.error_outline_rounded,
-                  title: _error!,
-                )
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.screenGutter,
-                    AppSpacing.space3,
-                    AppSpacing.screenGutter,
-                    AppSpacing.space6,
+          ? AppEmptyState(icon: Icons.error_outline_rounded, title: _error!)
+          : AppNoticeHost(
+              // 서명 필요 안내 — 아래로 내리면 하단 서명 단추를 놓치기 쉬워 들어오자마자
+              // 위에 알림 카드로 띄운다(2026-11-15, 예전엔 맨 위 고정 상자)
+              noticeKey: 'meeting-minutes-sign',
+              notices: [
+                if (canSign)
+                  const AppNotice(
+                    icon: Icons.draw_outlined,
+                    background: AppSemanticColors.brandWeak,
+                    iconColor: AppSemanticColors.brandDefault,
+                    title: '내 서명이 필요한 회의록이에요. 내용을 확인한 뒤 하단 버튼으로 서명해주세요.',
                   ),
-                  children: [
-                    // 서명 필요 배너 — 아래로 스크롤하면 하단 서명 버튼을 놓치기 쉬워
-                    // 진입 즉시 눈에 띄게 알려준다.
-                    // B안 안내 상자(옅은 틸 바탕·모서리 12·테두리 없음)
-                    if (canSign) ...[
-                      const SeedCallout(
-                        variant: SeedCalloutVariant.brand,
-                        icon: Icons.draw_outlined,
-                        title: '내 서명이 필요한 회의록이에요. 내용을 확인한 뒤 하단 버튼으로 서명해주세요.',
-                      ),
-                      const SizedBox(height: AppSpacing.cardGap),
-                    ],
-                    // 머리 정보
-                    _card(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            minutes?['title']?.toString() ?? '',
-                            style: AppTypography.heading5.copyWith(
-                              color: AppSemanticColors.textPrimary,
-                            ),
+              ],
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenGutter,
+                  AppSpacing.space3,
+                  AppSpacing.screenGutter,
+                  AppSpacing.space6,
+                ),
+                children: [
+                  // 머리 정보
+                  _card(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          minutes?['title']?.toString() ?? '',
+                          style: AppTypography.heading5.copyWith(
+                            color: AppSemanticColors.textPrimary,
                           ),
-                          const SizedBox(height: AppSpacing.space2),
-                          Text(
-                            [
-                              when,
-                              if ((minutes?['location']?.toString() ?? '').isNotEmpty)
-                                minutes!['location'].toString(),
-                              '작성 ${minutes?['authorName'] ?? ''}',
-                            ].join(' · '),
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
+                        ),
+                        const SizedBox(height: AppSpacing.space2),
+                        Text(
+                          [
+                            when,
+                            if ((minutes?['location']?.toString() ?? '')
+                                .isNotEmpty)
+                              minutes!['location'].toString(),
+                            '작성 ${minutes?['authorName'] ?? ''}',
+                          ].join(' · '),
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppSemanticColors.textSecondary,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: AppSpacing.cardGap),
+                  ),
+                  const SizedBox(height: AppSpacing.cardGap),
 
-                    // 회의 내용
-                    ..._sections().map(
-                      (section) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
-                        child: _card(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 카드·구역 제목(B안 16/w700)
-                              Semantics(
-                                header: true,
-                                child: Text(
-                                  '${section['label'] ?? ''}',
-                                  style: AppTypography.heading6.copyWith(
-                                    color: AppSemanticColors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.space2),
-                              Text(
-                                section['content'].toString(),
-                                style: AppTypography.bodyMedium.copyWith(
+                  // 회의 내용
+                  ..._sections().map(
+                    (section) => Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: AppSpacing.cardGap,
+                      ),
+                      child: _card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 카드·구역 제목(B안 16/w700)
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                '${section['label'] ?? ''}',
+                                style: AppTypography.heading6.copyWith(
                                   color: AppSemanticColors.textPrimary,
-                                  height: 1.6,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: AppSpacing.space2),
+                            Text(
+                              section['content'].toString(),
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppSemanticColors.textPrimary,
+                                height: 1.6,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
+                  ),
 
-                    // 참석자 서명 현황
-                    _card(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Semantics(
-                            header: true,
-                            child: Text(
-                              '참석자 서명',
-                              style: AppTypography.heading6.copyWith(
-                                color: AppSemanticColors.textPrimary,
-                              ),
+                  // 참석자 서명 현황
+                  _card(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            '참석자 서명',
+                            style: AppTypography.heading6.copyWith(
+                              color: AppSemanticColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.space2),
-                          ..._attendees.map((raw) {
-                            final attendee = raw as Map<String, dynamic>;
-                            final signed = attendee['signedAt'] != null;
-                            final isExternal = attendee['attendeeType'] == 'EXTERNAL';
-                            return ConstrainedBox(
-                              // 한 사람 한 줄 — 48 이상(서명 그림이 들어가도 줄 높이가 흔들리지 않게)
-                              constraints: const BoxConstraints(
-                                minHeight: AppSpacing.minTouchTarget,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    signed ? Icons.check_circle : Icons.radio_button_unchecked,
-                                    size: 22,
-                                    color: signed
-                                        ? AppSemanticColors.brandDefault
-                                        : AppSemanticColors.iconSubtle,
-                                  ),
-                                  const SizedBox(width: AppSpacing.space2_5),
-                                  Expanded(
-                                    child: Text(
-                                      '${attendee['attendeeName'] ?? ''}${isExternal ? ' (외부)' : ''}',
-                                      style: AppTypography.bodyMedium.copyWith(
-                                        color: AppSemanticColors.textPrimary,
-                                      ),
+                        ),
+                        const SizedBox(height: AppSpacing.space2),
+                        ..._attendees.map((raw) {
+                          final attendee = raw as Map<String, dynamic>;
+                          final signed = attendee['signedAt'] != null;
+                          final isExternal =
+                              attendee['attendeeType'] == 'EXTERNAL';
+                          return ConstrainedBox(
+                            // 한 사람 한 줄 — 48 이상(서명 그림이 들어가도 줄 높이가 흔들리지 않게)
+                            constraints: const BoxConstraints(
+                              minHeight: AppSpacing.minTouchTarget,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  signed
+                                      ? Icons.check_circle
+                                      : Icons.radio_button_unchecked,
+                                  size: 22,
+                                  color: signed
+                                      ? AppSemanticColors.brandDefault
+                                      : AppSemanticColors.iconSubtle,
+                                ),
+                                const SizedBox(width: AppSpacing.space2_5),
+                                Expanded(
+                                  child: Text(
+                                    '${attendee['attendeeName'] ?? ''}${isExternal ? ' (외부)' : ''}',
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: AppSemanticColors.textPrimary,
                                     ),
                                   ),
-                                  if (signed && attendee['signatureUrl'] != null)
-                                    Image.network(
-                                      attendee['signatureUrl'].toString(),
-                                      height: 28,
-                                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                                    )
-                                  else
-                                    Text(
-                                      signed ? '서명 완료' : '대기',
-                                      style: AppTypography.bodySmall.copyWith(
-                                        color: signed
-                                            ? AppSemanticColors.textLink
-                                            : AppSemanticColors.textTertiary,
-                                      ),
+                                ),
+                                if (signed && attendee['signatureUrl'] != null)
+                                  Image.network(
+                                    attendee['signatureUrl'].toString(),
+                                    height: 28,
+                                    errorBuilder: (_, __, ___) =>
+                                        const SizedBox.shrink(),
+                                  )
+                                else
+                                  Text(
+                                    signed ? '서명 완료' : '대기',
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: signed
+                                          ? AppSemanticColors.textLink
+                                          : AppSemanticColors.textTertiary,
                                     ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
+            ),
       bottomNavigationBar: canSign
           ? SafeArea(
               child: Padding(

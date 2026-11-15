@@ -9,10 +9,13 @@ import 'app_badge_pop.dart';
 
 /// [AppSegmentedTabs]의 한 칸.
 class AppSegmentedTab {
-  const AppSegmentedTab(this.label, {this.badgeCount = 0});
+  const AppSegmentedTab(this.label, {this.badgeCount = 0, this.semanticLabel});
 
   /// 칸에 보이는 글자.
   final String label;
+
+  /// 화면 읽기에 읽힐 이름 — 보이는 글자를 줄였을 때 원래 이름(없으면 [label]).
+  final String? semanticLabel;
 
   /// 0보다 크면 글자 뒤에 빨간 숫자 배지를 붙인다(99 넘으면 '99+').
   final int badgeCount;
@@ -51,7 +54,12 @@ class AppSegmentedTabs extends StatefulWidget implements PreferredSizeWidget {
     ),
     this.backgroundColor,
     this.onTap,
+    this.onBrand = false,
   }) : assert(tabs.length >= 2, '칸은 둘 이상이어야 한다');
+
+  /// 틸 상단 바 안에 넣을 때 — 띠는 반투명 흰색, 고른 칸은 흰 바탕에 틸 글자,
+  /// 안 고른 칸은 흰 글자. 바탕을 칠하지 않는다.
+  final bool onBrand;
 
   final TabController controller;
   final List<AppSegmentedTab> tabs;
@@ -72,7 +80,8 @@ class AppSegmentedTabs extends StatefulWidget implements PreferredSizeWidget {
   static const double trackPadding = AppSpacing.space1;
 
   /// 기본 글자 크기·기본 여백일 때의 전체 높이 — `PreferredSize`가 필요한 자리에서 쓴다.
-  static const double defaultHeight = segmentMinHeight +
+  static const double defaultHeight =
+      segmentMinHeight +
       trackPadding * 2 +
       AppSpacing.space2 +
       AppSpacing.space1;
@@ -114,13 +123,18 @@ class _AppSegmentedTabsState extends State<AppSegmentedTabs> {
     final animation = widget.controller.animation ?? widget.controller;
     final allowMovement = AppMotion.allowsMovement(context);
 
+    final onBrand = widget.onBrand;
     return ColoredBox(
-      color: widget.backgroundColor ?? AppSemanticColors.backgroundCanvas,
+      color: onBrand
+          ? Colors.transparent
+          : widget.backgroundColor ?? AppSemanticColors.backgroundCanvas,
       child: Padding(
         padding: widget.padding,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppSemanticColors.fillStrong,
+            color: onBrand
+                ? AppColors.white.withValues(alpha: 0.16)
+                : AppSemanticColors.fillStrong,
             borderRadius: BorderRadius.circular(AppBorderRadius.control),
           ),
           child: Padding(
@@ -129,9 +143,10 @@ class _AppSegmentedTabsState extends State<AppSegmentedTabs> {
               animation: animation,
               builder: (context, _) {
                 // 쓸어 넘기는 중에는 0~(count-1) 사이의 소수 — 흰 칸이 손가락을 따라간다.
-                final position = (widget.controller.animation?.value ??
-                        widget.controller.index.toDouble())
-                    .clamp(0.0, (count - 1).toDouble());
+                final position =
+                    (widget.controller.animation?.value ??
+                            widget.controller.index.toDouble())
+                        .clamp(0.0, (count - 1).toDouble());
                 return Stack(
                   children: [
                     Positioned.fill(
@@ -143,13 +158,13 @@ class _AppSegmentedTabsState extends State<AppSegmentedTabs> {
                         child: FractionallySizedBox(
                           widthFactor: 1 / count,
                           heightFactor: 1,
-                          child: const DecoratedBox(
+                          child: DecoratedBox(
                             decoration: BoxDecoration(
                               color: AppSemanticColors.surfaceCard,
-                              borderRadius: BorderRadius.all(
+                              borderRadius: const BorderRadius.all(
                                 Radius.circular(AppBorderRadius.inner),
                               ),
-                              boxShadow: AppShadows.raised,
+                              boxShadow: onBrand ? null : AppShadows.raised,
                             ),
                           ),
                         ),
@@ -162,9 +177,12 @@ class _AppSegmentedTabsState extends State<AppSegmentedTabs> {
                             child: _Segment(
                               tab: widget.tabs[i],
                               // 1 = 고른 칸, 0 = 한 칸 이상 떨어짐
-                              selectedness:
-                                  (1 - (position - i).abs()).clamp(0.0, 1.0),
+                              selectedness: (1 - (position - i).abs()).clamp(
+                                0.0,
+                                1.0,
+                              ),
                               selected: widget.controller.index == i,
+                              onBrand: onBrand,
                               pressed: allowMovement && _pressedIndex == i,
                               onTap: () => _select(i),
                               onPressedChanged: (down) =>
@@ -192,29 +210,39 @@ class _Segment extends StatelessWidget {
     required this.pressed,
     required this.onTap,
     required this.onPressedChanged,
+    this.onBrand = false,
   });
 
   final AppSegmentedTab tab;
   final double selectedness;
   final bool selected;
+  final bool onBrand;
   final bool pressed;
   final VoidCallback onTap;
   final ValueChanged<bool> onPressedChanged;
 
   @override
   Widget build(BuildContext context) {
-    final color = Color.lerp(
-      AppSemanticColors.textSecondary,
-      AppSemanticColors.textPrimary,
-      selectedness,
-    );
+    final color = onBrand
+        ? Color.lerp(
+            AppColors.white.withValues(alpha: 0.88),
+            AppSemanticColors.brandDefault,
+            selectedness,
+          )
+        : Color.lerp(
+            AppSemanticColors.textSecondary,
+            AppSemanticColors.textPrimary,
+            selectedness,
+          );
     final badge = tab.badgeCount;
 
     return Semantics(
       container: true,
       button: true,
       selected: selected,
-      label: badge > 0 ? '${tab.label}, $badge건' : tab.label,
+      label: badge > 0
+          ? '${tab.semanticLabel ?? tab.label}, $badge건'
+          : (tab.semanticLabel ?? tab.label),
       onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(

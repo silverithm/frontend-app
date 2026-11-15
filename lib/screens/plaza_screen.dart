@@ -35,6 +35,7 @@ import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/carev_app_bar.dart';
+import '../widgets/common/app_notice_toasts.dart';
 
 /// 게시판 key → 화면 표시 라벨. 목록·상세·글쓰기 시트가 공통으로 쓴다.
 String plazaBoardLabel(String? key) {
@@ -63,8 +64,9 @@ Future<bool?> showPlazaPostEditor(
   String initialBoard = 'free',
 }) async {
   final isEdit = existingPost != null;
-  final titleController =
-      TextEditingController(text: existingPost?['title']?.toString() ?? '');
+  final titleController = TextEditingController(
+    text: existingPost?['title']?.toString() ?? '',
+  );
   // 웹 서식 편집기로 쓴 글은 본문이 HTML이다. 평문 TextField에 원문을 그대로 넣으면
   // <p>·<br>이 날것으로 보이고, 그 상태로 저장하면 본문이 망가진다. 그래서 읽을 수
   // 있는 평문으로 풀어서 채우고, 저장할 때 들어온 모양(HTML)으로 다시 올린다.
@@ -73,9 +75,11 @@ Future<bool?> showPlazaPostEditor(
   final rawContent = existingPost?['content']?.toString() ?? '';
   final contentWasHtml = containsHtmlTags(rawContent);
   final contentController = TextEditingController(
-      text: contentWasHtml ? htmlToEditableText(rawContent) : rawContent);
+    text: contentWasHtml ? htmlToEditableText(rawContent) : rawContent,
+  );
   final contactController = TextEditingController(
-      text: existingPost?['contactInfo']?.toString() ?? '');
+    text: existingPost?['contactInfo']?.toString() ?? '',
+  );
   String board = existingPost?['board']?.toString() ?? initialBoard;
   bool isAnonymous = existingPost?['isAnonymous'] == true;
   bool contactPublic = existingPost?['contactPublic'] == true;
@@ -93,7 +97,8 @@ Future<bool?> showPlazaPostEditor(
             left: AppSpacing.space4,
             right: AppSpacing.space4,
             top: AppSpacing.space4,
-            bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
+            bottom:
+                MediaQuery.of(context).viewInsets.bottom + AppSpacing.space4,
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -116,10 +121,7 @@ Future<bool?> showPlazaPostEditor(
                       setSheetState(() => board = value ?? 'free'),
                 ),
                 const SizedBox(height: AppSpacing.space3),
-                SeedTextField(
-                  label: '제목',
-                  controller: titleController,
-                ),
+                SeedTextField(label: '제목', controller: titleController),
                 const SizedBox(height: AppSpacing.space3),
                 SeedTextField(
                   label: '내용',
@@ -139,14 +141,15 @@ Future<bool?> showPlazaPostEditor(
                       Checkbox(
                         value: contactPublic,
                         activeColor: AppSemanticColors.brandDefault,
-                        onChanged: (value) => setSheetState(
-                            () => contactPublic = value ?? false),
+                        onChanged: (value) =>
+                            setSheetState(() => contactPublic = value ?? false),
                       ),
                       Expanded(
                         child: Text(
                           '연락처 전체 공개 (끄면 로그인 회원에게만 보여요)',
                           style: AppTypography.bodySmall.copyWith(
-                              color: AppSemanticColors.textSecondary),
+                            color: AppSemanticColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -162,8 +165,9 @@ Future<bool?> showPlazaPostEditor(
                     ),
                     Text(
                       '익명으로 작성',
-                      style: AppTypography.bodySmall
-                          .copyWith(color: AppSemanticColors.textSecondary),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -194,8 +198,9 @@ Future<bool?> showPlazaPostEditor(
                             isAnonymous: isAnonymous,
                             authorName: user?.name,
                             companyName: user?.company?.name,
-                            contactInfo:
-                                isJobBoard ? contactController.text.trim() : null,
+                            contactInfo: isJobBoard
+                                ? contactController.text.trim()
+                                : null,
                             contactPublic: isJobBoard && contactPublic,
                           );
                         } else {
@@ -206,8 +211,9 @@ Future<bool?> showPlazaPostEditor(
                             isAnonymous: isAnonymous,
                             authorName: user?.name,
                             companyName: user?.company?.name,
-                            contactInfo:
-                                isJobBoard ? contactController.text.trim() : null,
+                            contactInfo: isJobBoard
+                                ? contactController.text.trim()
+                                : null,
                             contactPublic: isJobBoard && contactPublic,
                           );
                         }
@@ -330,11 +336,11 @@ class _PlazaFilterChips extends StatelessWidget {
 
 /// 카드 목록 여백 — 좌우 16, 카드 사이 10. FAB가 있는 탭은 마지막 카드가 가려지지 않게 아래를 더 띄운다.
 EdgeInsets _plazaListPadding({bool hasFab = false}) => EdgeInsets.fromLTRB(
-      AppSpacing.screenGutter,
-      AppSpacing.space2,
-      AppSpacing.screenGutter,
-      hasFab ? AppSpacing.space20 + AppSpacing.space4 : AppSpacing.space4,
-    );
+  AppSpacing.screenGutter,
+  AppSpacing.space2,
+  AppSpacing.screenGutter,
+  hasFab ? AppSpacing.space20 + AppSpacing.space4 : AppSpacing.space4,
+);
 
 /// 카드 목록 첫 불러오기 뼈대 — 회색 바탕 위 흰 카드([_plazaListPadding]과 같은 여백·간격).
 /// [withChipRow]면 위에 거르기 칩 줄 자리를 비워 둔다(칩 줄까지 통째로 불러오는 자료실).
@@ -406,8 +412,9 @@ class _PlazaErrorState extends StatelessWidget {
           const SizedBox(height: AppSpacing.space3),
           Text(
             '불러오지 못했습니다',
-            style: AppTypography.bodyMedium
-                .copyWith(color: AppSemanticColors.textSecondary),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textSecondary,
+            ),
           ),
           const SizedBox(height: AppSpacing.space4),
           SeedButton(
@@ -617,7 +624,10 @@ class _NewsTabState extends State<_NewsTab> {
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     try {
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched && mounted) {
         AppSnackBar.showError(context, message: '링크를 열 수 없습니다');
       }
@@ -635,111 +645,123 @@ class _NewsTabState extends State<_NewsTab> {
         (_newsLoading || _noticeInitialLoading) && !hasAnyData;
     final bothFailed = _newsError && _noticeError && !hasAnyData;
     // 한쪽만 실패했을 때는 목록은 정상 표시하고, 상단에 짧은 안내만 덧붙인다.
-    final onlyOneFailed = !bothFailed &&
+    final onlyOneFailed =
+        !bothFailed &&
         ((_newsError && _newsArticles.isEmpty) ||
             (_noticeError && _notices.isEmpty));
 
-    return Column(
-      children: [
+    return AppNoticeHost(
+      // 한쪽 소식만 못 불러왔으면 목록은 그대로 두고 위에 알림 카드로 잠깐 알린다(2026-11-15, 예전엔 고정 상자)
+      noticeKey: 'plaza-news-error',
+      notices: [
         if (onlyOneFailed)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.screenGutter,
-                AppSpacing.space1, AppSpacing.screenGutter, AppSpacing.space1),
-            child: SeedCallout(
-              variant: SeedCalloutVariant.warning,
-              icon: Icons.warning_amber_outlined,
-              title: _newsError
-                  ? '언론 보도를 불러오지 못했어요'
-                  : '장기요양보험공단 자료를 불러오지 못했어요',
-              description: '나머지 소식은 정상적으로 표시하고 있어요.',
-            ),
+          AppNotice(
+            icon: Icons.warning_amber_outlined,
+            background: AppSemanticColors.statusWarningBackground,
+            iconColor: AppSemanticColors.statusWarningIcon,
+            title: _newsError ? '언론 보도를 불러오지 못했어요' : '장기요양보험공단 자료를 불러오지 못했어요',
+            description: '나머지 소식은 정상적으로 표시하고 있어요.',
           ),
-        _PlazaFilterChips(
-          options: _filters,
-          selectedKey: _filter,
-          onSelected: (key) => setState(() => _filter = key),
-        ),
-        Expanded(
-          // 카드 등장 연출은 처음 한 번만 — 거르기·새로고침으로 다시 그려도 다시 떠오르지 않게 바깥에 둔다
-          child: AppListEntrance(
-          child: isInitialLoading
-              ? const _PlazaCardListSkeleton()
-              : bothFailed
+      ],
+      child: Column(
+        children: [
+          _PlazaFilterChips(
+            options: _filters,
+            selectedKey: _filter,
+            onSelected: (key) => setState(() => _filter = key),
+          ),
+          Expanded(
+            // 카드 등장 연출은 처음 한 번만 — 거르기·새로고침으로 다시 그려도 다시 떠오르지 않게 바깥에 둔다
+            child: AppListEntrance(
+              child: isInitialLoading
+                  ? const _PlazaCardListSkeleton()
+                  : bothFailed
                   ? _PlazaErrorState(onRetry: _refreshAll)
-                  : Builder(builder: (context) {
-                      final items = _mergedItems;
-                      if (items.isEmpty) {
-                        return const AppEmptyState(
-                          icon: Icons.newspaper_outlined,
-                          title: '아직 소식이 없어요',
-                          topSpacing: AppSpacing.space10,
-                        );
-                      }
-                      return AppRefreshIndicator(
-                        onRefresh: _refreshAll,
-                        child: ListView.separated(
-                          controller: _scrollController,
-                          padding: _plazaListPadding(),
-                          itemCount: items.length + (_noticeHasMore ? 1 : 0),
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppSpacing.cardGap),
-                          itemBuilder: (context, index) {
-                            if (index == items.length) {
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: AppSpacing.space4),
-                                child: Center(
-                                    child: SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2))),
-                              );
-                            }
-                            final item = items[index];
-                            // B안: 테두리 없는 흰 카드(모서리 16·여백 16)
-                            return AppListEntranceItem(
-                              index: index,
-                              child: AppCard(
-                              onTap: () => _openUrl(item.url),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Wrap(
-                                    spacing: AppSpacing.space2,
-                                    runSpacing: AppSpacing.space1,
-                                    crossAxisAlignment:
-                                        WrapCrossAlignment.center,
-                                    children: [
-                                      AppTag(label: item.badgeLabel),
-                                      if (item.date != null)
-                                        Text(
-                                          _formatDate(item.date),
-                                          style: AppTypography.bodySmall
-                                              .copyWith(
-                                                  color: AppSemanticColors
-                                                      .textTertiary),
-                                        ),
-                                    ],
+                  : Builder(
+                      builder: (context) {
+                        final items = _mergedItems;
+                        if (items.isEmpty) {
+                          return const AppEmptyState(
+                            icon: Icons.newspaper_outlined,
+                            title: '아직 소식이 없어요',
+                            topSpacing: AppSpacing.space10,
+                          );
+                        }
+                        return AppRefreshIndicator(
+                          onRefresh: _refreshAll,
+                          child: ListView.separated(
+                            controller: _scrollController,
+                            padding: _plazaListPadding(),
+                            itemCount: items.length + (_noticeHasMore ? 1 : 0),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: AppSpacing.cardGap),
+                            itemBuilder: (context, index) {
+                              if (index == items.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: AppSpacing.space4,
                                   ),
-                                  const SizedBox(height: AppSpacing.space2),
-                                  Text(
-                                    item.title,
-                                    style: AppTypography.titleMedium.copyWith(
-                                      color: AppSemanticColors.textPrimary,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
                                     ),
                                   ),
-                                ],
-                              ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    }),
+                                );
+                              }
+                              final item = items[index];
+                              // B안: 테두리 없는 흰 카드(모서리 16·여백 16)
+                              return AppListEntranceItem(
+                                index: index,
+                                child: AppCard(
+                                  onTap: () => _openUrl(item.url),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Wrap(
+                                        spacing: AppSpacing.space2,
+                                        runSpacing: AppSpacing.space1,
+                                        crossAxisAlignment:
+                                            WrapCrossAlignment.center,
+                                        children: [
+                                          AppTag(label: item.badgeLabel),
+                                          if (item.date != null)
+                                            Text(
+                                              _formatDate(item.date),
+                                              style: AppTypography.bodySmall
+                                                  .copyWith(
+                                                    color: AppSemanticColors
+                                                        .textTertiary,
+                                                  ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: AppSpacing.space2),
+                                      Text(
+                                        item.title,
+                                        style: AppTypography.titleMedium
+                                            .copyWith(
+                                              color:
+                                                  AppSemanticColors.textPrimary,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -782,8 +804,10 @@ class _BoardTabState extends State<_BoardTab> {
       _hasError = false;
     });
     try {
-      final response = await ApiService()
-          .getPlazaPosts(board: _board.isEmpty ? null : _board, size: 30);
+      final response = await ApiService().getPlazaPosts(
+        board: _board.isEmpty ? null : _board,
+        size: 30,
+      );
       final content = (response['content'] as List?) ?? [];
       if (mounted) {
         setState(() {
@@ -837,30 +861,29 @@ class _BoardTabState extends State<_BoardTab> {
           Expanded(
             // 카드 등장 연출은 처음 한 번만 — 거르기·새로고침으로 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
             child: AppListEntrance(
-            // 처음 불러올 때(아직 보일 글이 없을 때)만 뼈대 — 글이 있는 채로 다시 불러올 때는 예전 스피너
-            child: _isLoading && _posts.isEmpty
-                ? const _PlazaCardListSkeleton(hasFab: true)
-                : _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : (_hasError && _posts.isEmpty)
-                    ? _PlazaErrorState(onRetry: _load)
-                    : _posts.isEmpty
-                    ? const AppEmptyState(
-                        icon: Icons.forum_outlined,
-                        title: '아직 게시글이 없어요',
-                        description: '+ 버튼으로 첫 글을 남겨보세요',
-                        topSpacing: AppSpacing.space10,
-                      )
-                    : NotificationListener<UserScrollNotification>(
-                        onNotification: (notification) {
-                          final collapsed = _fabCollapsedFor(notification);
-                          if (collapsed != null &&
-                              collapsed != _fabCollapsed) {
-                            setState(() => _fabCollapsed = collapsed);
-                          }
-                          return false;
-                        },
-                        child: AppRefreshIndicator(
+              // 처음 불러올 때(아직 보일 글이 없을 때)만 뼈대 — 글이 있는 채로 다시 불러올 때는 예전 스피너
+              child: _isLoading && _posts.isEmpty
+                  ? const _PlazaCardListSkeleton(hasFab: true)
+                  : _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : (_hasError && _posts.isEmpty)
+                  ? _PlazaErrorState(onRetry: _load)
+                  : _posts.isEmpty
+                  ? const AppEmptyState(
+                      icon: Icons.forum_outlined,
+                      title: '아직 게시글이 없어요',
+                      description: '+ 버튼으로 첫 글을 남겨보세요',
+                      topSpacing: AppSpacing.space10,
+                    )
+                  : NotificationListener<UserScrollNotification>(
+                      onNotification: (notification) {
+                        final collapsed = _fabCollapsedFor(notification);
+                        if (collapsed != null && collapsed != _fabCollapsed) {
+                          setState(() => _fabCollapsed = collapsed);
+                        }
+                        return false;
+                      },
+                      child: AppRefreshIndicator(
                         onRefresh: _load,
                         child: ListView.separated(
                           padding: _plazaListPadding(hasFab: true),
@@ -890,7 +913,7 @@ class _BoardTabState extends State<_BoardTab> {
                           },
                         ),
                       ),
-                      ),
+                    ),
             ),
           ),
         ],
@@ -1053,10 +1076,12 @@ Future<bool?> showPlazaLibraryEditor(
   Map<String, dynamic>? existingItem,
 }) async {
   final isEdit = existingItem != null;
-  final titleController =
-      TextEditingController(text: existingItem?['title']?.toString() ?? '');
+  final titleController = TextEditingController(
+    text: existingItem?['title']?.toString() ?? '',
+  );
   final descriptionController = TextEditingController(
-      text: existingItem?['description']?.toString() ?? '');
+    text: existingItem?['description']?.toString() ?? '',
+  );
   String category = existingItem?['category']?.toString() ?? 'form';
   XFile? pickedFile;
   bool isSaving = false;
@@ -1094,10 +1119,7 @@ Future<bool?> showPlazaLibraryEditor(
                     setSheetState(() => category = value ?? 'form'),
               ),
               const SizedBox(height: AppSpacing.space3),
-              SeedTextField(
-                label: '제목',
-                controller: titleController,
-              ),
+              SeedTextField(label: '제목', controller: titleController),
               const SizedBox(height: AppSpacing.space3),
               SeedTextField(
                 label: '설명 (선택)',
@@ -1109,8 +1131,9 @@ Future<bool?> showPlazaLibraryEditor(
                 // 수정은 파일을 바꾸지 않는다 — 재업로드하면 다운로드 수 등 이력이 초기화된다
                 Text(
                   '파일: ${existingItem['fileName'] ?? ''} (파일 자체는 변경할 수 없어요)',
-                  style: AppTypography.bodySmall
-                      .copyWith(color: AppSemanticColors.textTertiary),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
                 )
               else
                 OutlinedButton.icon(
@@ -1121,9 +1144,11 @@ Future<bool?> showPlazaLibraryEditor(
                     }
                   },
                   icon: const Icon(Icons.attach_file, size: 16),
-                  label: Text(pickedFile?.name ?? '파일 선택',
-                      style: AppTypography.bodySmall,
-                      overflow: TextOverflow.ellipsis),
+                  label: Text(
+                    pickedFile?.name ?? '파일 선택',
+                    style: AppTypography.bodySmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               const SizedBox(height: AppSpacing.space3),
               SizedBox(
@@ -1247,7 +1272,9 @@ class _LibraryTabState extends State<_LibraryTab> {
     });
     try {
       final response = await ApiService().getPlazaLibrary(
-          category: _category.isEmpty ? null : _category, size: 30);
+        category: _category.isEmpty ? null : _category,
+        size: 30,
+      );
       final content = (response['content'] as List?) ?? [];
       if (mounted) {
         setState(() {
@@ -1288,9 +1315,9 @@ class _LibraryTabState extends State<_LibraryTab> {
       await dioClient.download(
         ApiService().plazaLibraryDownloadUrl(itemId),
         savePath,
-        options: dio.Options(headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-        }),
+        options: dio.Options(
+          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+        ),
       );
 
       final result = await OpenFilex.open(savePath);
@@ -1305,8 +1332,10 @@ class _LibraryTabState extends State<_LibraryTab> {
         // 이미 자격을 확인하지만, 확인 이후 자격이 바뀌는 경합 상황을 대비한다
         final is403 = e is dio.DioException && e.response?.statusCode == 403;
         if (is403) {
-          AppSnackBar.showWarning(context,
-              message: '자료실은 자유게시판에 글을 1개 이상 작성한 회원만 이용할 수 있습니다');
+          AppSnackBar.showWarning(
+            context,
+            message: '자료실은 자유게시판에 글을 1개 이상 작성한 회원만 이용할 수 있습니다',
+          );
         } else {
           AppSnackBar.showError(context, message: '다운로드에 실패했습니다');
         }
@@ -1338,7 +1367,7 @@ class _LibraryTabState extends State<_LibraryTab> {
             description: isLoginRequired
                 ? '자료실은 로그인 후 이용할 수 있어요.'
                 : '자료실은 자유게시판에 글을 1개 이상 작성한 회원만 이용할 수 있어요. '
-                    '나누는 만큼 받을 수 있도록 만든 조건이에요.',
+                      '나누는 만큼 받을 수 있도록 만든 조건이에요.',
           ),
           const SizedBox(height: AppSpacing.space4),
           if (!isLoginRequired && widget.onGoToFreeBoard != null)
@@ -1407,9 +1436,11 @@ class _LibraryTabState extends State<_LibraryTab> {
                   // 낱말 단위로만 줄을 바꾸고 '다운로드 96'은 한 덩어리로 —
                   // 수정 단추가 붙어 폭이 좁아지면 '다운로드 / 96', '다운로 / 드'로 갈렸다
                   keepAll(
-                      '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드\u00A0${item['downloadCount'] ?? 0}'),
-                  style: AppTypography.bodySmall
-                      .copyWith(color: AppSemanticColors.textTertiary),
+                    '${item['fileName'] ?? ''} · ${_formatSize(item['fileSize'] is int ? item['fileSize'] : 0)} · 다운로드\u00A0${item['downloadCount'] ?? 0}',
+                  ),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppSemanticColors.textTertiary,
+                  ),
                 ),
                 // 업로드할 때 적은 설명 — 안 보여주면 적을 이유가 없다 (회사 자료실과 동일)
                 if (description.isNotEmpty)
@@ -1419,8 +1450,9 @@ class _LibraryTabState extends State<_LibraryTab> {
                       item['description'].toString(),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodySmall
-                          .copyWith(color: AppSemanticColors.textSecondary),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppSemanticColors.textSecondary,
+                      ),
                     ),
                   ),
               ],
@@ -1429,14 +1461,18 @@ class _LibraryTabState extends State<_LibraryTab> {
           if (item['isMine'] == true)
             IconButton(
               tooltip: '수정',
-              icon: const Icon(Icons.edit_outlined,
-                  color: AppSemanticColors.textSecondary),
+              icon: const Icon(
+                Icons.edit_outlined,
+                color: AppSemanticColors.textSecondary,
+              ),
               onPressed: () => _showEditSheet(item),
             ),
           IconButton(
             tooltip: '다운로드',
-            icon: const Icon(Icons.download,
-                color: AppSemanticColors.interactivePrimaryDefault),
+            icon: const Icon(
+              Icons.download,
+              color: AppSemanticColors.interactivePrimaryDefault,
+            ),
             onPressed: () => _download(item),
           ),
         ],
@@ -1459,68 +1495,64 @@ class _LibraryTabState extends State<_LibraryTab> {
           : null,
       // 카드 등장 연출은 처음 한 번만 — 분류·새로고침으로 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
       body: AppListEntrance(
-      // 처음 불러올 때(아직 보일 자료가 없을 때)만 뼈대 — 자료가 있는 채로 다시 불러올 때는 예전 스피너
-      child: _isLoading && _items.isEmpty
-          ? const _PlazaCardListSkeleton(hasFab: true, withChipRow: true)
-          : _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : !_accessAllowed
-              ? (_hasError
+        // 처음 불러올 때(아직 보일 자료가 없을 때)만 뼈대 — 자료가 있는 채로 다시 불러올 때는 예전 스피너
+        child: _isLoading && _items.isEmpty
+            ? const _PlazaCardListSkeleton(hasFab: true, withChipRow: true)
+            : _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : !_accessAllowed
+            ? (_hasError
                   ? _PlazaErrorState(onRetry: _checkAccessAndLoad)
-                  : Center(child: SingleChildScrollView(child: _buildAccessGuard())))
-              : Column(
-                      children: [
-                        _PlazaFilterChips(
-                          options: _categories,
-                          selectedKey: _category,
-                          onSelected: (key) {
-                            setState(() => _category = key);
-                            _load();
-                          },
-                        ),
-                        Expanded(
-                          child: (_hasError && _items.isEmpty)
-                              ? _PlazaErrorState(onRetry: _load)
-                              : _items.isEmpty
-                                  ? const AppEmptyState(
-                                      icon: Icons.folder_open_outlined,
-                                      title: '아직 등록된 자료가 없어요',
-                                      description: '+ 버튼으로 첫 자료를 올려보세요',
-                                      topSpacing: AppSpacing.space10,
-                                    )
-                                  : NotificationListener<
-                                      UserScrollNotification>(
-                                      onNotification: (notification) {
-                                        final collapsed =
-                                            _fabCollapsedFor(notification);
-                                        if (collapsed != null &&
-                                            collapsed != _fabCollapsed) {
-                                          setState(() =>
-                                              _fabCollapsed = collapsed);
-                                        }
-                                        return false;
-                                      },
-                                      child: AppRefreshIndicator(
-                                      onRefresh: _load,
-                                      child: ListView.separated(
-                                        padding:
-                                            _plazaListPadding(hasFab: true),
-                                        itemCount: _items.length,
-                                        separatorBuilder: (_, __) =>
-                                            const SizedBox(
-                                                height: AppSpacing.cardGap),
-                                        itemBuilder: (context, index) =>
-                                            AppListEntranceItem(
-                                              index: index,
-                                              child:
-                                                  _buildItemCard(_items[index]),
-                                            ),
-                                      ),
+                  : Center(
+                      child: SingleChildScrollView(child: _buildAccessGuard()),
+                    ))
+            : Column(
+                children: [
+                  _PlazaFilterChips(
+                    options: _categories,
+                    selectedKey: _category,
+                    onSelected: (key) {
+                      setState(() => _category = key);
+                      _load();
+                    },
+                  ),
+                  Expanded(
+                    child: (_hasError && _items.isEmpty)
+                        ? _PlazaErrorState(onRetry: _load)
+                        : _items.isEmpty
+                        ? const AppEmptyState(
+                            icon: Icons.folder_open_outlined,
+                            title: '아직 등록된 자료가 없어요',
+                            description: '+ 버튼으로 첫 자료를 올려보세요',
+                            topSpacing: AppSpacing.space10,
+                          )
+                        : NotificationListener<UserScrollNotification>(
+                            onNotification: (notification) {
+                              final collapsed = _fabCollapsedFor(notification);
+                              if (collapsed != null &&
+                                  collapsed != _fabCollapsed) {
+                                setState(() => _fabCollapsed = collapsed);
+                              }
+                              return false;
+                            },
+                            child: AppRefreshIndicator(
+                              onRefresh: _load,
+                              child: ListView.separated(
+                                padding: _plazaListPadding(hasFab: true),
+                                itemCount: _items.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: AppSpacing.cardGap),
+                                itemBuilder: (context, index) =>
+                                    AppListEntranceItem(
+                                      index: index,
+                                      child: _buildItemCard(_items[index]),
                                     ),
-                                    ),
-                        ),
-      ],
-                    ),
+                              ),
+                            ),
+                          ),
+                  ),
+                ],
+              ),
       ),
     );
   }

@@ -6,14 +6,13 @@ import 'package:frontend_app/providers/vacation_provider.dart';
 import 'package:frontend_app/theme/app_theme.dart';
 import 'package:frontend_app/widgets/common/app_choice_grid.dart';
 import 'package:frontend_app/widgets/common/app_sheet_frame.dart';
-import 'package:frontend_app/widgets/seed/seed_chip.dart';
 import 'package:frontend_app/widgets/vacation_calendar_widget.dart';
 import 'package:frontend_app/widgets/vacation_request_dialog.dart';
 import 'package:provider/provider.dart';
 
 /// 묶음 ③ 일정·휴무 B안(2026-11-12) — 근무조정 달력과 휴무 신청 시트.
 /// 좁은 폰(320)·보통 폰(390)에서 글자를 앱 최대(1.3배)까지 키워도 넘치지 않아야 한다.
-/// (2026-11-14 크로박스식: 꽉 찬 달력·펼치기, 휴무 종류는 같은 폭 칸)
+/// (2026-11-14 크로박스식: 꽉 찬 달력·펼치기, 휴무 종류는 같은 폭 칸 / 11-15 머리는 초록 띠 한 줄로)
 Future<void> _pumpApp(
   WidgetTester tester, {
   required double width,
@@ -47,55 +46,20 @@ Future<void> _pumpApp(
   await tester.pump(const Duration(milliseconds: 400));
 }
 
-Widget _calendarHome() => Scaffold(
+Widget _calendarHome({bool expanded = false}) => Scaffold(
   body: VacationCalendarWidget(
     currentDate: DateTime(2026, 11),
     selectedDate: DateTime(2026, 11, 14),
     showSelection: false,
-    expanded: false,
+    expanded: expanded,
     sheetOpen: false,
     bodyHeight: 700,
     sheet: DraggableScrollableController(),
     sheetSplit: 0.55,
     onMoveMonth: (_) {},
-    onToday: () {},
-    onToggleExpanded: () {},
     onDayTap: (_) {},
-    onRoleFiltersChanged: (_) {},
   ),
 );
-
-/// 펼치기를 누르면 실제로 펼쳐지게 — 화면(calendar_screen)이 들고 있는 상태를 흉내 낸다.
-class _ExpandableCalendar extends StatefulWidget {
-  const _ExpandableCalendar();
-
-  @override
-  State<_ExpandableCalendar> createState() => _ExpandableCalendarState();
-}
-
-class _ExpandableCalendarState extends State<_ExpandableCalendar> {
-  bool _expanded = false;
-  final _sheet = DraggableScrollableController();
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: VacationCalendarWidget(
-      currentDate: DateTime(2026, 11),
-      selectedDate: DateTime(2026, 11, 14),
-      showSelection: false,
-      expanded: _expanded,
-      sheetOpen: false,
-      bodyHeight: 700,
-      sheet: _sheet,
-      sheetSplit: 0.55,
-      onMoveMonth: (_) {},
-      onToday: () {},
-      onToggleExpanded: () => setState(() => _expanded = !_expanded),
-      onDayTap: (_) {},
-      onRoleFiltersChanged: (_) {},
-    ),
-  );
-}
 
 /// 화면에서 '휴무 추가'를 누르면 이렇게 뜬다(calendar_screen._showVacationRequestDialog).
 Widget _sheetOpener() => Scaffold(
@@ -128,30 +92,20 @@ void main() {
           home: _calendarHome(),
         );
         expect(tester.takeException(), isNull);
-        // 크로박스식 머리줄 — 큰 달 이름 + 연도, 이동 단추, 오늘
-        expect(find.text('11월'), findsOneWidget);
-        expect(find.text('2026년'), findsOneWidget);
-        expect(find.byTooltip('이전 달'), findsOneWidget);
-        expect(find.byTooltip('다음 달'), findsOneWidget);
-        expect(find.text('오늘'), findsOneWidget);
-        // 직종 거르기는 거르기 칩, '전체'가 골라져 있다
-        final all = find.widgetWithText(SeedChip, '전체');
-        expect(all, findsOneWidget);
-        expect(tester.widget<SeedChip>(all).selected, isTrue);
+        // 달 이름·근무|일정·필터·펼치기·오늘은 화면 맨 위 초록 띠(CalendarOneLineHeader)로 갔다 — 여기엔 달력만
+        expect(find.byTooltip('이전 달'), findsNothing);
         // 이번 달 날짜가 다 있다(30일) — 다음 달 1~5일은 흐리게 따로
         expect(find.text('30'), findsOneWidget);
 
-        // 펼치기 — 좁은 폭·큰 글씨에선 아이콘만 남는다
+        // 펼친 판도 넘치지 않는다
         await _pumpApp(
           tester,
           width: width,
           textScale: scale,
-          home: const _ExpandableCalendar(),
+          home: _calendarHome(expanded: true),
         );
-        await tester.tap(find.byIcon(Icons.unfold_more_rounded));
-        await tester.pump(const Duration(milliseconds: 400));
         expect(tester.takeException(), isNull);
-        expect(find.byIcon(Icons.unfold_less_rounded), findsOneWidget);
+        expect(find.text('30'), findsOneWidget);
       });
 
       testWidgets('휴무 신청 시트 — 폭 $width · 글자 $scale배, 넘치지 않고 문구가 그대로다', (

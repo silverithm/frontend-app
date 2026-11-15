@@ -13,11 +13,11 @@ import '../widgets/common/app_refresh.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
-import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../widgets/common/app_tag.dart';
+import '../widgets/common/app_notice_toasts.dart';
 
 /// 고충·건의함 관리 — 웹(frontend-admin의 VoiceBoxAdmin.tsx)과 같은 기능.
 ///
@@ -109,7 +109,9 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
       );
       // 응답은 래퍼 객체({messages: [...]})다. 배열이 그대로 오지 않는다.
       final raw = response['messages'];
-      final list = raw is List ? raw : (response['content'] ?? response['data']);
+      final list = raw is List
+          ? raw
+          : (response['content'] ?? response['data']);
       final messages = (list is List ? list : const <dynamic>[])
           .whereType<Map<String, dynamic>>()
           .map(VoiceMessage.fromJson)
@@ -143,8 +145,9 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
 
   /// 처리 시트 — 상태와 답변을 고쳐 저장한다.
   Future<void> _openHandleSheet(VoiceMessage message) async {
-    final replyController =
-        TextEditingController(text: message.adminReply ?? '');
+    final replyController = TextEditingController(
+      text: message.adminReply ?? '',
+    );
     var status = message.status;
     var isSaving = false;
 
@@ -187,7 +190,10 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
                   children: [
                     Row(
                       children: [
-                        _StatusBadge(status: message.status, type: message.type),
+                        _StatusBadge(
+                          status: message.status,
+                          type: message.type,
+                        ),
                         const SizedBox(width: AppSpacing.space2),
                         Text(
                           message.type.label,
@@ -252,8 +258,7 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
                             label: _statusLabelFor(option, message.type),
                             selected: status == option,
                             isDisabled: isSaving,
-                            onTap: () =>
-                                setSheetState(() => status = option),
+                            onTap: () => setSheetState(() => status = option),
                           ),
                       ],
                     ),
@@ -320,79 +325,83 @@ class _AdminVoiceBoxScreenState extends State<AdminVoiceBoxScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: AppRefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenGutter,
-              AppSpacing.space4,
-              AppSpacing.screenGutter,
-              0,
+        child: AppNoticeHost(
+          noticeKey: 'admin-voice-box',
+          notices: const [
+            AppNotice.info(
+              title: '직원들이 남긴 고충·건의를 처리해요',
+              description:
+                  '익명으로 제출된 글은 작성자가 "익명"으로만 표시돼 누가 썼는지 알 수 없어요. 상태를 바꾸거나 답변을 남기면 작성자가 자기 내역에서 확인할 수 있습니다.',
             ),
-            children: [
-              const SeedCallout(
-                variant: SeedCalloutVariant.info,
-                title: '직원들이 남긴 고충·건의를 처리해요',
-                description:
-                    '익명으로 제출된 글은 작성자가 "익명"으로만 표시돼 누가 썼는지 알 수 없어요. 상태를 바꾸거나 답변을 남기면 작성자가 자기 내역에서 확인할 수 있습니다.',
+          ],
+          // 쓰는 법 안내는 위에 잠깐 뜨는 알림 카드로(2026-11-15) — 예전엔 목록 위 고정 상자
+          child: AppRefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenGutter,
+                AppSpacing.space4,
+                AppSpacing.screenGutter,
+                0,
               ),
-              const SizedBox(height: AppSpacing.space4),
-
-              // 글자가 커져 한 줄에 다 안 들어가면 다음 줄로 넘긴다
-              Wrap(
-                spacing: AppSpacing.space2,
-                runSpacing: AppSpacing.space2,
-                children: [
-                  for (final filter in _TypeFilter.values)
-                    SeedChip(
-                      label: _filter == _TypeFilter.all &&
-                              filter != _TypeFilter.all
-                          ? '${filter.label} (${_countOf(filter == _TypeFilter.grievance ? VoiceMessageType.grievance : VoiceMessageType.suggestion)})'
-                          : filter.label,
-                      selected: _filter == filter,
-                      isDisabled: _isLoading,
-                      onCanvas: true,
-                      onTap: () => _setFilter(filter),
-                    ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.space4),
-
-              // 처음 불러올 때(아직 보일 내역이 없을 때)만 뼈대 — 내역이 있는 채로 다시 불러올 때는 예전 스피너
-              if (_isLoading && _messages.isEmpty)
-                const _AdminVoiceBoxListSkeleton()
-              else if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.only(top: AppSpacing.space8),
-                  child: AppLoading(),
-                )
-              else if (_errorMessage != null)
-                _buildErrorState(_errorMessage!)
-              else if (_messages.isEmpty)
-                _buildEmptyState()
-              else
-                SeedListSection(
+              children: [
+                // 글자가 커져 한 줄에 다 안 들어가면 다음 줄로 넘긴다
+                Wrap(
+                  spacing: AppSpacing.space2,
+                  runSpacing: AppSpacing.space2,
                   children: [
-                    for (final message in _messages)
-                      SeedListCell(
-                        leadingIcon:
-                            message.type == VoiceMessageType.grievance
-                                ? Icons.report_gmailerrorred_outlined
-                                : Icons.lightbulb_outline,
-                        title: message.title,
-                        description:
-                            '${message.authorName} · ${_formatDate(message.createdAt)}${message.hasReply ? ' · 답변함' : ''}',
-                        trailing: _StatusBadge(
-                          status: message.status,
-                          type: message.type,
-                        ),
-                        onTap: () => _openHandleSheet(message),
+                    for (final filter in _TypeFilter.values)
+                      SeedChip(
+                        label:
+                            _filter == _TypeFilter.all &&
+                                filter != _TypeFilter.all
+                            ? '${filter.label} (${_countOf(filter == _TypeFilter.grievance ? VoiceMessageType.grievance : VoiceMessageType.suggestion)})'
+                            : filter.label,
+                        selected: _filter == filter,
+                        isDisabled: _isLoading,
+                        onCanvas: true,
+                        onTap: () => _setFilter(filter),
                       ),
                   ],
                 ),
+                const SizedBox(height: AppSpacing.space4),
 
-              const SizedBox(height: AppSpacing.space8),
-            ],
+                // 처음 불러올 때(아직 보일 내역이 없을 때)만 뼈대 — 내역이 있는 채로 다시 불러올 때는 예전 스피너
+                if (_isLoading && _messages.isEmpty)
+                  const _AdminVoiceBoxListSkeleton()
+                else if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: AppSpacing.space8),
+                    child: AppLoading(),
+                  )
+                else if (_errorMessage != null)
+                  _buildErrorState(_errorMessage!)
+                else if (_messages.isEmpty)
+                  _buildEmptyState()
+                else
+                  SeedListSection(
+                    children: [
+                      for (final message in _messages)
+                        SeedListCell(
+                          leadingIcon:
+                              message.type == VoiceMessageType.grievance
+                              ? Icons.report_gmailerrorred_outlined
+                              : Icons.lightbulb_outline,
+                          title: message.title,
+                          description:
+                              '${message.authorName} · ${_formatDate(message.createdAt)}${message.hasReply ? ' · 답변함' : ''}',
+                          trailing: _StatusBadge(
+                            status: message.status,
+                            type: message.type,
+                          ),
+                          onTap: () => _openHandleSheet(message),
+                        ),
+                    ],
+                  ),
+
+                const SizedBox(height: AppSpacing.space8),
+              ],
+            ),
           ),
         ),
       ),

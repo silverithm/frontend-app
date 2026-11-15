@@ -23,6 +23,7 @@ import 'calendar_screen.dart';
 import 'chat_room_list_screen.dart';
 import 'home_screen.dart';
 import 'menu_screen.dart';
+import '../widgets/common/main_tab_visibility.dart';
 
 /// 하단 탭 인덱스 — 홈 등 다른 화면에서 탭 이동 시 이 상수를 쓴다 (매직넘버 금지).
 /// 직원·관리자 모두 같은 5탭 구조라 인덱스가 역할에 따라 달라지지 않는다.
@@ -223,7 +224,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
     final approvalProvider = context.read<ApprovalProvider>();
     final futures = <Future<void>>[
-      approvalProvider.loadApprovalRequests(companyId: companyId, refresh: true),
+      approvalProvider.loadApprovalRequests(
+        companyId: companyId,
+        refresh: true,
+      ),
     ];
     if (!canManageApprovals) {
       futures.add(
@@ -329,22 +333,18 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // 센다 — 홈 화면 강조·결재함 탭 뱃지와 동일한 기준.
     final approvalBadge = canManageApprovals
         ? approvalProvider.myTurnCount(
-              myId: authProvider.currentUser?.id,
-              isAdmin: canManageApprovals,
-            ) +
-            vacationProvider.vacationRequests
-                .where((r) => r.status == VacationStatus.pending)
-                .length +
-            adminProvider.pendingUsers.length
+                myId: authProvider.currentUser?.id,
+                isAdmin: canManageApprovals,
+              ) +
+              vacationProvider.vacationRequests
+                  .where((r) => r.status == VacationStatus.pending)
+                  .length +
+              adminProvider.pendingUsers.length
         : approvalProvider.myPendingCount;
     final chatBadge = chatProvider.totalUnreadCount;
 
     return [
-      _buildNavItem(
-        Icons.home_rounded,
-        Icons.home_outlined,
-        '홈',
-      ),
+      _buildNavItem(Icons.home_rounded, Icons.home_outlined, '홈'),
       _buildNavItem(
         Icons.chat_rounded,
         Icons.chat_bubble_outline_rounded,
@@ -363,11 +363,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         badgeCount: approvalBadge,
       ),
       // 시안: '전체'는 네 칸 격자 아이콘(고르면 채움)
-      _buildNavItem(
-        Icons.grid_view_rounded,
-        Icons.grid_view_outlined,
-        '전체',
-      ),
+      _buildNavItem(Icons.grid_view_rounded, Icons.grid_view_outlined, '전체'),
     ];
   }
 }
@@ -379,11 +375,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 /// - '동작 줄이기'면 연출 없이 바로 바뀐다.
 /// - 탭 전환 햅틱은 하단 탭(AppBottomTabBar 쪽 _onNavBarTapped)이 울린다 — 여기서는 울리지 않는다.
 class MainTabStack extends StatefulWidget {
-  const MainTabStack({
-    super.key,
-    required this.index,
-    required this.children,
-  });
+  const MainTabStack({super.key, required this.index, required this.children});
 
   final int index;
   final List<Widget> children;
@@ -429,7 +421,17 @@ class _MainTabStackState extends State<MainTabStack>
       opacity: _opacity,
       // 옅게 나타나는 200ms 동안에도 화면 낭독기가 탭 내용을 놓치지 않게
       alwaysIncludeSemantics: true,
-      child: IndexedStack(index: widget.index, children: widget.children),
+      child: IndexedStack(
+        index: widget.index,
+        children: [
+          // 가려진 탭도 살아 있으니, 지금 보이는지는 따로 알려 준다
+          for (var i = 0; i < widget.children.length; i++)
+            MainTabVisibility(
+              visible: i == widget.index,
+              child: widget.children[i],
+            ),
+        ],
+      ),
     );
   }
 }
