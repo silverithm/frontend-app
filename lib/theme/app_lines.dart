@@ -21,12 +21,16 @@ class AppLines {
   /// 흰 카드 테두리
   static const Border cardBorder = Border.fromBorderSide(cardSide);
 
-  /// [children] 사이사이에 줄 구분선을 끼운다.
-  static List<Widget> between(List<Widget> children, {double indent = 0}) {
+  /// [children] 사이사이에 줄 구분선을 끼운다. [endIndent]가 없으면 오른쪽도 [indent]만큼 든다.
+  static List<Widget> between(
+    List<Widget> children, {
+    double indent = 0,
+    double? endIndent,
+  }) {
     if (children.length < 2) return children;
     return [
       for (var i = 0; i < children.length; i++) ...[
-        if (i > 0) AppRowDivider(indent: indent),
+        if (i > 0) AppRowDivider(indent: indent, endIndent: endIndent),
         children[i],
       ],
     ];

@@ -29,6 +29,7 @@ import '../widgets/seed/seed_section_header.dart';
 import 'login_screen.dart';
 import 'subscription_check_screen.dart';
 import 'signature_manage_screen.dart';
+import '../services/member_directory.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -218,6 +219,11 @@ class _ProfileScreenState extends State<ProfileScreen>
         context.read<AuthProvider>().updateUser(
           _withProfileImageUrl(user, newUrl),
         );
+        // 휴무·일정 목록의 내 이름 옆 사진도 바로 바뀌게
+        MemberDirectory.instance.ensureLoaded(
+          user.company?.id ?? '1',
+          force: true,
+        );
         AppSnackBar.showSuccess(context, message: '프로필 사진이 업로드되었습니다');
       }
     } catch (e) {
@@ -259,6 +265,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (mounted) {
         context.read<AuthProvider>().updateUser(
           _withProfileImageUrl(user, null),
+        );
+        MemberDirectory.instance.ensureLoaded(
+          user.company?.id ?? '1',
+          force: true,
         );
         AppSnackBar.showSuccess(context, message: '프로필 사진이 삭제되었습니다');
       }

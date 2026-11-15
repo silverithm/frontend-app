@@ -22,37 +22,47 @@ void main() {
   }
 
   Widget host(Widget home, {double textScale = 1.0}) => MaterialApp(
-        theme: AppTheme.withAppChrome(ThemeData()),
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context)
-              .copyWith(textScaler: TextScaler.linear(textScale)),
-          child: child!,
-        ),
-        home: home,
-      );
+    theme: AppTheme.withAppChrome(ThemeData()),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: TextScaler.linear(textScale)),
+      child: child!,
+    ),
+    home: home,
+  );
 
   List<Schedule> schedules(int n) => [
-        for (var i = 0; i < n; i++)
-          Schedule(
-            id: i,
-            title: '요양보호사 1팀 주간 회의와 어르신 생신잔치 준비 $i',
-            category: 'MEETING',
-            startDate: DateTime(2026, 11, 12),
-            startTime: '09:30:00',
-            companyId: 1,
-          ),
-      ];
+    for (var i = 0; i < n; i++)
+      Schedule(
+        id: i,
+        title: '요양보호사 1팀 주간 회의와 어르신 생신잔치 준비 $i',
+        category: 'MEETING',
+        startDate: DateTime(2026, 11, 12),
+        startTime: '09:30:00',
+        companyId: 1,
+      ),
+  ];
 
-  Future<BuildContext> pumpHost(WidgetTester tester, {double textScale = 1.0}) async {
+  Future<BuildContext> pumpHost(
+    WidgetTester tester, {
+    double textScale = 1.0,
+  }) async {
     setPhone(tester);
     late BuildContext captured;
-    await tester.pumpWidget(host(
-      Scaffold(body: Builder(builder: (context) {
-        captured = context;
-        return const SizedBox.expand();
-      })),
-      textScale: textScale,
-    ));
+    await tester.pumpWidget(
+      host(
+        Scaffold(
+          body: Builder(
+            builder: (context) {
+              captured = context;
+              return const SizedBox.expand();
+            },
+          ),
+        ),
+        textScale: textScale,
+      ),
+    );
     return captured;
   }
 
@@ -72,11 +82,15 @@ void main() {
       expect(find.byType(Dialog), findsNothing);
       expect(find.byType(BottomSheet), findsOneWidget);
       expect(find.text('오늘 일정 8건'), findsOneWidget);
-      expect(find.text('외 2건'), findsOneWidget);
+      // 다섯 줄까지 보이고 나머지는 '외 n건'(2026-11-16 줄마다 분류·담당 사진이 붙어 높아졌다)
+      expect(find.text('외 3건'), findsOneWidget);
       // 시각 칸이 둘로 갈라지지 않는다(한 줄)
       final time = tester.getSize(find.text('09:30').first);
       expect(time.height, lessThan(14 * scale * 2));
 
+      // 글자를 키우면 시트 안에서 내려야 단추가 보인다 — 사람이 하듯 단추까지 내린 뒤 누른다
+      await tester.ensureVisible(find.text('일정 보기'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('일정 보기'));
       await tester.pumpAndSettle();
       expect(viewed, isTrue);
@@ -103,7 +117,9 @@ void main() {
 
   for (final force in [false, true]) {
     for (final scale in [1.0, 1.6]) {
-      testWidgets('업데이트 창 — 강제 $force, 글자 $scale배, 단추 큰 52·테두리 없음', (tester) async {
+      testWidgets('업데이트 창 — 강제 $force, 글자 $scale배, 단추 큰 52·테두리 없음', (
+        tester,
+      ) async {
         final context = await pumpHost(tester, textScale: scale);
         showDialog<void>(
           context: context,
@@ -121,19 +137,28 @@ void main() {
         expect(find.text('1.19.7 → 1.20.0'), findsOneWidget);
         expect(find.text('나중에'), force ? findsNothing : findsOneWidget);
         // Dialog 위젯 크기에는 바깥 여백이 들어 있다 — 흰 면(Material) 폭으로 잰다
-        final dialog = tester.getSize(find
-            .descendant(of: find.byType(Dialog), matching: find.byType(Material))
-            .first);
-        final update = tester.getSize(find.ancestor(
-          of: find.text('업데이트').last,
-          matching: find.byType(SeedButton),
-        ));
+        final dialog = tester.getSize(
+          find
+              .descendant(
+                of: find.byType(Dialog),
+                matching: find.byType(Material),
+              )
+              .first,
+        );
+        final update = tester.getSize(
+          find.ancestor(
+            of: find.text('업데이트').last,
+            matching: find.byType(SeedButton),
+          ),
+        );
         expect(update.height, greaterThanOrEqualTo(52));
         if (!force) {
-          final later = tester.widget<SeedButton>(find.ancestor(
-            of: find.text('나중에'),
-            matching: find.byType(SeedButton),
-          ));
+          final later = tester.widget<SeedButton>(
+            find.ancestor(
+              of: find.text('나중에'),
+              matching: find.byType(SeedButton),
+            ),
+          );
           expect(later.variant, SeedButtonVariant.neutralWeak);
         }
         // 강제면 '업데이트' 하나가 창 폭을 거의 다 쓴다(안쪽 여백 24씩 뺀 폭)
@@ -144,21 +169,26 @@ void main() {
           );
           expect(tester.getSize(button).width, dialog.width - 48);
         }
-        final shape = tester.widget<Dialog>(find.byType(Dialog)).shape
-            as RoundedRectangleBorder;
+        final shape =
+            tester.widget<Dialog>(find.byType(Dialog)).shape
+                as RoundedRectangleBorder;
         expect(shape.borderRadius, BorderRadius.circular(24));
       });
     }
   }
 
   for (final scale in [1.0, 1.6]) {
-    testWidgets('글자 크기 — 흰 카드 하나에 네 줄(52 이상), 고르면 옅은 틸 바탕, 글자 $scale배', (tester) async {
+    testWidgets('글자 크기 — 흰 카드 하나에 네 줄(52 이상), 고르면 옅은 틸 바탕, 글자 $scale배', (
+      tester,
+    ) async {
       setPhone(tester);
       final provider = AppProvider();
-      await tester.pumpWidget(ChangeNotifierProvider<AppProvider>.value(
-        value: provider,
-        child: host(const TextSizeSettingsScreen(), textScale: scale),
-      ));
+      await tester.pumpWidget(
+        ChangeNotifierProvider<AppProvider>.value(
+          value: provider,
+          child: host(const TextSizeSettingsScreen(), textScale: scale),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
 
@@ -173,9 +203,11 @@ void main() {
       }
 
       Color? rowColor(String label) => tester
-          .widget<Material>(find
-              .ancestor(of: find.text(label), matching: find.byType(Material))
-              .first)
+          .widget<Material>(
+            find
+                .ancestor(of: find.text(label), matching: find.byType(Material))
+                .first,
+          )
           .color;
       expect(rowColor('보통'), AppSemanticColors.brandWeak);
       expect(rowColor('크게'), AppColors.transparent);

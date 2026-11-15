@@ -79,7 +79,9 @@ class Schedule {
     }
 
     return Schedule(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       title: json['title']?.toString() ?? '',
       content: json['content']?.toString(),
       category: json['category']?.toString() ?? 'OTHER',
@@ -90,7 +92,8 @@ class Schedule {
       // 신 필드(color) 우선, 없으면 구 응답의 label.color로 폴백.
       // 신 백엔드는 label을 항상 effectiveColor로 채운 shim으로 내려주므로 이 폴백이
       // 결과적으로 카테고리 기본색까지 이어진다 — 별개로 화면단에서도 한 번 더 폴백한다.
-      color: json['color']?.toString() ??
+      color:
+          json['color']?.toString() ??
           (json['label'] is Map
               ? (json['label'] as Map)['color']?.toString()
               : null),
@@ -105,8 +108,11 @@ class Schedule {
       sendNotification: json['sendNotification'] ?? false,
       participants: json['participants'] != null
           ? (json['participants'] as List)
-              .map((p) => ScheduleParticipant.fromJson(p as Map<String, dynamic>))
-              .toList()
+                .map(
+                  (p) =>
+                      ScheduleParticipant.fromJson(p as Map<String, dynamic>),
+                )
+                .toList()
           : null,
       isCompleted: json['isCompleted'] ?? false,
       completedAt: json['completedAt'] != null
@@ -120,14 +126,16 @@ class Schedule {
       managerType: json['managerType']?.toString(),
       tasks: json['tasks'] != null
           ? (json['tasks'] as List)
-              .map((t) => ScheduleTask.fromJson(t as Map<String, dynamic>))
-              .toList()
+                .map((t) => ScheduleTask.fromJson(t as Map<String, dynamic>))
+                .toList()
           : const [],
       taskTotal: json['taskTotal'] is int ? json['taskTotal'] : 0,
       taskCompleted: json['taskCompleted'] is int ? json['taskCompleted'] : 0,
       authorId: json['authorId']?.toString(),
       authorName: json['authorName']?.toString(),
-      companyId: json['companyId'] is int ? json['companyId'] : int.tryParse(json['companyId']?.toString() ?? '0') ?? 0,
+      companyId: json['companyId'] is int
+          ? json['companyId']
+          : int.tryParse(json['companyId']?.toString() ?? '0') ?? 0,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'].toString())
           : null,
@@ -167,6 +175,31 @@ class Schedule {
       return startTime!.substring(0, 5); // HH:mm
     }
     return '';
+  }
+
+  /// '10:00–11:30' — 같은 날 끝나는 시각이 있으면 범위로, 아니면 [timeText].
+  String get timeRangeText {
+    final start = timeText;
+    if (isAllDay || start.isEmpty) return start;
+    final end = endTime;
+    final sameDay =
+        endDate == null ||
+        (endDate!.year == startDate.year &&
+            endDate!.month == startDate.month &&
+            endDate!.day == startDate.day);
+    if (end == null || end.length < 5 || !sameDay) return start;
+    final endText = end.substring(0, 5);
+    return endText == start ? start : '$start–$endText';
+  }
+
+  /// 하루 안 순서 — 종일이 먼저, 그다음 시작 시각, 시각이 없으면 끝.
+  static int compareByTime(Schedule a, Schedule b) {
+    int rank(Schedule s) => s.isAllDay ? 0 : (s.startTime == null ? 2 : 1);
+    final byRank = rank(a).compareTo(rank(b));
+    if (byRank != 0) return byRank;
+    final byTime = (a.startTime ?? '').compareTo(b.startTime ?? '');
+    // 같은 시각이면 먼저 등록한 일정이 위 — 정렬할 때마다 순서가 바뀌지 않게
+    return byTime != 0 ? byTime : a.id.compareTo(b.id);
   }
 }
 
@@ -213,11 +246,7 @@ class ScheduleLabel {
   final String name;
   final String color;
 
-  ScheduleLabel({
-    required this.id,
-    required this.name,
-    required this.color,
-  });
+  ScheduleLabel({required this.id, required this.name, required this.color});
 
   factory ScheduleLabel.fromJson(Map<String, dynamic> json) {
     return ScheduleLabel(
@@ -257,7 +286,9 @@ class ScheduleTask {
 
   factory ScheduleTask.fromJson(Map<String, dynamic> json) {
     return ScheduleTask(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       scheduleId: json['scheduleId'] is int
           ? json['scheduleId']
           : int.tryParse(json['scheduleId']?.toString() ?? '0') ?? 0,

@@ -551,9 +551,10 @@ class ApiService {
     required String companyId,
   }) async {
     try {
-      final uri = Uri.parse('$_baseUrl/v1/dispatch-settings/driver-roles').replace(
-        queryParameters: {'companyId': companyId, 'memberName': memberName},
-      );
+      final uri = Uri.parse('$_baseUrl/v1/dispatch-settings/driver-roles')
+          .replace(
+            queryParameters: {'companyId': companyId, 'memberName': memberName},
+          );
 
       final response = await http.get(uri, headers: await _getHeaders());
       if (response.statusCode != 200) return [];
@@ -741,9 +742,12 @@ class ApiService {
     required String userId,
     String? fcmToken,
   }) async {
-    final uri = Uri.parse(
-      '$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token',
-    ).replace(queryParameters: fcmToken != null ? {'fcmToken': fcmToken} : null);
+    final uri =
+        Uri.parse(
+          '$_baseUrl${Constants.adminFcmTokenEndpoint}/$userId/fcm-token',
+        ).replace(
+          queryParameters: fcmToken != null ? {'fcmToken': fcmToken} : null,
+        );
     final response = await http.delete(uri, headers: await _getHeaders());
     _handleResponse(response);
   }
@@ -753,9 +757,12 @@ class ApiService {
     required String memberId,
     String? fcmToken,
   }) async {
-    final uri = Uri.parse(
-      '$_baseUrl${Constants.fcmTokenEndpoint}/$memberId/fcm-token',
-    ).replace(queryParameters: fcmToken != null ? {'fcmToken': fcmToken} : null);
+    final uri =
+        Uri.parse(
+          '$_baseUrl${Constants.fcmTokenEndpoint}/$memberId/fcm-token',
+        ).replace(
+          queryParameters: fcmToken != null ? {'fcmToken': fcmToken} : null,
+        );
     final response = await http.delete(uri, headers: await _getHeaders());
     _handleResponse(response);
   }
@@ -1024,13 +1031,20 @@ class ApiService {
   }
 
   // 회사 전체 회원 조회
+  ///
+  /// [includeAdmins]면 시설장(app_user) 계정도 role 'facility_admin'으로 함께 온다 — id가 직원과
+  /// 겹칠 수 있어 role과 같이 써야 한다. 기본은 예전처럼 직원만.
   Future<Map<String, dynamic>> getCompanyMembers({
     required String companyId,
+    bool includeAdmins = false,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse(
-        '$_baseUrl/v1/members',
-      ).replace(queryParameters: {'companyId': companyId});
+      final uri = Uri.parse('$_baseUrl/v1/members').replace(
+        queryParameters: {
+          'companyId': companyId,
+          if (includeAdmins) 'includeAdmins': 'true',
+        },
+      );
 
       print('[API] 회사 회원 조회: $uri');
 
@@ -1079,9 +1093,9 @@ class ApiService {
     required List<Map<String, dynamic>> assignments,
   }) async {
     return await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/dispatch-overrides').replace(
-        queryParameters: {'companyId': companyId, 'date': date},
-      );
+      final uri = Uri.parse(
+        '$_baseUrl/v1/dispatch-overrides',
+      ).replace(queryParameters: {'companyId': companyId, 'date': date});
 
       final headers = await _getHeaders();
       headers['ngrok-skip-browser-warning'] = 'true';
@@ -1451,6 +1465,7 @@ class ApiService {
     required String duration,
     String? reason,
     String? type,
+
     /// false면 서버가 duration을 UNUSED로 고정한다 (일반·필수·대체휴무)
     bool useAnnualLeave = true,
     bool reasonRequired = false,
@@ -2509,7 +2524,10 @@ class ApiService {
     String? comment, // 승인 의견(선택) — 결재선 있는 문서에서만 서버가 저장한다
     bool force = false,
   }) async {
-    final body = buildApproveBody(signatureBase64: signatureBase64, comment: comment);
+    final body = buildApproveBody(
+      signatureBase64: signatureBase64,
+      comment: comment,
+    );
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/approvals/$approvalId/approve')
           .replace(
@@ -3450,7 +3468,10 @@ class ApiService {
       Future<dio.Response> attempt() async {
         // FormData는 한 번 보내면 다시 못 쓴다 — 시도마다 새로 만든다
         final formData = dio.FormData.fromMap({
-          'file': await dio.MultipartFile.fromFile(filePath, filename: fileName),
+          'file': await dio.MultipartFile.fromFile(
+            filePath,
+            filename: fileName,
+          ),
           'senderId': senderId,
           'senderName': senderName,
           if (batchId != null && batchSize != null && batchSize > 1) ...{
@@ -4395,7 +4416,9 @@ class ApiService {
   // 기관 관리자용 접수 목록 (scope=admin). 관리자가 아니면 서버가 403을 준다.
   // 익명 글의 작성자 가림(authorName='익명')은 서버(VoiceMessageService.toDTO)가
   // 처리한다 — 앱은 내려온 authorName을 그대로 쓰고 따로 조회하지 않는다.
-  Future<Map<String, dynamic>> getVoiceBoxMessagesForAdmin({String? type}) async {
+  Future<Map<String, dynamic>> getVoiceBoxMessagesForAdmin({
+    String? type,
+  }) async {
     return await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/voice-box').replace(
         queryParameters: {
@@ -4591,17 +4614,22 @@ class ApiService {
   // ================== 회의록 ==================
 
   /// 회의록 목록 — 관리자는 기관 전체, 직원은 본인이 작성·참석한 것만 온다
-  Future<List<dynamic>> getMeetingMinutesList({required String companyId}) async {
+  Future<List<dynamic>> getMeetingMinutesList({
+    required String companyId,
+  }) async {
     final data = await _makeAuthenticatedRequest(() async {
-      final uri = Uri.parse('$_baseUrl/v1/meeting-minutes')
-          .replace(queryParameters: {'companyId': companyId});
+      final uri = Uri.parse(
+        '$_baseUrl/v1/meeting-minutes',
+      ).replace(queryParameters: {'companyId': companyId});
       final headers = await _getHeaders();
       return await http.get(uri, headers: headers);
     });
     return data['items'] as List<dynamic>? ?? [];
   }
 
-  Future<Map<String, dynamic>> getMeetingMinutesDetail({required int minutesId}) async {
+  Future<Map<String, dynamic>> getMeetingMinutesDetail({
+    required int minutesId,
+  }) async {
     final data = await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse('$_baseUrl/v1/meeting-minutes/$minutesId');
       final headers = await _getHeaders();
@@ -4619,7 +4647,8 @@ class ApiService {
   }) async {
     final data = await _makeAuthenticatedRequest(() async {
       final uri = Uri.parse(
-          '$_baseUrl/v1/meeting-minutes/$minutesId/attendees/$attendeeId/sign');
+        '$_baseUrl/v1/meeting-minutes/$minutesId/attendees/$attendeeId/sign',
+      );
       final headers = await _getHeaders();
       final body = signatureBase64 != null && signatureBase64.isNotEmpty
           ? json.encode({'signatureBase64': signatureBase64})

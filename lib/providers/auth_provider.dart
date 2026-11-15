@@ -4,6 +4,7 @@ import '../models/user.dart';
 import '../models/admin_signin_response.dart';
 import '../models/member_signin_response.dart';
 import '../services/storage_service.dart';
+import '../services/member_directory.dart';
 import '../services/api_service.dart';
 import '../services/auth_restore.dart';
 import '../services/analytics_service.dart';
@@ -365,6 +366,9 @@ class AuthProvider with ChangeNotifier {
         '[AuthProvider] 이메일 기억하기 데이터 백업 - 이메일: $rememberedEmail, 활성화: $rememberEmailEnabled',
       );
 
+      // 다른 회사로 다시 들어와도 앞 회사 사람 사진이 붙지 않게
+      MemberDirectory.instance.clear();
+
       // 모든 토큰과 사용자 정보 제거
       await StorageService().removeAll();
       print('[AuthProvider] StorageService.removeAll() 완료');
@@ -709,16 +713,21 @@ class AuthProvider with ChangeNotifier {
       final url = data['profileImageUrl']?.toString();
       final hasUrl = url != null && url.trim().isNotEmpty;
       final position = data['position']?.toString();
-      final name = (user.isAdminAccount ? data['userName'] : data['name'])?.toString();
+      final name = (user.isAdminAccount ? data['userName'] : data['name'])
+          ?.toString();
 
       // 사용자가 그새 로그아웃했거나 다른 계정으로 바꿨으면 덮어쓰지 않는다
       if (_currentUser?.id != user.id) return;
-      updateUser(_currentUser!.copyWith(
-        profileImageUrl: hasUrl ? url : null,
-        clearProfileImageUrl: !hasUrl,
-        position: (position != null && position.trim().isNotEmpty) ? position : null,
-        name: (name != null && name.trim().isNotEmpty) ? name : null,
-      ));
+      updateUser(
+        _currentUser!.copyWith(
+          profileImageUrl: hasUrl ? url : null,
+          clearProfileImageUrl: !hasUrl,
+          position: (position != null && position.trim().isNotEmpty)
+              ? position
+              : null,
+          name: (name != null && name.trim().isNotEmpty) ? name : null,
+        ),
+      );
     } catch (e) {
       print('[AuthProvider] 프로필 새로고침 실패(무시): $e');
     }
