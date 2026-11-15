@@ -196,6 +196,8 @@ lib/
 
 **빈 서식 인쇄(2026-11-15, 웹 11/13과 같은 틀):** 양식 미리보기(`approval_template_preview_screen.dart`)의 '빈 서식 인쇄' → `BlankFormPrinter`(`services/blank_form_printer.dart`). 칸 규칙은 `utils/blank_form.dart`(웹 `blankForm.ts`), 종이 모양은 `widgets/approval/blank_form_document.dart`(공문 706px 안쪽 폭). Pretendard가 OTF라 PDF에 글자로 못 넣어서 머리·본문 줄을 3배 그림으로 떠 A4(여백 15mm)에 붙이고, 줄 단위로 장을 나눠 한 줄이 두 장에 걸치지 않게 한다. 인쇄 창은 printing 라이브러리. 웹의 '한 장 서식 칸 늘리기'·직인 찍기는 앱에 없다.
 
+**직원 사진(2026-11-16):** 다른 직원 이름이 화면에 나오면 이름 왼쪽에 그 사람 프로필 사진을 둔다(사진 없으면 이름 첫 글자). 휴무·일정·결재·회의록 응답에는 사진 주소가 없으므로 `MemberAvatar`(`widgets/common/member_avatar.dart`)에 사람 번호와 이름을 넘기면 `MemberDirectory`(`services/member_directory.dart`, `/v1/members?includeAdmins=true` 한 벌)가 찾는다. 번호 표기는 `MemberAvatar.ref`가 'admin_3'·('ADMIN','3')·'12'를 모두 받는다. 직원 번호와 시설장 번호는 겹치므로 이름을 꼭 같이 넘긴다(이름이 다르면 사진을 붙이지 않는다). 응답에 사진이 오면(`profileImageUrl`) `imageUrl`로 넘긴다. 상태 아이콘 동그라미(대기=시계 등)를 사람 자리에 두지 말고 상태는 오른쪽 꼬리표나 사진 위 작은 표시(`BadgedAvatar`)로. 웹은 `src/lib/memberDirectory.ts` + `src/components/MemberAvatar.tsx`로 같은 규칙.
+
 **바탕·카드:** 화면 바탕 `AppSemanticColors.backgroundCanvas`(#F2F4F6) 위에 흰 카드 `surfaceCard`(모서리 `AppBorderRadius.card` 16·안쪽 여백 `AppSpacing.cardPadding` 16·카드 간격 `AppSpacing.cardGap` 10), 1px 테두리(`AppLines.cardBorder`)와 카드 안 줄 사이 1px 선(`AppRowDivider`). 채팅 대화·직원 목록처럼 한 종류가 죽 이어지는 목록은 카드 없이 화면 끝까지 채운다(`ChatCardSlice(fullBleed: true)`). 입력칸·보조 단추 바탕은 `fillDefault`, 옅은 틸 바탕은 `brandWeak` + 글자 `brandWeakForeground`.
 
 한글이 여러 줄로 넘어가는 표시용 글(말풍선·공지 본문 등)은 `utils/korean_keep_all.dart`의 `keepAll()`을 거쳐 낱말 중간에서 끊기지 않게 한다(복사·검색·전송에는 원문).
