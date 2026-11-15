@@ -23,6 +23,8 @@ import '../widgets/seed/seed_callout.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/common/member_avatar.dart';
+import '../widgets/seed/seed_avatar.dart';
 
 /// 배차 설정 — 노선을 만들고 운전자와 어르신을 붙인다.
 ///
@@ -101,11 +103,15 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
         .map((s) => s.elderlyId)
         .whereType<int>()
         .toSet();
-    return _elders.where((e) => e.id != null && !assignedElderlyIds.contains(e.id)).toList();
+    return _elders
+        .where((e) => e.id != null && !assignedElderlyIds.contains(e.id))
+        .toList();
   }
 
   Future<void> _copyRoutes(DispatchProvider provider, String sourceType) async {
-    final targetType = sourceType == RouteType.toWork ? RouteType.toHome : RouteType.toWork;
+    final targetType = sourceType == RouteType.toWork
+        ? RouteType.toHome
+        : RouteType.toWork;
     final confirmed = await AppDialog.showConfirm(
       context,
       title: '$targetType 노선으로 복사',
@@ -119,12 +125,16 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     final result = provider.copyRoutesToOtherType(sourceType);
     if (!mounted) return;
     if (result.routeCount == 0) {
-      AppSnackBar.showInfo(context, message: '복사할 $sourceType 노선이 없습니다 (이미 $targetType에 같은 이름이 있습니다)');
+      AppSnackBar.showInfo(
+        context,
+        message: '복사할 $sourceType 노선이 없습니다 (이미 $targetType에 같은 이름이 있습니다)',
+      );
       return;
     }
     AppSnackBar.showSuccess(
       context,
-      message: '$targetType 노선 ${result.routeCount}개, 어르신 ${result.seniorCount}명 복사',
+      message:
+          '$targetType 노선 ${result.routeCount}개, 어르신 ${result.seniorCount}명 복사',
     );
   }
 
@@ -135,10 +145,7 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(
-        title: Text(
-          '배차 설정',
-          style: AppTypography.appBarTitle,
-        ),
+        title: Text('배차 설정', style: AppTypography.appBarTitle),
         elevation: 0,
         actions: [
           if (provider.isSaving)
@@ -323,7 +330,13 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
             _hint('아직 배정된 어르신이 없습니다')
           else
             ...seniors.asMap().entries.map(
-              (entry) => _seniorRow(provider, route, entry.key, entry.value, seniors.length),
+              (entry) => _seniorRow(
+                provider,
+                route,
+                entry.key,
+                entry.value,
+                seniors.length,
+              ),
             ),
           Padding(
             padding: const EdgeInsets.only(
@@ -411,16 +424,28 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                 constraints: const BoxConstraints(
                   minHeight: AppSpacing.minTouchTarget,
                 ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                  driver.driverName.isEmpty ? '직원 선택' : driver.driverName,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: driver.driverName.isEmpty
-                        ? AppSemanticColors.textTertiary
-                        : AppSemanticColors.textPrimary,
-                  ),
-                ),
+                child: Row(
+                  children: [
+                    // 고른 운전자 사진(2026-11-16)
+                    if (driver.driverName.isNotEmpty) ...[
+                      MemberAvatar.ref(
+                        name: driver.driverName,
+                        id: driver.driverId,
+                        size: 28,
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
+                    ],
+                    Flexible(
+                      child: Text(
+                        driver.driverName.isEmpty ? '직원 선택' : driver.driverName,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: driver.driverName.isEmpty
+                              ? AppSemanticColors.textTertiary
+                              : AppSemanticColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -633,6 +658,11 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
             children: [
               ...members.map(
                 (member) => SeedListCell(
+                  leading: SeedAvatar(
+                    name: member.name,
+                    imageUrl: member.profileImageUrl,
+                    diameter: 36,
+                  ),
                   title: member.name,
                   description: member.email.isEmpty ? null : member.email,
                   showChevron: false,
@@ -653,7 +683,10 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
     }
 
     // 주운전자는 같은 방향(등원/하원)의 두 노선을 동시에 몰 수 없다 (부운전자 배정과 같은 규칙).
-    final conflict = provider.primaryDriverConflict(picked.name, routeType: routeType);
+    final conflict = provider.primaryDriverConflict(
+      picked.name,
+      routeType: routeType,
+    );
     if (conflict != null) {
       if (mounted) {
         AppSnackBar.showError(
@@ -732,6 +765,11 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
             children: [
               ...members.map(
                 (member) => SeedListCell(
+                  leading: SeedAvatar(
+                    name: member.name,
+                    imageUrl: member.profileImageUrl,
+                    diameter: 36,
+                  ),
                   title: member.name,
                   description: member.email.isEmpty ? null : member.email,
                   showChevron: false,
@@ -886,7 +924,9 @@ class _DispatchSettingsScreenState extends State<DispatchSettingsScreen> {
                     ...candidates.map(
                       (elder) => SeedListCell(
                         title: elder.name,
-                        description: elder.address.isEmpty ? null : elder.address,
+                        description: elder.address.isEmpty
+                            ? null
+                            : elder.address,
                         showChevron: false,
                         onTap: () => Navigator.of(sheetContext).pop(elder),
                       ),
@@ -925,7 +965,8 @@ class _ElderOption {
     return _ElderOption(
       id: rawId is int ? rawId : int.tryParse(rawId?.toString() ?? ''),
       name: json['name']?.toString() ?? '',
-      address: json['homeAddress']?.toString() ?? json['address']?.toString() ?? '',
+      address:
+          json['homeAddress']?.toString() ?? json['address']?.toString() ?? '',
     );
   }
 }

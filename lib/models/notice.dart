@@ -30,7 +30,9 @@ class NoticeAttachment {
       fileUrl: json['fileUrl']?.toString() ?? json['url']?.toString() ?? '',
       fileSize: json['fileSize'] as int? ?? json['size'] as int? ?? 0,
       fileType: json['fileType']?.toString() ?? json['type']?.toString(),
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -75,6 +77,9 @@ class NoticeComment {
   final String content;
   final DateTime createdAt;
 
+  /// 쓴 사람 프로필 사진 — 서버가 함께 보낸다(2026-11-16 전엔 받지 않아 첫 글자만 보였다)
+  final String? authorProfileImageUrl;
+
   NoticeComment({
     required this.id,
     required this.noticeId,
@@ -82,6 +87,7 @@ class NoticeComment {
     required this.authorName,
     required this.content,
     required this.createdAt,
+    this.authorProfileImageUrl,
   });
 
   factory NoticeComment.fromJson(Map<String, dynamic> json) {
@@ -91,7 +97,10 @@ class NoticeComment {
       authorId: json['authorId']?.toString() ?? '',
       authorName: json['authorName']?.toString() ?? '',
       content: json['content']?.toString() ?? '',
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
+      authorProfileImageUrl: _photo(json['profileImageUrl']),
     );
   }
 
@@ -115,12 +124,16 @@ class NoticeReader {
   final String userName;
   final DateTime readAt;
 
+  /// 읽은 사람 프로필 사진 — 서버가 함께 보낸다
+  final String? profileImageUrl;
+
   NoticeReader({
     required this.id,
     required this.noticeId,
     required this.userId,
     required this.userName,
     required this.readAt,
+    this.profileImageUrl,
   });
 
   factory NoticeReader.fromJson(Map<String, dynamic> json) {
@@ -129,7 +142,9 @@ class NoticeReader {
       noticeId: json['noticeId'] as int? ?? 0,
       userId: json['userId']?.toString() ?? '',
       userName: json['userName']?.toString() ?? '',
-      readAt: DateTime.tryParse(json['readAt']?.toString() ?? '') ?? DateTime.now(),
+      readAt:
+          DateTime.tryParse(json['readAt']?.toString() ?? '') ?? DateTime.now(),
+      profileImageUrl: _photo(json['profileImageUrl']),
     );
   }
 
@@ -200,8 +215,12 @@ class Notice {
       authorName: json['authorName']?.toString() ?? '',
       companyId: json['companyId'] as int? ?? 0,
       viewCount: json['viewCount'] as int? ?? 0,
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(json['updatedAt']?.toString() ?? '') ??
+          DateTime.now(),
       publishedAt: json['publishedAt'] != null
           ? DateTime.tryParse(json['publishedAt'].toString())
           : null,
@@ -307,4 +326,9 @@ class Notice {
       attachments: attachments ?? this.attachments,
     );
   }
+}
+
+String? _photo(Object? value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
 }

@@ -18,6 +18,7 @@ import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/seed/seed_button.dart';
+import '../widgets/seed/seed_avatar.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
   final bool showBackButton;
@@ -289,118 +290,117 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       child: Material(
-      color: AppSemanticColors.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.card),
-        side: AppLines.cardSide,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-      onTap: () => _showMemberDetail(user),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.cardPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        color: AppSemanticColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          side: AppLines.cardSide,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _showMemberDetail(user),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(
-                  radius: AppSpacing.iconCircle / 2,
-                  backgroundColor: AppSemanticColors.brandWeak,
-                  child: Icon(
-                    Icons.person,
-                    size: 22,
-                    color: AppSemanticColors.brandDefault,
-                  ),
+                Row(
+                  children: [
+                    // 직원 프로필 사진(없으면 이름 첫 글자, 2026-11-16 — 예전엔 모두 같은 사람 아이콘)
+                    SeedAvatar(
+                      name: user.name,
+                      imageUrl: user.profileImageUrl,
+                      diameter: AppSpacing.iconCircle,
+                    ),
+                    const SizedBox(width: AppSpacing.space3),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.name,
+                            style: AppTypography.titleMedium.copyWith(
+                              color: AppSemanticColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            user.email,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppSemanticColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    AppTag(
+                      label: AdminUtils.getStatusDisplayName(user.status),
+                      tone: isActive ? AppTagTone.success : AppTagTone.neutral,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppSpacing.space3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.name,
-                        style: AppTypography.titleMedium.copyWith(
-                          color: AppSemanticColors.textPrimary,
+                const SizedBox(height: AppSpacing.space1),
+                Row(
+                  children: [
+                    // 아바타(40) + 간격(12) 만큼 들여 이름과 줄을 맞춘다
+                    const SizedBox(
+                      width: AppSpacing.iconCircle + AppSpacing.space3,
+                    ),
+                    Icon(
+                      Icons.work_outline,
+                      size: 16,
+                      color: AppSemanticColors.textTertiary,
+                    ),
+                    const SizedBox(width: AppSpacing.space1),
+                    Flexible(
+                      child: Text(
+                        AdminUtils.getRoleDisplayName(user.role),
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppSemanticColors.textTertiary,
                         ),
                       ),
-                      Text(
-                        user.email,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textSecondary,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.space3),
+                // 상태 변경·삭제는 '종사자 관리' 권한자만 (조회 권한자는 목록만 본다)
+                if (PermissionUtils.has(
+                  context.read<AuthProvider>().currentUser,
+                  AppPermission.memberManage,
+                ))
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SeedButton(
+                          label: isStatusProcessing
+                              ? '처리중...'
+                              : (isActive ? '비활성화' : '활성화'),
+                          onPressed: isStatusProcessing
+                              ? null
+                              : () => _toggleMemberStatus(user),
+                          variant: SeedButtonVariant.brandSolid,
+                          size: SeedButtonSize.small,
+                          isLoading: isStatusProcessing,
+                          prefixIcon: isActive ? Icons.pause : Icons.play_arrow,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
+                      Expanded(
+                        child: SeedButton(
+                          label: isDeleteProcessing ? '처리중...' : '삭제',
+                          onPressed: isDeleteProcessing
+                              ? null
+                              : () => _showDeleteDialog(user),
+                          variant: SeedButtonVariant.critical,
+                          size: SeedButtonSize.small,
+                          isLoading: isDeleteProcessing,
+                          prefixIcon: Icons.delete,
                         ),
                       ),
                     ],
                   ),
-                ),
-                AppTag(
-                  label: AdminUtils.getStatusDisplayName(user.status),
-                  tone: isActive ? AppTagTone.success : AppTagTone.neutral,
-                ),
               ],
             ),
-            const SizedBox(height: AppSpacing.space1),
-            Row(
-              children: [
-                // 아바타(40) + 간격(12) 만큼 들여 이름과 줄을 맞춘다
-                const SizedBox(width: AppSpacing.iconCircle + AppSpacing.space3),
-                Icon(
-                  Icons.work_outline,
-                  size: 16,
-                  color: AppSemanticColors.textTertiary,
-                ),
-                const SizedBox(width: AppSpacing.space1),
-                Flexible(
-                  child: Text(
-                    AdminUtils.getRoleDisplayName(user.role),
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textTertiary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.space3),
-            // 상태 변경·삭제는 '종사자 관리' 권한자만 (조회 권한자는 목록만 본다)
-            if (PermissionUtils.has(
-              context.read<AuthProvider>().currentUser,
-              AppPermission.memberManage,
-            ))
-            Row(
-              children: [
-                Expanded(
-                  child: SeedButton(
-                    label: isStatusProcessing
-                        ? '처리중...'
-                        : (isActive ? '비활성화' : '활성화'),
-                    onPressed: isStatusProcessing
-                        ? null
-                        : () => _toggleMemberStatus(user),
-                    variant: SeedButtonVariant.brandSolid,
-                    size: SeedButtonSize.small,
-                    isLoading: isStatusProcessing,
-                    prefixIcon: isActive ? Icons.pause : Icons.play_arrow,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.space2),
-                Expanded(
-                  child: SeedButton(
-                    label: isDeleteProcessing ? '처리중...' : '삭제',
-                    onPressed: isDeleteProcessing
-                        ? null
-                        : () => _showDeleteDialog(user),
-                    variant: SeedButtonVariant.critical,
-                    size: SeedButtonSize.small,
-                    isLoading: isDeleteProcessing,
-                    prefixIcon: Icons.delete,
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
-      ),
-      ),
       ),
     );
   }
@@ -412,30 +412,30 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
         : '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
 
     Widget row(String label, String value) => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.space2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 88,
-                child: Text(
-                  label,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 88,
+            child: Text(
+              label,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textSecondary,
               ),
-              Expanded(
-                child: Text(
-                  value.isEmpty ? '-' : value,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        );
+          Expanded(
+            child: Text(
+              value.isEmpty ? '-' : value,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
     final bool isActive = user.status == 'active';
     AppBottomSheet.show(
@@ -449,6 +449,12 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             children: [
               Row(
                 children: [
+                  SeedAvatar(
+                    name: user.name,
+                    imageUrl: user.profileImageUrl,
+                    diameter: 48,
+                  ),
+                  const SizedBox(width: AppSpacing.space3),
                   Expanded(
                     child: Text(
                       user.name,
@@ -694,86 +700,82 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
           child: Material(
-          color: AppSemanticColors.surfaceCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.card),
-            side: AppLines.cardSide,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => _showPendingUserDetail(user),
-            child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: AppSpacing.iconCircle / 2,
-                      backgroundColor: AppSemanticColors.brandWeak,
-                      child: Icon(
-                        Icons.person,
-                        size: 22,
-                        color: AppSemanticColors.brandDefault,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.space3),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            style: AppTypography.titleMedium.copyWith(
-                              color: AppSemanticColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            user.email,
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // 직종은 분류라 회색 — 노랑은 '승인 대기' 상태색이다
-                    AppTag(label: AdminUtils.getRoleDisplayName(user.role)),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.space4),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SeedButton(
-                        label: isProcessing ? '처리중...' : '승인',
-                        onPressed: isProcessing
-                            ? null
-                            : () => _showApprovalDialog(user),
-                        variant: SeedButtonVariant.brandSolid,
-                        size: SeedButtonSize.small,
-                        isLoading: isProcessing,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.space3),
-                    Expanded(
-                      child: SeedButton(
-                        label: isProcessing ? '처리중...' : '거부',
-                        onPressed: isProcessing
-                            ? null
-                            : () => _showRejectDialog(user),
-                        variant: SeedButtonVariant.neutralWeak,
-                        size: SeedButtonSize.small,
-                        isLoading: isProcessing,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            color: AppSemanticColors.surfaceCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppBorderRadius.card),
+              side: AppLines.cardSide,
             ),
-          ),
-          ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => _showPendingUserDetail(user),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.cardPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        // 가입 신청자는 아직 사진이 없다 — 이름 첫 글자로 서로 구분되게
+                        SeedAvatar(
+                          name: user.name,
+                          diameter: AppSpacing.iconCircle,
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.name,
+                                style: AppTypography.titleMedium.copyWith(
+                                  color: AppSemanticColors.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                user.email,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppSemanticColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // 직종은 분류라 회색 — 노랑은 '승인 대기' 상태색이다
+                        AppTag(label: AdminUtils.getRoleDisplayName(user.role)),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.space4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SeedButton(
+                            label: isProcessing ? '처리중...' : '승인',
+                            onPressed: isProcessing
+                                ? null
+                                : () => _showApprovalDialog(user),
+                            variant: SeedButtonVariant.brandSolid,
+                            size: SeedButtonSize.small,
+                            isLoading: isProcessing,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space3),
+                        Expanded(
+                          child: SeedButton(
+                            label: isProcessing ? '처리중...' : '거부',
+                            onPressed: isProcessing
+                                ? null
+                                : () => _showRejectDialog(user),
+                            variant: SeedButtonVariant.neutralWeak,
+                            size: SeedButtonSize.small,
+                            isLoading: isProcessing,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -786,30 +788,30 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
         '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
 
     Widget row(String label, String value) => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.space2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 80,
-                child: Text(
-                  label,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppSemanticColors.textSecondary,
-                  ),
-                ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textSecondary,
               ),
-              Expanded(
-                child: Text(
-                  value.isEmpty ? '-' : value,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppSemanticColors.textPrimary,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        );
+          Expanded(
+            child: Text(
+              value.isEmpty ? '-' : value,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppSemanticColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
     AppBottomSheet.show(
       context,

@@ -4,22 +4,29 @@ import '../../models/approval.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
+import '../common/member_avatar.dart';
 
 /// 결재선 단계 — 크로박스 단계 표시(1·2·3·4 동그라미를 선으로 잇는 것)를 결재에 옮긴 것(2026-11-14).
 ///
 /// 기안 → 검토 → 결재를 동그라미로 잇고, 끝난 단계는 틸 동그라미에 체크, 지금 차례는 틸 동그라미에
 /// 순번 + 옅은 틸 고리, 남은 단계는 회색 동그라미, 반려는 빨간 동그라미에 X.
 /// 예전엔 '결재 차례 김관리 (1/2 승인)' 한 줄 글자로만 보여, 누가 끝냈고 누가 남았는지 한눈에 안 들어왔다.
+/// 2026-11-16: 동그라미 자리에 그 사람 사진. 끝남은 사진 오른쪽 아래 틸 체크, 반려는 빨간 X,
+/// 지금 차례는 틸 고리, 남은 단계·건너뜀은 사진을 흐리게.
 class ApprovalLineStepper extends StatelessWidget {
   final String requesterName;
   final DateTime requestedAt;
   final List<ApprovalStepModel> steps;
+
+  /// 기안자 번호(직원 번호 또는 'admin_3') — 사진을 찾는다
+  final String? requesterId;
 
   const ApprovalLineStepper({
     super.key,
     required this.requesterName,
     required this.requestedAt,
     required this.steps,
+    this.requesterId,
   });
 
   @override
@@ -36,6 +43,7 @@ class ApprovalLineStepper extends StatelessWidget {
         note: _date(requestedAt),
         state: _StepState.done,
         number: 1,
+        personId: requesterId,
       ),
       for (var i = 0; i < ordered.length; i++)
         _Node(
@@ -50,6 +58,8 @@ class ApprovalLineStepper extends StatelessWidget {
             isCurrent: !anyRejected && i == firstPending,
           ),
           number: i + 2,
+          personId: ordered[i].approverId,
+          personType: ordered[i].approverType,
         ),
     ];
 
@@ -110,6 +120,8 @@ class _Node {
   final String note;
   final _StepState state;
   final int number;
+  final String? personId;
+  final String? personType;
 
   const _Node({
     required this.role,
@@ -117,6 +129,8 @@ class _Node {
     required this.note,
     required this.state,
     required this.number,
+    this.personId,
+    this.personType,
   });
 
   /// 이 단계까지 결재가 닿았는지 — 앞 선을 틸로 칠한다.
@@ -146,8 +160,8 @@ class _StepColumn extends StatelessWidget {
 
   const _StepColumn({required this.node, this.lineLeft, this.lineRight});
 
-  static const double _dot = 32;
-  static const double _ring = 4;
+  static const double _dot = 36;
+  static const double _ring = 3;
 
   Color _line(bool on) =>
       on ? AppSemanticColors.brandDefault : AppSemanticColors.borderDefault;
@@ -155,43 +169,34 @@ class _StepColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCurrent = node.state == _StepState.current;
-    final Color fill;
-    final Widget mark;
-    switch (node.state) {
-      case _StepState.done:
-        fill = AppSemanticColors.brandDefault;
-        mark = const Icon(
-          Icons.check_rounded,
-          size: 18,
-          color: AppSemanticColors.textInverse,
-        );
-      case _StepState.current:
-        fill = AppSemanticColors.brandDefault;
-        mark = _number(AppSemanticColors.textInverse);
-      case _StepState.rejected:
-        fill = AppSemanticColors.statusErrorIcon;
-        mark = const Icon(
-          Icons.close_rounded,
-          size: 18,
-          color: AppSemanticColors.textInverse,
-        );
-      case _StepState.skipped:
-        fill = AppSemanticColors.fillDefault;
-        mark = const Icon(
-          Icons.remove_rounded,
-          size: 18,
-          color: AppSemanticColors.textTertiary,
-        );
-      case _StepState.waiting:
-        fill = AppSemanticColors.fillDefault;
-        mark = _number(AppSemanticColors.textTertiary);
-    }
+    // 사진 오른쪽 아래 작은 상태 표시 — 지금 차례·대기는 표시 없이 고리·흐림으로
+    final (Color, IconData)? badge = switch (node.state) {
+      _StepState.done => (AppSemanticColors.brandDefault, Icons.check_rounded),
+      _StepState.rejected => (
+        AppSemanticColors.statusErrorIcon,
+        Icons.close_rounded,
+      ),
+      _StepState.skipped => (
+        AppSemanticColors.textTertiary,
+        Icons.remove_rounded,
+      ),
+      _ => null,
+    };
+    final dim =
+        node.state == _StepState.waiting || node.state == _StepState.skipped;
 
     final noteColor = switch (node.state) {
       _StepState.current => AppSemanticColors.brandWeakForeground,
       _StepState.rejected => AppSemanticColors.statusErrorText,
       _ => AppSemanticColors.textTertiary,
     };
+
+    final face = MemberAvatar.ref(
+      name: node.name,
+      id: node.personId,
+      type: node.personType,
+      size: _dot,
+    );
 
     return Column(
       children: [
@@ -210,17 +215,40 @@ class _StepColumn extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isCurrent ? AppSemanticColors.brandWeak : null,
+                  border: isCurrent
+                      ? Border.all(
+                          color: AppSemanticColors.brandDefault,
+                          width: 2,
+                        )
+                      : null,
                 ),
-                child: Container(
-                  width: _dot,
-                  height: _dot,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: fill,
-                  ),
-                  child: mark,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    dim ? Opacity(opacity: 0.4, child: face) : face,
+                    if (badge != null)
+                      Positioned(
+                        right: -3,
+                        bottom: -3,
+                        child: Container(
+                          width: 18,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: badge.$1,
+                            border: Border.all(
+                              color: AppSemanticColors.surfaceCard,
+                              width: 2,
+                            ),
+                          ),
+                          child: Icon(
+                            badge.$2,
+                            size: 11,
+                            color: AppSemanticColors.textInverse,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Expanded(
@@ -260,13 +288,4 @@ class _StepColumn extends StatelessWidget {
       ],
     );
   }
-
-  Widget _number(Color color) => Text(
-    '${node.number}',
-    style: AppTypography.titleSmall.copyWith(
-      color: color,
-      height: 1,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    ),
-  );
 }

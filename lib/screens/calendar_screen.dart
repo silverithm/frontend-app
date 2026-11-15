@@ -39,6 +39,7 @@ import '../widgets/common/app_count_up.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_notice_toasts.dart';
 import '../widgets/common/app_sheet_frame.dart';
+import '../widgets/seed/seed_avatar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_text_field.dart';
 import 'admin_vacation_limits_setting_screen.dart';
@@ -2277,6 +2278,12 @@ class _CalendarScreenState extends State<CalendarScreen>
                                               const EdgeInsets.symmetric(
                                                 horizontal: AppSpacing.space2,
                                               ),
+                                          // 참석자 후보 사진(2026-11-16)
+                                          secondary: SeedAvatar(
+                                            name: member.name,
+                                            imageUrl: member.profileImageUrl,
+                                            diameter: 32,
+                                          ),
                                           title: Text(
                                             member.name,
                                             style: AppTypography.bodyMedium,

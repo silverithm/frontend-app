@@ -8,6 +8,7 @@ import '../../utils/schedule_filter.dart';
 import '../common/app_dialog.dart';
 import '../seed/seed_button.dart';
 import '../seed/seed_list_cell.dart';
+import '../common/member_avatar.dart';
 
 /// 월간일정 '일정 필터' 시트를 연다 — 웹 월간일정의 일정 필터 팝오버와 같은 두 묶음.
 ///
@@ -130,7 +131,16 @@ class _ScheduleFilterSheetState extends State<ScheduleFilterSheet> {
                     for (final person in people)
                       _FilterRow(
                         label: person.name,
-                        checked: _values.contains(personFilterValue(person.key)),
+                        // 키 "MEMBER:9" / "ADMIN:3" — 담당자 사진
+                        avatar: MemberAvatar.ref(
+                          name: person.name,
+                          type: person.key.split(':').first,
+                          id: person.key.split(':').last,
+                          size: 28,
+                        ),
+                        checked: _values.contains(
+                          personFilterValue(person.key),
+                        ),
                         trailing: _doneText(person.done, person.total),
                         onTap: () => _toggle(personFilterValue(person.key)),
                       ),
@@ -224,11 +234,15 @@ class _FilterRow extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback onTap;
 
+  /// 이름 앞 사진(담당자 줄)
+  final Widget? avatar;
+
   const _FilterRow({
     required this.label,
     required this.checked,
     required this.onTap,
     this.trailing,
+    this.avatar,
   });
 
   @override
@@ -258,6 +272,10 @@ class _FilterRow extends StatelessWidget {
                     width: 1.5,
                   ),
                 ),
+                if (avatar != null) ...[
+                  avatar!,
+                  const SizedBox(width: AppSpacing.space2),
+                ],
                 Expanded(
                   child: Text(
                     label,

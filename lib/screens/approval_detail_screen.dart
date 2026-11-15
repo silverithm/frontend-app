@@ -27,6 +27,7 @@ import '../utils/document_open.dart';
 import '../widgets/seed/seed_button.dart';
 import 'approval_form_screen.dart';
 import 'hwp_editor_screen.dart';
+import '../widgets/common/member_avatar.dart';
 
 class ApprovalDetailScreen extends StatefulWidget {
   final ApprovalRequest approval;
@@ -373,10 +374,10 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.space4),
-                  _buildInfoRow(
-                    Icons.person_outline,
+                  _buildPersonRow(
                     '요청자',
                     _approval.requesterName,
+                    id: _approval.requesterId,
                   ),
                   const SizedBox(height: AppSpacing.space2_5),
                   _buildInfoRow(
@@ -400,6 +401,7 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                     const AppRowDivider(),
                     const SizedBox(height: AppSpacing.space4),
                     ApprovalLineStepper(
+                      requesterId: _approval.requesterId,
                       requesterName: _approval.requesterName,
                       requestedAt: _approval.createdAt,
                       steps: _approval.approvalLine,
@@ -636,11 +638,25 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                     for (final step in _approval.approvalLine)
                       if ((step.comment ?? '').trim().isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.space3),
-                        Text(
-                          '${step.roleText} · ${step.approverName}',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
+                        // 의견 쓴 사람 사진 + '검토 · 김관리'
+                        Row(
+                          children: [
+                            MemberAvatar.ref(
+                              name: step.approverName,
+                              id: step.approverId,
+                              type: step.approverType,
+                              size: 22,
+                            ),
+                            const SizedBox(width: AppSpacing.space2),
+                            Expanded(
+                              child: Text(
+                                '${step.roleText} · ${step.approverName}',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: AppSpacing.space1),
                         Text(
@@ -688,11 +704,14 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.space3),
-                    _buildInfoRow(
-                      Icons.person_outline,
-                      '처리자',
-                      _approval.processedByName ?? '-',
-                    ),
+                    if (_approval.processedByName == null)
+                      _buildInfoRow(Icons.person_outline, '처리자', '-')
+                    else
+                      _buildPersonRow(
+                        '처리자',
+                        _approval.processedByName!,
+                        id: _approval.processedBy,
+                      ),
                     const SizedBox(height: AppSpacing.space2_5),
                     _buildInfoRow(
                       Icons.access_time,
@@ -758,6 +777,35 @@ class _ApprovalDetailScreenState extends State<ApprovalDetailScreen> {
         Expanded(
           child: Text(
             value,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textPrimary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 사람 한 명을 보이는 이름표·값 줄 — 값 앞에 그 사람 사진(2026-11-16).
+  Widget _buildPersonRow(String label, String name, {String? id}) {
+    final labelWidth = MediaQuery.textScalerOf(context).scale(84);
+    return Row(
+      children: [
+        SizedBox(
+          width: labelWidth,
+          child: Text(
+            label,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppSemanticColors.textSecondary,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.space2),
+        MemberAvatar.ref(name: name, id: id, size: 24),
+        const SizedBox(width: AppSpacing.space2),
+        Expanded(
+          child: Text(
+            name,
             style: AppTypography.bodyMedium.copyWith(
               color: AppSemanticColors.textPrimary,
             ),

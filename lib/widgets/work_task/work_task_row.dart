@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../common/app_tag.dart';
+import '../common/member_avatar.dart';
 
 /// 중요도 색 — 웹(빨강·노랑·회색)과 같다. 게이지도 같은 색으로 채운다.
 ({Color background, Color foreground, Color gauge}) workTaskImportanceColors(
@@ -197,16 +198,30 @@ class WorkTaskRow extends StatelessWidget {
                   const SizedBox(height: AppSpacing.space1_5),
                   Row(
                     children: [
-                      // 담당자 칸 너비를 고정해 줄마다 게이지 시작점이 같다
+                      // 담당자 칸 너비를 고정해 줄마다 게이지 시작점이 같다. 첫 담당자 사진 + '박소향 외 2'
                       SizedBox(
-                        width: scaler.scale(84),
-                        child: Text(
-                          who,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
+                        width: scaler.scale(84) + 26,
+                        child: Row(
+                          children: [
+                            if (task.assignees.isNotEmpty) ...[
+                              MemberAvatar.ref(
+                                name: task.assignees.first.name ?? '',
+                                id: task.assignees.first.id,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 6),
+                            ],
+                            Expanded(
+                              child: Text(
+                                who,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: AppSpacing.space2),
@@ -223,7 +238,7 @@ class WorkTaskRow extends StatelessWidget {
                             color: task.isDone
                                 ? AppSemanticColors.statusSuccessText
                                 : AppSemanticColors.textSecondary,
-                            ),
+                          ),
                         ),
                       ),
                     ],

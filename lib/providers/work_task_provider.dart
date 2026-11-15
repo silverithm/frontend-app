@@ -20,10 +20,14 @@ class WorkTaskCandidate {
   final String name;
   final String? position;
 
+  /// 프로필 사진 — 결재자 후보 응답에 함께 온다(예전엔 버려서 이름 첫 글자만 보였다)
+  final String? imageUrl;
+
   const WorkTaskCandidate({
     required this.id,
     required this.name,
     this.position,
+    this.imageUrl,
   });
 }
 
@@ -54,7 +58,8 @@ class WorkTaskProvider extends ChangeNotifier {
     return null;
   }
 
-  int myInProgressCount(String? meId) => myInProgressWorkTaskCount(_tasks, meId);
+  int myInProgressCount(String? meId) =>
+      myInProgressWorkTaskCount(_tasks, meId);
 
   /// 목록을 받는다. 이미 받아 둔 목록이 있으면 실패해도 그대로 둔다 —
   /// 잠깐 신호가 끊겼다고 보던 목록을 지우지 않는다.
@@ -131,6 +136,7 @@ class WorkTaskProvider extends ChangeNotifier {
           id: personId,
           name: item['name']?.toString() ?? '',
           position: position == null || position.isEmpty ? null : position,
+          imageUrl: _nonEmpty(item['profileImageUrl']),
         ),
       );
     }
@@ -160,9 +166,7 @@ class WorkTaskProvider extends ChangeNotifier {
     }
     // 화면이 바로 바뀌게 먼저 끼워 두고, 순서는 새로 받은 목록으로 맞춘다
     final index = _tasks.indexWhere((t) => t.id == saved.id);
-    _tasks = index < 0
-        ? [saved, ..._tasks]
-        : ([..._tasks]..[index] = saved);
+    _tasks = index < 0 ? [saved, ..._tasks] : ([..._tasks]..[index] = saved);
     notifyListeners();
     await load();
     return saved;
@@ -183,4 +187,9 @@ class WorkTaskProvider extends ChangeNotifier {
     }
     return fallback;
   }
+}
+
+String? _nonEmpty(Object? value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
 }

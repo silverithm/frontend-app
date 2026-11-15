@@ -21,6 +21,7 @@ import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
 import '../widgets/common/app_tag.dart';
+import '../widgets/common/member_avatar.dart';
 
 class AdminVacationManagementScreen extends StatefulWidget {
   final bool showAppBar;
@@ -250,77 +251,77 @@ class _AdminVacationManagementScreenState
                 0,
               ),
               child: AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 상태 필터
-                  Text(
-                    '상태',
-                    style: AppTypography.titleSmall.copyWith(
-                      color: AppSemanticColors.textPrimary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 상태 필터
+                    Text(
+                      '상태',
+                      style: AppTypography.titleSmall.copyWith(
+                        color: AppSemanticColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.space2),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildStatusFilterChip('전체', 'all'),
-                        const SizedBox(width: AppSpacing.space2),
-                        _buildStatusFilterChip('승인 대기', 'pending'),
-                        const SizedBox(width: AppSpacing.space2),
-                        _buildStatusFilterChip('승인됨', 'approved'),
-                        const SizedBox(width: AppSpacing.space2),
-                        _buildStatusFilterChip('거절됨', 'rejected'),
-                      ],
+                    const SizedBox(height: AppSpacing.space2),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildStatusFilterChip('전체', 'all'),
+                          const SizedBox(width: AppSpacing.space2),
+                          _buildStatusFilterChip('승인 대기', 'pending'),
+                          const SizedBox(width: AppSpacing.space2),
+                          _buildStatusFilterChip('승인됨', 'approved'),
+                          const SizedBox(width: AppSpacing.space2),
+                          _buildStatusFilterChip('거절됨', 'rejected'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.space4),
+                    const SizedBox(height: AppSpacing.space4),
 
-                  // 직무·정렬은 자주 안 바꾸므로 한 줄 요약 버튼으로 접고, 누르면 시트에서 고른다 (D12)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildFilterSummaryChip(
-                          label: '직무 · ${_roleFilterLabel()}',
-                          onTap: _openRoleFilterSheet,
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        _buildFilterSummaryChip(
-                          label: '정렬 · ${_sortLabel()}',
-                          onTap: _openSortFilterSheet,
-                        ),
-                      ],
+                    // 직무·정렬은 자주 안 바꾸므로 한 줄 요약 버튼으로 접고, 누르면 시트에서 고른다 (D12)
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterSummaryChip(
+                            label: '직무 · ${_roleFilterLabel()}',
+                            onTap: _openRoleFilterSheet,
+                          ),
+                          const SizedBox(width: AppSpacing.space2),
+                          _buildFilterSummaryChip(
+                            label: '정렬 · ${_sortLabel()}',
+                            onTap: _openSortFilterSheet,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.space2_5),
+                    const SizedBox(height: AppSpacing.space2_5),
 
-                  // 검색 필드
-                  SeedTextField(
-                    label: '검색',
-                    // 섹션 자체가 이미 카드/필터 묶음 안에 있어 별도 라벨 없이 쓰던 필드
-                    showLabel: false,
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                    placeholder: '이름, 직무로 검색...',
-                    prefixIcon: Icons.search,
-                    suffixIcon: _searchQuery.isNotEmpty ? Icons.clear : null,
-                    onSuffixIconTap: _searchQuery.isNotEmpty
-                        ? () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchQuery = '';
-                            });
-                          }
-                        : null,
-                  ),
-                ],
-              ),
+                    // 검색 필드
+                    SeedTextField(
+                      label: '검색',
+                      // 섹션 자체가 이미 카드/필터 묶음 안에 있어 별도 라벨 없이 쓰던 필드
+                      showLabel: false,
+                      controller: _searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
+                      placeholder: '이름, 직무로 검색...',
+                      prefixIcon: Icons.search,
+                      suffixIcon: _searchQuery.isNotEmpty ? Icons.clear : null,
+                      onSuffixIconTap: _searchQuery.isNotEmpty
+                          ? () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            }
+                          : null,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -336,89 +337,95 @@ class _AdminVacationManagementScreenState
                   0,
                 ),
                 child: AppCard(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space2,
-                  AppSpacing.space2,
-                  AppSpacing.space4,
-                  AppSpacing.space2,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 전체 선택 체크박스
-                    Row(
-                      children: [
-                        Checkbox(
-                          value:
-                              _selectedRequests.length ==
-                                  filteredRequests.length &&
-                              filteredRequests.isNotEmpty,
-                          onChanged: (value) {
-                            setState(() {
-                              if (value == true) {
-                                // 전체 선택
-                                _selectedRequests = filteredRequests
-                                    .map((r) => r['id'].toString())
-                                    .toSet();
-                              } else {
-                                // 전체 해제
-                                _selectedRequests.clear();
-                              }
-                              _isSelectMode = _selectedRequests.isNotEmpty;
-                            });
-                          },
-                          activeColor:
-                              AppSemanticColors.interactivePrimaryDefault,
-                        ),
-                        Text(
-                          '전체 선택',
-                          style: AppTypography.titleMedium.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.space2),
-                        // 고른 건수 — 공통 꼬리표(고른 게 있으면 옅은 틸)
-                        AppTag(
-                          label:
-                              '${_selectedRequests.length}/${filteredRequests.length}',
-                          tone: _selectedRequests.isNotEmpty
-                              ? AppTagTone.accent
-                              : AppTagTone.neutral,
-                        ),
-                      ],
-                    ),
-                    // 일괄 처리 버튼들
-                    if (_selectedRequests.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.space3),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space2,
+                    AppSpacing.space2,
+                    AppSpacing.space4,
+                    AppSpacing.space2,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 전체 선택 체크박스
                       Row(
                         children: [
-                          Expanded(
-                            child: SeedButton(
-                              label: _isBulkProcessing ? '처리중...' : '선택 항목 거절',
-                              variant: SeedButtonVariant.neutralWeak,
-                              isLoading: _isBulkProcessing,
-                              prefixIcon: Icons.close,
-                              onPressed: _isBulkProcessing ? null : _bulkReject,
+                          Checkbox(
+                            value:
+                                _selectedRequests.length ==
+                                    filteredRequests.length &&
+                                filteredRequests.isNotEmpty,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  // 전체 선택
+                                  _selectedRequests = filteredRequests
+                                      .map((r) => r['id'].toString())
+                                      .toSet();
+                                } else {
+                                  // 전체 해제
+                                  _selectedRequests.clear();
+                                }
+                                _isSelectMode = _selectedRequests.isNotEmpty;
+                              });
+                            },
+                            activeColor:
+                                AppSemanticColors.interactivePrimaryDefault,
+                          ),
+                          Text(
+                            '전체 선택',
+                            style: AppTypography.titleMedium.copyWith(
+                              color: AppSemanticColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.space3),
-                          Expanded(
-                            child: SeedButton(
-                              label: _isBulkProcessing ? '처리중...' : '선택 항목 승인',
-                              variant: SeedButtonVariant.brandSolid,
-                              isLoading: _isBulkProcessing,
-                              prefixIcon: Icons.check,
-                              onPressed: _isBulkProcessing
-                                  ? null
-                                  : _bulkApprove,
-                            ),
+                          const SizedBox(width: AppSpacing.space2),
+                          // 고른 건수 — 공통 꼬리표(고른 게 있으면 옅은 틸)
+                          AppTag(
+                            label:
+                                '${_selectedRequests.length}/${filteredRequests.length}',
+                            tone: _selectedRequests.isNotEmpty
+                                ? AppTagTone.accent
+                                : AppTagTone.neutral,
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.space2),
+                      // 일괄 처리 버튼들
+                      if (_selectedRequests.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.space3),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SeedButton(
+                                label: _isBulkProcessing
+                                    ? '처리중...'
+                                    : '선택 항목 거절',
+                                variant: SeedButtonVariant.neutralWeak,
+                                isLoading: _isBulkProcessing,
+                                prefixIcon: Icons.close,
+                                onPressed: _isBulkProcessing
+                                    ? null
+                                    : _bulkReject,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.space3),
+                            Expanded(
+                              child: SeedButton(
+                                label: _isBulkProcessing
+                                    ? '처리중...'
+                                    : '선택 항목 승인',
+                                variant: SeedButtonVariant.brandSolid,
+                                isLoading: _isBulkProcessing,
+                                prefixIcon: Icons.check,
+                                onPressed: _isBulkProcessing
+                                    ? null
+                                    : _bulkApprove,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.space2),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
                 ),
               ),
             ),
@@ -472,11 +479,15 @@ class _AdminVacationManagementScreenState
 
   String _sortLabel() => _sortLabels[_sortBy] ?? '신청순';
 
-  String _roleFilterLabel() =>
-      _roleFilter == RoleUtils.allRole ? '전체' : RoleUtils.displayName(_roleFilter);
+  String _roleFilterLabel() => _roleFilter == RoleUtils.allRole
+      ? '전체'
+      : RoleUtils.displayName(_roleFilter);
 
   /// 접힌 필터 한 개 — "직무 · 전체 ▾" 같은 요약 칩. 누르면 시트가 열린다.
-  Widget _buildFilterSummaryChip({required String label, required VoidCallback onTap}) {
+  Widget _buildFilterSummaryChip({
+    required String label,
+    required VoidCallback onTap,
+  }) {
     // 흰 카드 안 회색 알약(SeedChip 작은 것과 같은 높이 36·글자 14/w600)
     return Material(
       color: AppSemanticColors.fillDefault,
@@ -501,7 +512,11 @@ class _AdminVacationManagementScreenState
                   ),
                 ),
                 const SizedBox(width: AppSpacing.space0_5),
-                Icon(Icons.expand_more, size: 18, color: AppSemanticColors.textSecondary),
+                Icon(
+                  Icons.expand_more,
+                  size: 18,
+                  color: AppSemanticColors.textSecondary,
+                ),
               ],
             ),
           ),
@@ -547,21 +562,36 @@ class _AdminVacationManagementScreenState
   }
 
   void _openRoleFilterSheet() {
-    _openFilterSheet('직무', () => [
-      _sheetChip('전체', _roleFilter == RoleUtils.allRole,
-          () => setState(() => _roleFilter = RoleUtils.allRole)),
-      for (final role in _roleFilterOptions)
-        _sheetChip(RoleUtils.displayName(role), _roleFilter == role,
-            () => setState(() => _roleFilter = role)),
-    ]);
+    _openFilterSheet(
+      '직무',
+      () => [
+        _sheetChip(
+          '전체',
+          _roleFilter == RoleUtils.allRole,
+          () => setState(() => _roleFilter = RoleUtils.allRole),
+        ),
+        for (final role in _roleFilterOptions)
+          _sheetChip(
+            RoleUtils.displayName(role),
+            _roleFilter == role,
+            () => setState(() => _roleFilter = role),
+          ),
+      ],
+    );
   }
 
   void _openSortFilterSheet() {
-    _openFilterSheet('정렬', () => [
-      for (final entry in _sortLabels.entries)
-        _sheetChip(entry.value, _sortBy == entry.key,
-            () => setState(() => _sortBy = entry.key)),
-    ]);
+    _openFilterSheet(
+      '정렬',
+      () => [
+        for (final entry in _sortLabels.entries)
+          _sheetChip(
+            entry.value,
+            _sortBy == entry.key,
+            () => setState(() => _sortBy = entry.key),
+          ),
+      ],
+    );
   }
 
   List<String> get _roleFilterOptions {
@@ -701,90 +731,94 @@ class _AdminVacationManagementScreenState
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
       child: Material(
-      color: isSelected
-          ? AppSemanticColors.brandWeak
-          : AppSemanticColors.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.card),
-        side: isSelected
-            ? const BorderSide(color: AppSemanticColors.brandDefault, width: 2)
-            : AppLines.cardSide,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        // 기본 탭은 상세 시트를 연다. 일괄 선택은 길게 눌러 시작하고,
-        // 선택 모드에서는 탭이 선택 토글이 된다 (대기 건만 선택 대상).
-        onTap: () {
-          if (_isSelectMode && isPending) {
-            setState(() {
-              if (_selectedRequests.contains(requestId)) {
-                _selectedRequests.remove(requestId);
-              } else {
-                _selectedRequests.add(requestId);
-              }
-              _isSelectMode = _selectedRequests.isNotEmpty;
-            });
-            return;
-          }
-          _showVacationDetail(request);
-        },
-        // 길게 눌러 일괄 선택이 시작되는 순간 impact 진동 한 번 — InkWell 자체 길게 누르기 진동(Android)은
-        // 꺼서 두 번 울리지 않게 하고, '진동 반응' 스위치를 따르는 AppHaptics로만 울린다
-        enableFeedback: false,
-        onLongPress: isPending
-            ? () {
-                AppHaptics.impact();
-                setState(() {
+        color: isSelected
+            ? AppSemanticColors.brandWeak
+            : AppSemanticColors.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          side: isSelected
+              ? const BorderSide(
+                  color: AppSemanticColors.brandDefault,
+                  width: 2,
+                )
+              : AppLines.cardSide,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          // 기본 탭은 상세 시트를 연다. 일괄 선택은 길게 눌러 시작하고,
+          // 선택 모드에서는 탭이 선택 토글이 된다 (대기 건만 선택 대상).
+          onTap: () {
+            if (_isSelectMode && isPending) {
+              setState(() {
+                if (_selectedRequests.contains(requestId)) {
+                  _selectedRequests.remove(requestId);
+                } else {
                   _selectedRequests.add(requestId);
-                  _isSelectMode = true;
-                });
-              }
-            : null,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (isPending)
-                    SizedBox(
-                      width: AppSpacing.space6,
-                      height: AppSpacing.space6,
-                      child: Checkbox(
-                        value: isSelected,
-                        onChanged: (value) {
-                          setState(() {
-                            if (value == true) {
-                              _selectedRequests.add(requestId);
-                            } else {
-                              _selectedRequests.remove(requestId);
-                            }
-                            _isSelectMode = _selectedRequests.isNotEmpty;
-                          });
-                        },
-                        activeColor:
-                            AppSemanticColors.interactivePrimaryDefault,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                }
+                _isSelectMode = _selectedRequests.isNotEmpty;
+              });
+              return;
+            }
+            _showVacationDetail(request);
+          },
+          // 길게 눌러 일괄 선택이 시작되는 순간 impact 진동 한 번 — InkWell 자체 길게 누르기 진동(Android)은
+          // 꺼서 두 번 울리지 않게 하고, '진동 반응' 스위치를 따르는 AppHaptics로만 울린다
+          enableFeedback: false,
+          onLongPress: isPending
+              ? () {
+                  AppHaptics.impact();
+                  setState(() {
+                    _selectedRequests.add(requestId);
+                    _isSelectMode = true;
+                  });
+                }
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.space4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    if (isPending)
+                      SizedBox(
+                        width: AppSpacing.space6,
+                        height: AppSpacing.space6,
+                        child: Checkbox(
+                          value: isSelected,
+                          onChanged: (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedRequests.add(requestId);
+                              } else {
+                                _selectedRequests.remove(requestId);
+                              }
+                              _isSelectMode = _selectedRequests.isNotEmpty;
+                            });
+                          },
+                          activeColor:
+                              AppSemanticColors.interactivePrimaryDefault,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
                       ),
-                    ),
-                  if (isPending) const SizedBox(width: AppSpacing.space3),
-                  Expanded(child: _buildVacationCardHeader(request)),
+                    if (isPending) const SizedBox(width: AppSpacing.space3),
+                    Expanded(child: _buildVacationCardHeader(request)),
+                  ],
+                ),
+                if (request['reason'] != null &&
+                    request['reason'].toString().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.space3),
+                  _buildReasonSection(request['reason']),
                 ],
-              ),
-              if (request['reason'] != null &&
-                  request['reason'].toString().isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.space3),
-                _buildReasonSection(request['reason']),
+                if (!_isSelectMode) ...[
+                  const SizedBox(height: AppSpacing.space3),
+                  _buildActionButtons(request, isPending),
+                ],
               ],
-              if (!_isSelectMode) ...[
-                const SizedBox(height: AppSpacing.space3),
-                _buildActionButtons(request, isPending),
-              ],
-            ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -797,26 +831,22 @@ class _AdminVacationManagementScreenState
     final AppTagTone statusTone = isApproved
         ? AppTagTone.success
         : isPending
-            ? AppTagTone.warning
-            : AppTagTone.error;
+        ? AppTagTone.warning
+        : AppTagTone.error;
     final String statusText = isApproved
         ? '승인됨'
         : isPending
-            ? '대기중'
-            : '거절됨';
+        ? '대기중'
+        : '거절됨';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 종사자 관리 카드와 같은 옅은 틸 원 40 — 상태는 오른쪽 꼬리표 하나로만 말한다
-        const CircleAvatar(
-          radius: AppSpacing.iconCircle / 2,
-          backgroundColor: AppSemanticColors.brandWeak,
-          child: Icon(
-            Icons.person,
-            color: AppSemanticColors.brandDefault,
-            size: 22,
-          ),
+        // 신청한 직원 사진 40(없으면 이름 첫 글자) — 상태는 오른쪽 꼬리표 하나로만 말한다
+        MemberAvatar(
+          name: request['userName']?.toString() ?? '',
+          memberId: request['userId']?.toString(),
+          size: AppSpacing.iconCircle,
         ),
         const SizedBox(width: AppSpacing.space3),
         Expanded(
@@ -891,13 +921,13 @@ class _AdminVacationManagementScreenState
     final AppTagTone statusTone = isApproved
         ? AppTagTone.success
         : isPending
-            ? AppTagTone.warning
-            : AppTagTone.error;
+        ? AppTagTone.warning
+        : AppTagTone.error;
     final String statusText = isApproved
         ? '승인됨'
         : isPending
-            ? '대기중'
-            : '거절됨';
+        ? '대기중'
+        : '거절됨';
     final String reason = (request['reason'] ?? '').toString();
 
     AppBottomSheet.show(
@@ -914,6 +944,12 @@ class _AdminVacationManagementScreenState
               children: [
                 Row(
                   children: [
+                    MemberAvatar(
+                      name: request['userName']?.toString() ?? '',
+                      memberId: request['userId']?.toString(),
+                      size: 48,
+                    ),
+                    const SizedBox(width: AppSpacing.space3),
                     Expanded(
                       child: Text(
                         request['userName'] ?? '알 수 없음',
@@ -946,7 +982,9 @@ class _AdminVacationManagementScreenState
                       padding: const EdgeInsets.all(AppSpacing.space3),
                       decoration: BoxDecoration(
                         color: AppSemanticColors.fillDefault,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.control),
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.control,
+                        ),
                       ),
                       child: SingleChildScrollView(
                         child: Text(

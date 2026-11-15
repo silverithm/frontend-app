@@ -14,6 +14,7 @@ import '../seed/seed_callout.dart';
 import '../seed/seed_chip.dart';
 import '../seed/seed_text_field.dart';
 import 'work_task_assignee_picker.dart';
+import '../common/member_avatar.dart';
 
 /// 업무 등록·수정 — 담당자, 기한, 업무 내용, 중요도, 수행도(원장 그림의 "등록 시 기본정보 입력").
 /// 고칠 수 없는 사람(관리자·등록한 사람·담당자가 아님)에게는 같은 창을 읽기 전용으로 보여 준다.
@@ -239,8 +240,9 @@ class _WorkTaskFormState extends State<_WorkTaskForm> {
           spacing: AppSpacing.space2,
           runSpacing: AppSpacing.space2,
           children: [
+            // 고른 담당자 — 사진 + 이름 알약(2026-11-16, 예전엔 이름만 있는 칩)
             for (final id in _assigneeIds)
-              SeedChip(label: _nameOf(id), selected: true),
+              _AssigneePill(id: id, name: _nameOf(id)),
             if (!_readOnly)
               SeedChip(
                 label: _assigneeIds.isEmpty ? '담당자 고르기' : '바꾸기',
@@ -319,9 +321,8 @@ class _WorkTaskFormState extends State<_WorkTaskForm> {
               value >= 100 ? '완료' : '${value.round()}%',
           onChanged: _readOnly
               ? null
-              : (value) => setState(
-                  () => _progress = snapWorkTaskProgress(value),
-                ),
+              : (value) =>
+                    setState(() => _progress = snapWorkTaskProgress(value)),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
@@ -392,6 +393,43 @@ class _Label extends StatelessWidget {
       text,
       style: AppTypography.titleSmall.copyWith(
         color: AppSemanticColors.textPrimary,
+      ),
+    );
+  }
+}
+
+/// 고른 담당자 한 명 — 옅은 틸 알약 안에 사진과 이름.
+class _AssigneePill extends StatelessWidget {
+  final String id;
+  final String name;
+  const _AssigneePill({required this.id, required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 36),
+      padding: const EdgeInsets.fromLTRB(4, 4, AppSpacing.space3, 4),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.brandWeak,
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MemberAvatar.ref(name: name, id: id, size: 28),
+          const SizedBox(width: AppSpacing.space2),
+          Flexible(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.labelLarge.copyWith(
+                color: AppSemanticColors.brandWeakForeground,
+                fontWeight: AppTypography.fontWeightSemibold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

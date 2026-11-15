@@ -28,6 +28,7 @@ import '../utils/document_open.dart';
 import 'approval_detail_screen.dart';
 import '../widgets/seed/seed_chip.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/common/member_avatar.dart';
 
 class AdminApprovalManagementScreen extends StatefulWidget {
   const AdminApprovalManagementScreen({super.key});
@@ -929,10 +930,22 @@ class _AdminApprovalManagementScreenState
                             ],
                           ),
                           const SizedBox(height: AppSpacing.space1_5),
-                          Text(
-                            '요청자: ${request.requesterName}',
+                          // 요청자 사진 + 이름(2026-11-16, 예전 '요청자: 이름' 글자)
+                          MemberNameChip(
+                            name: request.requesterName,
+                            memberId: PersonRef.parse(
+                              request.requesterId,
+                            ).memberId,
+                            adminId: PersonRef.parse(
+                              request.requesterId,
+                            ).adminId,
+                            suffix: '요청',
+                            avatarSize: 22,
                             style: AppTypography.bodyMedium.copyWith(
-                              color: AppSemanticColors.textSecondary,
+                              color: AppSemanticColors.textPrimary,
+                            ),
+                            suffixStyle: AppTypography.bodyMedium.copyWith(
+                              color: AppSemanticColors.textTertiary,
                             ),
                           ),
                           const SizedBox(height: AppSpacing.space0_5),
@@ -1124,14 +1137,29 @@ class _AdminApprovalManagementScreenState
                           AppBorderRadius.control,
                         ),
                       ),
-                      child: Center(
-                        child: Text(
-                          '${request.currentStep?.approverName ?? '다른 결재자'}님의 차례입니다',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // 지금 차례인 사람 사진
+                          if (request.currentStep != null) ...[
+                            MemberAvatar.ref(
+                              name: request.currentStep!.approverName,
+                              id: request.currentStep!.approverId,
+                              type: request.currentStep!.approverType,
+                              size: 22,
+                            ),
+                            const SizedBox(width: AppSpacing.space2),
+                          ],
+                          Flexible(
+                            child: Text(
+                              '${request.currentStep?.approverName ?? '다른 결재자'}님의 차례입니다',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textSecondary,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                 ],

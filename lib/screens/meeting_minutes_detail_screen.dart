@@ -16,6 +16,7 @@ import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/common/app_notice_toasts.dart';
+import '../widgets/common/member_avatar.dart';
 
 /// 회의록 상세 — 내용을 읽고, 내가 참석자면 서명한다.
 /// 서명은 결재 승인과 같은 방식: 등록 서명 자동 날인 또는 즉석 그리기.
@@ -182,17 +183,31 @@ class _MeetingMinutesDetailScreenState
                           ),
                         ),
                         const SizedBox(height: AppSpacing.space2),
-                        Text(
-                          [
-                            when,
-                            if ((minutes?['location']?.toString() ?? '')
-                                .isNotEmpty)
-                              minutes!['location'].toString(),
-                            '작성 ${minutes?['authorName'] ?? ''}',
-                          ].join(' · '),
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppSemanticColors.textSecondary,
-                          ),
+                        // 작성자 사진 + '11월 14일 · 2층 · 작성 김관리'
+                        Row(
+                          children: [
+                            MemberAvatar.ref(
+                              name: minutes?['authorName']?.toString() ?? '',
+                              id: minutes?['authorRefId']?.toString(),
+                              type: minutes?['authorType']?.toString(),
+                              size: 20,
+                            ),
+                            const SizedBox(width: AppSpacing.space1_5),
+                            Expanded(
+                              child: Text(
+                                [
+                                  when,
+                                  if ((minutes?['location']?.toString() ?? '')
+                                      .isNotEmpty)
+                                    minutes!['location'].toString(),
+                                  '작성 ${minutes?['authorName'] ?? ''}',
+                                ].join(' · '),
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppSemanticColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -260,16 +275,21 @@ class _MeetingMinutesDetailScreenState
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  signed
-                                      ? Icons.check_circle
-                                      : Icons.radio_button_unchecked,
-                                  size: 22,
-                                  color: signed
-                                      ? AppSemanticColors.brandDefault
-                                      : AppSemanticColors.iconSubtle,
+                                // 참석자 사진 — 서명하면 오른쪽 아래 틸 체크, 아직이면 흐리게
+                                // (2026-11-16, 예전엔 체크/빈 동그라미 아이콘만)
+                                BadgedAvatar(
+                                  avatar: MemberAvatar.ref(
+                                    name:
+                                        attendee['attendeeName']?.toString() ??
+                                        '',
+                                    id: attendee['refId']?.toString(),
+                                    type: attendee['attendeeType']?.toString(),
+                                    size: 32,
+                                  ),
+                                  icon: signed ? Icons.check_rounded : null,
+                                  dim: !signed,
                                 ),
-                                const SizedBox(width: AppSpacing.space2_5),
+                                const SizedBox(width: AppSpacing.space3),
                                 Expanded(
                                   child: Text(
                                     '${attendee['attendeeName'] ?? ''}${isExternal ? ' (외부)' : ''}',

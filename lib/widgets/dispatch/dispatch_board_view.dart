@@ -25,6 +25,7 @@ import '../seed/seed_list_cell.dart';
 import 'dispatch_attendance_section.dart';
 import 'dispatch_status_style.dart';
 import '../common/app_tag.dart';
+import '../common/member_avatar.dart';
 
 const _titleWeekdayNames = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -153,9 +154,9 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     final vehicleName = route.isEmpty
         ? ''
         : (route.first.routeDrivers.isNotEmpty &&
-                route.first.routeDrivers.first.vehicleName.trim().isNotEmpty
-            ? route.first.routeDrivers.first.vehicleName.trim()
-            : route.first.name);
+                  route.first.routeDrivers.first.vehicleName.trim().isNotEmpty
+              ? route.first.routeDrivers.first.vehicleName.trim()
+              : route.first.name);
 
     AppBottomSheet.show<void>(
       context,
@@ -228,9 +229,9 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
 
     if (candidates.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('같은 방향의 다른 노선이 없습니다')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('같은 방향의 다른 노선이 없습니다')));
       return;
     }
 
@@ -267,9 +268,11 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     if (targetRoute == null || !mounted) return;
 
     // 그 노선이 회차를 쓰는지(이미 탑승 중인 누군가에게 tripOrder가 있는지) 본다
-    final targetDispatch = daily.routeDispatches
-        .where((rd) => rd.routeId == targetRoute.id);
-    final usesTrip = targetDispatch.isNotEmpty &&
+    final targetDispatch = daily.routeDispatches.where(
+      (rd) => rd.routeId == targetRoute.id,
+    );
+    final usesTrip =
+        targetDispatch.isNotEmpty &&
         targetDispatch.first.tripGroups.any((g) => g.tripOrder != null);
 
     int? targetTripOrder;
@@ -313,7 +316,9 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          ok ? '${senior.name}님을 ${targetRoute.name}(으)로 옮겼습니다' : '이동을 저장하지 못했습니다. 다시 시도해 주세요',
+          ok
+              ? '${senior.name}님을 ${targetRoute.name}(으)로 옮겼습니다'
+              : '이동을 저장하지 못했습니다. 다시 시도해 주세요',
         ),
       ),
     );
@@ -354,9 +359,9 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
       ClipboardData(text: buildDispatchBoardText(daily, _routeType)),
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('배차표를 복사했습니다')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('배차표를 복사했습니다')));
   }
 
   /// 배차표를 그림으로 만들어 공유 시트로 넘긴다.
@@ -365,8 +370,11 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
   /// 화면에 보이는 부분만 떠서는 안 된다. 차가 열세 대면 리스트는 여섯 대만
   /// 그려 두므로, 화면을 그대로 찍으면 나머지가 잘린 그림이 나간다.
   /// 그래서 화면과 별개로 표 전체를 한 번 그려서(captureFromLongWidget) 찍는다.
-  Future<void> _shareImage(DailyDispatch daily, List<RouteDispatch> dispatches,
-      List<Senior> personal) async {
+  Future<void> _shareImage(
+    DailyDispatch daily,
+    List<RouteDispatch> dispatches,
+    List<Senior> personal,
+  ) async {
     if (_isCapturing) return;
     setState(() => _isCapturing = true);
 
@@ -445,13 +453,23 @@ class _DispatchBoardViewState extends State<DispatchBoardView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildTopSection(daily, dispatches, personal, provider, unassigned, absent),
+        _buildTopSection(
+          daily,
+          dispatches,
+          personal,
+          provider,
+          unassigned,
+          absent,
+        ),
         Expanded(child: _buildRouteList(dispatches, provider)),
       ],
     );
   }
 
-  Widget _buildRouteList(List<RouteDispatch> dispatches, DispatchProvider provider) {
+  Widget _buildRouteList(
+    List<RouteDispatch> dispatches,
+    DispatchProvider provider,
+  ) {
     if (dispatches.isEmpty) {
       // B안 빈 화면
       return AppEmptyState(
@@ -785,11 +803,13 @@ class _RouteBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOff = dispatch.status == DispatchStatus.noService ||
+    final isOff =
+        dispatch.status == DispatchStatus.noService ||
         dispatch.status == DispatchStatus.holiday;
     final style = DispatchStatusStyle.of(dispatch.status);
 
-    final vehicleName = (dispatch.driver?.vehicleName.trim().isNotEmpty ?? false)
+    final vehicleName =
+        (dispatch.driver?.vehicleName.trim().isNotEmpty ?? false)
         ? dispatch.driver!.vehicleName.trim()
         : dispatch.routeName;
     final showRouteNameHint = vehicleName != dispatch.routeName;
@@ -878,7 +898,9 @@ class _RouteBlock extends StatelessWidget {
             const SizedBox(height: AppSpacing.space2),
             if (routeSeniors.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.space2),
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.space2,
+                ),
                 child: Text(
                   '탑승 없음',
                   style: AppTypography.bodySmall.copyWith(
@@ -967,9 +989,11 @@ class _DriverChip extends StatelessWidget {
     // B안 알약 — 테두리 없는 옅은 바탕(대체 운행은 경고 노랑), 글자 14/w600
     final chip = Container(
       constraints: const BoxConstraints(minHeight: 36),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space3,
-        vertical: AppSpacing.space1_5,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space1,
+        AppSpacing.space1,
+        AppSpacing.space3,
+        AppSpacing.space1,
       ),
       decoration: BoxDecoration(
         color: isSubstitute
@@ -980,14 +1004,13 @@ class _DriverChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.person_outline,
-            size: 18,
-            color: isSubstitute
-                ? AppSemanticColors.statusWarningText
-                : AppSemanticColors.textSecondary,
+          // 운전자 사진(2026-11-16, 예전엔 사람 모양 아이콘)
+          MemberAvatar.ref(
+            name: driver.driverName,
+            id: driver.driverId,
+            size: 28,
           ),
-          const SizedBox(width: AppSpacing.space1_5),
+          const SizedBox(width: AppSpacing.space2),
           Flexible(
             child: Text(
               label.trim(),
@@ -1005,9 +1028,9 @@ class _DriverChip extends StatelessWidget {
     if (!isSubstitute || dispatch.reason == null) return chip;
 
     return GestureDetector(
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(dispatch.reason!)),
-      ),
+      onTap: () => ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(dispatch.reason!))),
       child: chip,
     );
   }
@@ -1033,9 +1056,7 @@ class _ElderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (senior.elderlyId == null) {
       return ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: AppSpacing.minTouchTarget,
-        ),
+        constraints: const BoxConstraints(minHeight: AppSpacing.minTouchTarget),
         child: Row(
           children: [
             Expanded(
@@ -1060,7 +1081,9 @@ class _ElderRow extends StatelessWidget {
 
     final state = attendanceStateOf(provider, senior, dateStr);
     final isPickupRoute = routeType == RouteType.toWork;
-    final personalChecked = isPickupRoute ? state.personalPickup : state.personalDropoff;
+    final personalChecked = isPickupRoute
+        ? state.personalPickup
+        : state.personalDropoff;
     final personalLabel = isPickupRoute ? '개인등원' : '개인하원';
 
     Widget? pill;
@@ -1078,9 +1101,7 @@ class _ElderRow extends StatelessWidget {
       onTap: interactive ? () => onTap!(senior) : null,
       borderRadius: BorderRadius.circular(AppBorderRadius.control),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: AppSpacing.minTouchTarget,
-        ),
+        constraints: const BoxConstraints(minHeight: AppSpacing.minTouchTarget),
         child: Row(
           children: [
             Expanded(
@@ -1088,11 +1109,16 @@ class _ElderRow extends StatelessWidget {
                 senior.name,
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppSemanticColors.textPrimary,
-                  decoration: state.isAbsent ? TextDecoration.lineThrough : null,
+                  decoration: state.isAbsent
+                      ? TextDecoration.lineThrough
+                      : null,
                 ),
               ),
             ),
-            if (pill != null) ...[pill, const SizedBox(width: AppSpacing.space1)],
+            if (pill != null) ...[
+              pill,
+              const SizedBox(width: AppSpacing.space1),
+            ],
             if (interactive)
               const Icon(
                 Icons.chevron_right_rounded,

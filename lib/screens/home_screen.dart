@@ -38,6 +38,7 @@ import 'notice_detail_screen.dart';
 import 'notice_list_screen.dart';
 import 'work_task_list_screen.dart';
 import '../widgets/work_task/work_task_row.dart';
+import '../widgets/common/member_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateToTab;
@@ -217,7 +218,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 .map(
                   // 누르면 일정 탭으로 넘어가 월간일정의 오늘을 펴고 이 일정을 강조한다
                   (schedule) => InkWell(
-                    borderRadius: BorderRadius.circular(AppBorderRadius.control),
+                    borderRadius: BorderRadius.circular(
+                      AppBorderRadius.control,
+                    ),
                     onTap: () {
                       context.read<ScheduleProvider>().requestFocus(
                         scheduleId: schedule.id,
@@ -287,11 +290,21 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: AppSpacing.space4),
           Row(
             children: [
-              Icon(
-                Icons.beach_access_outlined,
-                size: AppSpacing.space4,
-                color: AppSemanticColors.textTertiary,
-              ),
+              // 휴무자가 있으면 그 사람들 사진을 겹쳐 보인다(2026-11-16 "직원 정보엔 프로필 사진")
+              if (todayVacationers.isEmpty)
+                Icon(
+                  Icons.beach_access_outlined,
+                  size: AppSpacing.space4,
+                  color: AppSemanticColors.textTertiary,
+                )
+              else
+                MemberFaces(
+                  people: [
+                    for (final v in todayVacationers)
+                      MemberFace(v.userName, id: v.userId),
+                  ],
+                  size: 24,
+                ),
               const SizedBox(width: AppSpacing.space2),
               Expanded(
                 child: Text(
@@ -388,238 +401,252 @@ class _HomeScreenState extends State<HomeScreen> {
         // 카드 네 장이 처음 한 번만 차례로 떠오른다 — 이 감싸개가 불러오기 분기 바깥에 있어
         // 당겨서 새로고침 뒤 카드가 다시 그려져도 또 떠오르지 않는다.
         child: AppListEntrance(
-        // D1: 카드는 내용 크기만큼만 차지한다 — 내용이 비어 있다고
-        // 빈 화면을 억지로 나눠 갖지 않는다. 넘칠 때만 스크롤된다.
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 인사말 머리줄 — 다른 화면 상단 바와 같은 틸 바탕 + 진한 틸 하단선.
-              // 상태표시줄 뒤까지 칠하려고 SafeArea 바깥에서 색을 깐다.
-              // AppBar가 아니라 상태표시줄 아이콘 밝기를 직접 정한다 — 진한 틸 위라 흰 아이콘.
-              AnnotatedRegion<SystemUiOverlayStyle>(
-                value: SystemUiOverlayStyle.light,
-                // B안(2026-11-12): 다른 탭 첫 화면과 같은 높이 56 틸 바, 아래 선 없음.
-                // 인사말은 제목 자리(왼쪽 20/w700). 하루 문구는 그 아래 한 줄(12, 옅은 흰색) —
-                // 1.20.0에서 바 아래 본문으로 내렸더니 카드가 한 줄씩 밀려, 1.20.2에 바 안으로 되돌렸다.
-                child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  color: AppSemanticColors.headerBackground,
-                ),
-                child: SafeArea(
-                bottom: false,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: AppSpacing.toolbarHeight,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: AppSpacing.space5,
-                      right: AppSpacing.space1,
+          // D1: 카드는 내용 크기만큼만 차지한다 — 내용이 비어 있다고
+          // 빈 화면을 억지로 나눠 갖지 않는다. 넘칠 때만 스크롤된다.
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 인사말 머리줄 — 다른 화면 상단 바와 같은 틸 바탕 + 진한 틸 하단선.
+                // 상태표시줄 뒤까지 칠하려고 SafeArea 바깥에서 색을 깐다.
+                // AppBar가 아니라 상태표시줄 아이콘 밝기를 직접 정한다 — 진한 틸 위라 흰 아이콘.
+                AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: SystemUiOverlayStyle.light,
+                  // B안(2026-11-12): 다른 탭 첫 화면과 같은 높이 56 틸 바, 아래 선 없음.
+                  // 인사말은 제목 자리(왼쪽 20/w700). 하루 문구는 그 아래 한 줄(12, 옅은 흰색) —
+                  // 1.20.0에서 바 아래 본문으로 내렸더니 카드가 한 줄씩 밀려, 1.20.2에 바 안으로 되돌렸다.
+                  child: DecoratedBox(
+                    decoration: const BoxDecoration(
+                      color: AppSemanticColors.headerBackground,
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.space1_5,
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${user.name}님, 안녕하세요',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.appBarTitleLarge
-                                      .copyWith(
-                                        color:
-                                            AppSemanticColors.headerForeground,
+                    child: SafeArea(
+                      bottom: false,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minHeight: AppSpacing.toolbarHeight,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                            left: AppSpacing.space5,
+                            right: AppSpacing.space1,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: AppSpacing.space1_5,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${user.name}님, 안녕하세요',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.appBarTitleLarge
+                                            .copyWith(
+                                              color: AppSemanticColors
+                                                  .headerForeground,
+                                            ),
                                       ),
-                                ),
-                                const SizedBox(height: AppSpacing.space0_5),
-                                Text(
-                                  getDailyGreeting(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: AppSemanticColors
-                                        .headerForegroundMuted,
+                                      const SizedBox(
+                                        height: AppSpacing.space0_5,
+                                      ),
+                                      Text(
+                                        getDailyGreeting(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.bodySmall.copyWith(
+                                          color: AppSemanticColors
+                                              .headerForegroundMuted,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                              ),
+                              // 진한 틸 머리줄 위 — 흰 상자 대신 투명 바탕 + 흰 종
+                              const NotificationBell(
+                                iconColor: AppSemanticColors.headerForeground,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_isLoading && !_hasLoadedOnce)
+                  // 첫 불러오기 — 아래 카드 네 칸과 같은 자리·여백의 뼈대
+                  const _HomeCardsSkeleton()
+                else if (_isLoading)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.space16,
+                    ),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: AppSemanticColors.interactivePrimaryDefault,
+                      ),
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space4,
+                      AppSpacing.space3,
+                      AppSpacing.space4,
+                      AppSpacing.space4,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 홈은 네 칸 — 공지사항(2건) · 전자결재(2건) · 업무진행도(3건) · 오늘(일정+휴무자).
+                        // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
+                        // 업무진행도는 원장 요청(2026-10-22)으로 웹 대시보드 오른쪽 패널과 같이 늘 보이게 했다.
+                        AppListEntranceItem(
+                          index: 0,
+                          child: _SectionCard(
+                            header: SeedSectionHeader(
+                              title: '공지사항',
+                              subtitle: '최근 공지',
+                              actionLabel: '전체보기',
+                              onAction: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => canManageNotice
+                                      ? const AdminNoticeManagementScreen()
+                                      : const NoticeListScreen(),
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (recentNotices.isEmpty)
+                                  const _EmptySectionState(
+                                    icon: Icons.campaign_outlined,
+                                    title: '등록된 공지사항이 없습니다',
+                                    subtitle: '새 공지가 올라오면 이곳에 표시됩니다.',
+                                  )
+                                else
+                                  Column(
+                                    children: [
+                                      // 줄 사이는 1px 선으로 나눈다
+                                      for (final entry
+                                          in recentNotices.asMap().entries) ...[
+                                        if (entry.key > 0)
+                                          const AppRowDivider(),
+                                        _NoticePreviewTile(
+                                          notice: entry.value,
+                                          onTap: () =>
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      NoticeDetailScreen(
+                                                        noticeId:
+                                                            entry.value.id,
+                                                      ),
+                                                ),
+                                              ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                               ],
                             ),
                           ),
                         ),
-                        // 진한 틸 머리줄 위 — 흰 상자 대신 투명 바탕 + 흰 종
-                        const NotificationBell(iconColor: AppSemanticColors.headerForeground),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              ),
-              ),
-              if (_isLoading && !_hasLoadedOnce)
-                // 첫 불러오기 — 아래 카드 네 칸과 같은 자리·여백의 뼈대
-                const _HomeCardsSkeleton()
-              else if (_isLoading)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.space16,
-                  ),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: AppSemanticColors.interactivePrimaryDefault,
-                    ),
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.space4,
-                    AppSpacing.space3,
-                    AppSpacing.space4,
-                    AppSpacing.space4,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 홈은 네 칸 — 공지사항(2건) · 전자결재(2건) · 업무진행도(3건) · 오늘(일정+휴무자).
-                      // 빠른작업·지표·커뮤니티 배너는 각 탭으로 걷어냈다 (2026-08 개편).
-                      // 업무진행도는 원장 요청(2026-10-22)으로 웹 대시보드 오른쪽 패널과 같이 늘 보이게 했다.
-                      AppListEntranceItem(
-                        index: 0,
-                        child: _SectionCard(
-                        header: SeedSectionHeader(
-                          title: '공지사항',
-                          subtitle: '최근 공지',
-                          actionLabel: '전체보기',
-                          onAction: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => canManageNotice
-                                  ? const AdminNoticeManagementScreen()
-                                  : const NoticeListScreen(),
+                        const SizedBox(height: AppSpacing.cardGap),
+
+                        AppListEntranceItem(
+                          index: 1,
+                          child: _SectionCard(
+                            header: SeedSectionHeader(
+                              // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
+                              // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
+                              // B안: 예전 '전자결재 (n)'의 숫자를 제목 옆 옅은 틸 알약으로.
+                              title: '전자결재',
+                              count: myTurnApprovals > 0
+                                  ? myTurnApprovals
+                                  : null,
+                              subtitle: myTurnApprovals > 0
+                                  ? '지금 내가 처리할 결재 $myTurnApprovals건'
+                                  : (canManageApprovals
+                                        ? '승인이 필요한 문서'
+                                        : '내 결재 진행 상황'),
+                              actionLabel: '전체보기',
+                              onAction: () =>
+                                  _openApproval(hasMyTurn: myTurnApprovals > 0),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (recentApprovals.isEmpty)
+                                  _EmptySectionState(
+                                    icon: Icons.fact_check_outlined,
+                                    title: canManageApprovals
+                                        ? '승인 대기 문서가 없습니다'
+                                        : '진행 중인 결재가 없습니다',
+                                    subtitle: '새 결재가 생기면 이곳에 표시됩니다.',
+                                  )
+                                else
+                                  Column(
+                                    children: [
+                                      for (final entry
+                                          in recentApprovals
+                                              .asMap()
+                                              .entries) ...[
+                                        if (entry.key > 0)
+                                          const AppRowDivider(),
+                                        _ApprovalPreviewTile(
+                                          approval: entry.value,
+                                          // 미리보기에서 바로 그 문서의 공문 상세로
+                                          onTap: () =>
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      ApprovalDetailScreen(
+                                                        approval: entry.value,
+                                                      ),
+                                                ),
+                                              ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                              ],
                             ),
                           ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (recentNotices.isEmpty)
-                              const _EmptySectionState(
-                                icon: Icons.campaign_outlined,
-                                title: '등록된 공지사항이 없습니다',
-                                subtitle: '새 공지가 올라오면 이곳에 표시됩니다.',
-                              )
-                            else
-                              Column(
-                                children: [
-                                  // 줄 사이는 1px 선으로 나눈다
-                                  for (final entry
-                                      in recentNotices.asMap().entries) ...[
-                                    if (entry.key > 0)
-                                      const AppRowDivider(),
-                                    _NoticePreviewTile(
-                                      notice: entry.value,
-                                      onTap: () => Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => NoticeDetailScreen(
-                                            noticeId: entry.value.id,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                      ),
-                      const SizedBox(height: AppSpacing.cardGap),
+                        const SizedBox(height: AppSpacing.cardGap),
 
-                      AppListEntranceItem(
-                        index: 1,
-                        child: _SectionCard(
-                        header: SeedSectionHeader(
-                          // 내 차례인 문서가 있으면 제목 옆 숫자로 바로 드러낸다
-                          // (배지·부제 강조 — 별도 블록을 새로 만들지 않는다).
-                          // B안: 예전 '전자결재 (n)'의 숫자를 제목 옆 옅은 틸 알약으로.
-                          title: '전자결재',
-                          count: myTurnApprovals > 0 ? myTurnApprovals : null,
-                          subtitle: myTurnApprovals > 0
-                              ? '지금 내가 처리할 결재 $myTurnApprovals건'
-                              : (canManageApprovals
-                                    ? '승인이 필요한 문서'
-                                    : '내 결재 진행 상황'),
-                          actionLabel: '전체보기',
-                          onAction: () =>
-                              _openApproval(hasMyTurn: myTurnApprovals > 0),
+                        AppListEntranceItem(
+                          index: 2,
+                          child: _buildWorkTaskSection(
+                            workTaskProvider,
+                            user.chatUserId,
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (recentApprovals.isEmpty)
-                              _EmptySectionState(
-                                icon: Icons.fact_check_outlined,
-                                title: canManageApprovals
-                                    ? '승인 대기 문서가 없습니다'
-                                    : '진행 중인 결재가 없습니다',
-                                subtitle: '새 결재가 생기면 이곳에 표시됩니다.',
-                              )
-                            else
-                              Column(
-                                children: [
-                                  for (final entry
-                                      in recentApprovals.asMap().entries) ...[
-                                    if (entry.key > 0)
-                                      const AppRowDivider(),
-                                    _ApprovalPreviewTile(
-                                      approval: entry.value,
-                                      // 미리보기에서 바로 그 문서의 공문 상세로
-                                      onTap: () => Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => ApprovalDetailScreen(
-                                            approval: entry.value,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                      ),
-                      const SizedBox(height: AppSpacing.cardGap),
+                        const SizedBox(height: AppSpacing.cardGap),
 
-                      AppListEntranceItem(
-                        index: 2,
-                        child: _buildWorkTaskSection(
-                          workTaskProvider,
-                          user.chatUserId,
+                        // 오늘 — 오늘의 일정과 휴무자 요약
+                        AppListEntranceItem(
+                          index: 3,
+                          child: _buildTodayBriefing(
+                            scheduleProvider,
+                            vacationProvider,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.cardGap),
-
-                      // 오늘 — 오늘의 일정과 휴무자 요약
-                      AppListEntranceItem(
-                        index: 3,
-                        child: _buildTodayBriefing(
-                          scheduleProvider,
-                          vacationProvider,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -632,9 +659,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final today = DateTime.now();
 
     void openList([int? taskId]) => Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => WorkTaskListScreen(openTaskId: taskId),
-      ),
+      MaterialPageRoute(builder: (_) => WorkTaskListScreen(openTaskId: taskId)),
     );
 
     return _SectionCard(
@@ -648,7 +673,8 @@ class _HomeScreenState extends State<HomeScreen> {
         actionLabel: '전체보기',
         onAction: openList,
       ),
-      child: provider.status == WorkTaskLoadStatus.error && provider.tasks.isEmpty
+      child:
+          provider.status == WorkTaskLoadStatus.error && provider.tasks.isEmpty
           ? const _EmptySectionState(
               icon: Icons.cloud_off_outlined,
               title: '업무를 불러오지 못했습니다',
@@ -663,9 +689,9 @@ class _HomeScreenState extends State<HomeScreen> {
           : Column(
               children: [
                 // 줄 사이는 1px 선으로 나눈다
-                for (final entry in inProgress.take(3).toList().asMap().entries) ...[
-                  if (entry.key > 0)
-                    const AppRowDivider(),
+                for (final entry
+                    in inProgress.take(3).toList().asMap().entries) ...[
+                  if (entry.key > 0) const AppRowDivider(),
                   WorkTaskRow(
                     task: entry.value,
                     today: today,
@@ -961,13 +987,26 @@ class _ApprovalPreviewTile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.space0_5),
-                      Text(
-                        '${approval.requesterName} · ${_formatDate(approval.createdAt)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppSemanticColors.textTertiary,
-                        ),
+                      // 기안자 사진 + '조은비 · 11월 14일'
+                      Row(
+                        children: [
+                          MemberAvatar.ref(
+                            name: approval.requesterName,
+                            id: approval.requesterId,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${approval.requesterName} · ${_formatDate(approval.createdAt)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppSemanticColors.textTertiary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1018,7 +1057,11 @@ class _EmptySectionState extends StatelessWidget {
                 color: AppSemanticColors.brandWeak,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 22, color: AppSemanticColors.brandDefault),
+              child: Icon(
+                icon,
+                size: 22,
+                color: AppSemanticColors.brandDefault,
+              ),
             ),
             const SizedBox(height: AppSpacing.space3),
             Text(

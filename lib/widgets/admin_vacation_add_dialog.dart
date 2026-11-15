@@ -11,6 +11,7 @@ import 'common/app_snackbar.dart';
 import 'seed/seed_button.dart';
 import 'common/app_choice_grid.dart';
 import 'seed/seed_text_field.dart';
+import 'seed/seed_avatar.dart';
 
 /// 관리자가 직원 휴무를 대신 등록하는 창. 등록하면 `true`로 닫힌다.
 ///
@@ -35,10 +36,8 @@ class AdminVacationAddDialog extends StatefulWidget {
   }) {
     return showAppSheet<bool>(
       context,
-      builder: (_) => AdminVacationAddDialog(
-        selectedDate: selectedDate,
-        asSheet: true,
-      ),
+      builder: (_) =>
+          AdminVacationAddDialog(selectedDate: selectedDate, asSheet: true),
     );
   }
 
@@ -51,6 +50,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
   final _reasonController = TextEditingController();
 
   DateTime? _selectedDate;
+
   /// 웹 관리자와 같은 6가지 종류에서 하나를 고른다 (유형과 기간이 여기서 함께 정해진다)
   VacationKind _selectedKind = VacationKind.regular;
   int? _selectedMemberId;
@@ -116,7 +116,9 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)), // 1년 전부터 선택 가능
+      firstDate: DateTime.now().subtract(
+        const Duration(days: 365),
+      ), // 1년 전부터 선택 가능
       lastDate: DateTime.now().add(const Duration(days: 365)), // 1년 후까지 선택 가능
       builder: (context, child) {
         return Theme(
@@ -165,9 +167,12 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
       final result = await ApiService().createVacationByAdmin(
         companyId: companyId,
         memberId: _selectedMemberId!,
-        date: '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
+        date:
+            '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
         duration: _selectedKind.serverDuration,
-        reason: _reasonController.text.isNotEmpty ? _reasonController.text : null,
+        reason: _reasonController.text.isNotEmpty
+            ? _reasonController.text
+            : null,
         type: _selectedKind.serverType,
         // 연차로 기록하지 않는 종류(일반·필수·대체)는 서버가 duration을 UNUSED로 고정한다
         useAnnualLeave: _selectedKind.useAnnualLeave,
@@ -243,12 +248,18 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
         ),
         backgroundColor: AppSemanticColors.surfaceCard,
         surfaceTintColor: AppColors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.space5, vertical: AppSpacing.space6),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space5,
+          vertical: AppSpacing.space6,
+        ),
         child: GestureDetector(
           onTap: () {}, // Dialog 내부 클릭 시 이벤트 전파 차단
           child: Container(
             width: MediaQuery.of(context).size.width * 0.9,
-            constraints: BoxConstraints(maxWidth: 480, maxHeight: MediaQuery.of(context).size.height * 0.85),
+            constraints: BoxConstraints(
+              maxWidth: 480,
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
             child: Form(
               key: _formKey,
               child: SingleChildScrollView(
@@ -266,10 +277,7 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                         ),
                         const SizedBox(width: AppSpacing.space3),
                         Flexible(
-                          child: Text(
-                            '휴무 추가',
-                            style: AppTypography.heading4,
-                          ),
+                          child: Text('휴무 추가', style: AppTypography.heading4),
                         ),
                       ],
                     ),
@@ -304,11 +312,11 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
   /// 가운데 창과 시트가 같이 쓰는 입력 칸들(직원 · 날짜 · 종류 · 사유).
   List<Widget> _buildFields() {
     OutlineInputBorder stroke(Color? color) => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.control),
-          borderSide: color == null
-              ? BorderSide.none
-              : BorderSide(color: color, width: 2),
-        );
+      borderRadius: BorderRadius.circular(AppBorderRadius.control),
+      borderSide: color == null
+          ? BorderSide.none
+          : BorderSide(color: color, width: 2),
+    );
     return [
       // 직원 선택
       _buildLabel('직원 선택'),
@@ -344,9 +352,22 @@ class _AdminVacationAddDialogState extends State<AdminVacationAddDialog> {
                 final role = _getRoleDisplayName(member['role'] ?? '');
                 return DropdownMenuItem<int>(
                   value: member['id'],
-                  child: Text(
-                    '$name - $role',
-                    overflow: TextOverflow.ellipsis,
+                  // 직원 사진 + '이름 - 역할'(2026-11-16)
+                  child: Row(
+                    children: [
+                      SeedAvatar(
+                        name: name.toString(),
+                        imageUrl: member['profileImageUrl']?.toString(),
+                        diameter: 24,
+                      ),
+                      const SizedBox(width: AppSpacing.space2),
+                      Flexible(
+                        child: Text(
+                          '$name - $role',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }).toList(),

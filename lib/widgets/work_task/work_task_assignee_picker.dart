@@ -7,9 +7,9 @@ import '../../theme/app_spacing.dart';
 import '../common/app_dialog.dart';
 import '../common/app_empty_state.dart';
 import '../common/app_skeleton.dart';
-import '../seed/seed_avatar.dart';
 import '../seed/seed_button.dart';
 import '../seed/seed_list_cell.dart';
+import '../common/member_avatar.dart';
 
 /// 업무 담당자 고르기 — 기관 사람(관리자 포함)을 여럿 고른다.
 /// 지금 명단에 없는 사람(퇴사 등)이 담당자로 남아 있어도 목록에서 사라지지 않게 맨 아래에 둔다.
@@ -127,9 +127,11 @@ class _AssigneeListState extends State<_AssigneeList> {
                   children: [
                     for (final person in _ordered(people))
                       SeedListCell(
-                        leading: SeedAvatar(
+                        leading: MemberAvatar.ref(
                           name: person.name,
-                          size: SeedAvatarSize.small,
+                          id: person.id,
+                          imageUrl: person.imageUrl,
+                          size: 32,
                         ),
                         title: person.id == widget.meId
                             ? '${person.name} (나)'

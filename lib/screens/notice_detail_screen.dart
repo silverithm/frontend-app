@@ -11,7 +11,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/common/app_card.dart';
-import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -19,6 +18,7 @@ import '../widgets/common/carev_app_bar.dart';
 import '../widgets/seed/seed_button.dart';
 import '../widgets/seed/seed_list_cell.dart';
 import '../widgets/seed/seed_text_field.dart';
+import '../widgets/common/member_avatar.dart';
 
 class NoticeDetailScreen extends StatefulWidget {
   final int noticeId;
@@ -327,21 +327,12 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: AppSpacing.space8,
-            height: AppSpacing.space8,
-            decoration: BoxDecoration(
-              color: AppSemanticColors.fillDefault,
-              borderRadius: BorderRadius.circular(AppBorderRadius.full),
-            ),
-            child: Center(
-              child: Text(
-                reader.userName.isNotEmpty ? reader.userName[0] : '?',
-                style: AppTag.labelStyle.copyWith(
-                  color: AppSemanticColors.textSecondary,
-                ),
-              ),
-            ),
+          // 읽은 사람 사진(서버가 보낸 것, 없으면 사진첩·첫 글자)
+          MemberAvatar.ref(
+            name: reader.userName,
+            id: reader.userId,
+            imageUrl: reader.profileImageUrl,
+            size: AppSpacing.space8,
           ),
           const SizedBox(width: AppSpacing.space3),
           Expanded(
@@ -412,21 +403,11 @@ class _NoticeDetailScreenState extends State<NoticeDetailScreen> {
         children: [
           Row(
             children: [
-              Container(
-                width: AppSpacing.space7,
-                height: AppSpacing.space7,
-                decoration: BoxDecoration(
-                  color: AppSemanticColors.fillDefault,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                ),
-                child: Center(
-                  child: Text(
-                    comment.authorName.isNotEmpty ? comment.authorName[0] : '?',
-                    style: AppTag.labelStyle.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                  ),
-                ),
+              MemberAvatar(
+                name: comment.authorName,
+                imageUrl: comment.authorProfileImageUrl,
+                email: comment.authorId,
+                size: AppSpacing.space7,
               ),
               const SizedBox(width: AppSpacing.space2),
               Flexible(

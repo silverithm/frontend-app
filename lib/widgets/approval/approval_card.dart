@@ -6,6 +6,7 @@ import '../../theme/app_typography.dart';
 import '../../theme/app_spacing.dart';
 import '../common/app_card.dart';
 import 'approval_status_badge.dart';
+import '../common/member_avatar.dart';
 
 class ApprovalCard extends StatelessWidget {
   final ApprovalRequest approval;
@@ -91,12 +92,13 @@ class ApprovalCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
-              Icons.person_outline,
-              size: 16,
-              color: AppSemanticColors.textTertiary,
+            // 기안자 사진(2026-11-16, 예전엔 사람 모양 아이콘)
+            MemberAvatar.ref(
+              name: approval.requesterName,
+              id: approval.requesterId,
+              size: 20,
             ),
-            const SizedBox(width: AppSpacing.space1),
+            const SizedBox(width: 6),
             // 글자를 크게 해도 한 줄을 넘치지 않게 — 이름이 먼저 줄어든다
             Flexible(
               child: Text(
@@ -151,7 +153,8 @@ class ApprovalCard extends StatelessWidget {
             ],
           ),
         ],
-        if (approval.processedAt != null && approval.processedByName != null) ...[
+        if (approval.processedAt != null &&
+            approval.processedByName != null) ...[
           const SizedBox(height: AppSpacing.space1),
           Row(
             children: [
