@@ -302,8 +302,14 @@ class _MeetingMinutesDetailScreenState
                                   Image.network(
                                     attendee['signatureUrl'].toString(),
                                     height: 28,
-                                    errorBuilder: (_, __, ___) =>
-                                        const SizedBox.shrink(),
+                                    // 서명 파일을 못 불러오면 빈칸 대신 '서명 완료' — 서버가 옛 서명 파일을
+                                    // 지우던 때(2026-11-16 멈춤) 사라진 파일이 있다
+                                    errorBuilder: (_, __, ___) => Text(
+                                      '서명 완료',
+                                      style: AppTypography.bodySmall.copyWith(
+                                        color: AppSemanticColors.textLink,
+                                      ),
+                                    ),
                                   )
                                 else
                                   Text(
