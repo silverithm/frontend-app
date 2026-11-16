@@ -72,4 +72,59 @@ void main() {
     // 기안자 이름은 서명 칸에 남는다
     expect(find.text('배정민'), findsOneWidget);
   });
+
+  testWidgets('양식을 고친 뒤 지난 문서 — 지운 항목 내용이 이전 양식 항목으로, 내부 키·빈 항목 없이', (tester) async {
+    // 2026-11-16 업무일지: 'content'(행정 업무)를 복제한 뒤 원본을 지운 양식
+    final template = ApprovalTemplate.fromJson({
+      'id': 1,
+      'name': '업무일지',
+      'templateType': 'form',
+      'isActive': true,
+      'formSchema': '{"fields":['
+          '{"id":"report-date","type":"date","label":"업무 일자","width":"half"},'
+          '{"id":"mwimrby44qj5y9343e3","type":"textarea","label":"행정 업무 사본","width":"full"},'
+          '{"id":"issues","type":"textarea","label":"어르신 특이사항"}],'
+          '"retiredFields":[{"id":"content","type":"textarea","label":"행정 업무"}]}',
+    });
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: OfficialDocumentView(
+            approval: _approval(formData: {
+              'report-date': '2026-11-14',
+              'content': '10:00 급여 서류 정리',
+              'issues': '없음',
+              'msocv159to0qjd38i7d': '',
+            }),
+            template: template,
+            companyName: '숲속재활어르신재가복지센터',
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    expect(find.text('이전 양식 항목'), findsOneWidget);
+    expect(find.text('행정 업무'), findsOneWidget);
+    expect(find.text('10:00 급여 서류 정리'), findsOneWidget);
+    expect(find.text('content'), findsNothing);
+    expect(find.textContaining('msocv159'), findsNothing);
+  });
+
+  testWidgets('지금 양식에 다 있는 문서에는 이전 양식 항목이 없다', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: OfficialDocumentView(
+            approval: _approval(formData: {'f1': ['msplrdcq2ibd551yedh'], 'stale': ''}),
+            template: _template(),
+            companyName: '숲속재활어르신재가복지센터',
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+    expect(find.text('이전 양식 항목'), findsNothing);
+    expect(find.text('stale'), findsNothing);
+  });
 }

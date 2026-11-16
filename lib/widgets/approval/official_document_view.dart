@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/approval.dart';
+import '../../utils/approval_orphan_fields.dart';
 import '../../utils/form_field_width.dart';
 import '../../theme/app_colors.dart';
 import 'approval_image_value.dart';
@@ -451,6 +452,11 @@ class OfficialDocumentView extends StatelessWidget {
         return '$start ~ $end';
       }
       if (value is bool) return value ? 'O' : 'X';
+      // 파일·사진 값 {fileUrl, fileName} — 이름만 (Map을 그대로 찍지 않는다)
+      if (value is Map) {
+        final name = value['fileName'] ?? value['name'];
+        if (name != null) return name.toString();
+      }
       // 체크박스처럼 여러 개를 고른 값 — 항목마다 라벨로 바꿔야 한다.
       // (예전에는 ID를 그대로 이어붙여 "msplrdcq…" 같은 내부 값이 문서에 나왔다)
       if (value is List) {
@@ -463,7 +469,6 @@ class OfficialDocumentView extends StatelessWidget {
     // 그릴 항목을 먼저 모은다 (라벨 · 값 · 폭 · 구분선 여부)
     final entries = <_DocFieldEntry>[];
     if (fields.isNotEmpty) {
-      final usedKeys = <String>{};
       for (final field in fields) {
         final type = field['type']?.toString();
         final id = field['id']?.toString() ?? '';
@@ -477,9 +482,7 @@ class OfficialDocumentView extends StatelessWidget {
           final start = formData['${id}_start'];
           final end = formData['${id}_end'];
           if (start != null || end != null) value = {'start': start, 'end': end};
-          usedKeys.addAll(['${id}_start', '${id}_end']);
         }
-        usedKeys.add(id);
 
         // 이미지 필드는 formData에 {fileUrl, fileName, fileSize?}가 들어있다 —
         // 텍스트로 찍으면 Map이 그대로 문자열화되므로 문서 안에 실제 이미지를 그린다.
@@ -502,9 +505,32 @@ class OfficialDocumentView extends StatelessWidget {
         entries.add(_DocFieldEntry(
             label, formatValue(field, value), fieldWidthSpan(field['width'])));
       }
-      for (final entry in formData.entries) {
-        if (!usedKeys.contains(entry.key)) {
-          entries.add(_DocFieldEntry(entry.key, formatValue(null, entry.value), 12));
+      // 지금 양식에 없는 항목에 써 둔 내용 — 양식을 고친 뒤에도 지난 문서에 쓴 것이 다 보이게(2026-11-16).
+      // 예전에는 내부 키('content')를 이름으로, 빈 항목까지 '-'로 줄줄이 붙였다.
+      final orphans = orphanFields(
+        fields: fields,
+        retired: retiredFieldsOf(template?.formSchema),
+        formData: formData,
+      );
+      if (orphans.isNotEmpty) {
+        entries.add(_DocFieldEntry('이전 양식 항목', '', 12, isSection: true));
+        for (final orphan in orphans) {
+          final value = orphan.valueIn(formData);
+          if (orphan.field?['type'] == 'image' && value is Map) {
+            entries.add(_DocFieldEntry(
+              orphan.label,
+              '',
+              12,
+              valueWidget: ApprovalImageFieldValue(
+                fileUrl: value['fileUrl']?.toString(),
+                fileName: value['fileName']?.toString(),
+                maxWidth: 200,
+                maxHeight: 200,
+              ),
+            ));
+            continue;
+          }
+          entries.add(_DocFieldEntry(orphan.label, formatValue(orphan.field, value), 12));
         }
       }
     } else {

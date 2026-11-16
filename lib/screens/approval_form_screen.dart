@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../models/approval.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/approval_orphan_fields.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/approval/document_form_fields.dart';
@@ -340,7 +341,8 @@ class _ApprovalFormScreenState extends State<ApprovalFormScreen> {
       _titleController.text = source.title;
       _formValues
         ..clear()
-        ..addAll(source.formData ?? const {});
+        // 그 뒤에 양식에서 지운 항목의 값은 가져오지 않는다(웹 이전 기안 불러오기와 같다)
+        ..addAll(pickLiveFormData(template.formFields, source.formData ?? const {}));
       _approvalLine
         ..clear()
         ..addAll(template.defaultApprovalLineCandidates);
