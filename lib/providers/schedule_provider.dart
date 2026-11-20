@@ -26,6 +26,17 @@ class ScheduleProvider with ChangeNotifier {
   List<Schedule> get schedules => _schedules;
   Map<String, List<Schedule>> get schedulesByDate => _schedulesByDate;
   bool get isLoading => _isLoading;
+
+  /// 마지막으로 다 받은 달 — 달을 넘겨 받는 중인지 가르는 데 쓴다
+  DateTime? _loadedMonth;
+
+  /// [month]를 아직 받는 중인가 — 같은 달을 다시 받을 때(저장 뒤 새로고침)는 false라
+  /// 달력 빈 칸에 뼈대가 깜빡이지 않는다.
+  bool isLoadingMonth(DateTime month) =>
+      _isLoading &&
+      (_loadedMonth == null ||
+          _loadedMonth!.year != month.year ||
+          _loadedMonth!.month != month.month);
   String? get error => _error;
 
   /// [date]의 달력을 펴고 [scheduleId] 일정을 강조해 달라고 요청한다.
@@ -99,6 +110,7 @@ class ScheduleProvider with ChangeNotifier {
         _schedulesByDate = {};
       }
 
+      _loadedMonth = month;
       _isLoading = false;
       notifyListeners();
     } catch (e) {

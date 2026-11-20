@@ -125,6 +125,10 @@ class NotificationItem {
   /// 대상의 종류 — 일정 알림은 type이 `general`이라 이 값(schedule…)으로 갈 곳을 안다
   final String? relatedEntityType;
 
+  /// 알림을 일으킨 사람 — 채팅식 번호('12' 직원, 'admin_3' 시설장). 서버 V1.111.0(2026-11-19)부터
+  /// 내려온다. 그 전에 생긴 알림은 비어 있어 [actorName]으로 글에서 이름을 읽는다.
+  final String? actorId;
+
   final DateTime createdAt;
   bool isUnread;
 
@@ -136,6 +140,7 @@ class NotificationItem {
     required this.createdAt,
     this.relatedEntityId,
     this.relatedEntityType,
+    this.actorId,
     this.isUnread = true,
   });
 
@@ -147,9 +152,38 @@ class NotificationItem {
       type: json['type'] ?? 'system',
       relatedEntityId: int.tryParse(json['relatedEntityId']?.toString() ?? ''),
       relatedEntityType: json['relatedEntityType']?.toString(),
+      actorId: () {
+        final raw = json['actorId']?.toString().trim() ?? '';
+        return raw.isEmpty ? null : raw;
+      }(),
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       isUnread: !(json['isRead'] ?? false),
     );
+  }
+
+  // 이름(직책) — 웹 notificationActor.ts와 같은 규칙. 한글·영문으로 시작, 20자 안쪽.
+  static const String _namePattern =
+      r'([가-힣A-Za-z][가-힣A-Za-z ·]{0,18}?)\s*(?:\([^)]{1,20}\))?';
+  static final RegExp _chatSender = RegExp('^\\s*$_namePattern\\s*\$');
+  static final RegExp _sentenceSubject = RegExp(
+    '^\\s*$_namePattern\\s*님(?:이|의|께서)\\s',
+  );
+
+  /// 알림을 일으킨 사람 이름 — 사진 찾기용. 채팅은 제목이 보낸 사람, 휴무 신청·결재·업무·회의록은
+  /// 글이 "한희정(조리원)님이 …"로 시작한다. 가입 요청은 아직 직원이 아니라 찾지 않는다.
+  String? get actorName {
+    final kind = type.toLowerCase();
+    RegExpMatch? match;
+    if (kind == 'chat') {
+      match = _chatSender.firstMatch(title);
+    } else if (kind == 'vacation_submitted' ||
+        kind == 'approval' ||
+        kind == 'work_task' ||
+        kind == 'meeting_minutes') {
+      match = _sentenceSubject.firstMatch(message);
+    }
+    final name = match?.group(1)?.trim();
+    return (name == null || name.isEmpty) ? null : name;
   }
 
   /// 알림 종류마다 아이콘·색 — 예전에는 휴무 승인·반려 말고는 모두 회색 종이었다

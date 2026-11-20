@@ -164,24 +164,35 @@ void main() {
 
     setUp(AppNoticeHost.resetClosed);
 
-    testWidgets('안내마다 한 장씩 뜨고, X로 하나씩 닫히고, 8초 뒤 저절로 들어간다', (tester) async {
+    testWidgets('겹쳐 쌓여 맨 앞 한 장만 보이고, 누르면 펼치고, X는 한 장씩, 8초 뒤 들어간다', (tester) async {
       await tester.pumpWidget(host());
       await settle(tester);
+      // 접힌 더미 — 맨 앞(첫 안내)만 글이 보이고 뒤 카드는 종이만 비친다
       expect(find.text(a.title), findsOneWidget);
+      expect(find.text(b.title), findsNothing);
+      expect(find.text('+1'), findsOneWidget);
+
+      // 누르면 펼쳐 두 장이 위아래로, 첫 안내가 위
+      await tester.tap(find.text(a.title));
+      await settle(tester);
       expect(find.text(b.title), findsOneWidget);
-      // 첫 안내가 맨 위
       expect(
         tester.getTopLeft(find.text(a.title)).dy,
         lessThan(tester.getTopLeft(find.text(b.title)).dy),
       );
+      // 펼쳐 둔 동안은 저절로 들어가지 않는다
+      await tester.pump(const Duration(seconds: 9));
+      await settle(tester);
+      expect(find.text(a.title), findsOneWidget);
 
-      // 맨 위 카드의 X
+      // 첫 카드의 X — 그 카드만 닫히고 남은 한 장은 '+1' 없이
       await tester.tap(find.byTooltip('안내 닫기').first);
       await settle(tester);
       expect(find.text(a.title), findsNothing);
       expect(find.text(b.title), findsOneWidget);
+      expect(find.text('+1'), findsNothing);
 
-      // 손대지 않으면 8초 뒤 남은 카드도 들어간다
+      // 접힌 뒤 손대지 않으면 8초 뒤 남은 카드도 들어간다
       await tester.pump(const Duration(seconds: 9));
       await settle(tester);
       expect(find.text(b.title), findsNothing);
@@ -197,6 +208,21 @@ void main() {
       // 하단 탭에서 가려지면 걷는다
       await tester.pumpWidget(host(tabVisible: false));
       await settle(tester);
+      expect(find.text(b.title), findsNothing);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('옆으로 밀면 더미가 통째로 닫히고 다시 띄우지 않는다', (tester) async {
+      await tester.pumpWidget(host());
+      await settle(tester);
+      await tester.drag(find.text(a.title), const Offset(500, 0));
+      await settle(tester);
+      expect(find.text(a.title), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await settle(tester);
+      await tester.pumpWidget(host());
+      await settle(tester);
+      expect(find.text(a.title), findsNothing);
       expect(find.text(b.title), findsNothing);
       await tester.pump(const Duration(seconds: 1));
     });

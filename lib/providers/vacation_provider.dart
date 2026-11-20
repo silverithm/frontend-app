@@ -223,7 +223,22 @@ class VacationProvider with ChangeNotifier {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
+  /// 달력 칸 자료를 받는 중인 달 / 마지막으로 다 받은 달 — [isCalendarLoading]용
+  DateTime? _calendarLoadingMonth;
+  DateTime? _calendarLoadedMonth;
+
+  static bool _sameMonth(DateTime? a, DateTime b) =>
+      a != null && a.year == b.year && a.month == b.month;
+
+  /// [month] 달력 칸 자료를 아직 받는 중인가(2026-11-20) — 빈 칸에 칩 뼈대를 그릴 때.
+  /// 같은 달을 다시 받을 때(신청·취소 뒤 새로고침)는 false라 뼈대가 깜빡이지 않는다.
+  /// 다른 목록(내 신청 등)을 받는 [isLoading]과 섞이지 않게 따로 센다.
+  bool isCalendarLoading(DateTime month) =>
+      _sameMonth(_calendarLoadingMonth, month) &&
+      !_sameMonth(_calendarLoadedMonth, month);
+
   Future<void> loadCalendarData(DateTime month, {String? companyId}) async {
+    _calendarLoadingMonth = month;
     try {
       setLoading(true);
       clearError();
@@ -275,6 +290,10 @@ class VacationProvider with ChangeNotifier {
       // 역할 필터 목록도 갱신 (관리자가 만든 역할 반영)
       await loadAvailableRoles(companyId: companyId);
 
+      // 칸 자료는 다 받았다 — 마감일·행사를 더 받는 동안 뼈대를 걷는다
+      _calendarLoadedMonth = month;
+      notifyListeners();
+
       // 마감일 설정(다음 달만 받기 포함)은 세션 중 1회만, 중요 행사는 달이 바뀔 때마다 로드
       await loadPlanningSettings(companyId: companyId);
       await loadEvents(month, companyId: companyId);
@@ -289,6 +308,7 @@ class VacationProvider with ChangeNotifier {
 
       notifyListeners();
     } finally {
+      if (_sameMonth(_calendarLoadingMonth, month)) _calendarLoadingMonth = null;
       setLoading(false);
     }
   }

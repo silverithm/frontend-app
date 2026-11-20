@@ -7,6 +7,7 @@ import '../../theme/app_lines.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
 import '../../utils/app_haptics.dart';
+import '../common/app_skeleton.dart';
 
 /// 꽉 찬 달력 — 크로박스 홈 달력(2026-11 현재 코드)을 옮긴 것.
 ///
@@ -105,7 +106,12 @@ class MonthChipGrid extends StatelessWidget {
     this.dimFor,
     this.holidayFor,
     this.footerFor,
+    this.loading = false,
   });
+
+  /// 이 달 자료를 받는 중 — 빈 칸에 칩 모양 뼈대를 그린다(2026-11-20).
+  /// 예전엔 달을 넘기면 빈 달력이 잠깐 있다가 칩이 한꺼번에 툭 떴다.
+  final bool loading;
 
   static bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
@@ -147,7 +153,7 @@ class MonthChipGrid extends StatelessWidget {
       ),
     );
 
-    return GestureDetector(
+    final grid = GestureDetector(
       onHorizontalDragEnd: (details) {
         final v = details.primaryVelocity ?? 0;
         if (v < -250) {
@@ -247,6 +253,8 @@ class MonthChipGrid extends StatelessWidget {
         ),
       ),
     );
+    // 뼈대의 빛이 칸마다 따로 돌지 않고 달력 전체를 한 줄로 지나가게 한 번만 감싼다
+    return loading ? AppSkeleton(child: grid) : grid;
   }
 
   Widget _cell(
@@ -337,6 +345,23 @@ class MonthChipGrid extends StatelessWidget {
             ),
           );
         }
+      }
+    }
+
+    if (loading && inMonth && chips.isEmpty) {
+      // 날마다 0~2개, 길이도 조금씩 — 똑같은 무늬가 줄지어 서면 뼈대 티가 너무 난다
+      final count = math.min((date.day * 7 + date.month) % 3, lines);
+      for (var i = 0; i < count; i++) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.only(top: _CellMetrics.gap),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: i == 0 ? 0.92 : 0.64,
+              child: AppSkeletonBox(height: m.chip, radius: AppBorderRadius.base),
+            ),
+          ),
+        );
       }
     }
 

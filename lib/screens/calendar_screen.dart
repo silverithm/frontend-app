@@ -743,6 +743,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                         sheetSplit: _kSheetSplit,
                         onTapDay: _onScheduleDayTap,
                         onSwipeMonth: _moveScheduleMonth,
+                        loading: provider.isLoadingMonth(_scheduleCurrentDate),
                         holidayFor: (date) =>
                             KoreanHolidays.getHolidayName(date) != null,
                         // 필터를 걸었으면 걸린 일정만 칸에 적는다

@@ -72,6 +72,7 @@ class VacationCalendarWidget extends StatelessWidget {
             sheetSplit: sheetSplit,
             onTapDay: onDayTap,
             onSwipeMonth: onMoveMonth,
+            loading: vacationProvider.isCalendarLoading(currentDate),
             chipsFor: (date) => [
               for (final v in vacationProvider.getVacationsForDate(date))
                 vacationChip(v),
