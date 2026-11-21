@@ -231,7 +231,10 @@ class NotificationItem {
     final now = DateTime.now();
     final difference = now.difference(createdAt);
 
-    if (difference.inDays > 0) {
+    if (difference.inDays >= 7) {
+      // 일주일이 넘으면 '9일 전'처럼 다시 세어야 하는 표기 대신 날짜로 — 채팅 목록·공지 카드와 같은 기준(7일)
+      return '${createdAt.month}/${createdAt.day}';
+    } else if (difference.inDays > 0) {
       return '${difference.inDays}일 전';
     } else if (difference.inHours > 0) {
       return '${difference.inHours}시간 전';

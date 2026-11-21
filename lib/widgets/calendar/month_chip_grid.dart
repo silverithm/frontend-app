@@ -453,16 +453,27 @@ class _Chip extends StatelessWidget {
       softWrap: false,
       overflow: extra == null ? TextOverflow.ellipsis : TextOverflow.visible,
       style: AppTypography.calendarCell.copyWith(
-        color: AppSemanticColors.textPrimary,
+        // 지난·대기 칩은 칩 전체를 0.45로 흐리던 것을 바탕만 옅게 하고 글자는 보조색으로 —
+        // 흐린 10pt 글자는 흰 바탕에서 2.5:1쯤이라 '추석 명...'조차 읽기 어려웠다.
+        color: data.faded
+            ? AppSemanticColors.textSecondary
+            : AppSemanticColors.textPrimary,
         letterSpacing: -0.2,
       ),
     );
-    Widget chip = Container(
+    final Widget? trailing = data.trailing == null
+        ? null
+        : (data.faded
+            ? Opacity(opacity: 0.55, child: data.trailing!)
+            : data.trailing!);
+    final Widget chip = Container(
       height: height,
       margin: const EdgeInsets.only(top: _CellMetrics.gap),
       padding: const EdgeInsets.only(left: 3, right: 1),
       decoration: BoxDecoration(
-        color: data.color,
+        color: data.faded
+            ? data.color.withValues(alpha: data.color.a * 0.45)
+            : data.color,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
@@ -489,12 +500,11 @@ class _Chip extends StatelessWidget {
                 ),
               ),
             )
-          else if (data.trailing != null)
-            data.trailing!,
+          else if (trailing != null)
+            trailing,
         ],
       ),
     );
-    if (data.faded) chip = Opacity(opacity: 0.45, child: chip);
     return chip;
   }
 }

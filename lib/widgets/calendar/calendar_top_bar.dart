@@ -115,7 +115,8 @@ class CalendarOneLineHeader extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(
         leading != null ? 0 : AppSpacing.space4,
         AppSpacing.space1,
-        AppSpacing.space1,
+        // 오른쪽 끝 '오늘' 알약이 화면 끝에 4px로 붙어 잘린 것처럼 보였다 — 왼쪽(16)과 짝이 맞게 12
+        AppSpacing.space3,
         AppSpacing.space2,
       ),
       child: ConstrainedBox(

@@ -665,22 +665,36 @@ class _AdminApprovalManagementScreenState
             ),
           ),
           const SizedBox(height: AppSpacing.space2),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                if (myTurnCount > 0) ...[
-                  _buildStatusFilterChip('내 차례 ($myTurnCount)', 'my_turn'),
+          // 칩이 카드 안쪽 끝에서 칼로 자른 듯 끊기면('반려됨'→'반려') 잘못 그려진 것처럼 보인다.
+          // 오른쪽 끝을 옅게 사라지게 해 '옆으로 더 있다'로 읽히게 하고, 끝까지 밀면 마지막 칩이
+          // 옅어지는 자리를 벗어나도록 끝에 여백을 둔다.
+          ShaderMask(
+            blendMode: BlendMode.dstIn,
+            shaderCallback: (rect) => const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              // 가림막(마스크)의 알파 값만 쓰인다 — 색 자체는 화면에 그려지지 않는다
+              colors: [Color(0xFF000000), Color(0xFF000000), Color(0x00000000)],
+              stops: [0, 0.86, 1],
+            ).createShader(rect),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  if (myTurnCount > 0) ...[
+                    _buildStatusFilterChip('내 차례 ($myTurnCount)', 'my_turn'),
+                    const SizedBox(width: AppSpacing.space2),
+                  ],
+                  _buildStatusFilterChip('전체', 'all'),
                   const SizedBox(width: AppSpacing.space2),
+                  _buildStatusFilterChip('진행중', 'pending'),
+                  const SizedBox(width: AppSpacing.space2),
+                  _buildStatusFilterChip('승인됨', 'approved'),
+                  const SizedBox(width: AppSpacing.space2),
+                  _buildStatusFilterChip('반려됨', 'rejected'),
+                  const SizedBox(width: AppSpacing.space8),
                 ],
-                _buildStatusFilterChip('전체', 'all'),
-                const SizedBox(width: AppSpacing.space2),
-                _buildStatusFilterChip('진행중', 'pending'),
-                const SizedBox(width: AppSpacing.space2),
-                _buildStatusFilterChip('승인됨', 'approved'),
-                const SizedBox(width: AppSpacing.space2),
-                _buildStatusFilterChip('반려됨', 'rejected'),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.space2_5),
