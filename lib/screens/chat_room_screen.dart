@@ -4272,19 +4272,46 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
     final hasMeta = showFailed || showSending || showUnread || showTime || showEdited;
 
     Widget metaColumn({required bool alignEnd}) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          // 안 읽은 수는 역할(직원·관리자)과 무관하게 같은 틸 — 같은 정보는 한 색이다
-          if (showUnread)
-            Text(
+      // 안 읽은 수는 역할(직원·관리자)과 무관하게 같은 틸 — 같은 정보는 한 색이다
+      final unreadLabel = showUnread
+          ? Text(
               '$unreadCount',
               style: AppTypography.labelStrong.copyWith(
                 color: AppSemanticColors.interactivePrimaryDefault,
                 height: 1.2,
               ),
-            ),
+            )
+          : null;
+      // '수정됨'은 시각 **위 줄**, 안 읽은 수 옆에 둔다. 시각 옆에 '수정됨 · 오후 7:24'로 붙였더니
+      // 시각 열이 그만큼 넓어지고, 말풍선은 같은 줄의 남는 폭만 받으므로 그대로 좁아졌다.
+      // 폰 글자를 키운 안드로이드에서는 말풍선이 3분의 1 폭이 돼 글이 낱말 중간에서
+      // 끊기며 세로로 길게 늘어졌다(버그제보방 11/24). 위 줄로 올리면 열 폭은 시각 폭 그대로다.
+      // 안 읽은 수와 따로 한 줄씩 쌓으면 세 줄이 돼 한 줄짜리 말풍선보다 높아지고 그 위
+      // 간격만 벌어졌다 — 그래서 한 줄에 나란히 두고, 숫자가 말풍선 쪽에 오게 한다.
+      final editedLabel = showEdited
+          ? Text(
+              '수정됨',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+                height: 1.2,
+              ),
+            )
+          : null;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          if (unreadLabel != null && editedLabel != null)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: alignEnd
+                  ? [editedLabel, const SizedBox(width: AppSpacing.space1), unreadLabel]
+                  : [unreadLabel, const SizedBox(width: AppSpacing.space1), editedLabel],
+            )
+          else if (unreadLabel != null || editedLabel != null)
+            (unreadLabel ?? editedLabel)!,
           // 실패는 아이콘만으로는 부족하다 — 다시 타이핑하지 않고 그 자리에서 보낼 수 있어야 한다
           if (showFailed)
             GestureDetector(
@@ -4299,18 +4326,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                     color: AppSemanticColors.statusErrorText,
                   ),
                 ),
-              ),
-            ),
-          // '수정됨'은 시각 **위 한 줄**에 쌓는다. 시각 옆에 '수정됨 · 오후 7:24'로 붙였더니
-          // 시각 열이 그만큼 넓어지고, 말풍선은 같은 줄의 남는 폭만 받으므로 그대로 좁아졌다.
-          // 폰 글자를 키운 안드로이드에서는 말풍선이 3분의 1 폭이 돼 글이 낱말 중간에서
-          // 끊기며 세로로 길게 늘어졌다(버그제보방 11/24). 위로 쌓으면 열 폭은 시각 폭 그대로다.
-          if (showEdited)
-            Text(
-              '수정됨',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppSemanticColors.textTertiary,
-                height: 1.2,
               ),
             ),
           if (showSending || showTime)
