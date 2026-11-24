@@ -37,6 +37,7 @@ import '../utils/chat_message_grouping.dart';
 import '../utils/chat_message_pagination.dart';
 import '../utils/korean_keep_all.dart';
 import 'chat_room_info_screen.dart';
+import 'chat_files_screen.dart';
 import 'document_viewer_screen.dart';
 import 'hwp_editor_screen.dart';
 import '../widgets/common/app_dialog.dart';
@@ -2638,100 +2639,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
 
   // ===================== 파일함 =====================
 
+  /// 예전에는 70% 높이 시트에 방의 사진·파일을 통째로 받아 한 줄씩 쭉 늘어놓았다(큰 방은 5천 건).
+  /// 이제 전체 화면에서 검색·종류·달로 찾고, 끝까지 내리면 다음 쪽을 받는다.
   Future<void> _showFileDrawer() async {
-    final chatProvider = context.read<ChatProvider>();
-    await chatProvider.loadSharedMedia(widget.room.id);
-
-    if (!mounted) return;
-
-    AppBottomSheet.show(
-      context,
-      title: '주고받은 파일',
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: Consumer<ChatProvider>(
-        builder: (context, provider, child) {
-          final files = provider.sharedMedia;
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.space4),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '${files.length}건',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppSemanticColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: files.isEmpty
-                    ? Center(
-                        child: Text(
-                          '아직 주고받은 파일이 없습니다',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppSemanticColors.textTertiary,
-                          ),
-                        ),
-                      )
-                    // 줄 사이 선 없이 — 시트 좌우 8 + 줄 좌우 12 = 글자가 가장자리에서 20
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.space2,
-                          0,
-                          AppSpacing.space2,
-                          AppSpacing.space4,
-                        ),
-                        itemCount: files.length,
-                        itemBuilder: (context, index) {
-                          final file = files[index];
-                          final isImage = file.type == MessageType.image;
-                          final thumbUrl = resolveChatImageUrl(file);
-                          final showThumb = isImage && thumbUrl != null;
-
-                          return SeedListCell(
-                            leading: showThumb
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(
-                                      AppBorderRadius.inner,
-                                    ),
-                                    child: ChatPhoto(
-                                      imageUrl: thumbUrl,
-                                      width: 44,
-                                      height: 44,
-                                      fit: BoxFit.cover,
-                                      // 44dp 썸네일에 원본 해상도를 그대로 디코드하지 않도록 제한
-                                      memCacheWidth: 88,
-                                      memCacheHeight: 88,
-                                      brokenBuilder: (_) =>
-                                          const Icon(Icons.image_outlined),
-                                    ),
-                                  )
-                                : null,
-                            // 사진이 아니면 B안 줄 아이콘(옅은 틸 둥근 바탕 40).
-                            // 파일함에서도 동영상은 한눈에 알아보게 한다
-                            leadingIcon: showThumb
-                                ? null
-                                : file.isVideoMessage
-                                    ? Icons.videocam_outlined
-                                    : Icons.insert_drive_file_outlined,
-                            title: file.fileName ?? '파일',
-                            description:
-                                '${file.senderName} · ${formatChatDateTime(file.createdAt)}',
-                            showChevron: false,
-                            onTap: () {
-                              Navigator.pop(context);
-                              _openAttachment(file);
-                            },
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChatFilesScreen(roomId: widget.room.id, onOpen: _openAttachment),
       ),
     );
   }

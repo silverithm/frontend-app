@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -11,10 +10,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../utils/admin_utils.dart';
-import '../utils/chat_image_url.dart';
-import '../widgets/common/app_card.dart';
 import '../widgets/common/app_dialog.dart';
-import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_tag.dart';
@@ -26,6 +22,8 @@ import '../widgets/seed/seed_list_cell.dart';
 import '../utils/constants.dart';
 import '../utils/document_open.dart';
 import '../utils/file_download_open.dart';
+import '../widgets/chat/chat_files_browser.dart';
+import 'chat_files_screen.dart';
 import '../widgets/chat/chat_image_viewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -55,10 +53,9 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadParticipants();
-      _loadSharedMedia();
-    });
+    // 미디어는 미디어 탭(ChatFilesBrowser)이 열릴 때 한 쪽씩 받는다 — 예전처럼 방의 첨부를
+    // 화면을 열자마자 통째로 받지 않는다.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadParticipants());
   }
 
   @override
@@ -79,11 +76,6 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
       _participantsLoading = false;
       _participantsFailed = !ok;
     });
-  }
-
-  Future<void> _loadSharedMedia() async {
-    final chatProvider = context.read<ChatProvider>();
-    await chatProvider.loadSharedMedia(widget.room.id);
   }
 
   Future<void> _leaveRoom() async {
@@ -540,147 +532,18 @@ class _ChatRoomInfoScreenState extends State<ChatRoomInfoScreen>
     );
   }
 
+  /// 미디어 탭 — 최근 사진과 종류별 개수만 보이고, 누르면 '주고받은 파일' 전체 화면(검색·달로 이동).
+  /// 예전에는 사진을 스크롤을 끈 3칸 바둑판에 통째로 펼쳐, 사진이 수천 장인 방에서 한꺼번에 그렸다.
   Widget _buildMediaTab(bool isAdmin) {
-    return Consumer<ChatProvider>(
-      builder: (context, chatProvider, child) {
-        final media = chatProvider.sharedMedia;
-
-        if (media.isEmpty) {
-          return const AppEmptyState(
-            icon: Icons.photo_library_outlined,
-            title: '공유된 미디어가 없습니다',
-          );
-        }
-
-        // 이미지와 파일 분리
-        final images = media.where((m) => m.type == MessageType.image).toList();
-        final files = media.where((m) => m.type == MessageType.file).toList();
-
-        // 사진·파일을 흰 카드 한 장씩에 — 카드 안 맨 위에 제목 글자만(머리띠·선 없음)
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screenGutter,
-            AppSpacing.space1,
-            AppSpacing.screenGutter,
-            AppSpacing.space3,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 이미지
-              if (images.isNotEmpty) ...[
-                AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '사진 (${images.length})',
-                        style: AppTypography.heading6.copyWith(
-                          color: AppSemanticColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.space3),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: AppSpacing.space2,
-                          crossAxisSpacing: AppSpacing.space2,
-                        ),
-                        itemCount: images.length,
-                        itemBuilder: (context, index) {
-                          final image = images[index];
-                          // 썸네일을 누르면 말풍선과 같은 전체화면 원본 보기
-                          return Semantics(
-                            button: true,
-                            label: '사진 확대 보기',
-                            child: GestureDetector(
-                              onTap: () => _openMedia(image),
-                              child: ClipRRect(
-                                borderRadius:
-                                    BorderRadius.circular(AppBorderRadius.inner),
-                                // 그리드는 목록 표시이므로 서버 썸네일이 있으면 그걸 쓰고
-                                // (chat_room_screen.dart와 같은 단일 지점), 탭했을 때
-                                // 열리는 전체화면(_openMedia)은 계속 원본 fileUrl을 쓴다.
-                                child: CachedNetworkImage(
-                                  imageUrl: resolveChatImageUrl(image) ?? '',
-                                  fit: BoxFit.cover,
-                                  // 3열 그리드 썸네일 크기에 맞춰 원본 디코드를 제한
-                                  memCacheWidth: 300,
-                                  errorWidget: (_, __, ___) => Container(
-                                    color: AppSemanticColors.fillDefault,
-                                    child: Icon(
-                                      Icons.broken_image,
-                                      color: AppSemanticColors.textTertiary,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.cardGap),
-              ],
-
-              // 파일 — 카드 안쪽 8 + 줄 좌우 12 = 제목·줄 글자 모두 카드 가장자리에서 20
-              if (files.isNotEmpty)
-                AppCard(
-                  padding: const EdgeInsets.all(AppSpacing.space2),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.space3,
-                          AppSpacing.space3,
-                          AppSpacing.space3,
-                          AppSpacing.space1,
-                        ),
-                        child: Text(
-                          '파일 (${files.length})',
-                          style: AppTypography.heading6.copyWith(
-                            color: AppSemanticColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: files.length,
-                        itemBuilder: (context, index) {
-                          final file = files[index];
-                          return SeedListCell(
-                            leadingIcon: file.isVideoMessage
-                                ? Icons.videocam_outlined
-                                : Icons.insert_drive_file,
-                            title: file.fileName ?? '파일',
-                            description: _formatFileSize(file.fileSize),
-                            showChevron: false,
-                            onTap: () => _openMedia(file),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
+    return ChatFilesPreview(
+      roomId: widget.room.id,
+      onOpen: _openMedia,
+      onShowAll: (kind) => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ChatFilesScreen(roomId: widget.room.id, onOpen: _openMedia, initialKind: kind),
+        ),
+      ),
     );
   }
 
-  String _formatFileSize(int? bytes) {
-    if (bytes == null) return '';
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
 }

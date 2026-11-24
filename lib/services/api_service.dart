@@ -3320,6 +3320,35 @@ class ApiService {
     });
   }
 
+  /// '주고받은 파일' 한 쪽 — 종류·검색어·달로 거른다(서버 /files?size=…).
+  /// 옛 서버는 이 매개변수를 몰라 통째로 준다 — 받는 쪽이 'hasMore' 유무로 가린다.
+  Future<Map<String, dynamic>> getChatFilesPage({
+    required int roomId,
+    required String kind,
+    String? query,
+    int? beforeId,
+    String? month,
+    int size = 60,
+  }) async {
+    return await _makeAuthenticatedRequest(() async {
+      final queryParams = <String, String>{
+        'kind': kind,
+        'size': size.toString(),
+        if (query != null && query.isNotEmpty) 'q': query,
+        if (beforeId != null) 'beforeId': beforeId.toString(),
+        if (month != null) 'month': month,
+      };
+      final uri = Uri.parse(
+        '$_baseUrl/v1/chat/rooms/$roomId/files',
+      ).replace(queryParameters: queryParams);
+
+      final headers = await _getHeaders();
+      headers['ngrok-skip-browser-warning'] = 'true';
+
+      return await http.get(uri, headers: headers);
+    });
+  }
+
   // 대화 내용 검색
   Future<Map<String, dynamic>> searchChatMessages({
     required int roomId,
