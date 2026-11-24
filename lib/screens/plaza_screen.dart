@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -29,7 +30,9 @@ import '../widgets/common/app_dialog.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_fab.dart';
 import '../widgets/common/app_list_entrance.dart';
+import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_search_bar.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_segmented_tabs.dart';
 import '../widgets/common/app_snackbar.dart';
@@ -332,6 +335,30 @@ class _PlazaFilterChips extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 다음 쪽이 더 있는지 — Spring Page의 last/totalPages를 우선 보고, 없으면 쪽이 가득 찼는지로 본다.
+bool _pageHasMore(
+  Map<String, dynamic> response,
+  int nextPage,
+  int count,
+  int size,
+) {
+  if (response['last'] == true) return false;
+  final totalPages = response['totalPages'];
+  if (totalPages is int) return nextPage < totalPages;
+  return count >= size;
+}
+
+/// 목록 맨 아래 "더 불러오는 중" 표시
+class _PlazaLoadMoreIndicator extends StatelessWidget {
+  const _PlazaLoadMoreIndicator();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(vertical: AppSpacing.space4),
+    child: Center(child: AppLoading(size: 24)),
+  );
 }
 
 /// 카드 목록 여백 — 좌우 16, 카드 사이 10. FAB가 있는 탭은 마지막 카드가 가려지지 않게 아래를 더 띄운다.
@@ -788,43 +815,127 @@ class _BoardTabState extends State<_BoardTab> {
   String _board = '';
   bool _fabCollapsed = false;
 
+  static const int _pageSize = 30;
+
   List<Map<String, dynamic>> _posts = [];
   bool _isLoading = true;
   bool _hasError = false;
 
+  // 검색(서버 search) + 무한스크롤
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  Timer? _searchDebounce;
+  String _keyword = '';
+  int _page = 0;
+  bool _hasMore = false;
+  bool _loadingMore = false;
+  int _requestId = 0; // 늦게 온 옛 응답이 새 결과를 덮지 않게
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _load();
   }
 
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_hasMore || _loadingMore || _isLoading) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      final keyword = value.trim();
+      if (keyword == _keyword) return;
+      _keyword = keyword;
+      _load();
+    });
+  }
+
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    if (_keyword.isEmpty) return;
+    _keyword = '';
+    _load();
+  }
+
+  List<Map<String, dynamic>> _asPosts(Map<String, dynamic> response) {
+    final content = (response['content'] as List?) ?? [];
+    return content
+        .whereType<Map>()
+        .map((p) => Map<String, dynamic>.from(p))
+        .toList();
+  }
+
   Future<void> _load() async {
+    final requestId = ++_requestId;
     setState(() {
       _isLoading = true;
       _hasError = false;
+      _loadingMore = false;
     });
     try {
       final response = await ApiService().getPlazaPosts(
         board: _board.isEmpty ? null : _board,
-        size: 30,
+        search: _keyword,
+        size: _pageSize,
       );
-      final content = (response['content'] as List?) ?? [];
-      if (mounted) {
-        setState(() {
-          _posts = content
-              .whereType<Map>()
-              .map((p) => Map<String, dynamic>.from(p))
-              .toList();
-          _isLoading = false;
-        });
-      }
+      if (!mounted || requestId != _requestId) return;
+      final posts = _asPosts(response);
+      setState(() {
+        _posts = posts;
+        _page = 1;
+        _hasMore = _pageHasMore(response, 1, posts.length, _pageSize);
+        _isLoading = false;
+      });
     } catch (e) {
       debugPrint('게시글 로드 실패: $e');
-      if (mounted) {
+      if (mounted && requestId == _requestId) {
         setState(() {
           _isLoading = false;
           _hasError = true;
         });
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    final requestId = _requestId;
+    setState(() => _loadingMore = true);
+    try {
+      final response = await ApiService().getPlazaPosts(
+        board: _board.isEmpty ? null : _board,
+        search: _keyword,
+        page: _page,
+        size: _pageSize,
+      );
+      if (!mounted || requestId != _requestId) return;
+      final posts = _asPosts(response);
+      // 새 글이 올라와 쪽이 밀려도 같은 글이 두 번 나오지 않게
+      final known = _posts.map((p) => p['id']).toSet();
+      setState(() {
+        _posts = [..._posts, ...posts.where((p) => !known.contains(p['id']))];
+        _page += 1;
+        _hasMore = _pageHasMore(response, _page, posts.length, _pageSize);
+        _loadingMore = false;
+      });
+    } catch (e) {
+      debugPrint('게시글 더 불러오기 실패: $e');
+      if (mounted && requestId == _requestId) {
+        setState(() => _loadingMore = false);
       }
     }
   }
@@ -850,6 +961,13 @@ class _BoardTabState extends State<_BoardTab> {
       ),
       body: Column(
         children: [
+          AppSearchBar(
+            controller: _searchController,
+            label: '게시글 검색',
+            placeholder: '제목·내용으로 찾기',
+            onChanged: _onSearchChanged,
+            onClear: _clearSearch,
+          ),
           _PlazaFilterChips(
             options: _boards,
             selectedKey: _board,
@@ -869,12 +987,19 @@ class _BoardTabState extends State<_BoardTab> {
                   : (_hasError && _posts.isEmpty)
                   ? _PlazaErrorState(onRetry: _load)
                   : _posts.isEmpty
-                  ? const AppEmptyState(
-                      icon: Icons.forum_outlined,
-                      title: '아직 게시글이 없어요',
-                      description: '+ 버튼으로 첫 글을 남겨보세요',
-                      topSpacing: AppSpacing.space10,
-                    )
+                  ? (_keyword.isNotEmpty
+                        ? const AppEmptyState(
+                            icon: Icons.search_off_rounded,
+                            title: '찾는 글이 없어요',
+                            description: '다른 말로 찾아보세요',
+                            topSpacing: AppSpacing.space10,
+                          )
+                        : const AppEmptyState(
+                            icon: Icons.forum_outlined,
+                            title: '아직 게시글이 없어요',
+                            description: '+ 버튼으로 첫 글을 남겨보세요',
+                            topSpacing: AppSpacing.space10,
+                          ))
                   : NotificationListener<UserScrollNotification>(
                       onNotification: (notification) {
                         final collapsed = _fabCollapsedFor(notification);
@@ -886,11 +1011,17 @@ class _BoardTabState extends State<_BoardTab> {
                       child: AppRefreshIndicator(
                         onRefresh: _load,
                         child: ListView.separated(
+                          controller: _scrollController,
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
                           padding: _plazaListPadding(hasFab: true),
-                          itemCount: _posts.length,
+                          itemCount: _posts.length + (_hasMore ? 1 : 0),
                           separatorBuilder: (_, __) =>
                               const SizedBox(height: AppSpacing.cardGap),
                           itemBuilder: (context, index) {
+                            if (index == _posts.length) {
+                              return const _PlazaLoadMoreIndicator();
+                            }
                             final post = _posts[index];
                             return AppListEntranceItem(
                               index: index,
@@ -1223,9 +1354,21 @@ class _LibraryTabState extends State<_LibraryTab> {
 
   String _category = '';
   bool _fabCollapsed = false;
+  static const int _pageSize = 30;
+
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = true;
   bool _hasError = false;
+
+  // 검색(서버 search) + 무한스크롤
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  Timer? _searchDebounce;
+  String _keyword = '';
+  int _page = 0;
+  bool _hasMore = false;
+  bool _loadingMore = false;
+  int _requestId = 0;
 
   // 자료실 이용 자격 — 자유게시판 글 1개 이상 필요. null이면 아직 확인 전(허용으로 간주하지 않는다).
   bool _accessAllowed = false;
@@ -1234,7 +1377,77 @@ class _LibraryTabState extends State<_LibraryTab> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _checkAccessAndLoad();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_hasMore || _loadingMore || _isLoading) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      final keyword = value.trim();
+      if (keyword == _keyword) return;
+      _keyword = keyword;
+      _load();
+    });
+  }
+
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    if (_keyword.isEmpty) return;
+    _keyword = '';
+    _load();
+  }
+
+  List<Map<String, dynamic>> _asItems(Map<String, dynamic> response) {
+    final content = (response['content'] as List?) ?? [];
+    return content
+        .whereType<Map>()
+        .map((i) => Map<String, dynamic>.from(i))
+        .toList();
+  }
+
+  Future<void> _loadMore() async {
+    final requestId = _requestId;
+    setState(() => _loadingMore = true);
+    try {
+      final response = await ApiService().getPlazaLibrary(
+        category: _category.isEmpty ? null : _category,
+        search: _keyword,
+        page: _page,
+        size: _pageSize,
+      );
+      if (!mounted || requestId != _requestId) return;
+      final items = _asItems(response);
+      final known = _items.map((i) => i['id']).toSet();
+      setState(() {
+        _items = [..._items, ...items.where((i) => !known.contains(i['id']))];
+        _page += 1;
+        _hasMore = _pageHasMore(response, _page, items.length, _pageSize);
+        _loadingMore = false;
+      });
+    } catch (e) {
+      debugPrint('자료실 더 불러오기 실패: $e');
+      if (mounted && requestId == _requestId) {
+        setState(() => _loadingMore = false);
+      }
+    }
   }
 
   Future<void> _checkAccessAndLoad() async {
@@ -1266,28 +1479,29 @@ class _LibraryTabState extends State<_LibraryTab> {
   }
 
   Future<void> _load() async {
+    final requestId = ++_requestId;
     setState(() {
       _isLoading = true;
       _hasError = false;
+      _loadingMore = false;
     });
     try {
       final response = await ApiService().getPlazaLibrary(
         category: _category.isEmpty ? null : _category,
-        size: 30,
+        search: _keyword,
+        size: _pageSize,
       );
-      final content = (response['content'] as List?) ?? [];
-      if (mounted) {
-        setState(() {
-          _items = content
-              .whereType<Map>()
-              .map((i) => Map<String, dynamic>.from(i))
-              .toList();
-          _isLoading = false;
-        });
-      }
+      if (!mounted || requestId != _requestId) return;
+      final items = _asItems(response);
+      setState(() {
+        _items = items;
+        _page = 1;
+        _hasMore = _pageHasMore(response, 1, items.length, _pageSize);
+        _isLoading = false;
+      });
     } catch (e) {
       debugPrint('자료실 로드 실패: $e');
-      if (mounted) {
+      if (mounted && requestId == _requestId) {
         setState(() {
           _isLoading = false;
           _hasError = true;
@@ -1495,11 +1709,9 @@ class _LibraryTabState extends State<_LibraryTab> {
           : null,
       // 카드 등장 연출은 처음 한 번만 — 분류·새로고침으로 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
       body: AppListEntrance(
-        // 처음 불러올 때(아직 보일 자료가 없을 때)만 뼈대 — 자료가 있는 채로 다시 불러올 때는 예전 스피너
-        child: _isLoading && _items.isEmpty
+        // 자격을 확인하는 동안(아직 목록 틀이 없을 때)만 통째 뼈대
+        child: (_isLoading && !_accessAllowed)
             ? const _PlazaCardListSkeleton(hasFab: true, withChipRow: true)
-            : _isLoading
-            ? const Center(child: CircularProgressIndicator())
             : !_accessAllowed
             ? (_hasError
                   ? _PlazaErrorState(onRetry: _checkAccessAndLoad)
@@ -1508,6 +1720,14 @@ class _LibraryTabState extends State<_LibraryTab> {
                     ))
             : Column(
                 children: [
+                  // 검색칸은 목록을 다시 불러와도 그대로 남아야 입력이 끊기지 않는다
+                  AppSearchBar(
+                    controller: _searchController,
+                    label: '자료 검색',
+                    placeholder: '제목·설명으로 찾기',
+                    onChanged: _onSearchChanged,
+                    onClear: _clearSearch,
+                  ),
                   _PlazaFilterChips(
                     options: _categories,
                     selectedKey: _category,
@@ -1517,15 +1737,26 @@ class _LibraryTabState extends State<_LibraryTab> {
                     },
                   ),
                   Expanded(
-                    child: (_hasError && _items.isEmpty)
+                    child: _isLoading && _items.isEmpty
+                        ? const _PlazaCardListSkeleton(hasFab: true)
+                        : _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : (_hasError && _items.isEmpty)
                         ? _PlazaErrorState(onRetry: _load)
                         : _items.isEmpty
-                        ? const AppEmptyState(
-                            icon: Icons.folder_open_outlined,
-                            title: '아직 등록된 자료가 없어요',
-                            description: '+ 버튼으로 첫 자료를 올려보세요',
-                            topSpacing: AppSpacing.space10,
-                          )
+                        ? (_keyword.isNotEmpty
+                              ? const AppEmptyState(
+                                  icon: Icons.search_off_rounded,
+                                  title: '찾는 자료가 없어요',
+                                  description: '다른 말로 찾아보세요',
+                                  topSpacing: AppSpacing.space10,
+                                )
+                              : const AppEmptyState(
+                                  icon: Icons.folder_open_outlined,
+                                  title: '아직 등록된 자료가 없어요',
+                                  description: '+ 버튼으로 첫 자료를 올려보세요',
+                                  topSpacing: AppSpacing.space10,
+                                ))
                         : NotificationListener<UserScrollNotification>(
                             onNotification: (notification) {
                               final collapsed = _fabCollapsedFor(notification);
@@ -1538,15 +1769,22 @@ class _LibraryTabState extends State<_LibraryTab> {
                             child: AppRefreshIndicator(
                               onRefresh: _load,
                               child: ListView.separated(
+                                controller: _scrollController,
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
                                 padding: _plazaListPadding(hasFab: true),
-                                itemCount: _items.length,
+                                itemCount: _items.length + (_hasMore ? 1 : 0),
                                 separatorBuilder: (_, __) =>
                                     const SizedBox(height: AppSpacing.cardGap),
-                                itemBuilder: (context, index) =>
-                                    AppListEntranceItem(
-                                      index: index,
-                                      child: _buildItemCard(_items[index]),
-                                    ),
+                                itemBuilder: (context, index) {
+                                  if (index == _items.length) {
+                                    return const _PlazaLoadMoreIndicator();
+                                  }
+                                  return AppListEntranceItem(
+                                    index: index,
+                                    child: _buildItemCard(_items[index]),
+                                  );
+                                },
                               ),
                             ),
                           ),

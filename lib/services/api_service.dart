@@ -1919,7 +1919,7 @@ class ApiService {
         queryParams['priority'] = priority;
       }
       if (search != null && search.isNotEmpty) {
-        queryParams['search'] = search;
+        queryParams['searchQuery'] = search;
       }
 
       final uri = Uri.parse(

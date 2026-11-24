@@ -12,6 +12,7 @@ import '../widgets/common/carev_app_bar.dart';
 import '../widgets/common/app_list_entrance.dart';
 import '../widgets/common/app_loading.dart';
 import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_search_bar.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/seed/seed_button.dart';
 import 'notice_detail_screen.dart';
@@ -27,6 +28,8 @@ class NoticeListScreen extends StatefulWidget {
 
 class _NoticeListScreenState extends State<NoticeListScreen> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  String _keyword = '';
 
   @override
   void initState() {
@@ -40,6 +43,7 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -69,55 +73,98 @@ class _NoticeListScreenState extends State<NoticeListScreen> {
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: widget.showAppBar ? const CareVAppBar(title: '공지사항') : null,
       // 목록 등장 연출은 처음 한 번만 — 새로고침으로 목록이 비었다 다시 차도 다시 떠오르지 않게 Consumer 바깥에 둔다
-      body: AppListEntrance(
-        child: Consumer<NoticeProvider>(
-          builder: (context, noticeProvider, child) {
-            if (noticeProvider.isLoading &&
-                noticeProvider.publishedNotices.isEmpty) {
-              return const _NoticeListSkeleton();
-            }
-
-            if (noticeProvider.errorMessage.isNotEmpty &&
-                noticeProvider.publishedNotices.isEmpty) {
-              return _buildErrorState(noticeProvider.errorMessage);
-            }
-
-            if (noticeProvider.publishedNotices.isEmpty) {
-              return _buildEmptyState();
-            }
-
-            return AppRefreshIndicator(
-              onRefresh: () => _loadNotices(refresh: true),
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space2,
-                ),
-                itemCount:
-                    noticeProvider.publishedNotices.length +
-                    (noticeProvider.hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == noticeProvider.publishedNotices.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(AppSpacing.space4),
-                      child: Center(child: AppLoading(size: 24)),
-                    );
+      body: Column(
+        children: [
+          AppSearchBar(
+            controller: _searchController,
+            label: '공지사항 검색',
+            placeholder: '제목·내용으로 찾기',
+            onChanged: (v) => setState(() => _keyword = v.trim()),
+            onClear: () {
+              _searchController.clear();
+              setState(() => _keyword = '');
+            },
+          ),
+          // 목록 등장 연출은 처음 한 번만 — 새로고침으로 목록이 비었다 다시 차도 다시 떠오르지 않게 Consumer 바깥에 둔다
+          Expanded(
+            child: AppListEntrance(
+              child: Consumer<NoticeProvider>(
+                builder: (context, noticeProvider, child) {
+                  if (noticeProvider.isLoading &&
+                      noticeProvider.publishedNotices.isEmpty) {
+                    return const _NoticeListSkeleton();
                   }
 
-                  final notice = noticeProvider.publishedNotices[index];
-                  return AppListEntranceItem(
-                    index: index,
-                    child: NoticeCard(
-                      notice: notice,
-                      onTap: () => _navigateToDetail(notice),
+                  if (noticeProvider.errorMessage.isNotEmpty &&
+                      noticeProvider.publishedNotices.isEmpty) {
+                    return _buildErrorState(noticeProvider.errorMessage);
+                  }
+
+                  if (noticeProvider.publishedNotices.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  // 불러온 목록 안에서 제목·내용으로 거른다
+                  final notices = [
+                    for (final n in noticeProvider.publishedNotices)
+                      if (matchesKeyword(_keyword, [n.title, n.content])) n,
+                  ];
+                  if (notices.isEmpty) {
+                    // 아직 안 불러온 쪽에 있을 수 있으니 더 있으면 이어서 불러온다
+                    if (noticeProvider.hasMore && !noticeProvider.isLoading) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _loadNotices();
+                      });
+                    }
+                    return noticeProvider.hasMore
+                        ? const Center(child: AppLoading(size: 24))
+                        : _buildNoResultState();
+                  }
+
+                  return AppRefreshIndicator(
+                    onRefresh: () => _loadNotices(refresh: true),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.space2,
+                      ),
+                      itemCount:
+                          notices.length + (noticeProvider.hasMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == notices.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(AppSpacing.space4),
+                            child: Center(child: AppLoading(size: 24)),
+                          );
+                        }
+
+                        final notice = notices[index];
+                        return AppListEntranceItem(
+                          index: index,
+                          child: NoticeCard(
+                            notice: notice,
+                            onTap: () => _navigateToDetail(notice),
+                          ),
+                        );
+                      },
                     ),
                   );
                 },
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildNoResultState() {
+    return const AppEmptyState(
+      icon: Icons.search_off_rounded,
+      title: '찾는 공지사항이 없어요',
+      description: '다른 말로 찾아보세요',
     );
   }
 

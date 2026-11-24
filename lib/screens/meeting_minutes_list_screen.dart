@@ -10,10 +10,20 @@ import '../widgets/common/app_card.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_list_entrance.dart';
 import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_search_bar.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_tag.dart';
 import 'meeting_minutes_detail_screen.dart';
 import '../widgets/common/member_avatar.dart';
+
+/// '2026-11-14T10:00' -> '2026년 11월'. 날짜를 못 읽으면 빈 문자열.
+String meetingMonthLabel(String startAt) {
+  if (startAt.length < 7) return '';
+  final y = int.tryParse(startAt.substring(0, 4));
+  final m = int.tryParse(startAt.substring(5, 7));
+  if (y == null || m == null) return '';
+  return '$y년 $m월';
+}
 
 /// 회의록 목록 — 서명 요청이 온 회의록을 확인하고 들어가서 서명한다.
 class MeetingMinutesListScreen extends StatefulWidget {
@@ -28,12 +38,29 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
   List<dynamic> _items = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _searchController = TextEditingController();
+  String _keyword = '';
 
   @override
   void initState() {
     super.initState();
     _load();
   }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// 제목으로 거른 목록. 서버가 최신순으로 주므로 순서는 그대로 둔다.
+  List<Map<String, dynamic>> get _filtered => [
+    for (final e in _items)
+      if (matchesKeyword(_keyword, [
+        (e as Map<String, dynamic>)['title']?.toString(),
+      ]))
+        e,
+  ];
 
   Future<void> _load() async {
     final companyId =
@@ -81,99 +108,160 @@ class _MeetingMinutesListScreenState extends State<MeetingMinutesListScreen> {
     return Scaffold(
       backgroundColor: AppSemanticColors.backgroundCanvas,
       appBar: AppBar(title: const Text('회의록')),
-      body: AppRefreshIndicator(
-        onRefresh: _load,
-        child: _isLoading
-            ? const _MeetingMinutesListSkeleton()
-            : _error != null
-            ? _message(_error!)
-            : _items.isEmpty
-            ? _emptyState()
-            : AppListEntrance(
-                child: ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.screenGutter,
-                    AppSpacing.space3,
-                    AppSpacing.screenGutter,
-                    AppSpacing.space8,
-                  ),
-                  itemCount: _items.length,
-                  // B안: 카드끼리는 선 대신 간격으로 나눈다
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpacing.cardGap),
-                  itemBuilder: (context, index) {
-                    final item = _items[index] as Map<String, dynamic>;
-                    final status = _statusStyle(
-                      item['status']?.toString() ?? '',
-                    );
-                    final startAt = item['meetingStartAt']?.toString() ?? '';
-                    final when = startAt.length >= 16
-                        ? '${startAt.substring(0, 10)} ${startAt.substring(11, 16)}'
-                        : startAt;
-                    final signed = item['signedCount'] ?? 0;
-                    final total = item['attendeeCount'] ?? 0;
+      body: Column(
+        children: [
+          if (!_isLoading && _error == null && _items.isNotEmpty)
+            AppSearchBar(
+              controller: _searchController,
+              label: '회의록 검색',
+              placeholder: '제목으로 찾기',
+              onChanged: (v) => setState(() => _keyword = v.trim()),
+              onClear: () {
+                _searchController.clear();
+                setState(() => _keyword = '');
+              },
+            ),
+          Expanded(
+            child: AppRefreshIndicator(
+              onRefresh: _load,
+              child: _isLoading
+                  ? const _MeetingMinutesListSkeleton()
+                  : _error != null
+                  ? _message(_error!)
+                  : _items.isEmpty
+                  ? _emptyState()
+                  : _buildList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                    // B안: 회색 바탕 위 흰 카드(테두리 없음, 모서리 16, 안쪽 16)
-                    return AppListEntranceItem(
-                      index: index,
-                      child: AppCard(
-                        onTap: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => MeetingMinutesDetailScreen(
-                                minutesId: item['id'] as int,
-                              ),
-                            ),
-                          );
-                          _load();
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    item['title']?.toString() ?? '',
-                                    style: AppTypography.titleMedium.copyWith(
-                                      color: AppSemanticColors.textPrimary,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.space2),
-                                AppTag(label: status.label, tone: status.tone),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.space1_5),
-                            // 작성자 사진 + '11월 14일 · 김관리 · 서명 3/5'
-                            Row(
-                              children: [
-                                MemberAvatar.ref(
-                                  name: item['authorName']?.toString() ?? '',
-                                  id: item['authorRefId']?.toString(),
-                                  type: item['authorType']?.toString(),
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    '$when · ${item['authorName'] ?? ''} · 서명 $signed/$total',
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: AppSemanticColors.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+  Widget _buildList() {
+    final items = _filtered;
+    if (items.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          AppEmptyState(
+            icon: Icons.search_off_rounded,
+            title: '찾는 회의록이 없어요',
+            description: '다른 제목으로 찾아보세요',
+          ),
+        ],
+      );
+    }
+    // 달이 바뀌는 곳마다 머리글을 끼워 넣은 한 줄 목록
+    final rows = <Object>[];
+    String? lastMonth;
+    for (final item in items) {
+      final month = meetingMonthLabel(item['meetingStartAt']?.toString() ?? '');
+      if (month.isNotEmpty && month != lastMonth) {
+        rows.add(month);
+        lastMonth = month;
+      }
+      rows.add(item);
+    }
+    return AppListEntrance(
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenGutter,
+          AppSpacing.space1,
+          AppSpacing.screenGutter,
+          AppSpacing.space8,
+        ),
+        itemCount: rows.length,
+        itemBuilder: (context, index) {
+          final row = rows[index];
+          if (row is String) {
+            return Padding(
+              padding: EdgeInsets.only(
+                top: index == 0 ? AppSpacing.space2 : AppSpacing.space4,
+                bottom: AppSpacing.space2,
+              ),
+              child: Text(
+                row,
+                style: AppTypography.labelLarge.copyWith(
+                  color: AppSemanticColors.textSecondary,
                 ),
               ),
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.cardGap),
+            child: _buildItem(row as Map<String, dynamic>, index),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildItem(Map<String, dynamic> item, int index) {
+    final status = _statusStyle(item['status']?.toString() ?? '');
+    final startAt = item['meetingStartAt']?.toString() ?? '';
+    final when = startAt.length >= 16
+        ? '${startAt.substring(0, 10)} ${startAt.substring(11, 16)}'
+        : startAt;
+    final signed = item['signedCount'] ?? 0;
+    final total = item['attendeeCount'] ?? 0;
+
+    // B안: 회색 바탕 위 흰 카드(테두리 없음, 모서리 16, 안쪽 16)
+    return AppListEntranceItem(
+      index: index,
+      child: AppCard(
+        onTap: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  MeetingMinutesDetailScreen(minutesId: item['id'] as int),
+            ),
+          );
+          _load();
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    item['title']?.toString() ?? '',
+                    style: AppTypography.titleMedium.copyWith(
+                      color: AppSemanticColors.textPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.space2),
+                AppTag(label: status.label, tone: status.tone),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.space1_5),
+            // 작성자 사진 + '11월 14일 · 김관리 · 서명 3/5'
+            Row(
+              children: [
+                MemberAvatar.ref(
+                  name: item['authorName']?.toString() ?? '',
+                  id: item['authorRefId']?.toString(),
+                  type: item['authorType']?.toString(),
+                  size: 18,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '$when · ${item['authorName'] ?? ''} · 서명 $signed/$total',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppSemanticColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

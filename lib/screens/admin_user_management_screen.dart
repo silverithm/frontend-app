@@ -14,6 +14,7 @@ import '../widgets/common/app_tag.dart';
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_list_entrance.dart';
 import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_search_bar.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_segmented_tabs.dart';
@@ -34,6 +35,14 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
   // 개별 사용자 작업 상태 추적
   final Set<String> _processingStatusUsers = {};
   final Set<String> _processingDeleteUsers = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _keyword = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -253,24 +262,52 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
             );
           }
 
-          return AppRefreshIndicator(
-            onRefresh: () async => _loadData(),
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenGutter,
-                AppSpacing.space1,
-                AppSpacing.screenGutter,
-                AppSpacing.space6,
+          final shown = [
+            for (final u in adminProvider.companyMembers)
+              if (matchesKeyword(_keyword, [u.name, u.department, u.position]))
+                u,
+          ];
+          return Column(
+            children: [
+              AppSearchBar(
+                controller: _searchController,
+                label: '종사자 검색',
+                placeholder: '이름으로 찾기',
+                onChanged: (v) => setState(() => _keyword = v.trim()),
+                onClear: () {
+                  _searchController.clear();
+                  setState(() => _keyword = '');
+                },
               ),
-              itemCount: adminProvider.companyMembers.length,
-              itemBuilder: (context, index) {
-                final user = adminProvider.companyMembers[index];
-                return AppListEntranceItem(
-                  index: index,
-                  child: _buildMemberCard(user),
-                );
-              },
-            ),
+              Expanded(
+                child: shown.isEmpty
+                    ? const AppEmptyState(
+                        icon: Icons.search_off_rounded,
+                        title: '찾는 종사자가 없어요',
+                        description: '다른 이름으로 찾아보세요',
+                      )
+                    : AppRefreshIndicator(
+                        onRefresh: () async => _loadData(),
+                        child: ListView.builder(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.screenGutter,
+                            AppSpacing.space1,
+                            AppSpacing.screenGutter,
+                            AppSpacing.space6,
+                          ),
+                          itemCount: shown.length,
+                          itemBuilder: (context, index) {
+                            return AppListEntranceItem(
+                              index: index,
+                              child: _buildMemberCard(shown[index]),
+                            );
+                          },
+                        ),
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -578,8 +615,17 @@ class AdminPendingUsersTab extends StatefulWidget {
 
 class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
     with AutomaticKeepAliveClientMixin {
+  final TextEditingController _searchController = TextEditingController();
+  String _keyword = '';
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -667,24 +713,56 @@ class _AdminPendingUsersTabState extends State<AdminPendingUsersTab>
             );
           }
 
-          return AppRefreshIndicator(
-            onRefresh: () async => _loadData(),
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenGutter,
-                AppSpacing.space1,
-                AppSpacing.screenGutter,
-                AppSpacing.space6,
+          // 신청이 몇 건 안 될 땐 검색칸이 군더더기라 여섯 건부터 보인다
+          final showSearch = adminProvider.pendingUsers.length >= 6;
+          final shown = [
+            for (final u in adminProvider.pendingUsers)
+              if (!showSearch ||
+                  matchesKeyword(_keyword, [u.name, u.department, u.position]))
+                u,
+          ];
+          return Column(
+            children: [
+              if (showSearch)
+                AppSearchBar(
+                  controller: _searchController,
+                  label: '승인 대기 검색',
+                  placeholder: '이름으로 찾기',
+                  onChanged: (v) => setState(() => _keyword = v.trim()),
+                  onClear: () {
+                    _searchController.clear();
+                    setState(() => _keyword = '');
+                  },
+                ),
+              Expanded(
+                child: shown.isEmpty
+                    ? const AppEmptyState(
+                        icon: Icons.search_off_rounded,
+                        title: '찾는 신청이 없어요',
+                        description: '다른 이름으로 찾아보세요',
+                      )
+                    : AppRefreshIndicator(
+                        onRefresh: () async => _loadData(),
+                        child: ListView.builder(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.screenGutter,
+                            AppSpacing.space1,
+                            AppSpacing.screenGutter,
+                            AppSpacing.space6,
+                          ),
+                          itemCount: shown.length,
+                          itemBuilder: (context, index) {
+                            return AppListEntranceItem(
+                              index: index,
+                              child: _buildPendingUserCard(shown[index]),
+                            );
+                          },
+                        ),
+                      ),
               ),
-              itemCount: adminProvider.pendingUsers.length,
-              itemBuilder: (context, index) {
-                final user = adminProvider.pendingUsers[index];
-                return AppListEntranceItem(
-                  index: index,
-                  child: _buildPendingUserCard(user),
-                );
-              },
-            ),
+            ],
           );
         },
       ),

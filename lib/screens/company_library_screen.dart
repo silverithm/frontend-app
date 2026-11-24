@@ -23,6 +23,7 @@ import '../widgets/common/app_snackbar.dart';
 import '../widgets/common/app_fab.dart';
 import '../widgets/common/app_list_entrance.dart';
 import '../widgets/common/app_refresh.dart';
+import '../widgets/common/app_search_bar.dart';
 import '../widgets/common/app_skeleton.dart';
 import '../widgets/common/app_tag.dart';
 import '../widgets/common/carev_app_bar.dart';
@@ -54,11 +55,19 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
   bool _hasError = false;
   String _selectedCategory = '';
   bool _fabCollapsed = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _keyword = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -111,8 +120,19 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
   }
 
   List<Map<String, dynamic>> get _visibleItems {
-    if (_selectedCategory.isEmpty) return _items;
-    return _items.where((i) => _categoryOf(i) == _selectedCategory).toList();
+    // 분류 칩과 검색어(제목·설명·파일명)를 함께 만족하는 자료만
+    return _items
+        .where(
+          (i) =>
+              (_selectedCategory.isEmpty ||
+                  _categoryOf(i) == _selectedCategory) &&
+              matchesKeyword(_keyword, [
+                i['title']?.toString(),
+                i['description']?.toString(),
+                i['fileName']?.toString(),
+              ]),
+        )
+        .toList();
   }
 
   String _formatSize(int bytes) {
@@ -203,150 +223,145 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
       context,
       isScrollControlled: true,
       child: StatefulBuilder(
-          builder: (context, setSheetState) {
-            Future<void> submit() async {
-              if (titleController.text.trim().isEmpty || picked == null) {
-                AppSnackBar.showWarning(context, message: '제목과 파일을 모두 넣어주세요');
-                return;
-              }
-
-              final auth = this.context.read<AuthProvider>();
-              final companyId = auth.currentUser?.company?.id;
-              if (companyId == null) return;
-
-              setSheetState(() => isSaving = true);
-              try {
-                // 파일을 먼저 올리고, 돌려받은 경로로 자료를 등록한다
-                final uploaded = await ApiService().uploadFileToServer(
-                  filePath: picked!.path,
-                );
-
-                await ApiService().createCompanyLibraryItem(
-                  companyId: companyId,
-                  title: titleController.text.trim(),
-                  description: descriptionController.text.trim(),
-                  category: category,
-                  fileName: uploaded['fileName']?.toString() ?? picked!.name,
-                  fileSize:
-                      (uploaded['fileSize'] as num?)?.toInt() ??
-                      await File(picked!.path).length(),
-                  filePath: uploaded['filePath']?.toString() ?? '',
-                  uploaderId: auth.currentUser?.id ?? '',
-                  uploaderName: auth.currentUser?.name ?? '',
-                );
-
-                if (!context.mounted) return;
-                Navigator.pop(context);
-                if (mounted) {
-                  AppSnackBar.showSuccess(this.context, message: '자료를 올렸습니다');
-                  _load();
-                }
-              } catch (e) {
-                debugPrint('기관 자료 등록 실패: $e');
-                setSheetState(() => isSaving = false);
-                if (context.mounted) {
-                  AppSnackBar.showError(context, message: '자료 등록에 실패했습니다');
-                }
-              }
+        builder: (context, setSheetState) {
+          Future<void> submit() async {
+            if (titleController.text.trim().isEmpty || picked == null) {
+              AppSnackBar.showWarning(context, message: '제목과 파일을 모두 넣어주세요');
+              return;
             }
 
-            return Padding(
-              padding: EdgeInsets.only(
-                left: AppSpacing.space5,
-                right: AppSpacing.space5,
-                top: AppSpacing.space5,
-                bottom:
-                    AppSpacing.space5 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '자료 올리기',
-                    style: AppTypography.heading5,
+            final auth = this.context.read<AuthProvider>();
+            final companyId = auth.currentUser?.company?.id;
+            if (companyId == null) return;
+
+            setSheetState(() => isSaving = true);
+            try {
+              // 파일을 먼저 올리고, 돌려받은 경로로 자료를 등록한다
+              final uploaded = await ApiService().uploadFileToServer(
+                filePath: picked!.path,
+              );
+
+              await ApiService().createCompanyLibraryItem(
+                companyId: companyId,
+                title: titleController.text.trim(),
+                description: descriptionController.text.trim(),
+                category: category,
+                fileName: uploaded['fileName']?.toString() ?? picked!.name,
+                fileSize:
+                    (uploaded['fileSize'] as num?)?.toInt() ??
+                    await File(picked!.path).length(),
+                filePath: uploaded['filePath']?.toString() ?? '',
+                uploaderId: auth.currentUser?.id ?? '',
+                uploaderName: auth.currentUser?.name ?? '',
+              );
+
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              if (mounted) {
+                AppSnackBar.showSuccess(this.context, message: '자료를 올렸습니다');
+                _load();
+              }
+            } catch (e) {
+              debugPrint('기관 자료 등록 실패: $e');
+              setSheetState(() => isSaving = false);
+              if (context.mounted) {
+                AppSnackBar.showError(context, message: '자료 등록에 실패했습니다');
+              }
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: AppSpacing.space5,
+              right: AppSpacing.space5,
+              top: AppSpacing.space5,
+              bottom:
+                  AppSpacing.space5 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('자료 올리기', style: AppTypography.heading5),
+                const SizedBox(height: AppSpacing.space4),
+                SeedTextField(label: '제목', controller: titleController),
+                const SizedBox(height: AppSpacing.space3),
+                SeedTextField(
+                  label: '설명 (선택)',
+                  controller: descriptionController,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.space3),
+                Text(
+                  '분류',
+                  style: AppTypography.titleSmall.copyWith(
+                    color: AppSemanticColors.textPrimary,
                   ),
-                  const SizedBox(height: AppSpacing.space4),
-                  SeedTextField(label: '제목', controller: titleController),
-                  const SizedBox(height: AppSpacing.space3),
-                  SeedTextField(
-                    label: '설명 (선택)',
-                    controller: descriptionController,
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: AppSpacing.space3),
-                  Text(
-                    '분류',
-                    style: AppTypography.titleSmall.copyWith(
-                      color: AppSemanticColors.textPrimary,
+                ),
+                const SizedBox(height: AppSpacing.space1_5),
+                DropdownButtonFormField<String>(
+                  initialValue: category,
+                  // B안 입력칸: 회색 채움·테두리 없음·모서리 12, 누르고 있으면 틸 2px(SeedTextField와 같다)
+                  decoration: InputDecoration(
+                    isCollapsed: true,
+                    filled: true,
+                    fillColor: AppSemanticColors.fillDefault,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space4,
+                      vertical: AppSpacing.space3_5,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.control,
+                      ),
+                      borderSide: const BorderSide(
+                        color: AppSemanticColors.borderFocus,
+                        width: 2,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.space1_5),
-                  DropdownButtonFormField<String>(
-                    initialValue: category,
-                    // B안 입력칸: 회색 채움·테두리 없음·모서리 12, 누르고 있으면 틸 2px(SeedTextField와 같다)
-                    decoration: InputDecoration(
-                      isCollapsed: true,
-                      filled: true,
-                      fillColor: AppSemanticColors.fillDefault,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space4,
-                        vertical: AppSpacing.space3_5,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppBorderRadius.control,
-                        ),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppBorderRadius.control,
-                        ),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppBorderRadius.control,
-                        ),
-                        borderSide: const BorderSide(
-                          color: AppSemanticColors.borderFocus,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    items: _presetCategories
-                        .map(
-                          (c) => DropdownMenuItem(value: c, child: Text(c)),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) setSheetState(() => category = value);
-                    },
+                  items: _presetCategories
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) setSheetState(() => category = value);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.space3),
+                SeedButton(
+                  label: picked?.name ?? '파일 선택',
+                  variant: SeedButtonVariant.neutralOutline,
+                  prefixIcon: Icons.attach_file,
+                  onPressed: () async {
+                    final file = await openFile();
+                    if (file != null) setSheetState(() => picked = file);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.space5),
+                SizedBox(
+                  width: double.infinity,
+                  child: SeedButton(
+                    label: isSaving ? '올리는 중...' : '올리기',
+                    onPressed: isSaving ? null : submit,
                   ),
-                  const SizedBox(height: AppSpacing.space3),
-                  SeedButton(
-                    label: picked?.name ?? '파일 선택',
-                    variant: SeedButtonVariant.neutralOutline,
-                    prefixIcon: Icons.attach_file,
-                    onPressed: () async {
-                      final file = await openFile();
-                      if (file != null) setSheetState(() => picked = file);
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.space5),
-                  SizedBox(
-                    width: double.infinity,
-                    child: SeedButton(
-                      label: isSaving ? '올리는 중...' : '올리기',
-                      onPressed: isSaving ? null : submit,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -385,22 +400,39 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
               onPressed: _showUploadSheet,
             )
           : null,
-      // 목록 등장 연출은 처음 한 번만 — 새로고침으로 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
-      body: AppListEntrance(
-        // 처음 불러올 때(아직 보일 자료가 없을 때)만 뼈대 — 자료가 있는 채로 다시 불러올 때는 예전 스피너
-        child: _isLoading && _items.isEmpty
-            ? const _LibrarySkeleton()
-            : _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _hasError
-            ? _buildErrorState()
-            : NotificationListener<UserScrollNotification>(
-                onNotification: _onUserScroll,
-                child: AppRefreshIndicator(
-                  onRefresh: _load,
-                  child: _buildList(isAdmin),
-                ),
-              ),
+      body: Column(
+        children: [
+          if (!_isLoading && !_hasError && _items.isNotEmpty)
+            AppSearchBar(
+              controller: _searchController,
+              label: '자료 검색',
+              placeholder: '제목·설명으로 찾기',
+              onChanged: (v) => setState(() => _keyword = v.trim()),
+              onClear: () {
+                _searchController.clear();
+                setState(() => _keyword = '');
+              },
+            ),
+          Expanded(
+            // 목록 등장 연출은 처음 한 번만 — 새로고침으로 다시 불러와도 다시 떠오르지 않게 바깥에 둔다
+            child: AppListEntrance(
+              // 처음 불러올 때(아직 보일 자료가 없을 때)만 뼈대 — 자료가 있는 채로 다시 불러올 때는 예전 스피너
+              child: _isLoading && _items.isEmpty
+                  ? const _LibrarySkeleton()
+                  : _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _hasError
+                  ? _buildErrorState()
+                  : NotificationListener<UserScrollNotification>(
+                      onNotification: _onUserScroll,
+                      child: AppRefreshIndicator(
+                        onRefresh: _load,
+                        child: _buildList(isAdmin),
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -438,6 +470,7 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
     final items = _visibleItems;
 
     return ListView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       // 마지막 카드가 FAB(56)에 가려지지 않게
       padding: const EdgeInsets.only(
         bottom: AppSpacing.space20 + AppSpacing.space4,
@@ -446,8 +479,14 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
         if (_categories.isNotEmpty) _buildCategoryChips(),
         if (items.isEmpty)
           AppEmptyState(
-            icon: Icons.folder_open_outlined,
-            title: _items.isEmpty ? '아직 올라온 자료가 없습니다' : '이 분류에는 자료가 없습니다',
+            icon: _keyword.isNotEmpty
+                ? Icons.search_off_rounded
+                : Icons.folder_open_outlined,
+            title: _items.isEmpty
+                ? '아직 올라온 자료가 없습니다'
+                : _keyword.isNotEmpty
+                ? '찾는 자료가 없어요'
+                : '이 분류에는 자료가 없습니다',
             topSpacing: AppSpacing.space10,
           )
         else
@@ -476,7 +515,9 @@ class _CompanyLibraryScreenState extends State<CompanyLibraryScreen> {
             setState(() => _selectedCategory = '');
           }),
           ..._categories.map((category) {
-            final count = _items.where((i) => _categoryOf(i) == category).length;
+            final count = _items
+                .where((i) => _categoryOf(i) == category)
+                .length;
             return Padding(
               padding: const EdgeInsets.only(left: AppSpacing.space2),
               child: _buildChip(
