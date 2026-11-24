@@ -4265,10 +4265,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         showSending && photoGroup == null ? _chatProvider.uploadProgressOf(message.localId) : null;
     final showUnread = showMeta && unreadCount > 0 && sendingStatus != MessageSendingStatus.failed;
     final showTime = showMeta && !showFailed;
-    final hasMeta = showFailed || showSending || showUnread || showTime;
+    // 고친 글이라는 표시는 묶음 가운데 말풍선에도 남긴다(웹은 고친 말풍선마다 붙인다).
+    // 시각처럼 같은 분 마지막에만 두면 가운데서 고친 글은 고쳤다는 흔적이 사라진다.
+    final showEdited =
+        message.editedAt != null && photoGroup == null && !message.isDeleted && !showFailed;
+    final hasMeta = showFailed || showSending || showUnread || showTime || showEdited;
 
     Widget metaColumn({required bool alignEnd}) {
-      final edited = message.editedAt != null && photoGroup == null;
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -4298,6 +4301,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 ),
               ),
             ),
+          // '수정됨'은 시각 **위 한 줄**에 쌓는다. 시각 옆에 '수정됨 · 오후 7:24'로 붙였더니
+          // 시각 열이 그만큼 넓어지고, 말풍선은 같은 줄의 남는 폭만 받으므로 그대로 좁아졌다.
+          // 폰 글자를 키운 안드로이드에서는 말풍선이 3분의 1 폭이 돼 글이 낱말 중간에서
+          // 끊기며 세로로 길게 늘어졌다(버그제보방 11/24). 위로 쌓으면 열 폭은 시각 폭 그대로다.
+          if (showEdited)
+            Text(
+              '수정됨',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppSemanticColors.textTertiary,
+                height: 1.2,
+              ),
+            ),
           if (showSending || showTime)
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -4320,10 +4335,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
                 ],
                 if (showTime)
                   Text(
-                    // 수정 표시는 말풍선 안 둘째 줄이 아니라 시각 옆에 — 말풍선이 커지지 않는다
-                    edited
-                        ? '수정됨 · ${_formatMessageTime(message.createdAt)}'
-                        : _formatMessageTime(message.createdAt),
+                    _formatMessageTime(message.createdAt),
                     style: AppTypography.bodySmall.copyWith(
                       color: AppSemanticColors.textTertiary,
                       height: 1.2,
@@ -4631,7 +4643,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen>
         );
 
       case MessageType.text:
-        // '수정됨'은 시각 옆으로 옮겼다(말풍선 안 둘째 줄은 틸 위에서 흐리고 말풍선만 키웠다).
+        // '수정됨'은 말풍선 밖 시각 위에 쌓는다(말풍선 안 둘째 줄은 틸 위에서 흐리고 말풍선만 키웠다).
         return _buildTextWithMentions(message.content ?? '', textColor);
       case MessageType.system:
         return _buildTextWithMentions(message.content ?? '', textColor);
